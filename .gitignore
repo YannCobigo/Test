@@ -1,0 +1,7 @@
+# un commentaire, cette ligne est ignorée
+*.~       # no emacs automatic save
+*.a       # no archives .a
+!lib.a    # mais suivre en version lib.a malgré la règle précédente
+/TODO     # ignorer uniquement le fichier TODO à la racine du projet
+build/    # ignore build directory
+doc/*.txt # ignorer doc/notes.txt, mais pas doc/server/arch.txt

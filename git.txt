@@ -1,0 +1,40 @@
+- clone a repository
+
+The name of the repository is Test:
+> git clone https://github.com/YannCobigo/Test.git 
+
+The name of the repository is MyTest2:
+> git clone https://github.com/YannCobigo/Test.git MyTest2
+
+- git status 
+
+Give general information on the local copy of the repository.
+
+- git add [file]
+
+Add new file ; index modification for commit
+
+- file .gitignore
+
+tell which files to ignore for indexation
+
+- git diff
+
+show informations on files differences IF THEY ARE NOT YET INDEXED.
+> git diff
+
+show information on files differences IF THEY ARE INDEXED
+> git diff --cached/--staged
+
+- git commit
+
+Cette commande lance emacs (git config --global core.editor emacs)
+> git commit
+
+On peut direcetment editer le message
+> git commit -m "Story 182: Fix benchmarks for speed"
+
+
+
+
+
