@@ -1,5 +1,6 @@
-- clone a repository
+http://djibril.developpez.com/tutoriels/conception/pro-git/
 
+- clone a repository
 The name of the repository is Test:
 > git clone https://github.com/YannCobigo/Test.git 
 
@@ -7,19 +8,15 @@ The name of the repository is MyTest2:
 > git clone https://github.com/YannCobigo/Test.git MyTest2
 
 - git status 
-
 Give general information on the local copy of the repository.
 
 - git add [file]
-
 Add new file ; index modification for commit
 
 - file .gitignore
-
 tell which files to ignore for indexation
 
 - git diff
-
 show informations on files differences IF THEY ARE NOT YET INDEXED.
 > git diff
 
@@ -27,13 +24,48 @@ show information on files differences IF THEY ARE INDEXED
 > git diff --cached/--staged
 
 - git commit
-
 Cette commande lance emacs (git config --global core.editor emacs)
 > git commit
 
 On peut direcetment editer le message
 > git commit -m "Story 182: Fix benchmarks for speed"
 
+Cette commande permet de mettre tous les fichiers dans la zone d'index, sans avoir a taper la commande 'add'
+> git commit -a -m 'added new benchmarks'
+
+Pour eliminer la dernière mise en index. (voir le détail)
+> git commit --amend
+
+- git rm
+Pour éliminer des fichiers. Il, en premier, enlever le fichier d ela zone de travail
+> rm README.md
+
+Puis le retirer de la zone d'index
+> git rm README.md
+
+-git log
+Donne les information du journal des versions.
+
+Donne des information plus precises: les ligne modifiées
+> git log -p
+
+donne le détail des lignes modifiées mais sur deux dernières versions.
+> git log -p -2
+
+- git remote -v
+Examiner les dépôts a distance.
+
+> git remote show origin
+
+- git fetch origin
+récupère tout ajout qui a été poussé vers ce dépôt depuis que vous l'avez cloné ou la dernière fois que vous avez récupéré les ajouts. Il faut noter que la commande fetch tire les données dans votre dépôt local mais sous sa propre branche — elle ne les fusionne pas automatiquement avec aucun de vos travaux ni ne modifie votre copie de travail. Vous devez volontairement fusionner ses modifications distantes dans votre travail lorsque vous le souhaitez.
+
+- git push [nom-distant] [nom-de-branche]
+Lorsque votre dépôt vous semble prêt à être partagé, il faut le pousser en amont.
+Cette commande ne fonctionne que si vous avez cloné depuis un serveur sur lequel vous avez des droits d'accès en écriture et si personne n'a poussé dans l'intervalle.
+
+- git pull
+git va automatiquement fusionner la branche master du dépôt distant après avoir récupéré toutes les références sur le serveur distant.
 
 
 
