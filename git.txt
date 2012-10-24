@@ -1,4 +1,5 @@
 http://djibril.developpez.com/tutoriels/conception/pro-git/
+source .git-completion.bash
 
 - clone a repository
 The name of the repository is Test:
@@ -74,12 +75,17 @@ Cette commande donne tous les tag v1.4.2.*
 
 Git utilise deux types principaux de balises : légères et annotées. Une balise légère ressemble beaucoup à une branche qui ne change pas, c'est juste un pointeur sur un commit spécifique. Les balises annotées, par contre sont stockées en tant qu'objets à part entière dans la base de données de Git. Elles ont une somme de contrôle, contiennent le nom et l'adresse e-mail du créateur, la date, un message de balisage et peuvent être signées et vérifiées avec GNU Privacy Guard (GPG). Il est généralement recommandé de créer des balises annotées pour générer toute cette information mais si la balise doit rester temporaire ou l'information supplémentaire n'est pas désirée, il reste toujours les balises légères.
 
--- Les balises annotées
+-- Les balises annotées / TAG
 > git tag -a v1.4 -m 'my version 1.4'
 
 Vous pouvez visualiser les données de la balise à côté du commit qui a été marqué en utilisant la commande git show :
 > git show v1.4
 
+Par défaut, la commande git push ne transfère pas les balises vers les serveurs distants. Il faut explicitement pousser les balises après les avoir créées localement. Ce processus s'apparente à pousser des branches distantes - vous pouvez lancer git push origin [nom-du-tag].
+> git push origin v1.5
+
+Si vous avez de nombreuses balises que vous souhaitez pousser en une fois, vous pouvez aussi utiliser l'option --tags avec la commande git push. Ceci transférera toutes les nouvelles balises vers le serveur distant.
+> git push origin --tags
 
 
 
