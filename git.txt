@@ -1,30 +1,37 @@
 http://djibril.developpez.com/tutoriels/conception/pro-git/
 source .git-completion.bash
 
-- clone a repository
-The name of the repository is Test:
+1. Gestion dan Git
+1.1. clone a repository
+
+Le nom du depot est Test :
 > git clone https://github.com/YannCobigo/Test.git 
 
-The name of the repository is MyTest2:
+Nous pouvons attribuer un nom arbitrairement MyTest2 :
 > git clone https://github.com/YannCobigo/Test.git MyTest2
 
-- git status 
+1.2.1. git status 
+
 Give general information on the local copy of the repository.
 
-- git add [file]
+1.2.1. git add [file]
+
 Add new file ; index modification for commit
 
-- file .gitignore
+1.2.3. file .gitignore
+
 tell which files to ignore for indexation
 
-- git diff
+1.2.4. git diff
+
 show informations on files differences IF THEY ARE NOT YET INDEXED.
 > git diff
 
 show information on files differences IF THEY ARE INDEXED
 > git diff --cached/--staged
 
-- git commit
+1.3. git commit
+
 Cette commande lance emacs (git config --global core.editor emacs)
 > git commit
 
@@ -37,14 +44,16 @@ Cette commande permet de mettre tous les fichiers dans la zone d'index, sans avo
 Pour eliminer la dernière mise en index. (voir le détail)
 > git commit --amend
 
-- git rm
+1.4. git rm
+
 Pour éliminer des fichiers. Il, en premier, enlever le fichier d ela zone de travail
 > rm README.md
 
 Puis le retirer de la zone d'index
 > git rm README.md
 
--git log
+1.5. git log
+
 Donne les information du journal des versions.
 
 Donne des information plus precises: les ligne modifiées
@@ -53,29 +62,35 @@ Donne des information plus precises: les ligne modifiées
 donne le détail des lignes modifiées mais sur deux dernières versions.
 > git log -p -2
 
-- git remote -v
+1.6. git remote -v
+
 Examiner les dépôts a distance.
 
 > git remote show origin
 
-- git fetch origin
+1.6.1. git fetch origin
+
 récupère tout ajout qui a été poussé vers ce dépôt depuis que vous l'avez cloné ou la dernière fois que vous avez récupéré les ajouts. Il faut noter que la commande fetch tire les données dans votre dépôt local mais sous sa propre branche — elle ne les fusionne pas automatiquement avec aucun de vos travaux ni ne modifie votre copie de travail. Vous devez volontairement fusionner ses modifications distantes dans votre travail lorsque vous le souhaitez.
 
-- git push [nom-distant] [nom-de-branche]
+1.6.2. git push [nom-distant] [nom-de-branche]
+
 Lorsque votre dépôt vous semble prêt à être partagé, il faut le pousser en amont.
 Cette commande ne fonctionne que si vous avez cloné depuis un serveur sur lequel vous avez des droits d'accès en écriture et si personne n'a poussé dans l'intervalle.
 
-- git pull
+1.6.3. git pull
+
 git va automatiquement fusionner la branche master du dépôt distant après avoir récupéré toutes les références sur le serveur distant.
 
 
-- git tag
+1.7. git tag
+
 Cette commande donne tous les tag v1.4.2.*
 > git tag -l 'v1.4.2.*'
 
 Git utilise deux types principaux de balises : légères et annotées. Une balise légère ressemble beaucoup à une branche qui ne change pas, c'est juste un pointeur sur un commit spécifique. Les balises annotées, par contre sont stockées en tant qu'objets à part entière dans la base de données de Git. Elles ont une somme de contrôle, contiennent le nom et l'adresse e-mail du créateur, la date, un message de balisage et peuvent être signées et vérifiées avec GNU Privacy Guard (GPG). Il est généralement recommandé de créer des balises annotées pour générer toute cette information mais si la balise doit rester temporaire ou l'information supplémentaire n'est pas désirée, il reste toujours les balises légères.
 
--- Les balises annotées / TAG
+1.7.1. Les balises annotées / TAG
+
 > git tag -a v1.4 -m 'my version 1.4'
 
 Vous pouvez visualiser les données de la balise à côté du commit qui a été marqué en utilisant la commande git show :
@@ -87,11 +102,24 @@ Par défaut, la commande git push ne transfère pas les balises vers les serveur
 Si vous avez de nombreuses balises que vous souhaitez pousser en une fois, vous pouvez aussi utiliser l'option --tags avec la commande git push. Ceci transférera toutes les nouvelles balises vers le serveur distant.
 > git push origin --tags
 
+2. Branches
 
+Il faut bien combrandre que les versions des fichiers sont des instantanes du projet. Chaque version sont pointees. Le pointer et la fonction de hachage (SHA-1) sont sauves dans une maille d'une liste chainee. C'est elle qui gere le versionnage.
+Si nous n'avons qu'une branche (master) le pointer HEAD represente la tete de l'arbre.
+Creation d'une branche testing:
+> git branch testing
 
+Git va creer un nouveau pointer "testing" sur le dernier commit testing. La commande suivant va placer le pointeur HEAD sur le nouveau pointer de la branche.
+> git checkout testing
 
+Les prochain commit ajouteront des mailles a la chaine pointee par la branche "testing"
+> git commit -a -m 'petite modification'
 
+rafaire des travaux dans la branche principale se fait tout simplement par :
+> git checkout master
+> git commit -a -m 'autres modifications'
 
+2.1. Brancher et fusionner
 
 
 
