@@ -190,14 +190,52 @@ A présent que votre travail a été fusionné, vous n'avez plus besoin de la br
 
 2.1.2. Conflit de fusion
 
+Si votre résolution du problème #53 a modifié la même section de fichier que le correctif, vous obtiendrez une conflit de fusion qui ressemble à ceci :
+> git merge prob53
+Auto-merging index.html
+CONFLICT (content): Merge conflict in index.html
+Automatic merge failed; fix conflicts and then commit the result.
 
+Lancez git status pour voir le conflit de fusion. Quels fichiers n'ont pas été fusionnés : 
+> git status
+index.html: needs merge
+# On branch master
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       unmerged:   index.html
 
+Git ajoute des marques de conflit standard dans les fichiers qui comportent des conflits. Votre fichier contient des sections qui ressemblent à ceci :
+<<<<<<< HEAD:index.html
+<div id="footer">contact : email.support@github.com</div>
+=======
+<div id="footer">
+  please contact us at support@github.com
+</div>
+>>>>>>> prob53:index.html
 
+Après avoir résolu chacune de ces sections dans chaque fichier comportant un conflit, lancez "git add" sur chaque fichier pour le marquer comme résolu.
+Vous pouvez lancer à nouveau la commande git status pour vérifier que tous les conflits ont été résolus :
+> git status
+# On branch master
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#       modified:   index.html
+#
 
-
-
-
-
+Taper la commande "git commit" pour finaliser le commit de fusion. 
+> git commit
+Merge branch 'prob53'
+Conflicts:
+  index.html
+#
+# It looks like you may be committing a MERGE.
+# If this is not correct, please remove the file
+# .git/MERGE_HEAD
+# and try again.
+#
 
 
 
