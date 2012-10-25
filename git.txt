@@ -121,6 +121,95 @@ rafaire des travaux dans la branche principale se fait tout simplement par :
 
 2.1. Brancher et fusionner
 
+Suivons un exemple simple de branche et fusion dans une utilisation que vous feriez dans le monde réel. Vous feriez les étapes suivantes :
+
+  -  Travailler sur un site web
+  -  Créer une branche pour une nouvelle Story sur laquelle vous souhaiteriez travailler
+  -  Réaliser quelques tâches sur cette branche
+
+À cette étape, vous recevez un appel pour vous dire qu'un problème critique a été découvert et qu'il faut le régler au plus tôt. Vous feriez ce qui suit :
+
+  - Revenir à la branche de production
+  -  Créer une branche et y développer le correctif
+  -  Après un test, fusionner la branche de correctif et pousser le résultat à la production
+  -  Rebasculer à la branche initiale et continuer le travail
+
+2.1.1. Creer une branche correctif
+
+Pour gerer le bug 53:
+> git branch prob53
+> git checkout prob53 
+
+ou, deux commandes en une, creation et switch direct sur la branche prob53:
+> git checkout -b prob53
+> git commit -a -m 'ajout d'un pied de page [problème 53 fiexed]'
+
+Maintenant vous recevez un appel qui vous apprend qu'il y a un problème sur le site web, un problème qu'il faut résoudre immédiatement. Tout ce que vous avez à faire, c'est simplement rebasculer sur la branche master.
+Pour l'instant, vous avez validé tous vos changements dans la branche prob53 et vous pouvez donc rebasculer vers la branche master :
+> git checkout master
+Switched to branch "master"
+
+À présent, votre répertoire de copie de travail est exactement dans l'état précédent les modifications pour le problème #53 et vous pouvez vous consacrer à votre correctif.
+C'est un point important : Git réinitialise le répertoire de travail pour qu'il ressemble à l'instantané de la validation sur laquelle la branche que vous extrayez pointe. Il ajoute, retire et modifie les fichiers automatiquement pour assurer que la copie de travail soit identique à ce qu'elle était lors de votre dernière validation sur la branche.
+Ensuite, vous avez un correctif à faire. Créons une branche de correctif sur laquelle travailler jusqu'à ce que ce soit terminé (voir figure 3-13) :
+> git checkout -b 'correctif'
+Switched to a new branch "correctif"
+> git commit -a -m "correction d'une adresse mail incorrecte"
+[correctif]: created 3a0874c: "correction d'une adresse mail incorrecte"
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+Vous pouvez lancer vos tests, vous assurer que la correction est efficace et la fusionner dans la branche master pour la déployer en production. Vous réalisez ceci au moyen de la commande git merge :
+
+> git checkout master
+> git merge correctif
+Updating f42c576..3a0874c
+Fast forward
+ LISEZMOI |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+vous allez avant tout effacer la branche correctif parce que vous n'en avez plus besoin et la branche master pointe au même endroit.
+> git branch -d correctif
+Deleted branch correctif (3a0874c).
+
+Maintenant, il est temps de basculer sur la branche “travaux en cours” sur le problème #53 et de continuer à travailler dessus (voir figure 3-15) :
+> git checkout prob53
+Switched to branch "prob53"
+> git commit -a -m 'Nouveau pied de page terminé [problème 53]'
+[prob53]: created ad82d7a: "Nouveau pied de page terminé [problème 53]"
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Supposons que vous ayez décidé que le travail sur le problème #53 est terminé et se trouve donc prêt à être fusionné dans la branche master.
+> git checkout master
+> git merge prob53
+Merge made by recursive.
+ README |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+A présent que votre travail a été fusionné, vous n'avez plus besoin de la branche prob53.
+> git branch -d prob53
+
+2.1.2. Conflit de fusion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
