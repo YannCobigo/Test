@@ -1,0 +1,944 @@
+M-x R -> start a R session
+
+
+> data <- read.table('Data_mesh.vs.conductivity.frame', header=T)
+
+> summary(data)
+ Cell_sub_domain      X_cent             Y_cent            Z_cent      
+ Min.   : 4.000   Min.   :-67.3851   Min.   :-71.254   Min.   :-48.77  
+ 1st Qu.: 4.000   1st Qu.:-26.4159   1st Qu.:-23.569   1st Qu.: 12.18  
+ Median : 5.000   Median : -0.7689   Median :  5.067   Median : 31.24  
+ Mean   : 6.356   Mean   : -1.0056   Mean   :  7.746   Mean   : 31.79  
+ 3rd Qu.: 5.000   3rd Qu.: 24.4365   3rd Qu.: 36.888   3rd Qu.: 53.37  
+ Max.   :21.000   Max.   : 65.5033   Max.   :102.013   Max.   : 92.88  
+       l1                l2                l3              l_long       
+ Min.   :-0.2277   Min.   :-0.2924   Min.   :-0.3980   Min.   :-0.2277  
+ 1st Qu.: 0.5504   1st Qu.: 0.3913   1st Qu.: 0.2941   1st Qu.: 0.5504  
+ Median : 0.6476   Median : 0.4826   Median : 0.3946   Median : 0.6476  
+ Mean   : 0.6822   Mean   : 0.5222   Mean   : 0.4252   Mean   : 0.6822  
+ 3rd Qu.: 0.7718   3rd Qu.: 0.6115   3rd Qu.: 0.5240   3rd Qu.: 0.7718  
+ Max.   : 1.8171   Max.   : 1.7107   Max.   : 1.6812   Max.   : 1.8171  
+     l_tang            l_mean            l1_v0             l2_v0        
+ Min.   :-0.3192   Min.   :-0.2887   Min.   :-0.2277   Min.   :-0.2734  
+ 1st Qu.: 0.3435   1st Qu.: 0.4217   1st Qu.: 0.5499   1st Qu.: 0.3919  
+ Median : 0.4371   Median : 0.4993   Median : 0.6473   Median : 0.4824  
+ Mean   : 0.4737   Mean   : 0.5432   Mean   : 0.6818   Mean   : 0.5218  
+ 3rd Qu.: 0.5659   3rd Qu.: 0.6210   3rd Qu.: 0.7718   3rd Qu.: 0.6108  
+ Max.   : 1.6960   Max.   : 1.7364   Max.   : 1.8171   Max.   : 1.7107  
+     l3_v0             l1_v1             l2_v1             l3_v1        
+ Min.   :-0.4233   Min.   :-0.2403   Min.   :-0.2924   Min.   :-0.4233  
+ 1st Qu.: 0.2939   1st Qu.: 0.5499   1st Qu.: 0.3911   1st Qu.: 0.2935  
+ Median : 0.3942   Median : 0.6472   Median : 0.4822   Median : 0.3942  
+ Mean   : 0.4247   Mean   : 0.6815   Mean   : 0.5212   Mean   : 0.4241  
+ 3rd Qu.: 0.5231   3rd Qu.: 0.7716   3rd Qu.: 0.6103   3rd Qu.: 0.5227  
+ Max.   : 1.6812   Max.   : 1.8171   Max.   : 1.7107   Max.   : 1.6812  
+     l1_v2             l2_v2             l3_v2             l1_v3        
+ Min.   :-0.2403   Min.   :-0.2809   Min.   :-0.4233   Min.   :-0.2403  
+ 1st Qu.: 0.5504   1st Qu.: 0.3914   1st Qu.: 0.2939   1st Qu.: 0.5500  
+ Median : 0.6475   Median : 0.4823   Median : 0.3944   Median : 0.6475  
+ Mean   : 0.6816   Mean   : 0.5214   Mean   : 0.4242   Mean   : 0.6813  
+ 3rd Qu.: 0.7717   3rd Qu.: 0.6106   3rd Qu.: 0.5227   3rd Qu.: 0.7714  
+ Max.   : 1.8171   Max.   : 1.7107   Max.   : 1.6812   Max.   : 1.8171  
+     l2_v3             l3_v3        
+ Min.   :-0.2924   Min.   :-0.4233  
+ 1st Qu.: 0.3917   1st Qu.: 0.2940  
+ Median : 0.4824   Median : 0.3943  
+ Mean   : 0.5211   Mean   : 0.4240  
+ 3rd Qu.: 0.6105   3rd Qu.: 0.5225  
+ Max.   : 1.7107   Max.   : 1.6812  
+
+
+################################################################################
+
+
+> hist(data$l_mean[data$Cell_sub_domain == 5], prob=T, breaks=50, main="Distribution of l_mean in the cortex", xlab="l_mean")
+> mean(data$l_mean[data$Cell_sub_domain == 5])
+[1] 0.5684975
+> sd(data$l_mean[data$Cell_sub_domain == 5])
+[1] 0.1805893
+> fitdistr( data$l_mean[data$Cell_sub_domain == 5 & data$l_mean > 0], "lognormal")
+      meanlog          sdlog    
+  -0.6135778798    0.3368885476 
+ ( 0.0004005107) ( 0.0002832038)
+> curve( dnorm(x, -0.6135778798, 0.3368885476), col='red', add=T)curve( dnorm(x, -0.6135778798, 0.3368885476), col='red', add=T)
+Error: unexpected symbol in:
+"curve( dnorm(x, -0.6135778798, 0.3368885476, col='red', add=T)
+curve"
+> curve( dlnorm(x, -0.6135778798, 0.3368885476), col='red', add=T)
+
+postscript("GM_l_mean_distribution.ps")
+hist(data$l_mean[data$Cell_sub_domain == 5], prob=T, breaks=50, main="Distribution of l_mean in the cortex", xlab="l_mean")
+curve( dlnorm(x, -0.6135778798, 0.3368885476), col='red', add=T)
+dev.off()
+
+
+################################################################################
+> frac_tang_long_GM <- data$l_tang[data$Cell_sub_domain == 5] / data$l_long[data$Cell_sub_domain == 5]
+
+> summary(frac_tang_long_GM)
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+-716.6000    0.6346    0.7596    0.7145    0.8414  162.2000 
+> frac_tang_long_GM_cut <- frac_tang_long_GM < 1.1 & frac_tang_long_GM > -0.5
+> hist(frac_tang_long_GM[frac_tang_long_GM_cut], breaks = 100, prob=T)
+
+postscript("frac_tang_long_GM.ps")
+hist(frac_tang_long_GM[frac_tang_long_GM_cut], breaks = 100, prob=T, main="Gray matter", xlab="sigma_tan / sigma_long")
+dev.off()
+
+
+################################################################################
+data_GM <- data[data$Cell_sub_domain == 5,]
+
+ library(rgl)
+
+plot3d(data$X_cent[data$Cell_sub_domain == 4], data$Y_cent[data$Cell_sub_domain == 4], data$Z_cent[data$Cell_sub_domain == 4], col="blue")
+frac_tang_long_GM_cut_75_100 <- frac_tang_long_GM > 0.8414 & frac_tang_long_GM < 1.
+frac_tang_long_GM_cut_50_75 <- frac_tang_long_GM > 0.7145 & frac_tang_long_GM < 0.8414
+frac_tang_long_GM_cut_0_50 <- frac_tang_long_GM > 0.  & frac_tang_long_GM < 0.7145
+plot3d(data_GM$X_cent[frac_tang_long_GM_cut_75_100 & data_GM$Z_cent < 60 ], data_GM$Y_cent[frac_tang_long_GM_cut_75_100 & data_GM$Z_cent < 60 ], data_GM$Z_cent[frac_tang_long_GM_cut_75_100 & data_GM$Z_cent < 60 ], col="red", add=T)
+plot3d(data_GM$X_cent[frac_tang_long_GM_cut_50_75 & data_GM$Z_cent < 60 ], data_GM$Y_cent[frac_tang_long_GM_cut_50_75 & data_GM$Z_cent < 60 ], data_GM$Z_cent[frac_tang_long_GM_cut_50_75 & data_GM$Z_cent < 60 ], col="green", add=T)
+plot3d(data_GM$X_cent[frac_tang_long_GM_cut_0_50 & data_GM$Z_cent < 60 ], data_GM$Y_cent[frac_tang_long_GM_cut_0_50 & data_GM$Z_cent < 60 ], data_GM$Z_cent[frac_tang_long_GM_cut_0_50 & data_GM$Z_cent < 60 ], col="yellow", add=T)
+
+> summary(data_GM$l_mean)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-0.2887  0.4453  0.5375  0.5685  0.6604  1.5830 
+> summary(data_GM$l_long)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-0.2277  0.5721  0.6719  0.6959  0.7919  1.6720 
+> summary(data_GM$l_tang)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-0.3192  0.3747  0.4788  0.5048  0.6097  1.5560 
+> summary(data_GM$l_tang)
+
+################################################################################
+
+data_WM <- data[data$Cell_sub_domain == 4,]
+
+frac_tang_long_WM <- data_WM$l_tang / data_WM$l_long
+
+summary(frac_tang_long_WM)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-0.4647  0.5304  0.6988  0.6607  0.8120 22.9400 
+
+> frac_tang_long_WM_cut <- frac_tang_long_WM < 1.1 & frac_tang_long_WM > -0.5
+> hist(frac_tang_long_WM[frac_tang_long_WM_cut], breaks = 100, prob=T)
+
+postscript("frac_tang_long_WM.ps")
+hist(frac_tang_long_WM[frac_tang_long_WM_cut], breaks = 100, prob=T, main="White matter", xlab="sigma_tan / sigma_long")
+dev.off()
+
+library(rgl)
+
+#plot3d(data$X_cent[data$Cell_sub_domain == 4], data$Y_cent[data$Cell_sub_domain == 4], data$Z_cent[data$Cell_sub_domain == 4], col="blue")
+frac_tang_long_WM_cut_75_100 <- frac_tang_long_WM > 0.8120 & frac_tang_long_WM < 1.
+frac_tang_long_WM_cut_50_75 <- frac_tang_long_WM > 0.6607  & frac_tang_long_WM < 0.8120
+frac_tang_long_WM_cut_25_50 <- frac_tang_long_WM > 0.5304  & frac_tang_long_WM < 0.6607
+frac_tang_long_WM_cut_0_25 <- frac_tang_long_WM > 0.  & frac_tang_long_WM < 0.5304
+plot3d(data_WM$X_cent[frac_tang_long_WM_cut_75_100 & data_WM$Z_cent < 30 ], data_WM$Y_cent[frac_tang_long_WM_cut_75_100 & data_WM$Z_cent < 30 ], data_WM$Z_cent[frac_tang_long_WM_cut_75_100 & data_WM$Z_cent < 30 ], col="blue")
+plot3d(data_WM$X_cent[frac_tang_long_WM_cut_50_75 & data_WM$Z_cent < 30 ], data_WM$Y_cent[frac_tang_long_WM_cut_50_75 & data_WM$Z_cent < 30 ], data_WM$Z_cent[frac_tang_long_WM_cut_50_75 & data_WM$Z_cent < 30 ], col="green", add=T)
+plot3d(data_WM$X_cent[frac_tang_long_WM_cut_25_50 & data_WM$Z_cent < 30 ], data_WM$Y_cent[frac_tang_long_WM_cut_25_50 & data_WM$Z_cent < 30 ], data_WM$Z_cent[frac_tang_long_WM_cut_25_50 & data_WM$Z_cent < 30 ], col="yellow", add=T)
+plot3d(data_WM$X_cent[frac_tang_long_WM_cut_0_25 & data_WM$Z_cent < 30 ], data_WM$Y_cent[frac_tang_long_WM_cut_0_25 & data_WM$Z_cent < 30 ], data_WM$Z_cent[frac_tang_long_WM_cut_0_25 & data_WM$Z_cent < 30 ], col="red", add=T)
+
+
+
+################################################################################
+
+frac_tang_long_GM_cut <- frac_tang_long_GM < 1.1 & frac_tang_long_GM > 0.
+frac_tang_long_WM_cut <- frac_tang_long_WM < 1.1 & frac_tang_long_WM > 0.
+postscript("frac_tang_long_GM_WM.ps")
+par(mfrow=c(1,2))
+hist(frac_tang_long_WM[frac_tang_long_WM_cut], breaks = 50, prob=T, main="sigma_tan / sigma_long", xlab="White-matter")
+hist(frac_tang_long_GM[frac_tang_long_GM_cut], breaks = 50, prob=T, main="sigma_tan / sigma_long", xlab="Gray-matter")
+par(mfrow=c(1,1))
+dev.off()
+
+################################################################################
+
+
+dist <- sqrt( (data$X_cent-data$X_cent_vox) * (data$X_cent-data$X_cent_vox) + (data$Y_cent-data$Y_cent_vox) * (data$Y_cent-data$Y_cent_vox) + (data$Z_cent-data$Z_cent_vox) * (data$Z_cent-data$Z_cent_vox))
+dist_cut <- dist < 2.5
+> library(MASS)
+> fitdistr(dist[dist_cut], "normal")
+       mean            sd     
+  1.0647800404   0.3152565692 
+ (0.0002720978) (0.0001924022)
+> curve( dnorm(x, 1.0647800404,0.3152565692), col='red', add=T)
+> hist(dist[dist_cut], breaks=20, prob=T)
+> curve( dnorm(x, 1.0647800404,0.3152565692), col='red', add=T)
+
+postscript("dist_centroid_vs_voxel_center.ps")
+hist(dist[dist_cut], breaks=20, prob=T, main="centroids v.s. voxel centers", xlab="distance [mm]")
+curve( dnorm(x, 1.0647800404,0.3152565692), col='red', add=T)
+dev.off()
+
+
+################################################################################
+
+centroid_eigen_neg <- data$l1 < 0 & data$l2 < 0 & data$l3 < 0
+> summary(centroid_eigen_neg)
+   Mode   FALSE    TRUE    NA's 
+logical 1345300     449       0 
+
+centroid_or_eigen_neg <- data$l1 < 0 | data$l2 < 0 | data$l3 < 0
+> summary(centroid_or_eigen_neg)
+   Mode   FALSE    TRUE    NA's 
+logical 1340644    5105       0 
+
+centroid_l3_neg <- data$l3 < 0
+> summary(centroid_l3_neg)
+   Mode   FALSE    TRUE    NA's 
+logical 1340644    5105       0 
+
+library(rgl)
+
+plot3d(data$X_cent, data$Y_cent, data$Z_cent, col="blue")
+plot3d(data$X_cent[centroid_eigen_neg ], data$Y_cent[centroid_eigen_neg ], data$Z_cent[centroid_eigen_neg ], col="red", add=T)
+plot3d(data$X_cent[centroid_l3_neg ], data$Y_cent[centroid_l3_neg ], data$Z_cent[centroid_l3_neg ], col="red", add=T)
+
+centroid_vertex_l3_neg  <- data$l3 < 0 & data$l3_v0 < 0 & data$l3_v1 < 0 & data$l3_v2 < 0 & data$l3_v3 < 0
+> summary(centroid_vertex_l3_neg)
+   Mode   FALSE    TRUE    NA's 
+logical 1345208     541       0 
+
+~ 0.04 %
+
+> summary(data[centroid_vertex_l3_neg,])
+ Cell_sub_domain      X_cent           Y_cent           Z_cent      
+ Min.   : 4.000   Min.   :-41.91   Min.   :-67.50   Min.   :-35.36  
+ 1st Qu.: 5.000   1st Qu.: 30.92   1st Qu.:-50.66   1st Qu.: 22.38  
+ Median : 5.000   Median : 40.47   Median :-39.65   Median : 39.40  
+ Mean   : 5.993   Mean   : 36.73   Mean   :-19.11   Mean   : 33.11  
+ 3rd Qu.: 5.000   3rd Qu.: 50.01   3rd Qu.:-11.11   3rd Qu.: 48.91  
+ Max.   :21.000   Max.   : 65.20   Max.   :102.01   Max.   : 67.47  
+       l1                 l2                 l3                l_long        
+ Min.   :-0.22766   Min.   :-0.24041   Min.   :-0.397976   Min.   :-0.22766  
+ 1st Qu.: 0.04743   1st Qu.:-0.02112   1st Qu.:-0.171319   1st Qu.: 0.04743  
+ Median : 0.12462   Median : 0.05803   Median :-0.096443   Median : 0.12462  
+ Mean   : 0.15183   Mean   : 0.05293   Mean   :-0.114469   Mean   : 0.15183  
+ 3rd Qu.: 0.23459   3rd Qu.: 0.13244   3rd Qu.:-0.045543   3rd Qu.: 0.23459  
+ Max.   : 0.95009   Max.   : 0.51925   Max.   :-0.002692   Max.   : 0.95009  
+     l_tang             l_mean             l1_v0              l2_v0         
+ Min.   :-0.31919   Min.   :-0.28868   Min.   :-0.22766   Min.   :-0.24041  
+ 1st Qu.:-0.09398   1st Qu.:-0.02659   1st Qu.: 0.03942   1st Qu.:-0.02090  
+ Median :-0.01774   Median : 0.03465   Median : 0.12462   Median : 0.05803  
+ Mean   :-0.03077   Mean   : 0.03010   Mean   : 0.15450   Mean   : 0.05573  
+ 3rd Qu.: 0.02491   3rd Qu.: 0.09836   3rd Qu.: 0.23126   3rd Qu.: 0.13376  
+ Max.   : 0.19211   Max.   : 0.34841   Max.   : 0.95009   Max.   : 0.51925  
+     l3_v0               l1_v1              l2_v1              l3_v1          
+ Min.   :-0.397976   Min.   :-0.24026   Min.   :-0.28091   Min.   :-0.412365  
+ 1st Qu.:-0.171319   1st Qu.: 0.04743   1st Qu.:-0.02112   1st Qu.:-0.163399  
+ Median :-0.096443   Median : 0.11884   Median : 0.05386   Median :-0.094890  
+ Mean   :-0.112016   Mean   : 0.15118   Mean   : 0.05526   Mean   :-0.108453  
+ 3rd Qu.:-0.044997   3rd Qu.: 0.22699   3rd Qu.: 0.13376   3rd Qu.:-0.044763  
+ Max.   :-0.002692   Max.   : 0.95009   Max.   : 0.58520   Max.   :-0.002692  
+     l1_v2              l2_v2              l3_v2               l1_v3         
+ Min.   :-0.22766   Min.   :-0.24041   Min.   :-0.423348   Min.   :-0.24026  
+ 1st Qu.: 0.05523   1st Qu.:-0.01822   1st Qu.:-0.171319   1st Qu.: 0.04743  
+ Median : 0.12462   Median : 0.05826   Median :-0.092151   Median : 0.12462  
+ Mean   : 0.15838   Mean   : 0.05939   Mean   :-0.111957   Mean   : 0.15272  
+ 3rd Qu.: 0.24033   3rd Qu.: 0.13376   3rd Qu.:-0.041021   3rd Qu.: 0.23459  
+ Max.   : 0.95009   Max.   : 0.51925   Max.   :-0.001315   Max.   : 0.95009  
+     l2_v3              l3_v3          
+ Min.   :-0.28091   Min.   :-0.423348  
+ 1st Qu.:-0.02112   1st Qu.:-0.171319  
+ Median : 0.05826   Median :-0.096443  
+ Mean   : 0.05262   Mean   :-0.115847  
+ 3rd Qu.: 0.13244   3rd Qu.:-0.048130  
+ Max.   : 0.51925   Max.   :-0.001315  
+
+centroid_l3_neg_vertex_l3_pos  <- data$l3 < 0 & (data$l3_v0 > 0 | data$l3_v1 > 0 | data$l3_v2 > 0 | data$l3_v3 > 0)
+summary(centroid_l3_neg_vertex_l3_pos)
+   Mode   FALSE    TRUE    NA's 
+logical 1341185    4564       0 
+
+################################################################################
+
+data_GM <- data[data$Cell_sub_domain == 5,]
+
+four_vertices_in_voxel <- data_GM$l3_v0 == data_GM$l3_v1 & data_GM$l3_v0 == data_GM$l3_v2 & data_GM$l3_v0 == data_GM$l3_v3
+summary(four_vertices_in_voxel)
+   Mode   FALSE    TRUE    NA's 
+logical  698387   10305       0 
+
+
+three_vertices_in_voxel <- (data_GM$l3_v0 == data_GM$l3_v1 & data_GM$l3_v0 == data_GM$l3_v2 & data_GM$l3_v0 != data_GM$l3_v3 ) | (data_GM$l3_v0 == data_GM$l3_v2 & data_GM$l3_v0 == data_GM$l3_v3 & data_GM$l3_v0 != data_GM$l3_v1) | (data_GM$l3_v1 == data_GM$l3_v2 & data_GM$l3_v1 == data_GM$l3_v3 & data_GM$l3_v1 != data_GM$l3_v0 ) | (data_GM$l3_v1 == data_GM$l3_v3 & data_GM$l3_v1 == data_GM$l3_v0 & data_GM$l3_v1 != data_GM$l3_v2)
+summary(three_vertices_in_voxel)
+   Mode   FALSE    TRUE    NA's 
+logical  622471   86221       0 
+
+two_vertices_in_voxel <- (data_GM$l3_v0 == data_GM$l3_v1 & data_GM$l3_v0 != data_GM$l3_v2 & data_GM$l3_v0 != data_GM$l3_v3 ) | (data_GM$l3_v0 == data_GM$l3_v2 & data_GM$l3_v0 != data_GM$l3_v3 & data_GM$l3_v0 != data_GM$l3_v1) | (data_GM$l3_v0 == data_GM$l3_v3 & data_GM$l3_v0 != data_GM$l3_v1 & data_GM$l3_v0 != data_GM$l3_v2 ) | (data_GM$l3_v1 == data_GM$l3_v2 & data_GM$l3_v1 != data_GM$l3_v0 & data_GM$l3_v1 != data_GM$l3_v3) | (data_GM$l3_v1 == data_GM$l3_v3 & data_GM$l3_v1 != data_GM$l3_v0 & data_GM$l3_v1 != data_GM$l3_v2) | (data_GM$l3_v2 == data_GM$l3_v3 & data_GM$l3_v2 != data_GM$l3_v0 & data_GM$l3_v2 != data_GM$l3_v1)
+
+a <- data_GM$l3_v0 == data_GM$l3_v1 & data_GM$l3_v0 != data_GM$l3_v2 & data_GM$l3_v0 != data_GM$l3_v3
+b <- data_GM$l3_v0 == data_GM$l3_v2 & data_GM$l3_v0 != data_GM$l3_v3 & data_GM$l3_v0 != data_GM$l3_v1
+c <- data_GM$l3_v0 == data_GM$l3_v3 & data_GM$l3_v0 != data_GM$l3_v1 & data_GM$l3_v0 != data_GM$l3_v2
+d <- data_GM$l3_v1 == data_GM$l3_v2 & data_GM$l3_v1 != data_GM$l3_v0 & data_GM$l3_v1 != data_GM$l3_v3
+e <- data_GM$l3_v1 == data_GM$l3_v3 & data_GM$l3_v1 != data_GM$l3_v0 & data_GM$l3_v1 != data_GM$l3_v2
+f <- data_GM$l3_v2 == data_GM$l3_v3 & data_GM$l3_v2 != data_GM$l3_v0 & data_GM$l3_v2 != data_GM$l3_v1
+two_vertices_in_voxel <- a|b|c|d|e|f
+summary(two_vertices_in_voxel)
+   Mode   FALSE    TRUE    NA's 
+logical  355217  353475       0 
+
+
+one_vertices_in_voxel <- data_GM$l3_v0 != data_GM$l3_v1 & data_GM$l3_v0 != data_GM$l3_v2 & data_GM$l3_v0 != data_GM$l3_v3 &  data_GM$l3_v1 != data_GM$l3_v2 & data_GM$l3_v1 != data_GM$l3_v3 & data_GM$l3_v2 != data_GM$l3_v3 
+   Mode   FALSE    TRUE    NA's 
+logical  450001  258691       0 
+
+centroid_vertex_l3_neg_GM  <- data_GM$l3 < 0 & data_GM$l3_v0 < 0 & data_GM$l3_v1 < 0 & data_GM$l3_v2 < 0 & data_GM$l3_v3 < 0
+   Mode   FALSE    TRUE    NA's 
+logical  708196     496       0 
+centroid_l3_neg_vertex_l3_pos_GM  <- data_GM$l3 < 0 & (data_GM$l3_v0 > 0 | data_GM$l3_v1 > 0 | data_GM$l3_v2 > 0 | data_GM$l3_v3 > 0)
+summary(centroid_l3_neg_vertex_l3_pos_GM)
+   Mode   FALSE    TRUE    NA's 
+logical  704978    3714       0 
+
+summary(centroid_l3_neg_vertex_l3_pos_GM & one_vertices_in_voxel)
+   Mode   FALSE    TRUE    NA's 
+logical  707951     741       0 
+summary(centroid_l3_neg_vertex_l3_pos_GM & two_vertices_in_voxel)
+   Mode   FALSE    TRUE    NA's 
+logical  706640    2052       0 
+summary(centroid_l3_neg_vertex_l3_pos_GM & three_vertices_in_voxel)
+   Mode   FALSE    TRUE    NA's 
+logical  707771     921       0 
+summary(centroid_l3_neg_vertex_l3_pos_GM & four_vertices_in_voxel)
+   Mode   FALSE    NA's 
+logical  708692       0 
+
+
+four_vertices_in_voxel <- data_GM$l3_v0 == data_GM$l3_v1 & data_GM$l3_v0 == data_GM$l3_v2 & data_GM$l3_v0 == data_GM$l3_v3 & data_GM$l3_v0 > 0
+summary(four_vertices_in_voxel)
+   Mode   FALSE    TRUE    NA's 
+logical  698621   10071       0 
+summary(four_vertices_in_voxel & centroid_l3_neg_vertex_l3_pos_GM)
+   Mode   FALSE    NA's 
+logical  708692       0 
+
+
+three_vertices_in_voxel <- (data_GM$l3_v0 == data_GM$l3_v1 & data_GM$l3_v0 == data_GM$l3_v2 & data_GM$l3_v0 != data_GM$l3_v3  & data_GM$l3_v0 > 0) | (data_GM$l3_v0 == data_GM$l3_v2 & data_GM$l3_v0 == data_GM$l3_v3 & data_GM$l3_v0 != data_GM$l3_v1 & data_GM$l3_v0 > 0) | (data_GM$l3_v1 == data_GM$l3_v2 & data_GM$l3_v1 == data_GM$l3_v3 & data_GM$l3_v1 != data_GM$l3_v0  & data_GM$l3_v1 > 0) | (data_GM$l3_v1 == data_GM$l3_v3 & data_GM$l3_v1 == data_GM$l3_v0 & data_GM$l3_v1 != data_GM$l3_v2 & data_GM$l3_v1 > 0)
+summary(three_vertices_in_voxel)
+   Mode   FALSE    TRUE    NA's 
+logical  623550   85142       0 
+summary(three_vertices_in_voxel & centroid_l3_neg_vertex_l3_pos_GM)
+   Mode   FALSE    TRUE    NA's 
+logical  708677      15       0 
+
+
+a <- data_GM$l3_v0 == data_GM$l3_v1 & data_GM$l3_v0 != data_GM$l3_v2 & data_GM$l3_v0 != data_GM$l3_v3 & data_GM$l3_v0 > 0
+b <- data_GM$l3_v0 == data_GM$l3_v2 & data_GM$l3_v0 != data_GM$l3_v3 & data_GM$l3_v0 != data_GM$l3_v1 & data_GM$l3_v0 > 0
+c <- data_GM$l3_v0 == data_GM$l3_v3 & data_GM$l3_v0 != data_GM$l3_v1 & data_GM$l3_v0 != data_GM$l3_v2 & data_GM$l3_v0 > 0
+d <- data_GM$l3_v1 == data_GM$l3_v2 & data_GM$l3_v1 != data_GM$l3_v0 & data_GM$l3_v1 != data_GM$l3_v3 & data_GM$l3_v1 > 0
+e <- data_GM$l3_v1 == data_GM$l3_v3 & data_GM$l3_v1 != data_GM$l3_v0 & data_GM$l3_v1 != data_GM$l3_v2 & data_GM$l3_v1 > 0
+f <- data_GM$l3_v2 == data_GM$l3_v3 & data_GM$l3_v2 != data_GM$l3_v0 & data_GM$l3_v2 != data_GM$l3_v1 & data_GM$l3_v2 > 0
+two_vertices_in_voxel <- a|b|c|d|e|f
+summary(two_vertices_in_voxel)
+   Mode   FALSE    TRUE    NA's 
+logical  357532  351160       0 
+> summary(two_vertices_in_voxel & centroid_l3_neg_vertex_l3_pos_GM)
+   Mode   FALSE    TRUE    NA's 
+logical  708113     579       0 
+
+
+one_vertices_in_voxel <- data_GM$l3_v0 != data_GM$l3_v1 & data_GM$l3_v0 != data_GM$l3_v2 & data_GM$l3_v0 != data_GM$l3_v3 &  data_GM$l3_v1 != data_GM$l3_v2 & data_GM$l3_v1 != data_GM$l3_v3 & data_GM$l3_v2 != data_GM$l3_v3 & data_GM$l3_v0 
+   Mode   FALSE    TRUE    NA's 
+logical  450001  258691       0 
+
+################################################################################
+
+for (i in 0:22)
++ {
++ print( i);
++ print(summary(data$Cell_sub_domain == i));
++ }
+[1] 0
+   Mode   FALSE    NA's 
+logical 1345749       0 
+[1] 1
+   Mode   FALSE    NA's 
+logical 1345749       0 
+[1] 2
+   Mode   FALSE    NA's 
+logical 1345749       0 
+[1] 3
+   Mode   FALSE    NA's 
+logical 1345749       0 
+[1] 4
+   Mode   FALSE    TRUE    NA's 
+logical  933083  412666       0 
+[1] 5
+   Mode   FALSE    TRUE    NA's 
+logical  637057  708692       0 
+[1] 6
+   Mode   FALSE    TRUE    NA's 
+logical 1330712   15037       0 
+[1] 7
+   Mode   FALSE    TRUE    NA's 
+logical 1334658   11091       0 
+[1] 8
+   Mode   FALSE    TRUE    NA's 
+logical 1341828    3921       0 
+[1] 9
+   Mode   FALSE    TRUE    NA's 
+logical 1337624    8125       0 
+[1] 10
+   Mode   FALSE    TRUE    NA's 
+logical 1334554   11195       0 
+[1] 11
+   Mode   FALSE    TRUE    NA's 
+logical 1334326   11423       0 
+[1] 12
+   Mode   FALSE    TRUE    NA's 
+logical 1343447    2302       0 
+[1] 13
+   Mode   FALSE    TRUE    NA's 
+logical 1342586    3163       0 
+[1] 14
+   Mode   FALSE    TRUE    NA's 
+logical 1340233    5516       0 
+[1] 15
+   Mode   FALSE    TRUE    NA's 
+logical 1341737    4012       0 
+[1] 16
+   Mode   FALSE    TRUE    NA's 
+logical 1345496     253       0 
+[1] 17
+   Mode   FALSE    TRUE    NA's 
+logical 1256706   89043       0 
+[1] 18
+   Mode   FALSE    TRUE    NA's 
+logical 1312293   33456       0 
+[1] 19
+   Mode   FALSE    TRUE    NA's 
+logical 1336406    9343       0 
+[1] 20
+   Mode   FALSE    TRUE    NA's 
+logical 1345357     392       0 
+[1] 21
+   Mode   FALSE    TRUE    NA's 
+logical 1329630   16119       0 
+[1] 22
+   Mode   FALSE    NA's 
+logical 1345749       0 
+> 
+################################################################################
+
+> mean(data$l_mean[l_mean_pos])
+[1] 0.5437943
+> sd(data$l_mean[l_mean_pos])
+[1] 0.1835537
+
+
+################################################################################
+
+[cobigo@cob-IV Mesh_rendering]$ date && ./build_inrimage && date
+Fri Aug 16 16:00:29 PDT 2013
+Process started at: 1.37669e+09
+Build_labeled_domain - event log:vtkTimerLog (0x275e8f0)
+  Debug: Off
+  Modified Time: 4
+  Reference Count: 1
+  Registered Events: (none)
+  MaxEntries: 100
+  NextEntry: 5
+  WrapFlag: 0
+  TicksPerSecond: 60
+
+  Entry         Wall Time       CpuTicks        Event
+  ----------------------------------------------
+  0             0               0               Head segmentation
+  1             1.2e-05         0               Skull and scalp
+  2             3.67273         858             Cortical segmentation
+  3             63.6386         16789           Subcortical segmenation
+  4             63.6429         16790           building inrimage data
+
+  StartTime: 0
+  WrapFlag: 0
+
+
+cell: 100000
+cell: 200000
+cell: 300000
+cell: 400000
+cell: 500000
+cell: 600000
+cell: 700000
+cell: 800000
+cell: 900000
+cell: 1000000
+cell: 1100000
+cell: 1200000
+cell: 1300000
+cell: 1400000
+cell: 1500000
+cell: 1600000
+cell: 1700000
+cell: 1800000
+cell: 1900000
+cell: 2000000
+cell: 2100000
+cell: 2200000
+cell: 2300000
+cell: 2400000
+cell: 2500000
+cell: 2600000
+cell: 2700000
+cell: 2800000
+cell: 2900000
+cell: 3000000
+cell: 3100000
+cell: 3200000
+Events log:vtkTimerLog (0x275eed0)
+  Debug: Off
+  Modified Time: 5
+  Reference Count: 1
+  Registered Events: (none)
+  MaxEntries: 100
+  NextEntry: 11
+  WrapFlag: 0
+  TicksPerSecond: 60
+
+  Entry         Wall Time       CpuTicks        Event
+  ----------------------------------------------
+  0             0               0               Head segmentation
+  1             1.2e-05         0               Skull and scalp
+  2             3.67273         858             Cortical segmentation
+  3             63.6386         16789           Subcortical segmenation
+  4             63.6429         16790           building inrimage data
+  5             135.772         23990           Write Inrimage
+  6             135.78          23991           Diffusion tensor
+  7             135.818         23995           Build the mesh
+  8             331.834         43538           Mesh conductivity matching
+  9             4189.22         428466          write Outputs
+  10            4218.32         434762          Stop the process
+
+  StartTime: 0
+  WrapFlag: 0
+
+
+Fri Aug 16 17:10:49 PDT 2013
+
+
+
+################################################################################
+################################################################################
+
+EDP Sparse Matrices
+
+
+################################################################################
+library(Matrix)
+
+Sparse Matrix
+str(pores <- readMM(system.file("external/pores_1.mtx",package = "Matrix")))
+#
+str(A <- readMM("mat65k.mtx"))
+RHS
+b <- scan("rhs65025.txt", skip = 1, quiet= TRUE)
+Solve
+x <- solve(A,b)
+#
+save the vector
+write(x, file="result65025_2.txt")
+library(MASS)
+write.matrix(x, file="result65025_2.txt",sep=" ")
+
+str(A <- readMM("A_Ax_b_spheres.mtx"))
+b <- scan("b_Ax_b_spheres.mtx", skip = 1, quiet= TRUE)
+x <- solve(A,b)
+write.matrix(x, file="result_spheres.txt",sep=" ")
+
+
+str(A <- readMM("A_Ax_b_head.mtx"))
+b <- scan("b_Ax_b_head.mtx", skip = 1, quiet= TRUE)
+
+Faire un truc comme ça pour sauver les résultats
+write(words, file="words.txt")
+
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+
+dipoles positions
+
+################################################################################
+
+
+lh_pial<- read.table('lh.pial.frame', header=T)
+rh_pial<- read.table('rh.pial.frame', header=T)
+lh.smoothwm<- read.table('lh.smoothwm.frame', header=T)
+rh.smoothwm<- read.table('rh.smoothwm.frame', header=T)
+Centroid_normal<- read.table('Centroid_normal.frame', header=T)
+
+library(rgl)
+plot3d(lh_pial$X, lh_pial$Y, lh_pial$Z, col="blue")
+plot3d(rh_pial$X, rh_pial$Y, rh_pial$Z, col="red", add=T)
+
+plot3d(lh.smoothwm$X, lh.smoothwm$Y, lh.smoothwm$Z, col="blue")
+plot3d(rh.smoothwm$X, rh.smoothwm$Y, rh.smoothwm$Z, col="red", add=T)
+
+plot3d(Centroid_normal$X[Centroid_normal$Cell_sub_domain == 5], Centroid_normal$Y[Centroid_normal$Cell_sub_domain == 5], Centroid_normal$Z[Centroid_normal$Cell_sub_domain == 5], col="red")
+plot3d(rh_pial$X, rh_pial$Y, rh_pial$Z, col="blue", add=T)
+
+################################################################################
+Gray matter
+
+Centroid_pial<- read.table('centroid.vs.pial.frame', header=T)
+gray_matter <-Centroid_pial[Centroid_pial$domain == 5 ,]
+cosin_theta_0 <- gray_matter$cosin_theta == 0
+
+> summary(gray_matter)
+     domain      cent_X             cent_Y            cent_Z      
+ Min.   :5   Min.   :-67.4130   Min.   :-71.078   Min.   :-20.97  
+ 1st Qu.:5   1st Qu.:-31.0725   1st Qu.:-24.434   1st Qu.: 17.87  
+ Median :5   Median : -0.7862   Median :  8.902   Median : 37.44  
+ Mean   :5   Mean   : -1.0603   Mean   : 10.474   Mean   : 38.20  
+ 3rd Qu.:5   3rd Qu.: 28.8482   3rd Qu.: 44.009   3rd Qu.: 58.81  
+ Max.   :5   Max.   : 65.4450   Max.   :102.173   Max.   : 92.79  
+      v1_X              v1_Y               v1_Z               Vert_X       
+ Min.   :-1.0000   Min.   :-0.99973   Min.   :-0.999948   Min.   :-68.567  
+ 1st Qu.:-0.6653   1st Qu.: 0.01226   1st Qu.:-0.522447   1st Qu.:-31.186  
+ Median :-0.2301   Median : 0.33180   Median :-0.004392   Median : -1.403  
+ Mean   :-0.1424   Mean   : 0.28500   Mean   : 0.004988   Mean   : -1.171  
+ 3rd Qu.: 0.3685   3rd Qu.: 0.65068   3rd Qu.: 0.540625   3rd Qu.: 28.596  
+ Max.   : 0.9999   Max.   : 0.99997   Max.   : 0.999915   Max.   : 65.280  
+     Vert_Y           Vert_Z            n_X                 n_Y            
+ Min.   :-70.98   Min.   :-21.89   Min.   :-0.999999   Min.   :-0.9999980  
+ 1st Qu.:-24.45   1st Qu.: 17.75   1st Qu.:-0.507205   1st Qu.:-0.4579720  
+ Median :  9.02   Median : 37.30   Median : 0.003779   Median : 0.0046688  
+ Mean   : 10.55   Mean   : 38.09   Mean   : 0.001571   Mean   : 0.0008104  
+ 3rd Qu.: 44.19   3rd Qu.: 58.82   3rd Qu.: 0.509226   3rd Qu.: 0.4557950  
+ Max.   :102.77   Max.   : 92.41   Max.   : 0.999999   Max.   : 0.9999720  
+      n_Z               distance        cosin_theta      
+ Min.   :-0.999990   Min.   :0.01303   Min.   :-1.00000  
+ 1st Qu.:-0.513278   1st Qu.:0.69248   1st Qu.:-0.54016  
+ Median : 0.004847   Median :1.16557   Median :-0.01363  
+ Mean   :-0.001582   Mean   :1.30618   Mean   :-0.01014  
+ 3rd Qu.: 0.504731   3rd Qu.:1.76927   3rd Qu.: 0.51750  
+ Max.   : 0.999995   Max.   :7.00559   Max.   : 0.99999  
+
+hist(gray_matter$cosin_theta[!cosin_theta_0], breaks = 50, prob=T, main="| v1 > . | n >", xlab="cos(theta)")
+hist(gray_matter$distance[!cosin_theta_0], breaks = 50, prob=T, main="Distance Centroid to pial", xlab="distance")
+plot(gray_matter$cosin_theta[!cosin_theta_0]~gray_matter$distance[!cosin_theta_0])
+
+cos_theta_1 <- gray_matter$cosin_theta < -0.86 | gray_matter$cosin_theta > 0.86
+hist(gray_matter$cosin_theta[cos_theta_1], breaks = 50, prob=T, main="| v1 > . | n >", xlab="cos(theta) in [-1, -0.86] cup [0.86, 1]")
+hist(gray_matter$distance[cos_theta_1], breaks = 50, prob=T, main="Distance Centroid to pial", xlab="distance")
+
+hist(gray_matter$distance, breaks = 50, main="Distance Centroid to pial", xlab="distance")
+hist(gray_matter$distance[cos_theta_1], breaks = 50, main="Distance Centroid to pial", xlab="distance", col="red", add=T)
+cos_theta_11 <- gray_matter$cosin_theta > 0.86
+hist(gray_matter$distance[cos_theta_11], breaks = 50, main="Distance Centroid to pial", xlab="distance", col="blue", add=T)
+
+library(rgl)
+plot3d(gray_matter$cent_X[cos_theta_11], gray_matter$cent_Y[cos_theta_11], gray_matter$cent_Z[cos_theta_11], col="red")
+cos_theta_10 <- gray_matter$cosin_theta < -0.86
+plot3d(gray_matter$cent_X[cos_theta_10], gray_matter$cent_Y[cos_theta_10], gray_matter$cent_Z[cos_theta_10], col="green", add=T)
+
+lh_pial<- read.table('lh.pial.frame', header=T)
+rh_pial<- read.table('rh.pial.frame', header=T)
+plot3d(lh_pial$X, lh_pial$Y, lh_pial$Z)
+plot3d(gray_matter$cent_X[cos_theta_11 & gray_matter$cent_X < 0 ], gray_matter$cent_Y[cos_theta_11 & gray_matter$cent_X < 0 ], gray_matter$cent_Z[cos_theta_11 & gray_matter$cent_X < 0 ], col="red", add=T)
+plot3d(gray_matter$cent_X[cos_theta_10 & gray_matter$cent_X < 0 ], gray_matter$cent_Y[cos_theta_10 & gray_matter$cent_X < 0 ], gray_matter$cent_Z[cos_theta_10 & gray_matter$cent_X < 0 ], col="green", add=T)
+
+###################################################################
+pial.vs.wm.frame
+
+pial.vs.wm <- read.table('pial.vs.wm.frame', header=T)
+> summary(pial.vs.wm)
+   Vert_gm_X         Vert_gm_Y        Vert_gm_Z          n_gm_X          
+ Min.   :-68.681   Min.   :-70.98   Min.   :-21.89   Min.   :-0.9999990  
+ 1st Qu.:-29.347   1st Qu.:-24.24   1st Qu.: 16.03   1st Qu.:-0.5185470  
+ Median : -1.471   Median :  7.65   Median : 34.89   Median : 0.0063135  
+ Mean   : -1.308   Mean   :  9.26   Mean   : 36.44   Mean   : 0.0006814  
+ 3rd Qu.: 27.083   3rd Qu.: 40.66   3rd Qu.: 56.55   3rd Qu.: 0.5188290  
+ Max.   : 65.280   Max.   :102.79   Max.   : 92.41   Max.   : 1.0000000  
+     n_gm_Y               n_gm_Z            Vert_wm_X         Vert_wm_Y      
+ Min.   :-0.9999980   Min.   :-0.999991   Min.   :-65.333   Min.   :-68.677  
+ 1st Qu.:-0.4578610   1st Qu.:-0.515024   1st Qu.:-29.471   1st Qu.:-24.046  
+ Median : 0.0005857   Median : 0.018594   Median : -1.108   Median :  7.507  
+ Mean   :-0.0048284   Mean   : 0.009274   Mean   : -1.293   Mean   :  9.251  
+ 3rd Qu.: 0.4411600   3rd Qu.: 0.532117   3rd Qu.: 26.981   3rd Qu.: 40.429  
+ Max.   : 0.9999720   Max.   : 0.999995   Max.   : 62.263   Max.   : 99.588  
+   Vert_wm_Z          n_wm_X              n_wm_Y               n_wm_Z        
+ Min.   :-18.27   Min.   :-0.999996   Min.   :-1.0000000   Min.   :-1.00000  
+ 1st Qu.: 16.23   1st Qu.:-0.541449   1st Qu.:-0.4268060   1st Qu.:-0.52365  
+ Median : 35.07   Median : 0.002200   Median : 0.0045129   Median : 0.02892  
+ Mean   : 36.40   Mean   :-0.003537   Mean   :-0.0001011   Mean   : 0.01585  
+ 3rd Qu.: 56.12   3rd Qu.: 0.532482   3rd Qu.: 0.4223310   3rd Qu.: 0.55493  
+ Max.   : 89.32   Max.   : 0.999995   Max.   : 0.9999980   Max.   : 0.99999  
+    distance         cosin_theta     
+ Min.   :0.002759   Min.   :-1.0000  
+ 1st Qu.:1.796260   1st Qu.: 0.8921  
+ Median :2.390130   Median : 0.9616  
+ Mean   :2.376145   Mean   : 0.8012  
+ 3rd Qu.:2.983340   3rd Qu.: 0.9872  
+ Max.   :8.299600   Max.   : 1.0000  
+
+
+hist(pial.vs.wm$cosin_theta, breaks = 50, prob=T, main=" |n pial > . | n wm >", xlab="cos(theta)")
+hist(pial.vs.wm$distance, breaks = 50, prob=T, main=" Distance white matter to pial", xlab="distance")
+plot(pial.vs.wm$cosin_theta~pial.vs.wm$distance)
+
+
+plot3d(lh_pial$X, lh_pial$Y, lh_pial$Z)
+plot3d(pial.vs.wm$Vert_gm_X[pial.vs.wm$distance < 0.1 ], pial.vs.wm$Vert_gm_Y[pial.vs.wm$distance < 0.1 ], pial.vs.wm$Vert_gm_Z[pial.vs.wm$distance < 0.1 ], col="red", add=T)
+
+plot3d(pial.vs.wm$Vert_gm_X[pial.vs.wm$distance > 4 ], pial.vs.wm$Vert_gm_Y[pial.vs.wm$distance > 4 ], pial.vs.wm$Vert_gm_Z[pial.vs.wm$distance > 4 ], col="red")
+plot3d(pial.vs.wm$Vert_wm_X[pial.vs.wm$distance > 4 ], pial.vs.wm$Vert_wm_Y[pial.vs.wm$distance > 4 ], pial.vs.wm$Vert_wm_Z[pial.vs.wm$distance > 4 ], col="green", add=T)
+
+plot3d(pial.vs.wm$Vert_gm_X[pial.vs.wm$cosin_theta < -0.8 ], pial.vs.wm$Vert_gm_Y[pial.vs.wm$cosin_theta < -0.8 ], pial.vs.wm$Vert_gm_Z[pial.vs.wm$cosin_theta < -0.8 ], col="red")
+
+
+
+################################################################################
+Centroid vs wm
+
+Centroid_wm<- read.table('centroid.vs.wm.frame', header=T)
+gray_matter_wm <-Centroid_pial[Centroid_wm$domain == 5 ,]
+cosin_theta_0 <- gray_matter_wm$cosin_theta == 0
+
+> summary(gray_matter_wm)
+ Min.   :5   Min.   :-67.4130   Min.   :-71.078   Min.   :-20.97  
+ 1st Qu.:5   1st Qu.:-31.0725   1st Qu.:-24.434   1st Qu.: 17.87  
+ Median :5   Median : -0.7862   Median :  8.902   Median : 37.44  
+ Mean   :5   Mean   : -1.0603   Mean   : 10.474   Mean   : 38.20  
+ 3rd Qu.:5   3rd Qu.: 28.8482   3rd Qu.: 44.009   3rd Qu.: 58.81  
+ Max.   :5   Max.   : 65.4450   Max.   :102.173   Max.   : 92.79  
+      v1_X              v1_Y               v1_Z               Vert_X       
+ Min.   :-1.0000   Min.   :-0.99973   Min.   :-0.999948   Min.   :-68.567  
+ 1st Qu.:-0.6653   1st Qu.: 0.01226   1st Qu.:-0.522447   1st Qu.:-31.186  
+ Median :-0.2301   Median : 0.33180   Median :-0.004392   Median : -1.403  
+ Mean   :-0.1424   Mean   : 0.28500   Mean   : 0.004988   Mean   : -1.171  
+ 3rd Qu.: 0.3685   3rd Qu.: 0.65068   3rd Qu.: 0.540625   3rd Qu.: 28.596  
+ Max.   : 0.9999   Max.   : 0.99997   Max.   : 0.999915   Max.   : 65.280  
+     Vert_Y           Vert_Z            n_X                 n_Y            
+ Min.   :-70.98   Min.   :-21.89   Min.   :-0.999999   Min.   :-0.9999980  
+ 1st Qu.:-24.45   1st Qu.: 17.75   1st Qu.:-0.507205   1st Qu.:-0.4579720  
+ Median :  9.02   Median : 37.30   Median : 0.003779   Median : 0.0046688  
+ Mean   : 10.55   Mean   : 38.09   Mean   : 0.001571   Mean   : 0.0008104  
+ 3rd Qu.: 44.19   3rd Qu.: 58.82   3rd Qu.: 0.509226   3rd Qu.: 0.4557950  
+ Max.   :102.77   Max.   : 92.41   Max.   : 0.999999   Max.   : 0.9999720  
+      n_Z               distance        cosin_theta      
+ Min.   :-0.999990   Min.   :0.01303   Min.   :-1.00000  
+ 1st Qu.:-0.513278   1st Qu.:0.69248   1st Qu.:-0.54016  
+ Median : 0.004847   Median :1.16557   Median :-0.01363  
+ Mean   :-0.001582   Mean   :1.30618   Mean   :-0.01014  
+ 3rd Qu.: 0.504731   3rd Qu.:1.76927   3rd Qu.: 0.51750  
+ Max.   : 0.999995   Max.   :7.00559   Max.   : 0.99999  
+
+hist(gray_matter_wm$cosin_theta[!cosin_theta_0], breaks = 50, prob=T, main="| v1 > . | n >", xlab="cos(theta)")
+hist(gray_matter_wm$distance[!cosin_theta_0], breaks = 50, prob=T, main="Distance Centroid to pial", xlab="distance")
+
+cos_theta_1 <- gray_matter_wm$cosin_theta < -0.86 | gray_matter_wm$cosin_theta > 0.86
+hist(gray_matter_wm$cosin_theta[cos_theta_1], breaks = 50, prob=T, main="| v1 > . | n >", xlab="cos(theta) in [-1, -0.86] cup [0.86, 1]")
+hist(gray_matter_wm$distance[cos_theta_1], breaks = 50, prob=T, main="Distance Centroid to pial", xlab="distance")
+
+hist(gray_matter_wm$distance, breaks = 50, main="Distance Centroid to pial", xlab="distance")
+hist(gray_matter_wm$distance[cos_theta_1], breaks = 50, main="Distance Centroid to pial", xlab="distance", col="red", add=T)
+cos_theta_11 <- gray_matter_wm$cosin_theta > 0.86
+hist(gray_matter_wm$distance[cos_theta_11], breaks = 50, main="Distance Centroid to pial", xlab="distance", col="blue", add=T)
+
+library(rgl)
+plot3d(gray_matter_wm$cent_X[cos_theta_11], gray_matter_wm$cent_Y[cos_theta_11], gray_matter_wm$cent_Z[cos_theta_11], col="red")
+cos_theta_10 <- gray_matter_wm$cosin_theta < -0.86
+plot3d(gray_matter_wm$cent_X[cos_theta_10], gray_matter_wm$cent_Y[cos_theta_10], gray_matter_wm$cent_Z[cos_theta_10], col="green", add=T)
+
+plot3d(lh_pial$X, lh_pial$Y, lh_pial$Z)
+plot3d(gray_matter_wm$cent_X[cos_theta_11 & gray_matter_wm$cent_X < 0 ], gray_matter_wm$cent_Y[cos_theta_11 & gray_matter_wm$cent_X < 0 ], gray_matter_wm$cent_Z[cos_theta_11 & gray_matter_wm$cent_X < 0 ], col="red", add=T)
+plot3d(gray_matter_wm$cent_X[cos_theta_10 & gray_matter_wm$cent_X < 0 ], gray_matter_wm$cent_Y[cos_theta_10 & gray_matter_wm$cent_X < 0 ], gray_matter_wm$cent_Z[cos_theta_10 & gray_matter_wm$cent_X < 0 ], col="green", add=T)
+
+
+
+################################################################################
+################################################################################
+
+data <- read.table('centroid.wm.gm.frame', header=T)
+
+     cent_X             cent_Y            cent_Z            v1_X        
+ Min.   :-67.4130   Min.   :-71.078   Min.   :-20.97   Min.   :-1.0000  
+ 1st Qu.:-31.0725   1st Qu.:-24.434   1st Qu.: 17.87   1st Qu.:-0.6653  
+ Median : -0.7862   Median :  8.902   Median : 37.44   Median :-0.2301  
+ Mean   : -1.0603   Mean   : 10.474   Mean   : 38.20   Mean   :-0.1424  
+ 3rd Qu.: 28.8482   3rd Qu.: 44.009   3rd Qu.: 58.81   3rd Qu.: 0.3685  
+ Max.   : 65.4450   Max.   :102.173   Max.   : 92.79   Max.   : 0.9999  
+      v1_Y               v1_Z             Vert_wm_X        Vert_wm_Y      
+ Min.   :-0.99973   Min.   :-0.999948   Min.   :-65.33   Min.   :-68.699  
+ 1st Qu.: 0.01226   1st Qu.:-0.522447   1st Qu.:-31.04   1st Qu.:  0.000  
+ Median : 0.33180   Median :-0.004392   Median :  0.00   Median :  0.000  
+ Mean   : 0.28500   Mean   : 0.004988   Mean   :-15.15   Mean   :  4.805  
+ 3rd Qu.: 0.65068   3rd Qu.: 0.540625   3rd Qu.:  0.00   3rd Qu.:  7.322  
+ Max.   : 0.99997   Max.   : 0.999915   Max.   :  0.00   Max.   : 99.588  
+   Vert_wm_Z          n_wm_X             n_wm_Y             n_wm_Z        
+ Min.   :-17.42   Min.   :-0.99998   Min.   :-0.99995   Min.   :-0.99998  
+ 1st Qu.:  0.00   1st Qu.:-0.02317   1st Qu.: 0.00000   1st Qu.: 0.00000  
+ Median :  0.00   Median : 0.00000   Median : 0.00000   Median : 0.00000  
+ Mean   : 19.34   Mean   :-0.01260   Mean   : 0.00559   Mean   : 0.01385  
+ 3rd Qu.: 38.15   3rd Qu.: 0.00000   3rd Qu.: 0.01350   3rd Qu.: 0.04240  
+ Max.   : 89.32   Max.   : 0.99999   Max.   : 1.00000   Max.   : 0.99999  
+   Vert_gm_X        Vert_gm_Y         Vert_gm_Z          n_gm_X         
+ Min.   :-68.58   Min.   :-70.968   Min.   :-21.17   Min.   :-0.999999  
+ 1st Qu.:-30.96   1st Qu.:  0.000   1st Qu.:  0.00   1st Qu.: 0.000000  
+ Median :  0.00   Median :  0.000   Median :  0.00   Median : 0.000000  
+ Mean   :-15.17   Mean   :  4.800   Mean   : 19.37   Mean   :-0.003805  
+ 3rd Qu.:  0.00   3rd Qu.:  7.414   3rd Qu.: 38.00   3rd Qu.: 0.000000  
+ Max.   :  0.00   Max.   :101.925   Max.   : 92.34   Max.   : 0.999999  
+     n_gm_Y              n_gm_Z           distance_wm       
+ Min.   :-0.999985   Min.   :-0.999975   Min.   :  0.01283  
+ 1st Qu.: 0.000000   1st Qu.: 0.000000   1st Qu.:  1.71322  
+ Median : 0.000000   Median : 0.000000   Median : 24.05490  
+ Mean   : 0.002726   Mean   : 0.009286   Mean   : 35.53247  
+ 3rd Qu.: 0.003592   3rd Qu.: 0.024569   3rd Qu.: 69.27925  
+ Max.   : 0.999972   Max.   : 0.999988   Max.   :112.02000  
+ cosin_theta_wm       distance_gm        cosin_theta_gm     
+ Min.   :-0.999998   Min.   :  0.01303   Min.   :-0.999999  
+ 1st Qu.: 0.000000   1st Qu.:  1.49761   1st Qu.: 0.000000  
+ Median : 0.000000   Median : 24.05490   Median : 0.000000  
+ Mean   :-0.001175   Mean   : 35.55853   Mean   :-0.003479  
+ 3rd Qu.: 0.000000   3rd Qu.: 69.27925   3rd Qu.: 0.000000  
+ Max.   : 0.999998   Max.   :112.02000   Max.   : 0.999966 
+
+
+################################################################################
+library(rgl)
+plot3d(data$Vert_wm_X, data$Vert_wm_Y, data$Vert_wm_Z, col="red" )
+plot3d(data$Vert_gm_X, data$Vert_gm_Y, data$Vert_gm_Z, add=T )
+plot3d(data$cent_X[data$cent_X<0], data$cent_Y[data$cent_X<0], data$cent_Z[data$cent_X<0], col="green", add=T )
+
+plot3d(data$Vert_wm_X, data$Vert_wm_Y, data$Vert_wm_Z, col="red" )
+plot3d(data$Vert_gm_X, data$Vert_gm_Y, data$Vert_gm_Z, add=T )
+plot3d(data$cent_X[data$cent_X<0 & data$cosin_theta_gm > 0.8  & data$cosin_theta_wm > 0.8 ], data$cent_Y[data$cent_X<0 & data$cosin_theta_gm > 0.8  & data$cosin_theta_wm > 0.8 ], data$cent_Z[data$cent_X<0 & data$cosin_theta_gm > 0.8  & data$cosin_theta_wm > 0.8 ], col="green", add=T )
+
+plot3d(data$Vert_gm_X, data$Vert_gm_Y, data$Vert_gm_Z )
+plot3d(data$cent_X[data$cent_X<0 & data$cosin_theta_gm > 0.8  & data$cosin_theta_wm > 0.8 ], data$cent_Y[data$cent_X<0 & data$cosin_theta_gm > 0.8  & data$cosin_theta_wm > 0.8 ], data$cent_Z[data$cent_X<0 & data$cosin_theta_gm > 0.8  & data$cosin_theta_wm > 0.8 ], col="red", add=T )
+
+hist(cosin_theta_gm[!Vert_gm_X_null])
+
+
+plot3d(data$cent_X[data$cosin_theta_gm[!Vert_wm_X_null] > 0.8 ], data$cent_Y[data$cosin_theta_gm[!Vert_wm_X_null] > 0.8], data$cent_Z[data$cosin_theta_gm[!Vert_wm_X_null] > 0.8 ], col="red" )
+plot3d(data$cent_X[data$cosin_theta_gm[!Vert_wm_X_null] > 0.5  & data$cosin_theta_gm[!Vert_wm_X_null] < 0.8 ], data$cent_Y[data$cosin_theta_gm[!Vert_wm_X_null] > 0.5 & data$cosin_theta_gm[!Vert_wm_X_null] < 0.8 ], data$cent_Z[data$cosin_theta_gm[!Vert_wm_X_null] > 0.5 & data$cosin_theta_gm[!Vert_wm_X_null] < 0.8 ], col="purple" , add =T )
+
+plot(data$cosin_theta_wm[!Vert_wm_X_null] ~ data$distance_wm[!Vert_wm_X_null] )
+
+################################################################################
+
+Conductivity <- read.table('Data_mesh.vs.conductivity.frame', header=T)
+
+gray_matter <- Conductivity[Conductivity$Cell_sub_domain == 5,]
+
+gm_l1 <- gray_matter$l1[gray_matter$l1>0 & gray_matter$l2>0 & gray_matter$l3>0]
+gm_l2 <- gray_matter$l2[gray_matter$l2>0 & gray_matter$l2>0 & gray_matter$l3>0]
+gm_l3 <- gray_matter$l3[gray_matter$l3>0 & gray_matter$l2>0 & gray_matter$l3>0]
+
+Trace_gm <- gm_l1 + gm_l2 + gm_l3
+Prod_gm <- abs(gm_l1 * gm_l2 * gm_l3)
+
+Ratio_gm <- 27 * Prod_gm / ( Trace_gm * Trace_gm * Trace_gm )
+
+plot((1 - Ratio_gm ) ~ Trace_gm , ylim=c(0,1), xlim=c(0,5) )
+
+plot3d(data$Vert_wm_X, data$Vert_wm_Y, data$Vert_wm_Z, col="green" )
+plot3d(gray_matter$X_cent, gray_matter$Y_cent, gray_matter$Z_cent, add=T )
+
+plot3d(data$Vert_wm_X, data$Vert_wm_Y, data$Vert_wm_Z, col="green" )
+plot3d(gray_matter$X_cent[Trace_gm > 3], gray_matter$Y_cent[Trace_gm > 3], gray_matter$Z_cent[Trace_gm > 3], add=T )
+
+plot3d(data$Vert_gm_X, data$Vert_gm_Y, data$Vert_gm_Z, col="green" )
+plot3d(gray_matter$X_cent[Trace_gm > 3], gray_matter$Y_cent[Trace_gm > 3], gray_matter$Z_cent[Trace_gm > 3], add=T )
+
+plot3d(gray_matter$X_cent[Trace_gm <= 2], gray_matter$Y_cent[Trace_gm <= 2], gray_matter$Z_cent[Trace_gm <= 2], col="green" )
+plot3d(gray_matter$X_cent[Trace_gm > 2], gray_matter$Y_cent[Trace_gm > 2], gray_matter$Z_cent[Trace_gm > 2], add=T , col="red")
+
+hist(gm_l3)
+plot3d(gray_matter$X_cent[gm_l3 <= 1], gray_matter$Y_cent[gm_l3 <= 1], gray_matter$Z_cent[gm_l3 <= 1], col="green" )
+plot3d(gray_matter$X_cent[gm_l3 > 1], gray_matter$Y_cent[gm_l3 > 1], gray_matter$Z_cent[gm_l3 > 1], add=T , col="red")
+plot3d(gray_matter$X_cent[gm_l3 <= 0.5], gray_matter$Y_cent[gm_l3 <= 0.5], gray_matter$Z_cent[gm_l3 <= 0.5], col="green" )
+plot3d(gray_matter$X_cent[gm_l3 > 0.5], gray_matter$Y_cent[gm_l3 > 0.5], gray_matter$Z_cent[gm_l3 > 0.5], add=T , col="red")
+
+
+plot3d(gray_matter$X_cent[Trace_gm < 3 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Y_cent[Trace_gm < 3 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Z_cent[ Trace_gm < 3 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], col = "green" )
+plot3d(gray_matter$X_cent[Trace_gm > 3 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Y_cent[Trace_gm > 3 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Z_cent[Trace_gm > 3 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], col="red", add=T )
+
+plot3d(gray_matter$X_cent[Trace_gm < 2.5 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Y_cent[Trace_gm < 2.5 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Z_cent[ Trace_gm < 2.5 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], col = "green" )
+plot3d(gray_matter$X_cent[Trace_gm > 2.5 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Y_cent[Trace_gm > 2.5 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Z_cent[Trace_gm > 2.5 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], col="red", add=T )
+
+plot3d(gray_matter$X_cent[Trace_gm < 2. & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Y_cent[Trace_gm < 2. & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Z_cent[ Trace_gm < 2. & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], col = "green" )
+plot3d(gray_matter$X_cent[Trace_gm > 2. & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Y_cent[Trace_gm > 2. & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], gray_matter$Z_cent[Trace_gm > 2. & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 38 ], col="red", add=T )
+
+
+################################################################################
+
+white_matter <- Conductivity[Conductivity$Cell_sub_domain == 4,]
+
+wm_l1 <- white_matter$l1[white_matter$l1>0 & white_matter$l2>0 & white_matter$l3>0]
+wm_l2 <- white_matter$l2[white_matter$l2>0 & white_matter$l2>0 & white_matter$l3>0]
+wm_l3 <- white_matter$l3[white_matter$l3>0 & white_matter$l2>0 & white_matter$l3>0]
+
+Trace_wm <- wm_l1 + wm_l2 + wm_l3
+Prod_wm <- abs(wm_l1 * wm_l2 * wm_l3)
+
+Ratio_wm <- 27 * Prod_wm / ( Trace_wm * Trace_wm * Trace_wm )
+
+
+op <- par(mfrow=c(1,2))
+plot((1 - Ratio_wm ) ~ Trace_wm , ylim=c(0,1), xlim=c(0,5) )
+plot((1 - Ratio_gm ) ~ Trace_gm , ylim=c(0,1), xlim=c(0,5) )
+par(op)
+
+
+plot(data$Vert_wm_X[data$Vert_wm_Z < 40 & data$Vert_wm_Z > 39 ], data$Vert_wm_Y[data$Vert_wm_Z < 40 & data$Vert_wm_Z > 39 ], pch=3 , ylim=c(-70,100), xlim=c(-70,0))
+par(new=T)
+plot(data$Vert_gm_X[data$Vert_gm_Z < 40 & data$Vert_gm_Z > 39 ], data$Vert_gm_Y[data$Vert_gm_Z < 40 & data$Vert_gm_Z > 39 ], pch=3 , ylim=c(-70,100), xlim=c(-70,0), col="blue")
+par(new=T)
+plot(gray_matter$X_cent[Trace_gm < 2.5 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 39 & gray_matter$X_cent < 0], gray_matter$Y_cent[Trace_gm < 2.5 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 39  & gray_matter$X_cent < 0], col = "green",pch=20,ylim=c(-70,100), xlim=c(-70,0)  )
+par(new=T)
+plot(gray_matter$X_cent[Trace_gm > 2.5 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 39 ], gray_matter$Y_cent[Trace_gm > 2.5 & gray_matter$Z_cent < 40 & gray_matter$Z_cent > 39 ], col="red",pch=20,ylim=c(-70,100), xlim=c(-70,0) )
+par(new=F)
+
+
+
+plot(data$Vert_wm_X[data$Vert_wm_Z < 40 & data$Vert_wm_Z > 39 ], data$Vert_wm_Y[data$Vert_wm_Z < 40 & data$Vert_wm_Z > 39 ], pch=3 , ylim=c(-70,100), xlim=c(-70,0))
+par(new=T)
+plot(data$Vert_gm_X[data$Vert_gm_Z < 40 & data$Vert_gm_Z > 39 ], data$Vert_gm_Y[data$Vert_gm_Z < 40 & data$Vert_gm_Z > 39 ], pch=3 , ylim=c(-70,100), xlim=c(-70,0), col="blue")
+par(new=T)
+plot(white_matter$X_cent[Trace_gm < 2.5 & white_matter$Z_cent < 40 & white_matter$Z_cent > 39 & white_matter$X_cent < 0], white_matter$Y_cent[Trace_gm < 2.5 & white_matter$Z_cent < 40 & white_matter$Z_cent > 39  & white_matter$X_cent < 0], col = "green",pch=20,ylim=c(-70,100), xlim=c(-70,0)  )
+par(new=T)
+plot(white_matter$X_cent[Trace_gm > 2.5 & white_matter$Z_cent < 40 & white_matter$Z_cent > 39 ], white_matter$Y_cent[Trace_gm > 2.5 & white_matter$Z_cent < 40 & white_matter$Z_cent > 39 ], col="red",pch=20,ylim=c(-70,100), xlim=c(-70,0) )
+
+
+plot(data$Vert_wm_X[data$Vert_wm_Z < 40 & data$Vert_wm_Z > 39 ], data$Vert_wm_Y[data$Vert_wm_Z < 40 & data$Vert_wm_Z > 39 ], pch=3 , ylim=c(-70,100), xlim=c(-70,0))
+par(new=T)
+plot(data$Vert_gm_X[data$Vert_gm_Z < 40 & data$Vert_gm_Z > 39 ], data$Vert_gm_Y[data$Vert_gm_Z < 40 & data$Vert_gm_Z > 39 ], pch=3 , ylim=c(-70,100), xlim=c(-70,0), col="blue")
+par(new=T)
+plot(Conductivity$X_cent[Trace_gm < 2.5 & Conductivity$Z_cent < 40 & Conductivity$Z_cent > 39 & Conductivity$X_cent < 0], Conductivity$Y_cent[Trace_gm < 2.5 & Conductivity$Z_cent < 40 & Conductivity$Z_cent > 39  & Conductivity$X_cent < 0], col = "green",pch=20,ylim=c(-70,100), xlim=c(-70,0)  )
+par(new=T)
+plot(Conductivity$X_cent[Trace_gm > 2.5 & Conductivity$Z_cent < 40 & Conductivity$Z_cent > 39 ], Conductivity$Y_cent[Trace_gm > 2.5 & Conductivity$Z_cent < 40 & Conductivity$Z_cent > 39 ], col="red",pch=20,ylim=c(-70,100), xlim=c(-70,0) )
+
+
+################################################################################
+################################################################################
+
+################################################################################
+################################################################################
+
+################################################################################
+################################################################################
+
+################################################################################
+################################################################################
+
+################################################################################
+################################################################################
+
+################################################################################
+################################################################################
+
+################################################################################
+################################################################################
+
+################################################################################
+################################################################################
+
