@@ -1,0 +1,570 @@
+Third-Party Libraries (TPLs)
+
+VERY usefull documentations:
+http://trilinos.sandia.gov/TrilinosBuildQuickRef.html
+http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html
+
+Most of the LIBRARIES are shared libraries. After compillation, do not forget to add the path of those libraries in your LD_LIBRARY_PATH.
+
+!!! Avec cette merde de CMake : faire attention qu'il n'y ait pas de symbole genre '+' dans les path !!!
+
+
+%-----------------------------------------------------------
+NOT INSTALLED
+
+MUMPS 
+MUMPS: a MUltifrontal Massively Parallel sparse direct Solver
+http://graal.ens-lyon.fr/MUMPS/
+Will receive by email ...
+
+%-----------------------------------------------------------
+INSTALLED
+
+
+UMFPACK 
+http://www.cise.ufl.edu/research/sparse/umfpack/
+UMFPACK.tar.gz
+
+L'installation est assez simple. Mais nous avons de nombreuses dépendances. Il faut en premier installer et configurer :
+
+SuiteSparse_config-4.2.1.tar.gz
+
+Ajouter les options de compilation, dans la section LINUX :
+
+ CC = gcc -O3 -fexceptions -fPIC -lrt
+ CF = $(CFLAGS) -O3 -fexceptions -fPIC -lrt
+
+Faire la même chose pour la compillation de METIS avant de compiler CHOLMOD. Les autres soft dépendent de cette permière installation. En suite, l'installation de  
+
+CHOLMOD-2.1.2.tar.gz
+
+demande l'installation locale de metis-4.0.3.tar.gz (metis-4.0 ; faire un lien symbolique). Puis
+
+AMD-2.3.1.tar.gz
+CAMD-2.3.1.tar.gz
+CCOLAMD-2.8.0.tar.gz
+CHOLMOD-2.1.2.tar.gz
+COLAMD.tar.gz
+
+et enfin :
+
+UMFPACK.tar.gz
+
+%-----------------------------------------------------------
+INSTALLED but doesn't work
+
+
+
+the Trilinos Project
+http://trilinos.sandia.gov/
+Downloads/trilinos-11.4.1-Source.tar.gz
+
+git clone https://software.sandia.gov/trilinos/repositories/publicTrilinos 
+
+tree
+.
+├── build
+│   ├── debug
+│   └── release
+├── install
+│   ├── debug
+│   └── release
+├── trilinos -> trilinos-11.4.1-Source
+├── trilinos-11.2.5-Source.tar.gz
+└── trilinos-11.4.1-Source.tar.gz
+
+Installation prefix: Il est possible de faire ++ installations selon les modes de compilation:
+-D CMAKE_INSTALL_PREFIX:PATH=$HOME/install/trilinos/mpi/opt
+
+
+RELEASE
+cmake \
+  -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+  -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+  -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+  -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+  -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+  -D CMAKE_INSTALL_PREFIX:PATH=/home/cobigo/devel/CPP/Trilinos/install-11.2.5/release/ \
+  -D Trilinos_ENABLE_COVERAGE_TESTING:BOOL=ON \
+  -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON \
+  -D Trilinos_ENABLE_OpenMP:BOOL=ON \
+  -D BUILD_SHARED_LIBS:BOOL=ON \
+  -D TPL_ENABLE_BLAS:BOOL=ON \
+  -D TPL_ENABLE_Boost:BOOL=ON \
+  -D TPL_ENABLE_CUDA:BOOL=ON \
+  -D TPL_ENABLE_CUSPARSE:BOOL=ON \
+  -D TPL_ENABLE_Eigen:BOOL=ON \
+  -D TPL_ENABLE_MPI:BOOL=ON \
+  -D Eigen_INCLUDE_DIRS:PATH=/home/cobigo/devel/CPP/Eigen3/install/include/eigen3/ \
+  -D TPL_ENABLE_LAPACK:BOOL=ON \
+  -D LAPACK_LIBRARY_DIRS:PATH=/usr/lib64/ \
+  ../../trilinos/ >& cmake.log &
+
+
+
+DEBUG
+cmake \
+  -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+  -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+  -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+  -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+  -D CMAKE_INSTALL_PREFIX:PATH=/home/cobigo/devel/CPP/Trilinos/install-11.2.5/debug/ \
+  -D Trilinos_ENABLE_COVERAGE_TESTING:BOOL=OFF \
+  -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON \
+  -D Trilinos_ENABLE_OpenMP:BOOL=ON \
+  -D BUILD_SHARED_LIBS:BOOL=ON \
+  -D TPL_ENABLE_BLAS:BOOL=ON \
+  -D TPL_ENABLE_Boost:BOOL=ON \
+  -D TPL_ENABLE_CUDA:BOOL=ON \
+  -D TPL_ENABLE_CUSPARSE:BOOL=ON \
+  -D TPL_ENABLE_Eigen:BOOL=ON \
+  -D TPL_ENABLE_MPI:BOOL=ON \
+  -D Eigen_INCLUDE_DIRS:PATH=/home/cobigo/devel/CPP/Eigen3/install/include/eigen3/ \
+  -D TPL_ENABLE_LAPACK:BOOL=ON \
+  -D LAPACK_LIBRARY_DIRS:PATH=/usr/lib64/ \
+  ../../trilinos/ >& cmake.log &
+
+
+
+
+$ make -j4 VERBOSE=1 && ctest -j4 && make -j4 install
+
+
+%-----------------------------------------------------------
+INSTALLED
+
+PETSc (Portable, Extensible Toolkit for Scientific Computation)
+
+Download petsc-3.4.2.tar.gz - http://www.mcs.anl.gov/petsc/download/index.html
+External Software: http://www.mcs.anl.gov/petsc/miscellaneous/external.html
+
+
+export PETSC_DIR=/home/cobigo/devel/C++/PETSc/petsc-3.4.2
+#
+export PETSC_ARCH=install-3.4.0.release.gpu
+export PETSC_ARCH=install-3.4.0.release
+export PETSC_ARCH=install-3.4.0.debug
+
+mkdir build.release build.debug build.gpu
+
+GPU
+./configure  --with-cc=gcc --with-fc=gfortran --with-debugging=0 COPTFLAGS='-O3 -march=p4 -mtune=p4' FOPTFLAGS='-O3 -qarch=p4 -qtune=p4' --download-f-blas-lapack --download-mpich --with-cuda=1 --with-cusp=1 --with-cusp-dir=/usr/local/cuda/include/cusp  --with-thrust=1 --download-txpetscgpu=1 --with-precision=double --with-clanguage=c --with-cuda-arch=sm_13
+
+make PETSC_DIR=/home/cobigo/devel/C++/PETSc/petsc-3.4.2 PETSC_ARCH=install-3.4.0.release.gpu all
+make PETSC_DIR=/home/cobigo/devel/C++/PETSc/petsc-3.4.2 PETSC_ARCH=install-3.4.0.release.gpu test
+make all test
+
+RELEASE
+./configure  --with-cc=gcc --with-fc=gfortran --with-debugging=0 COPTFLAGS='-O3 -march=p4 -mtune=p4' FOPTFLAGS='-O3 -qarch=p4 -qtune=p4' --download-f-blas-lapack --download-mpich --download-scalapack --download-mumps  --download-superlu_dist --download-metis --download-parmetis  --download-pastix=1 --download-ptscotch=1
+make PETSC_DIR=/home/cobigo/devel/C++/PETSc/petsc-3.4.2 PETSC_ARCH=install-3.4.0.release all
+make PETSC_DIR=/home/cobigo/devel/C++/PETSc/petsc-3.4.2 PETSC_ARCH=install-3.4.0.release test
+make all test
+
+DEBUG (mode de compillation par défaut)
+./configure  --with-cc=gcc --with-fc=gfortran --download-f-blas-lapack --download-mpich --download-scalapack --download-mumps --download-superlu_dist --download-metis --download-parmetis --download-pastix=1 --download-ptscotch=1
+make PETSC_DIR=/home/cobigo/devel/C++/PETSc/petsc-3.4.2 PETSC_ARCH=install-3.4.0.debug all
+make PETSC_DIR=/home/cobigo/devel/C++/PETSc/petsc-3.4.2 PETSC_ARCH=install-3.4.0.debug test
+make all test
+
+
+%-----------------------------------------------------------
+INSTALLED
+
+METIS & parMETIS (MPI)
+http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
+graph partitioner
+
+METIS
+
+Edit the file include/metis.h and specify the width (32 or 64 bits) of the elementary data type used in METIS. This is controled by the IDXTYPEWIDTH constant.
+
+Release
+make config shared=1 prefix=/home/cobigo/devel/C++/METIS/install-5.1.0.release
+
+Debug
+make config shared=1 prefix=/home/cobigo/devel/C++/METIS/install-5.1.0.debug gdb=1 debug=1
+
+make install
+
+ParMETIS (MPI)
+
+Edit the file metis/include/metis.h and specify the width (32 or 64 bits) of the elementary data type used in ParMetis (and METIS). This is controled by the IDXTYPEWIDTH constant.
+
+   
+
+
+%-----------------------------------------------------------
+INSTALLED
+
+MTL-4 Matrix Template Library 
+MTL-4.0.9404-Linux.tar.gz
+
+Pas besoin d'installation : juste des headers.
+
+%-----------------------------------------------------------
+INSTALLED
+
+Automatic installation
+
+parallel version
+  scalapack-common.x86_64 0:1.7.5-14.fc16     scalapack-mpich2.x86_64 0:1.7.5-14.fc16           scalapack-mpich2-devel.x86_64 0:1.7.5-14.fc16   
+  scalapack-openmpi.x86_64 0:1.7.5-14.fc16    scalapack-openmpi-devel.x86_64 0:1.7.5-14.fc16   
+
+%-----------------------------------------------------------
+NOT INSTALLED
+SCOTCH & PT-SCOTCH
+
+http://www.labri.fr/perso/pelegrin/scotch/
+
+Equiv to METIS (graph partitioning package). Projet français proche de MUMPS !!!
+https://gforge.inria.fr/frs/?group_id=248
+scotch.x86_64                       
+scotch-devel.x86_64                 
+
+%-----------------------------------------------------------
+PaStiX
+
+
+
+
+%-----------------------------------------------------------
+INSTALLED
+
+FEniCS Project
+
+Tous les projet, le livre inclu: https://bitbucket.org/fenics-project
+
+PETSc no debug
+export PETSC_ARCH=install
+export PETSC_DIR=/home/cobigo/devel/C++/PETSc/petsc-3.4.2
+
+
+Python packages (FFC, FIAT, Instant, Viper and UFL)
+http://fenicsproject.org/download/installation_from_source.html#installation-from-source
+
+python setup.py install --prefix=/home/cobigo/devel/C++/FEniCS-project/install.dev/
+python setup.py install --prefix=/home/cobigo/devel/C++/FEniCS-project/install.release/
+python setup.py install --prefix=/home/cobigo/devel/C++/FEniCS-project/install.debug
+
+FIAT: FInite element Automatic Tabulator
+The FInite element Automatic Tabulator FIAT supports generation of arbitrary order instances of the Lagrange elements on lines, triangles, and tetrahedra. It is also capable of generating arbitrary order instances of Jacobi-type quadrature rules on the same element shapes. Further, H(div) and H(curl) conforming finite element spaces such as the families of Raviart-Thomas, Brezzi-Douglas-Marini and Nedelec are supported on triangles and tetrahedra. Upcoming versions will also support Hermite and nonconforming elements.
+
+UFL - Unified Form Language
+The Unified Form Language (UFL) is a domain specific language for declaration of finite element discretizations of variational forms. More precisely, it defines a flexible interface for choosing finite element spaces and defining expressions for weak forms in a notation close to mathematical notation.
+
+UFC 2.2.0+
+UFC (Unified Form-assembly Code) is a unified framework for finite element assembly. More precisely, it defines a fixed interface for communicating low level routines (functions) for evaluating and assembling finite element variational forms. The UFC interface consists of a single header file ufc.h that specifies a C++ interface that must be implemented by code that complies with the UFC specification. Examples of form compilers that support the UFC interface are FFC and SyFi.
+
+mkdir build-UFC.release build-UFC.debug build-UFC.dev
+
+DEV
+cmake \
+   -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+   -D CMAKE_INSTALL_PREFIX:PATH=/home/cobigo/devel/CPP/FEniCS-project/install.dev \
+   -D BUILD_SHARED_LIBS:BOOL=ON \
+   -D PYTHON_LIBRARY:FILEPATH=/usr/lib64/ \
+   /home/cobigo/devel/CPP/FEniCS-project/Dependencies/UFC/ >& cmake.log
+make
+make install
+
+RELEASE
+cmake \
+   -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+   -D CMAKE_INSTALL_PREFIX:PATH=/home/cobigo/devel/CPP/FEniCS-project/install.release \
+   -D BUILD_SHARED_LIBS:BOOL=ON \
+   -D PYTHON_LIBRARY:FILEPATH=/usr/lib64/ \
+   /home/cobigo/devel/CPP/FEniCS-project/Dependencies/UFC/
+make
+make install
+
+
+DEBUG
+cmake \
+   -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+   -D CMAKE_INSTALL_PREFIX:PATH=/home/cobigo/devel/CPP/FEniCS-project/install.debug \
+   -D BUILD_SHARED_LIBS:BOOL=ON \
+   -D PYTHON_LIBRARY:FILEPATH=/usr/lib64/ \
+   /home/cobigo/devel/CPP/FEniCS-project/Dependencies/UFC/
+make
+make install
+
+
+Instant
+Instant is a Python module that allows for instant inlining of C and C++ code in Python. It is a small Python module built on top of SWIG and Distutils. 
+
+
+FFC
+Needs the latest version of FIAT, UFC and UFL
+
+%--------------
+
+
+Dolfin
+DOLFIN is the C++/Python interface of FEniCS, providing a consistent PSE (Problem Solving Environment) for ordinary and partial differential equations.
+
+The FEniCS documentation is generated by Sphinx and uses reStructuredText (reST) as the markup language. Good starting points are reStructuredText primer and Sphinx Markup Constructs.
+easy_install -U Sphinx
+
+#PETSc
+export PETSC_ARCH=install
+export PETSC_DIR=/home/cobigo/devel/C++/PETSc/petsc-3.4.2
+# PYTHON
+export PYTHONPATH=/home/cobigo/devel/CPP/FEniCS-project/install/lib64/python2.7/site-packages:/home/cobigo/devel/CPP/FEniCS-project/install/lib/python2.7/site-packages
+#PATH 
+export PATH=/home/cobigo/devel/CPP/FEniCS-project/install/bin:/home/cobigo/root/bin:/usr/local/cuda/bin:/usr/lib64/mpich2/bin/:/usr/lib64/qt-3.3/bin:/usr/lib64/ccache:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/cobigo/.local/bin:/home/cobigo/bin
+
+#LD_LIBRARY_PATH 
+export LD_LIBRARY_PATH=/home/cobigo/devel/CPP/FEniCS-project/install/lib64:/home/cobigo/devel/CPP/FEniCS-project/install/lib:/usr/lib64:/home/cobigo/root//lib:/usr/local/cuda/lib64:/usr/lib64/mpich2//lib:/usr/lib64/openmpi//lib:
+
+
+export BOOST_LIBRARYDIR=/usr/lib64/lib:/usr/lib64/openmpi/lib:/usr/lib64/mpich2/lib
+
+Cette dernière variable d'environnement est pour palier l'erreur :
+
+      The following Boost libraries could not be found:            
+      
+      boost_mpi
+
+
+changer : DOLFIN/cmake/modules/Find{CHOLMOD,UMFPACK}.cmake les lignes :
+
+  set(CMAKE_REQUIRED_LIBRARIES ${UMFPACK_LIBRARIES )
+  set(CMAKE_REQUIRED_LIBRARIES ${CHOLMOD_LIBRARIES} )
+
+en :
+
+  set(CMAKE_REQUIRED_LIBRARIES ${UMFPACK_LIBRARIES} ${METIS_LIBRARY} -lrt )
+  set(CMAKE_REQUIRED_LIBRARIES ${CHOLMOD_LIBRARIES} ${METIS_LIBRARY} -lrt )
+
+
+
+
+
+mkdir build-DOLFIN.release build-DOLFIN.debug build-DOLFIN.dev
+
+-D CMAKE_CXX_FLAGS:STRING=-I/some/path
+-D CMAKE_CXX_FLAGS:STRING=VIENNACL_WITH_OPENCL
+
+DEV
+cmake \
+   -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+   -D CMAKE_INSTALL_PREFIX:PATH=/home/cobigo/devel/CPP/FEniCS-project/install.dev \
+   -D BUILD_SHARED_LIBS:BOOL=ON \
+   -D CMAKE_VERBOSE_MAKEFILE:BOOL=TURE \
+   -D PYTHON_LIBRARY:FILEPATH=/usr/lib64/ \
+   -D DOLFIN_ENABLE_TESTING=true \
+   -D DOLFIN_ENABLE_BENCHMARKS=true \
+   -D ARMADILLO_DIR:FILEPATH=/home/cobigo/devel/CPP/Armadillo/install/usr \
+   -D CGAL_DIR:FILEPATH=/home/cobigo/devel/CPP/CGAL/install.release \
+   -D TRILINOS_DIR:FILEPATH=/home/cobigo/devel/CPP/Trilinos/install \
+   -D VIENNACL_DIR:FILEPATH=/home/cobigo/devel/CPP/ViennaCL/include \
+   -D VIENNACL_INCLUDE_DIRS:FILEPATH=/home/cobigo/devel/CPP/ViennaCL/include \
+   -D VIENNACL_LIBRARY_DIRS:FILEPATH=/usr/lib64/ \
+   /home/cobigo/devel/CPP/FEniCS-project/Dependencies/DOLFIN/ >& cmake.log &
+
+make -j4 VERBOSE=1
+make install
+
+RELEASE
+cmake \
+   -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+   -D CMAKE_INSTALL_PREFIX:PATH=/home/cobigo/devel/CPP/FEniCS-project/install.release \
+   -D BUILD_SHARED_LIBS:BOOL=ON \
+   -D PYTHON_LIBRARY:FILEPATH=/usr/lib64/ \
+   -D DOLFIN_ENABLE_TESTING=true \
+   -D DOLFIN_ENABLE_BENCHMARKS=true \
+   -D ARMADILLO_DIR:FILEPATH=/home/cobigo/devel/CPP/Armadillo/install/usr \
+   -D CGAL_DIR:FILEPATH=/home/cobigo/devel/CPP/CGAL/install.release \
+   -D UMFPACK_DIR:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/install \
+   -D CHOLMOD_DIR:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/install \
+   -D CCOLAMD_DIR:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/install \
+   -D CAMD_DIR:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/install \
+   -D AMD_DIR:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/install \
+   -D TRILINOS_DIR:FILEPATH=/home/cobigo/devel/CPP/Trilinos/install \
+   -D PASTIX_DIR:FILEPATH=/home/cobigo/devel/CPP/PaStiX/install \
+   -D PARMETIS_DIR:FILEPATH=/home/cobigo/devel/CPP/METIS/install-5.1.0.release \
+   -D METIS_LIBRARY:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/metis-4.0/libmetis.a \
+   /home/cobigo/devel/CPP/FEniCS-project/Dependencies/DOLFIN/ >& cmake.log &
+
+make -j4
+make install
+
+
+DOLFIN has now been installed in
+
+    /home/cobigo/devel/CPP/FEniCS-project/install.release
+
+and the demo programs have been installed in
+
+    /home/cobigo/devel/CPP/FEniCS-project/install.release/share/dolfin/demo
+
+Before rushing off to try the demos, don't forget to update your
+environment variables. This can be done easily using the helper file
+'dolfin.conf' which sets the appropriate variables (for users of the
+Bash shell).
+
+To update your environment variables, run the following command:
+
+    source /home/cobigo/devel/CPP/FEniCS-project/install.release/share/dolfin/dolfin.conf
+
+For future reference, we recommend that you add this command to your
+configuration (.bashrc, .profile or similar).
+
+
+
+
+DEBUG
+cmake \
+   -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+   -D CMAKE_INSTALL_PREFIX:PATH=/home/cobigo/devel/CPP/FEniCS-project/install.debug \
+   -D BUILD_SHARED_LIBS:BOOL=ON \
+   -D PYTHON_LIBRARY:FILEPATH=/usr/lib64/ \
+   -D DOLFIN_ENABLE_TESTING=true \
+   -D DOLFIN_ENABLE_BENCHMARKS=true \
+   -D ARMADILLO_DIR:FILEPATH=/home/cobigo/devel/CPP/Armadillo/install/usr \
+   -D CGAL_DIR:FILEPATH=/home/cobigo/devel/CPP/CGAL/install.release \
+   -D UMFPACK_DIR:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/install \
+   -D CHOLMOD_DIR:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/install \
+   -D CCOLAMD_DIR:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/install \
+   -D CAMD_DIR:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/install \
+   -D AMD_DIR:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/install \
+   -D TRILINOS_DIR:FILEPATH=/home/cobigo/devel/CPP/Trilinos/install \
+   -D PASTIX_DIR:FILEPATH=/home/cobigo/devel/CPP/PaStiX/install \
+   -D PARMETIS_DIR:FILEPATH=/home/cobigo/devel/CPP/METIS/install-5.1.0.release \
+   -D METIS_LIBRARY:FILEPATH=/home/cobigo/devel/CPP/UMFPACK/metis-4.0/libmetis.a \
+   /home/cobigo/devel/CPP/FEniCS-project/Dependencies/DOLFIN/ >& cmake.log &
+
+
+make -j4
+make install
+
+   -D PARMETIS_DIR:FILEPATH=/home/cobigo/devel/CPP/METIS/install-5.1.0.release \
+
+%--------------
+
+FORK on FEniCS project
+
+https://yanncobigo@bitbucket.org/yanncobigo/dolfin.git
+
+git clone https://yanncobigo@bitbucket.org/yanncobigo/dolfin.git
+
+
+%-----------------------------------------------------------
+
+CUSP
+http://cusplibrary.github.io/
+
+in devel/CPP/CUSP
+git clone https://github.com/cusplibrary/cusplibrary.git
+
+CUSP is directly installed in the CUDA directory:
+
+cp -r cuda-5.0 cuda-5.0-cusp
+ln -s cuda-5.0-cusp cuda
+cd cuda
+ln -s /home/cobigo/devel/CPP/CUSP/cusplibrary/cusp
+
+%---------
+
+Refer to the QuickStartGuide for detailed installation and usage instructions:
+http://code.google.com/p/cusp-library/wiki/QuickStartGuide
+
+
+Instructions for the Impatient
+------------------------------
+
+    0) Verify that CUDA 4.x is installed
+        $ nvcc --version
+        nvcc: NVIDIA (R) Cuda compiler driver
+        Copyright (c) 2005-2011 NVIDIA Corporation
+        Built on Fri_Jan_13_01:52:47_PST_2012
+        Cuda compilation tools, release 4.1, V0.2.1221
+
+    1) Download Cusp v0.3.x
+        http://cusp-library.googlecode.com/files/cusp-v0.3.0.zip
+    
+    2) Extract contents of ZIP files to the CUDA include directory:
+        /usr/local/cuda/include/ on a Linux and Mac OSX
+        C:\CUDA\include\ on a Windows system
+    
+    3) Save the following program to a file named version.cu
+
+        #include <thrust/version.h>
+        #include <cusp/version.h>
+        #include <iostream>
+
+        int main(void)
+        {
+            std::cout << "The following libraries were found:" << std::endl;
+
+            std::cout << "    CUDA   v" << (CUDA_VERSION / 1000) << "." <<
+                                           (CUDA_VERSION % 1000) / 10 << std::endl;
+
+            std::cout << "    Thrust v" << THRUST_MAJOR_VERSION << "." << 
+                                           THRUST_MINOR_VERSION << "." << 
+                                           THRUST_SUBMINOR_VERSION << std::endl;
+
+            std::cout << "    Cusp   v" << CUSP_MAJOR_VERSION << "." << 
+                                           CUSP_MINOR_VERSION << "." << 
+                                           CUSP_SUBMINOR_VERSION << std::endl;
+
+            return 0;
+        }
+
+    4) Compile version.cu with nvcc to verify installation
+        $ nvcc version.cu -o version
+        $ ./version
+        The following libraries were found:
+            CUDA   v4.1
+            Thrust v1.5.1
+            Cusp   v0.3.0
+
+
+
+
+%-----------------------------------------------------------
+INSTALL
+
+ViennaCL 1.4.2
+
+Dependencies
+• GCC version 4.2.x 
+The full potential of ViennaCL is available with the following optional libraries:
+• CMake as build system (optional, but highly recommended for building examples)
+• OpenCL for accessing compute devices (GPUs); 
+• CUDA for using CUDA-accelerated operations.
+• OpenMP for directive-based parallelism on CPUs.
+• uBLAS (shipped with Boost) provides the same interface as ViennaCL and allows to switch between CPU and GPU seamlessly, see the tutorials.
+• Eigen can be used to fill ViennaCL types directly. Moreover, the iterative solvers in ViennaCL can directly be used with Eigen objects.
+• MTL 4 can be used to fill ViennaCL types directly. Even though MTL 4 provides its own iterative solvers, the ViennaCL solvers can also be used with MTL 4 objects.
+
+NVIDIA provides the OpenCL library with the GPU driver. Therefore, if a NVIDIA driver is present on the system, the library is too. However, not all of the released drivers contain the OpenCL library. A driver which is known to support OpenCL, and hence providing the required library, is 260.19.21. Note that the latest NVIDIA drivers do not include the OpenCL headers anymore. Therefore, the official OpenCL headers from the Khronos group are also shipped with ViennaCL in the folder CL/.
+
+
+Preprocessor #define               Default computing backend
+
+none                               CPU, single-threaded
+VIENNACL_WITH_OPENMP               CPU with OpenMP (compiler flags required)
+VIENNACL_WITH_OPENCL               OpenCL
+VIENNACL_WITH_CUDA                 CUDA
+
+The preprocessor constants can be either defined at the beginning of the source file (prior to any ViennaCL-includes), or passed to the compiler as command line argument. For example, on g++ the respective command line option for enabling the OpenCL backend is -DVIENNACL_WITH_OPENCL. Note that CUDA requires the nvcc compiler. Furthermore, the use of OpenMP usually requires additional compiler flags (on g++ this is for example -fopenmp).
+Multiple backends can be used simultaneously. In such case, CUDA has higher priority than OpenCL, which has higher priority over the CPU backend when it comes to selecting the default backend.
+
+cd build
+
+
+cmake \
+ -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+ -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+ -D ENABLE_CUDA:BOOL=ON \
+ -D ENABLE_OPENCL:BOOL=ON \
+ -D ENABLE_OPENMP:BOOL=ON \
+ -D ENABLE_UBLAS:BOOL=ON \
+ -D ENABLE_EIGEN:BOOL=ON \
+ -D EIGEN_INCLUDE_DIR:FILEPATH=/home/cobigo/devel/CPP/Eigen3/install/include/eigen3/ \
+   /home/cobigo/devel/CPP/ViennaCL/include/ >& cmake.log &
+
+make -j4 >& make.log
+make test
+
