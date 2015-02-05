@@ -49,13 +49,16 @@ M-x R -> start a R session
 
 
 ################################################################################
-
+# fitdistr est dans le package:
+install.packages("MASS")
+library(MASS)
 
 > hist(data$l_mean[data$Cell_sub_domain == 5], prob=T, breaks=50, main="Distribution of l_mean in the cortex", xlab="l_mean")
 > mean(data$l_mean[data$Cell_sub_domain == 5])
 [1] 0.5684975
 > sd(data$l_mean[data$Cell_sub_domain == 5])
 [1] 0.1805893
+
 > fitdistr( data$l_mean[data$Cell_sub_domain == 5 & data$l_mean > 0], "lognormal")
       meanlog          sdlog    
   -0.6135778798    0.3368885476 
@@ -920,6 +923,38 @@ plot(Conductivity$X_cent[Trace_gm > 2.5 & Conductivity$Z_cent < 40 & Conductivit
 
 ################################################################################
 ################################################################################
+
+library(oro.nifti)
+
+image <- readNIfTI("image.nii")
+image
+image(image)
+orthographic(image)
+
+library(oro.nifti)
+library(MASS)
+image <- readNIfTI("file.nii")
+hist(image)
+hist(image[image > .5], breaks=200, main="Distribution of l_mean in the cortex", xlab="l_mean")
+
+
+fitdistr( rev_image[rev_image > 0.], densfun="log-normal")
+     meanlog         sdlog    
+  -2.792113981    1.718065762 
+ ( 0.002328943) ( 0.001646812)
+curve( dlnorm(x,-2.792113981, 1.718065762), , col='red', add=T)
+hist(rev_image, probability=TRUE, breaks=50, main="Distribution of l_mean in the cortex", xlab="l_mean")
+curve( dlnorm(x,-2.792113981, 1.718065762), , col='red', add=T)
+
+
+fitdistr( rev_image[rev_image > 0.], densfun="exponential")
+      rate    
+  5.238017897 
+ (0.007100454)
+hist(rev_image[rev_image > 0.], probability=TRUE, breaks=50, main="Distribution of l_mean in the cortex", xlab="l_mean")
+curve( dexp(x,5.238017897), , col='red', add=T)
+
+
 
 ################################################################################
 ################################################################################
