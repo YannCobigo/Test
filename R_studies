@@ -925,35 +925,57 @@ plot(Conductivity$X_cent[Trace_gm > 2.5 & Conductivity$Z_cent < 40 & Conductivit
 ################################################################################
 
 library(oro.nifti)
-
-image <- readNIfTI("image.nii")
-image
-image(image)
-orthographic(image)
-
-library(oro.nifti)
 library(MASS)
-image <- readNIfTI("file.nii")
+image <- readNIfTI("c1_10177_2011-05-04_MP-LAS_NIFD034X1.nii")
 hist(image)
 hist(image[image > .5], breaks=200, main="Distribution of l_mean in the cortex", xlab="l_mean")
 
-
+rev_image <- 1. - image[image > 0.2]
 fitdistr( rev_image[rev_image > 0.], densfun="log-normal")
      meanlog         sdlog    
   -2.792113981    1.718065762 
  ( 0.002328943) ( 0.001646812)
-curve( dlnorm(x,-2.792113981, 1.718065762), , col='red', add=T)
+
 hist(rev_image, probability=TRUE, breaks=50, main="Distribution of l_mean in the cortex", xlab="l_mean")
-curve( dlnorm(x,-2.792113981, 1.718065762), , col='red', add=T)
+curve( dlnorm(x,-2.792113981, 1.718065762), col='red', add=T)
+exp( -2.792113981 + 1.718065762*1.718065762/2.)
+0.2681419
 
 
-fitdistr( rev_image[rev_image > 0.], densfun="exponential")
+###############################################################
+Background
+
+fitdistr(image[image > 0.05 & image < 1.-0.3], densfun="exponential")
       rate    
-  5.238017897 
- (0.007100454)
-hist(rev_image[rev_image > 0.], probability=TRUE, breaks=50, main="Distribution of l_mean in the cortex", xlab="l_mean")
-curve( dexp(x,5.238017897), , col='red', add=T)
+  4.714647955 
+ (0.007993662)
+hist(image[image > 0.2], probability=TRUE, breaks=50, main="Distribution of l_mean in the cortex", xlab="l_mean")
+curve( dexp(x,3.246225863), , col='red', add=T)
+###############################################################
 
+
+hist(rev_image, probability=TRUE, breaks=100)
+histo <- hist(rev_image, probability=TRUE, breaks=100)
+
+#fit <- lm(y ~ x)
+fit <- lm(test$density[test$mids > 0.30 & test$mids < 0.75] ~ test$mids[test$mids > 0.30 & test$mids < 0.75])
+abline(fit)
+
+for (i in 1:(length(histo$density)) ) 
+{
+  if (histo$density[i] > fit$coefficients[[1]] )
+    {
+      histo$density[i] = histo$density[i] -  fit$coefficients[[1]];
+    } 
+  else histo$density[i] = 0.05;
+}
+#hist(histo$density, probability=TRUE, breaks=100, add=T)
+
+fitdistr( histo$density, densfun="log-normal")
+
+#    meanlog       sdlog   
+#  -1.7567912    1.4763676 
+curve( dlnorm(x,-1.7567912, 1.4763676), col='red', add=T)
 
 
 ################################################################################
