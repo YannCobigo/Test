@@ -1,0 +1,12 @@
+1. FSL (FMRIB Software Library)
+
+  1.1. Fast
+  
+  fast -S 2 -o T1T2/Seg -p -g -b -B -t 1 -t 2 T1_brain.nii.gz  T2_brain.nii.gz
+  
+  
+2. ANTs
+
+  2.1. Antropos
+  
+  
