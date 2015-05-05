@@ -8,5 +8,7 @@
 2. ANTs
 
   2.1. Antropos
+  Atropos -d 3 -x mask.nii.gz -c [5,1.e-4] -a  FLAIR-3DC_NHV053X4_T1_unbias.nii.gz -i Otsu[4] -k Gaussian -m [0.3,1x1x1] -r 1 -p Socrates[1] -o [/home/ycobigo/devel/FSL/WMH/Bet/output/tmpSegmentation.nii.gz,/home/ycobigo/devel/FSL/WMH/Bet/output/tmpSegmentationPosteriors%d.nii.gz] 
   
-  
+  2.2. N4 bias field correction
+  N4BiasFieldCorrection -d 3 -i /home/ycobigo/devel/FSL/WMH/Bet/MP-LAS-long-3DC_NHV053X4.nii -x /home/ycobigo/devel/FSL/WMH/Bet/mask.nii.gz -s 2 -c [100x100x100x100,1.e-10] -b [200] -o MP-LAS-long-3DC_NHV053X4_unbias.nii.gz
