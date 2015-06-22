@@ -2184,11 +2184,17 @@ dev.off()
 ################################################################################
 RMS plot
 
+ abs <- read.table('asl_w_M0.nii.gz_abs.rms', header=F)
+ rel <- read.table('asl_w_M0.nii.gz_rel.rms', header=F)
+ 
+ seqABS <- seq(1,261)
+ seq <- seq(1,260)
+
  postscript("RMS.eps")
  plot(abs$V1~seqABS, type="l", xlab="frame", ylab="RMS", col="blue", xlim=c(1,200), ylim=c(0.,2.5))
  legend(0.,2.2,c("Absolute","Relative"),col=c("blue","red"),pch=c("_","_"))
  par(new=T)
- plot(relat$V1~seq, type="l", xlab="frame", ylab="RMS", col="red", xlim=c(1,200), ylim=c(0.,2.5))
+ plot(rel$V1~seq, type="l", xlab="frame", ylab="RMS", col="red", xlim=c(1,200), ylim=c(0.,2.5))
  abline(h=1., col="blue")
  dev.off()
 
