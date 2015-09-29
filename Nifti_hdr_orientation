@@ -1,0 +1,67 @@
+T1 nifti header:
+
+sizeof_hdr     348
+data_type      INT16
+dim0           3
+dim1           160
+dim2           240
+dim3           256
+dim4           1
+dim5           1
+dim6           1
+dim7           1
+vox_units      mm
+time_units     s
+datatype       4
+nbyper         2
+bitpix         16
+pixdim0        0.000000
+pixdim1        1.000000
+pixdim2        1.000000
+pixdim3        1.000000
+pixdim4        2.300000
+pixdim5        1.000000
+pixdim6        1.000000
+pixdim7        40816.988281
+vox_offset     352
+cal_max        0.0000
+cal_min        0.0000
+scl_slope      1.000000
+scl_inter      0.000000
+phase_dim      0
+freq_dim       0
+slice_dim      0
+slice_name     Unknown
+slice_code     0
+slice_start    0
+slice_end      0
+slice_duration 0.000000
+time_offset    0.000000
+intent         Unknown
+intent_code    0
+intent_name    
+intent_p1      0.000000
+intent_p2      0.000000
+intent_p3      0.000000
+qform_name     Scanner Anat
+qform_code     1
+qto_xyz:1      0.998296  -0.007270  -0.057894  -68.958961
+qto_xyz:2      0.014010  0.993047  0.116882  -108.327293
+qto_xyz:3      0.056642  -0.117494  0.991457  -148.791214
+qto_xyz:4      0.000000  0.000000  0.000000  1.000000
+qform_xorient  Left-to-Right
+qform_yorient  Posterior-to-Anterior
+qform_zorient  Inferior-to-Superior
+sform_name     Scanner Anat
+sform_code     1
+sto_xyz:1      0.998296  -0.007270  -0.057894  -68.958961
+sto_xyz:2      0.014010  0.993047  0.116882  -108.327293
+sto_xyz:3      0.056642  -0.117494  0.991457  -148.791214
+sto_xyz:4      0.000000  0.000000  0.000000  1.000000
+sform_xorient  Left-to-Right
+sform_yorient  Posterior-to-Anterior
+sform_zorient  Inferior-to-Superior
+file_type      NIFTI-1+
+file_code      1
+descrip        
+aux_file       
