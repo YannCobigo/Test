@@ -1,0 +1,62 @@
+# Use phusion/baseimage as base image. To make your builds reproducible, make
+# sure you lock down to a specific version, not to `latest`!
+# See https://github.com/phusion/baseimage-docker/blob/master/Changelog.md for
+# a list of version numbers.
+#FROM phusion/baseimage:0.9.17
+# Pull from CentOS RPM Build Image
+
+#
+# CentOS
+# cat /etc/centos-release
+#
+# ex. FROM centos:6 version 6 of CentOS
+FROM centos:6
+
+MAINTAINER Yann Cobigo yann.cobigo@ucsf.edu
+
+# Update the image
+RUN yum update -y
+RUN yum install openssh.x86_64 \
+    openssh-clients.x86_64 \
+    openssh-server.x86_64 \
+    epel-release.noarch \
+    emacs \
+    gcc.x86_64 \
+    gcc-c++ \
+    python-devel.x86_64 \
+    tmux \
+    htop \
+    git \
+    wget \
+    numpy scipy python-matplotlib ipython python-pandas sympy python-nose \
+    libxml2-devel.x86_64 libxml2-python.x86_64 libxslt.x86_64 libxslt-devel.x86_64 libxslt-python.x86_64 \
+    
+# 
+# Python 
+# pip
+# Pip is part of Extra Packages for Enterprise Linux (EPEL),
+
+RUN yum -y install python-pip
+RUN pip install --upgrade pip
+# nipype should ask for scipy, nibabel, numpy
+RUN pip install  nibabel --upgrade 
+RUN pip install  networkx --upgrade 
+RUN pip install  numpy --upgrade 
+RUN pip install  scipy --upgrade 
+RUN pip install  matplotlib  --upgrade 
+RUN pip install  rdflib  --upgrade 
+RUN pip install  sphinx --upgrade 
+RUN pip install  graphviz --upgrade 
+RUN pip install future
+RUN pip install simplejson
+RUN pip install prov
+
+
+#
+# NIPIPE
+# does not work => manual "RUN pip install nipype "
+RUN cd && \
+    git clone  git://github.com/nipy/nipype.git && \
+    cd nipype && \
+    git checkout 0.12.0-rc1 && \
+    python setup.py install
