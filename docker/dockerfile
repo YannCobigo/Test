@@ -19,7 +19,7 @@
 # Controlling containers
 # docker --help
 # docker ps  -a -> list running and sleeping docker
-# sudo docker run -it centos -> start the image
+# sudo docker run -it centos:6 -> start the image
 # Ctrl -p  Ctrl -q -> detach the docker
 # docker attach e3a3651e9b58 -> attach, address from docker ps
 # Start a new container
@@ -36,3 +36,25 @@ $ docker kill $JOB
 $ docker stop $JOB # Container must be stopped to remove it
 $ docker rm $JOB
  
+ 
+ 
+#
+# mounting external disk
+# we need to mount R drives and the local image of the neuro-image software (FSL, SPM, ANTs)
+# centralized the software in 
+
+mkdir /mnt/neuroimaging/
+
+#docker build -f Dockerfile --tag="ucsfmac/gateway:$1" .
+#docker tag -f ucsfmac/gateway:$1 ucsfmac/gateway:latest
+
+docker build -f Dockerfile --tag="ucsfmac/gateway:01" .
+docker tag -f ucsfmac/gateway:01 ucsfmac/gateway:latest
+
+
+
+
+  docker run -d  --name gw_mac1  -h gw-1.mac-internal.net --net=none --cap-add=NET_ADMIN --dns 10.36.0.8 --dns 10.36.0.9  -v /containers/gw_mac1/conf/:/opt/conf/ -v /containers/gw_mac1/service/:/etc/service/  ucsfmac/gateway:latest
+  
+  docker run -d  --name Neuro   --cap-add=NET_ADMIN --dns 10.36.56.196  -v /containers/Neuro/mnt/neuroimaging:/mnt/neuroimaging/  ucsfmac/gateway:latest
+  
