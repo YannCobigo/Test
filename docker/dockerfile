@@ -19,6 +19,7 @@
 # Controlling containers
 # docker --help
 # docker ps  -a -> list running and sleeping docker
+# sudo docker run -it centos -> start the image
 # sudo docker run -it centos:6 -> start the image
 # Ctrl -p  Ctrl -q -> detach the docker
 # docker attach e3a3651e9b58 -> attach, address from docker ps
@@ -36,25 +37,141 @@ $ docker kill $JOB
 $ docker stop $JOB # Container must be stopped to remove it
 $ docker rm $JOB
  
- 
- 
 #
+# images_neuroimages
+We are building a interactive simple image for the construction of the tools (Matlab, FSL, ...). This image will mount NFS directories and those directoties will be saved and tested on different plateforms. 
+
+# create the images
+cd images_neuroimaging/
+docker build -f Dockerfile --tag="imaging_core:01" .
+docker images 
+# it will show 
+REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+imaging_core        01                  4882bbe2a8f6        22 minutes ago      1.011 GB
+
+
 # mounting external disk
-# we need to mount R drives and the local image of the neuro-image software (FSL, SPM, ANTs)
-# centralized the software in 
+we need to mount R drives and the local image of the neuro-image software (FSL, SPM, ANTs)  centralized the software in 
 
-mkdir /mnt/neuroimaging/
+mkdir /mnt/neuroimaging_CentOS7/
 
-#docker build -f Dockerfile --tag="ucsfmac/gateway:$1" .
-#docker tag -f ucsfmac/gateway:$1 ucsfmac/gateway:latest
+JOB=$(docker run -d  -it --name  Neuro  -v /mnt/neuroimaging_CentOS7:/mnt/neuroimaging  imaging_core:01)
+docker attach $JOB
 
-docker build -f Dockerfile --tag="ucsfmac/gateway:01" .
-docker tag -f ucsfmac/gateway:01 ucsfmac/gateway:latest
+JOB=$( sudo docker run -it  --name  Neuro3  \
+    --user=$USER \
+    --env="DISPLAY" \
+    --workdir="/home/$USER" \
+    --volume="/mnt/neuroimaging_CentOS7:/mnt/neuroimaging" \
+    --volume="/mnt/macdata:/mnt/macdata" \
+    --volume="/home/$USER:/home/$USER" \
+    --volume="/etc/group:/etc/group:ro" \
+    --volume="/etc/passwd:/etc/passwd:ro" \
+    --volume="/etc/shadow:/etc/shadow:ro" \
+    --volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
+    --volume="/etc/machine-id:/etc/machine-id:ro" \
+    --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+    imaging_core:02 )
 
 
 
+#
+#
+# On the image
+#
+#
+mkdir /mnt/neuroimaging/install
 
-  docker run -d  --name gw_mac1  -h gw-1.mac-internal.net --net=none --cap-add=NET_ADMIN --dns 10.36.0.8 --dns 10.36.0.9  -v /containers/gw_mac1/conf/:/opt/conf/ -v /containers/gw_mac1/service/:/etc/service/  ucsfmac/gateway:latest
-  
-  docker run -d  --name Neuro   --cap-add=NET_ADMIN --dns 10.36.56.196  -v /containers/Neuro/mnt/neuroimaging:/mnt/neuroimaging/  ucsfmac/gateway:latest
-  
+#
+# FSL installation
+cd
+scp ycobigo@172.17.42.1:~ycobigo/Docker/images_neuroimaging/fslinstaller.py .
+export SHELL=/bin/bash
+python fslinstaller.py
+Where would you like to install FSL? [/usr/local]: /mnt/neuroimaging
+
+#
+# VTK and ITK and ANTs
+# VTK
+git clone http://vtk.org/VTK.git
+cd VTK 
+git checkout v5.10.1
+mkdir build && cd build
+cmake \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_C_FLAGS=-DGLX_GLXEXT_LEGACY \
+      -DCMAKE_CXX_FLAGS=-DGLX_GLXEXT_LEGACY \
+      -D BUILD_SHARED_LIBS=OFF \
+      -DCMAKE_INSTALL_PREFIX=/mnt/neuroimaging/install ..
+make && make install
+
+# ITK
+git clone http://itk.org/ITK.git
+cd ITK
+git checkout v4.9rc03
+mkdir build && cd build
+cmake  \
+       -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+       -D BUILD_SHARED_LIBS=OFF \
+       -D ITK_DYNAMIC_LOADING=OFF \
+       -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+       -D ITKV3_COMPATIBILITY=ON \
+       -D ITK_LEGACY_REMOVE=OFF \
+       -D Module_ITKVtkGlue:BOOL=ON \
+       -D VTK_DIR:PATH=/mnt/neuroimaging/install/lib/vtk-5.10/ \
+       -D CMAKE_INSTALL_PREFIX:PATH=/mnt/neuroimaging/install ..
+make && make install
+# ANTs
+!!!!!!!!! tester install + prendre un tag !!!!!!!!!!
+cd /mnt/neuroimaging/
+git clone https://github.com/stnava/ANTs
+cd ANTs
+git checkout v2.1.0rc3
+mkdir install && cd install
+cmake  \
+       -D CMAKE_BUILD_TYPE:STRING=Release \
+       -D BUILD_SHARED_LIBS:BOOL=ON \
+       -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE ..
+make
+
+#
+# DTI_TK
+decompress dtitk-2.3.1-Linux-x86_64.tar.gz in /mnt/neuroimaging/
+
+
+
+#
+# Dlib Eigen 
+wget http://bitbucket.org/eigen/eigen/get/3.2.8.tar.gz
+mv 3.2.8.tar.gz Eigen-3.2.8.tar.gz
+move untar directory in /mnt/neuroimaging/Eigen-3
+
+#
+# MRtrix & Qt
+Installation d'un nouveau QT:
+
+git clone https://github.com/MRtrix3/mrtrix3
+cd mrtrix3
+git checkout 0.3.14
+
+# new links have to be done:
+ln -s /usr/bin/moc-qt5 /usr/bin/moc
+ln -s /usr/bin/qmake-qt5 /usr/bin/qmake
+
+EIGEN_CFLAGS="-isystem /mnt/neuroimaging/Eigen-3/" ./configure
+./build
+
+
+
+########
+# PATH #
+########
+export FSLDIR=/mnt/neuroimaging/fsl/
+export ANTSPATH=/mnt/neuroimaging/ANTs/install/bin
+export ANTS=/mnt/neuroimaging/ANTs/
+export DTITK_ROOT=/mnt/neuroimaging/dtitk-2.3.1-Linux-x86_64
+export DTITK_SUIT=$DTITK_ROOT/bin:$DTITK_ROOT/scripts:$DTITK_ROOT/utilities
+export MRTRIX3=/mnt/neuroimaging/mrtrix3/release
+#
+export PATH=$PATH:/mnt/neuroimaging/install/bin:$FSLDIR/bin:$ANTSPATH:$ANTS/Scripts:$DTITK_SUIT:$MRTRIX3/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/neuroimaging/install/lib:$FSLDIR/lib:$ANTS/install/lib:$DTITK_ROOT/lib:$MRTRIX3/lib
