@@ -172,6 +172,7 @@ export ANTS=/mnt/neuroimaging/ANTs/
 export DTITK_ROOT=/mnt/neuroimaging/dtitk-2.3.1-Linux-x86_64
 export DTITK_SUIT=$DTITK_ROOT/bin:$DTITK_ROOT/scripts:$DTITK_ROOT/utilities
 export MRTRIX3=/mnt/neuroimaging/mrtrix3/release
+export MATLAB=/mnt/neuroimaging/MATLAB/R2014b/
 #
-export PATH=$PATH:/mnt/neuroimaging/install/bin:$FSLDIR/bin:$ANTSPATH:$ANTS/Scripts:$DTITK_SUIT:$MRTRIX3/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/neuroimaging/install/lib:$FSLDIR/lib:$ANTS/install/lib:$DTITK_ROOT/lib:$MRTRIX3/lib
+export PATH=$PATH:/mnt/neuroimaging/install/bin:$FSLDIR/bin:$ANTSPATH:$ANTS/Scripts:$DTITK_SUIT:$MRTRIX3/bin:$MATLAB/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/neuroimaging/install/lib:$FSLDIR/lib:$ANTS/install/lib:$DTITK_ROOT/lib:$MRTRIX3/lib:$MATLAB/lib
