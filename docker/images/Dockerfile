@@ -1,7 +1,7 @@
 #
 # CentOS
 # cat /etc/centos-release
-#
+# docker build -f Dockerfile --tag="imaging_core:01" .
 # ex. FROM centos:6 version 6 of CentOS
 FROM centos:7
 
