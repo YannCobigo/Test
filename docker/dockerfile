@@ -52,13 +52,15 @@ imaging_core        01                  4882bbe2a8f6        22 minutes ago      
 
 # mounting external disk
 we need to mount R drives and the local image of the neuro-image software (FSL, SPM, ANTs)  centralized the software in 
+sudo dbus-uuidgen --ensure=/etc/machine-id
+
 
 mkdir /mnt/neuroimaging_CentOS7/
 
 JOB=$(docker run -d  -it --name  Neuro  -v /mnt/neuroimaging_CentOS7:/mnt/neuroimaging  imaging_core:01)
 docker attach $JOB
 
-JOB=$( sudo docker run -it  --name  Neuro3  \
+JOB=$( sudo docker run -it  --name  Neuro  \
     --user=$USER \
     --env="DISPLAY" \
     --workdir="/home/$USER" \
@@ -71,7 +73,40 @@ JOB=$( sudo docker run -it  --name  Neuro3  \
     --volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
     --volume="/etc/machine-id:/etc/machine-id:ro" \
     --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
-    imaging_core:02 )
+    imaging_core:01 )
+
+
+JOB=$( sudo docker run -it  --name  Neuro  \
+    --user=$USER \
+    --env="DISPLAY" \
+    --workdir="/home/$USER" \
+    --volume="/mnt/neuroimaging_CentOS7:/mnt/neuroimaging" \
+    --volume="/mnt/macdata:/mnt/macdata" \
+    --volume="/mnt/home/$USER:/home/$USER" \
+    --volume="/etc/machine-id:/etc/machine-id:ro" \
+    --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+    imaging_core:01 )
+
+#Instances
+JOB=$( sudo docker run -it --rm --name  Neuro  \
+    --user=$USER \
+    --env="DISPLAY" \
+    --net=host \
+    --workdir="/home/$USER" \
+    --volume="$HOME/.Xauthority:/home/ycobigo/.Xauthority" \
+    --volume="/mnt/neuroimaging/neuroimaging_CentOS7:/mnt/neuroimaging:ro" \
+    --volume="/mnt/macdata:/mnt/macdata" \
+    --volume="/mnt/data/home/$USER:/home/$USER" \
+    --volume="/etc/group:/etc/group:ro" \
+    --volume="/etc/passwd:/etc/passwd:ro" \
+    --volume="/etc/shadow:/etc/shadow:ro" \
+    --volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
+    --volume="/etc/machine-id:/etc/machine-id:ro" \
+    --volume="/tmp/.X11-unix/X0:/tmp/.X11-unix/X0:rw" \
+    --volume="/mnt/data/tmp:/tmp" \
+    --volume="/usr/local/MATLAB:/usr/local/MATLAB" \
+    imaging_core:01 )
+
 
 
 
@@ -166,6 +201,7 @@ EIGEN_CFLAGS="-isystem /mnt/neuroimaging/Eigen-3/" ./configure
 ########
 # PATH #
 ########
+# Local
 export FSLDIR=/mnt/neuroimaging/fsl/
 export ANTSPATH=/mnt/neuroimaging/ANTs/install/bin
 export ANTS=/mnt/neuroimaging/ANTs/
@@ -173,6 +209,22 @@ export DTITK_ROOT=/mnt/neuroimaging/dtitk-2.3.1-Linux-x86_64
 export DTITK_SUIT=$DTITK_ROOT/bin:$DTITK_ROOT/scripts:$DTITK_ROOT/utilities
 export MRTRIX3=/mnt/neuroimaging/mrtrix3/release
 export MATLAB=/mnt/neuroimaging/MATLAB/R2014b/
+export MRICRON=/mnt/neuroimaging/neuroimaging_CentOS7/mricron_lx
 #
 export PATH=$PATH:/mnt/neuroimaging/install/bin:$FSLDIR/bin:$ANTSPATH:$ANTS/Scripts:$DTITK_SUIT:$MRTRIX3/bin:$MATLAB/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/neuroimaging/install/lib:$FSLDIR/lib:$ANTS/install/lib:$DTITK_ROOT/lib:$MRTRIX3/lib:$MATLAB/lib
+source /mnt/neuroimaging/fsl//etc/fslconf/fsl.sh
+
+# Instance
+export FSLDIR=/mnt/neuroimaging/fsl/
+export ANTSPATH=/mnt/neuroimaging/ANTs/install/bin
+export ANTS=/mnt/neuroimaging/ANTs/
+export DTITK_ROOT=/mnt/neuroimaging/dtitk-2.3.1-Linux-x86_64
+export DTITK_SUIT=$DTITK_ROOT/bin:$DTITK_ROOT/scripts:$DTITK_ROOT/utilities
+export MRTRIX3=/mnt/neuroimaging/mrtrix3/release
+export MATLAB=/usr/local/MATLAB/R2014b/
+export MRICRON=/mnt/neuroimaging/mricron_lx
+#
+export PATH=$PATH:/mnt/neuroimaging/install/bin:$FSLDIR/bin:$ANTSPATH:$ANTS/Scripts:$DTITK_SUIT:$MRTRIX3/bin:$MATLAB/bin:$MRICRON/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/neuroimaging/install/lib:$FSLDIR/lib:$ANTS/install/lib:$DTITK_ROOT/lib:$MRTRIX3/lib:$MATLAB/lib
+source /mnt/neuroimaging/fsl//etc/fslconf/fsl.sh
