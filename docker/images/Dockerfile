@@ -7,34 +7,28 @@ FROM centos:7
 
 MAINTAINER Yann Cobigo yann.cobigo@ucsf.edu
 
+# File system
+RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images 
+
 # Update the image
 RUN yum update -y
 RUN yum install  -y epel-release.noarch
 
 RUN yum groupinstall -y "Development tools"
 
-RUN yum install  -y openssh.x86_64 \
-    openssh-clients.x86_64 \
-    openssh-server.x86_64 \
-    emacs \
-    cmake \
-    gcc.x86_64 \
-    gcc-c++ \
+RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 \
+    emacs tmux htop git wget tree.x86_64 \
+    cmake gcc.x86_64 gcc-c++ \
+    fftw-libs-single-3.3.3-8.el7.x86_64 \
     python-devel.x86_64 \
-    tmux \
-    htop \
-    git \
-    wget \
-    xz \
-    zlib-devel \
-    bzip2-devel \
+    xz zlib-devel bzip2-devel bzip2-libs-1.0.6-13.el7.x86_64 \
     openssl-devel \
     ncurses-devel \
     sqlite-devel \
-    libpng12.x86_64 \
-    mlocate-0.26-5.el7.x86_64 \
-    tree.x86_64 \
-    sudo.x86_64
+    libpng12.x86_64 mlocate-0.26-5.el7.x86_64 \
+    sudo.x86_64 \
+    net-tools \
+    initscripts
 
 RUN yum install -y mesa-libGL-devel.x86_64 \
     mesa-libGLU.x86_64 \
@@ -47,6 +41,7 @@ RUN yum install -y mesa-libGL-devel.x86_64 \
 
 # X11
 RUN yum install -y xorg-x11-apps.x86_64 \
+    xorg-x11-xauth \
      xorg-x11-drivers.x86_64 \
       xorg-x11-utils.x86_64 \
        xorg-x11-xinit-session.x86_64
@@ -86,7 +81,22 @@ RUN yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy py
 # pip
 # Pip is part of Extra Packages for Enterprise Linux (EPEL),
 # matplotlib scipy
-RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy && pip install future simplejson prov
+RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy && pip install lockfile future simplejson prov statsmodels psutil
+RUN pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype 
+RUN pip install dipy && pip install --upgrade dipy 
 
-RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images 
 
+#
+# user features
+#To avoid the interactive questions by adduser, you can call it with these parameters: RUN adduser --disabled-password --gecos '' newuser
+# we give the user its Cloud-Instance specific user ID
+# run id in a terminal
+# uid=1002(ycobigo) gid=1002(ycobigo) groups=1002(ycobigo),4(adm),27(sudo),110(admin)
+##RUN useradd -u 1002 -g 1002 -G adm,sudo,admin -p "tempo" -ms /bin/bash ycobigo
+RUN groupadd 1002 && useradd -u 1002 -p "tempo" -ms /bin/bash ycobigo
+USER ycobigo
+WORKDIR /home/ycobigo
+
+
+    
+## MAYBE RUN echo "ycobigo ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ycobigo && chmod 0440 /etc/sudoers.d/ycobigo && \
