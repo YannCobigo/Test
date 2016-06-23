@@ -7,6 +7,10 @@ FROM centos:7
 
 MAINTAINER Yann Cobigo yann.cobigo@ucsf.edu
 
+# File system
+RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images 
+
+
 # Update the image
 RUN yum update -y
 RUN yum install  -y epel-release.noarch
@@ -88,5 +92,9 @@ RUN yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy py
 # matplotlib scipy
 RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy && pip install future simplejson prov
 
-RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images 
-
+#
+# user features
+#To avoid the interactive questions by adduser, you can call it with these parameters: RUN adduser --disabled-password --gecos '' newuser
+RUN useradd -ms /bin/bash ycobigo
+USER ycobigo
+WORKDIR /home/ycobigo
