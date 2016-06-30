@@ -1,7 +1,7 @@
 #
 # CentOS
 # cat /etc/centos-release
-#
+# sudo docker build -f Dockerfile --tag="imaging_core:01" .
 # ex. FROM centos:6 version 6 of CentOS
 FROM centos:7
 
@@ -64,15 +64,16 @@ RUN pip install dipy && pip install --upgrade dipy
 #To avoid the interactive questions by adduser, you can call it with these parameters: RUN adduser --disabled-password --gecos '' newuser
 # we give the user its Cloud-Instance specific user ID
 # run id in a terminal
-# uid=1002(ycobigo) gid=1002(ycobigo) groups=1002(ycobigo),4(adm),27(sudo),110(admin)
-##RUN useradd -u 1002 -g 1002 -G adm,sudo,admin -p "tempo" -ms /bin/bash ycobigo
-##RUN groupadd 1002 && useradd -u 1002 -p "tempo" -ms /bin/bash ycobigo
-
-RUN export uid=1002 gid=1002 && groupadd 1002 && useradd -u 1002 -p "tempo" -ms /bin/bash ycobigo
-    echo "ycobigo:x:${uid}:${gid}:Yann,,,:/home/ycobigo:/bin/bash" >> /etc/passwd && \
-    echo "ycobigo:x:${uid}:" >> /etc/group && \
+# uid=1002(ycobigo) gid=1002(ycobigo) groups=1002(ycobigo),4(adm),27(sudo),110(admin) \
+RUN groupadd ic      -g 1100 && \
+    groupadd ycobigo -g 1002 && \
+    groupadd gmarx   -g 1003 && \
+    groupadd guest   -g 1004 && \
+    useradd -u 1001 -G 1100 -g 1002 -p "ycobigo_tempo" -ms /bin/bash ycobigo && \
+    useradd -u 1002 -G 1100 -g 1003 -p "gmarx_tempo"   -ms /bin/bash gmarx && \
+    useradd -u 1003 -G 1100 -g 1004 -p "guest_tempo"   -ms /bin/bash guest && \
     echo "ycobigo ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ycobigo && \
     chmod 0440 /etc/sudoers.d/ycobigo 
 
-USER ycobigo
-WORKDIR /home/ycobigo
+USER guest
+
