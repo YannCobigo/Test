@@ -34,6 +34,7 @@ RUN yum install  -y openssh.x86_64 \
     libpng12.x86_64 \
     mlocate-0.26-5.el7.x86_64 \
     tree.x86_64 \
+    bc.x86_64 \
     sudo.x86_64
 
 RUN yum install -y mesa-libGL-devel.x86_64 \
