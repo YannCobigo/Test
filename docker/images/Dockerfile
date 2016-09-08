@@ -23,6 +23,7 @@ RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 
     xz zlib-devel bzip2-devel bzip2-libs-1.0.6-13.el7.x86_64 \
     openssl-devel ncurses-devel sqlite-devel \
     libpng12.x86_64 mlocate-0.26-5.el7.x86_64 \
+    bc.x86_64 \
     sudo.x86_64 net-tools initscripts
 #
 RUN yum install -y mesa-libGL-devel.x86_64 \
