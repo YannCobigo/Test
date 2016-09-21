@@ -12,10 +12,7 @@ RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images
 
 #
 # Update the image
-RUN yum update -y
-RUN yum install  -y epel-release.noarch
-#
-RUN yum groupinstall -y "Development tools"
+RUN yum update -y && yum install  -y epel-release.noarch && yum groupinstall -y "Development tools" && yum makecache fast
 #
 RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 \
     emacs tmux htop git wget tree.x86_64 cmake gcc.x86_64 gcc-c++ \
