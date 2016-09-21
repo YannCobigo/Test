@@ -65,6 +65,12 @@ RUN yum install -y qt-config.x86_64 \
 	   qt5-qtsvg.x86_64 qt5-qtsvg-devel.x86_64 qt5-qtsvg-examples.x86_64 \
 	   qt5-qtbase-gui.x86_64 qt5-qtsvg.x86_64 qt5-qtsvg-devel.x86_64 qt5-qtsvg-examples.x86_64
 
+#
+RUN yum install -y graphviz.x86_64 graphviz-devel.x86_64 \
+    graphviz-doc.x86_64 graphviz-gd.x86_64 graphviz-graphs.x86_64 \
+    graphviz-guile.x86_64 graphviz-python.x86_64
+
+
 ###
 ### Python
 ##RUN cd && wget --no-check-certificate https://www.python.org/ftp/python/2.7.6/Python-2.7.6.tar.xz && tar -xf Python-2.7.6.tar.xz 
@@ -88,6 +94,7 @@ RUN yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy py
 # Pip is part of Extra Packages for Enterprise Linux (EPEL),
 # matplotlib scipy
 RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy && pip install future simplejson prov
+RUN pip install --upgrade qap pygraphviz
 
 RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images 
 
