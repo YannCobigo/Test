@@ -74,7 +74,7 @@ main( const int argc, const char **argv )
 	  //
 	  // Load the CSV file
 	  //
-	  MAC_bmle::BmleLoadCSV file ( std::string("data/example.csv") );
+	  MAC_bmle::BmleLoadCSV file ( filename );
 	}
       else
 	{
