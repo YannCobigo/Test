@@ -11,7 +11,8 @@ endif()
 
 #
 # Eigen
-set( EIGEN /mnt/neuroimaging/Eigen-3/install/include/eigen3/ )
+#set( EIGEN /mnt/neuroimaging/Eigen-3/install/include/eigen3/ )
+set( EIGEN /home/cobigo/devel/CPP/Eigen/install/include/eigen3/ )
 #
 include_directories( ${EIGEN}/ ${ITK_INC})
 list( APPEND SOURCES ${DLIB_ALL_SOURCES} )

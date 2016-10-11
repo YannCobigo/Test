@@ -48,7 +48,7 @@ MAC_bmle::BmleLoadCSV::BmleLoadCSV( const std::string& CSV_file ):
 	if ( subjects.find( PIDN ) == subjects.end() )
 	  subjects[ PIDN ] = BmleSubject( PIDN, group );
 	//
-	subjects[ PIDN ].add_tp( age, covariates );
+	subjects[ PIDN ].add_tp( age, covariates, image );
       }
 
     //

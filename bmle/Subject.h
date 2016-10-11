@@ -37,10 +37,15 @@ namespace MAC_bmle
 
     //
     // Add time point
-    inline void add_tp( const int Age, const std::list< float >& Covariates )
+    inline void add_tp( const int Age, const std::list< float >& Covariates,
+			const std::string& Image )
     {
       if ( age_covariates_.find( Age ) == age_covariates_.end() )
-	age_covariates_[ Age ] = Covariates;
+	{
+	  age_covariates_[ Age ] = Covariates;
+	  age_images_[ Age ]     = Image;
+	  time_points_++;
+	}
       else
 	std::cerr << "Age " << Age << " is already entered for the patient " << PIDN_
 		 << "." << std::endl;
@@ -53,6 +58,7 @@ namespace MAC_bmle
     {
       std::cout << "PIDN: " << PIDN_ << std::endl;
       std::cout << "Group: " << group_ << std::endl;
+      std::cout << "Number of time points: " << time_points_ << std::endl;
       //
       std::cout << "Age and covariates: " << std::endl;
       if ( !age_covariates_.empty() )
@@ -65,6 +71,14 @@ namespace MAC_bmle
 	  }
       else
 	std::cout << "No age and covariates recorded." << std::endl;
+      //
+      std::cout << "Age and imagess: " << std::endl;
+      if ( !age_images_.empty() )
+	for ( auto age_img : age_images_ )
+	  std::cout << "At age " << age_img.first << " iamge was: "
+		    << age_img.second << std::endl;
+      else
+	std::cout << "No age and images recorded." << std::endl;
     }
 
   private:
@@ -79,6 +93,10 @@ namespace MAC_bmle
     // image ITK
     // Age covariate map
     std::map< int, std::list< float > > age_covariates_;
+    // Age covariate map
+    std::map< int, std::string > age_images_;
+    // Number of time points
+    int time_points_{0};
 
     //
     // Model parameters
@@ -90,7 +108,10 @@ namespace MAC_bmle
     Eigen::MatrixXf covariates_;
     //
     // Random effect
-    // eigen vetor dimension fixe 
+    // theta level 1
+    Eigen::VectorXf theta_1_;
+    // non-lin model in function of age
+    Eigen::VectorXf model_age_;
   };
 }
 #endif
