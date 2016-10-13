@@ -26,7 +26,7 @@ RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 
     libpng12.x86_64 mlocate-0.26-5.el7.x86_64 \
     libyaml-0.1.4-11.el7_0.x86_64 yaml-cpp.x86_64 yaml-cpp-devel.x86_64 gsl.x86_64 \
     gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 \
-    sudo.x86_64 net-tools initscripts
+    sudo.x86_64 net-tools initscripts nautilus.x86_64
 # GL
 RUN yum install -y mesa-libGL-devel.x86_64 \
     mesa-libGLU.x86_64 mesa-libGLU-devel.x86_64 \
@@ -58,7 +58,7 @@ RUN yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy py
     libxml2-devel.x86_64 libxml2-python.x86_64 libxslt.x86_64 libxslt-devel.x86_64 libxslt-python.x86_64 
 # pip
 # Pip is part of Extra Packages for Enterprise Linux (EPEL),
-RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy && pip install lockfile future simplejson prov statsmodels psutil
+RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy && pip install lockfile future simplejson prov statsmodels psutil untangle
 RUN pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype 
 RUN pip install dipy && pip install --upgrade dipy 
 RUN pip install --upgrade pygraphviz Pillow
