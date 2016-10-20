@@ -58,7 +58,8 @@ RUN yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy py
     libxml2-devel.x86_64 libxml2-python.x86_64 libxslt.x86_64 libxslt-devel.x86_64 libxslt-python.x86_64 
 # pip
 # Pip is part of Extra Packages for Enterprise Linux (EPEL),
-RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy && pip install lockfile future simplejson prov statsmodels psutil untangle
+RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy && \
+	pip install lockfile future simplejson prov statsmodels psutil untangle jsonpath-rw 		
 RUN pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype 
 RUN pip install dipy && pip install --upgrade dipy 
 RUN pip install --upgrade pygraphviz Pillow
