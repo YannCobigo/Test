@@ -6,6 +6,7 @@
 //
 // 
 //
+#include "BmleException.h"
 #include "Load_csv.h"
 //
 //
@@ -48,44 +49,58 @@ private:
 int
 main( const int argc, const char **argv )
 {
-  //
-  // Parse the arguments
-  //
-  if( argc > 1 )
+  try
     {
-      InputParser input( argc, argv );
-      if( input.cmdOptionExists("-h") )
+      //
+      // Parse the arguments
+      //
+      if( argc > 1 )
 	{
-	  std::cerr << "./bmle -c file.csv < -m mask.nii.gz >" << std::endl;
-	  std::exit(0);
-	}
+	  InputParser input( argc, argv );
+	  if( input.cmdOptionExists("-h") )
+	    throw MAC_bmle::BmleException( __FILE__, __LINE__,
+					   "./bmle -c file.csv < -m mask.nii.gz >",
+					   ITK_LOCATION );
 
-      //
-      // takes the csv file ans the mask
-      const std::string& filename = input.getCmdOption("-c");
-      const std::string& mask     = input.getCmdOption("-m");
-      //
-      if ( !filename.empty() )
-	{
-	  if ( mask.empty() )
-	    std::cout << "No mask loaded. It would speed up the process to load a mask." << std::endl;
+	  //
+	  // takes the csv file ans the mask
+	  const std::string& filename = input.getCmdOption("-c");
+	  const std::string& mask     = input.getCmdOption("-m");
+	  //
+	  if ( !filename.empty() )
+	    {
+	      if ( mask.empty() )
+		std::cout << "No mask loaded. It would speed up the process to load a mask."
+			  << std::endl;
+	      else
+		std::cout << "You are loading the mask: " << mask << std::endl;
+
+	      ////////////////////////////
+	      ///////              ///////
+	      ///////  PROCESSING  ///////
+	      ///////              ///////
+	      ////////////////////////////
+
+	      //
+	      // Load the CSV file
+	      MAC_bmle::BmleLoadCSV subject_mapping( filename );
+	      // create the 4D iamge with all the images
+	      subject_mapping.image_cat();
+	    }
 	  else
-	    std::cout << "You are loading the mask: " << mask << std::endl;
-	  //
-	  // Load the CSV file
-	  //
-	  MAC_bmle::BmleLoadCSV file ( filename );
+	    throw MAC_bmle::BmleException( __FILE__, __LINE__,
+					   "./bmle -c file.csv < -m mask.nii.gz >",
+					   ITK_LOCATION );
 	}
       else
-	{
-	  std::cerr << "./bmle -c file.csv < -m mask.nii.gz >" << std::endl;
-	  std::exit(0);
-	}
+	throw MAC_bmle::BmleException( __FILE__, __LINE__,
+				       "./bmle -c file.csv < -m mask.nii.gz >",
+				       ITK_LOCATION );
     }
-  else
+  catch( itk::ExceptionObject & err )
     {
-      std::cerr << "./bmle -c file.csv < -m mask.nii.gz >" << std::endl;
-      std::exit(0);
+      std::cerr << err << std::endl;
+      return EXIT_FAILURE;
     }
 
   //

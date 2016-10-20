@@ -4,16 +4,37 @@
 //
 //
 #include <iostream>
+#include <fstream>
 #include <map>
 #include <list>
 // Egen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
 //
+// ITK
+//
+#include <itkImage.h>
+#include <itkImageFileReader.h>
+#include <itkImageFileWriter.h>
+#include <itkImageRegionIterator.h>
+#include <itkNiftiImageIO.h>
+#include <itkOrientImageFilter.h>
+#include <itkSpatialOrientation.h>
+//
+//
+//
+#include "BmleException.h"
+//
 //
 //
 namespace MAC_bmle
 {
+  inline bool file_exists ( const std::string& name )
+  {
+    std::ifstream f( name.c_str() );
+    return f.good();
+  }
+
   /** \class BmleSubject
    *
    * \brief 
@@ -37,19 +58,7 @@ namespace MAC_bmle
 
     //
     // Add time point
-    inline void add_tp( const int Age, const std::list< float >& Covariates,
-			const std::string& Image )
-    {
-      if ( age_covariates_.find( Age ) == age_covariates_.end() )
-	{
-	  age_covariates_[ Age ] = Covariates;
-	  age_images_[ Age ]     = Image;
-	  time_points_++;
-	}
-      else
-	std::cerr << "Age " << Age << " is already entered for the patient " << PIDN_
-		 << "." << std::endl;
-    }
+    void add_tp( const int, const std::list< float >&, const std::string& );
     // Convariates' model
     void build_covariates_matrix();
     //
@@ -95,6 +104,7 @@ namespace MAC_bmle
     std::map< int, std::list< float > > age_covariates_;
     // Age covariate map
     std::map< int, std::string > age_images_;
+    std::map< int, itk::ImageIOBase::Pointer > age_ITK_images_;
     // Number of time points
     int time_points_{0};
 

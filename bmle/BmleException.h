@@ -19,13 +19,13 @@ namespace MAC_bmle
     itkTypeMacro(ImageFileReaderException, ExceptionObject);
     /** Constructor. */
     BmleException( const char *file, unsigned int line,
-			     const char *message = "Error in Bmle",
-			     const char *loc = "Unknown" ):
+		   const char *message = "Error in Bmle",
+		   const char *loc = "Unknown" ):
     ExceptionObject( file, line, message, loc ){}
     /** Constructor. */
     BmleException( const std::string & file, unsigned int line,
-			     const char *message = "Error in Bmle",
-			     const char *loc = "Unknown" ):
+		   const char *message = "Error in Bmle",
+		   const char *loc = "Unknown" ):
     ExceptionObject( file, line, message, loc ){}
     /** Has to have empty throw(). */
     virtual ~BmleException() throw() {};

@@ -7,6 +7,9 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <map>
+#include <set>
+#include <vector>
 //
 //
 //
@@ -27,12 +30,25 @@ namespace MAC_bmle
     /** Constructor. */
     explicit BmleLoadCSV( const std::string& );
     
-    /**  */
+    /** Destructor */
     virtual ~BmleLoadCSV() {};
 
+
+    //
+    // Functions
+    //
+
+    //
+    void image_cat();
+    //
+
+    
   private:
     // CSV file
     std::ifstream csv_file_;
+    // Arrange pidns inti groups
+    std::set< int > groups_;
+    std::vector< std::map< int /*pidn*/, BmleSubject > > group_pind_{10};
    
   };
 }
