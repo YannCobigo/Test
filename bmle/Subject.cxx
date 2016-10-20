@@ -25,9 +25,9 @@ MAC_bmle::BmleSubject::build_covariates_matrix()
   covariates_.resize( age_covariates_.size() * (D_ + 1), (*age_cov_it).second.size() * (D_ + 1));
   covariates_ = Eigen::MatrixXf::Zero(age_covariates_.size() * (D_ + 1), ((*age_cov_it).second.size() + 1 )* (D_ + 1));
   //
-  theta_1_.resize( D_ + 1 );
-  theta_1_ = Eigen::VectorXf::Random();
-  model_age_.resize( D_ + 1 );
+//  theta_1_.resize( D_ + 1 );
+//  theta_1_ = Eigen::VectorXf::Random();
+//  model_age_.resize( D_ + 1 );
   //
   int line = 0;
   int col  = 0;
