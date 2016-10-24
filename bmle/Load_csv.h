@@ -35,22 +35,27 @@ namespace MAC_bmle
 
 
     //
+
+    
+  private:
+    //
     // Functions
     //
 
     // This function will load all the patients images into a 4D image.
     void image_concat();
-    //
 
+    //
+    // Members
+    //
     
-  private:
     //
     // CSV file
     std::ifstream csv_file_;
     //
     // Arrange pidns inti groups
     std::set< int > groups_;
-    std::vector< std::map< int /*pidn*/, BmleSubject > > group_pind_{10};
+    std::vector< std::map< int /*pidn*/, BmleSubject< 3, 3 > > > group_pind_{10};
     //
     // Measures in  4D image
     using Image4DType = itk::Image< float, 4 >;

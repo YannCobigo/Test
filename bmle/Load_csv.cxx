@@ -22,6 +22,7 @@ MAC_bmle::BmleLoadCSV::BmleLoadCSV( const std::string& CSV_file ):
       {
 	//
 	//
+	float mean_age = 0.;
 	std::string line;
 	//skip the first line
 	std::getline(csv_file_, line);
@@ -43,6 +44,7 @@ MAC_bmle::BmleLoadCSV::BmleLoadCSV( const std::string& CSV_file ):
 	    // Get the age
 	    std::getline(lineStream, cell, ',');
 	    int age = std::stoi( cell );
+	    mean_age += static_cast< float >( age );
 	    // Get the image
 	    std::string image;
 	    std::getline(lineStream, image, ',');
@@ -61,12 +63,33 @@ MAC_bmle::BmleLoadCSV::BmleLoadCSV( const std::string& CSV_file ):
 	    if ( group_pind_[ group ].find( PIDN ) == group_pind_[ group ].end() )
 	      {
 		groups_.insert( group );
-		group_pind_[ group ][PIDN] = BmleSubject( PIDN, group );
+		group_pind_[ group ][PIDN] = BmleSubject< 3, 3 >( PIDN, group );
 	      }
 	    //
 	    group_pind_[ group ][ PIDN ].add_tp( age, covariates, image );
 	    num_3D_images_++;
 	  }
+
+	// 
+	// Design Matrix for every subject
+	//
+
+	//
+	// mean age
+	mean_age /= static_cast< float >( num_3D_images_ );
+	std::cout << "mean age: " << mean_age << std::endl;
+	//
+	for ( auto g : groups_ )
+	  for ( auto s : group_pind_[g] )
+	    {
+	      s.second.build_design_matrices( mean_age );
+	      //s.second.build_covariates_matrix();
+	    }
+
+	
+	//
+	// Create the 4D measurements image
+	image_concat();
       }
     catch( itk::ExceptionObject & err )
       {
