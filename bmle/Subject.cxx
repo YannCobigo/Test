@@ -70,10 +70,16 @@ MAC_bmle::BmleSubject::add_tp( const int                 Age,
 	  // load the ITK images
 	  if ( file_exists(Image) )
 	    {
-	      age_ITK_images_[ Age ] = itk::ImageIOFactory::CreateImageIO( Image.c_str(),
-									   itk::ImageIOFactory::ReadMode );
-	      age_ITK_images_[ Age ]->SetFileName( Image );
-	      age_ITK_images_[ Age ]->ReadImageInformation();
+	      //
+	      // load the image ITK pointer
+	      auto image_ptr = itk::ImageIOFactory::CreateImageIO( Image.c_str(),
+								   itk::ImageIOFactory::ReadMode );
+	      image_ptr->SetFileName( Image );
+	      image_ptr->ReadImageInformation();
+	      // Read the ITK image
+	      age_ITK_images_[ Age ] = Reader3D::New();
+	      age_ITK_images_[ Age ]->SetFileName( image_ptr->GetFileName() );
+	      age_ITK_images_[ Age ]->Update();
 	    }
 	  else
 	    {

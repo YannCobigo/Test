@@ -42,6 +42,11 @@ namespace MAC_bmle
    */
   class BmleSubject
   {
+    //
+    // Some typedef
+    using Image3DType = itk::Image< float, 3 >;
+    using Reader3D    = itk::ImageFileReader< Image3DType >;
+
   public:
     /** Constructor. */
   BmleSubject():
@@ -55,6 +60,10 @@ namespace MAC_bmle
     //
     //
     inline const int get_PIDN() const { return PIDN_ ;};
+    //
+    //
+    inline const std::map< int, Reader3D::Pointer >&
+      get_age_images() const { return age_ITK_images_ ;};
 
     //
     // Add time point
@@ -99,12 +108,16 @@ namespace MAC_bmle
     int PIDN_;
     // Group for multi-group comparisin (controls, MCI, FTD, ...)
     int group_;
-    // image ITK
+    // 
     // Age covariate map
     std::map< int, std::list< float > > age_covariates_;
-    // Age covariate map
-    std::map< int, std::string > age_images_;
-    std::map< int, itk::ImageIOBase::Pointer > age_ITK_images_;
+    //
+    // Age image maps
+    // age-image name
+    std::map< int, std::string > age_images_; 
+    // age-ITK image
+    std::map< int, Reader3D::Pointer > age_ITK_images_; 
+    //
     // Number of time points
     int time_points_{0};
 
