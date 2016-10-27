@@ -79,6 +79,16 @@ namespace MAC_bmle
 
     private:
       //
+      // private member function
+      //
+
+      //
+      // Add time point
+      void create_theta_images();
+
+
+
+      //
       // Subject parameters
       //
     
@@ -105,12 +115,17 @@ namespace MAC_bmle
 
       // Model dimension
       int D_;
-      // First level design matrix
-      Eigen::MatrixXf X_1_;
-      // Second level design matrix, Matrix of covariates
-      Eigen::MatrixXf X_2__;
       //
-      // Random effect
+      // Level 1
+      // Random matrix
+      Eigen::MatrixXf X_1_rand_;
+      // Fixed matrix
+      Eigen::MatrixXf X_1_fixed_;
+      // Second level design matrix, Matrix of covariates
+      Eigen::MatrixXf X_2_;
+      //
+      // Random effect results
+      Image3DType::Pointer Random_effect_ITK_image_;
     };
 
   //
@@ -139,27 +154,29 @@ namespace MAC_bmle
 
 	//
 	//
-	int
-	  num_lignes = age_images_.size(),
-	  num_cols   = D_r + D_f;
+	int num_lignes    = age_images_.size();
 	//
-	X_1_.resize( num_lignes, num_cols );
-	X_1_ = Eigen::MatrixXf::Zero( num_lignes, num_cols );
+	X_1_rand_.resize(  num_lignes, D_r );
+	X_1_fixed_.resize( num_lignes, D_f );
+	X_1_rand_  = Eigen::MatrixXf::Zero( num_lignes, D_r );
+	X_1_fixed_ = Eigen::MatrixXf::Zero( num_lignes, D_f );
 	// record ages
 	std::vector< float > ages;
 	for ( auto age : age_images_ )
 	  ages.push_back( age.first );
 	// random part of the design matrix
 	for ( int l = 0 ; l < num_lignes ; l++ )
-	  for ( int c = 0 ; c <  D_r ; c++ )
-	    X_1_(l,c) = pow( ages[l] - Age_mean, c );
-	// fixed part of the design matrix
-	for ( int l = 0 ; l < num_lignes ; l++ )
-	  for ( int c = 0 ; c <  D_f ; c++ )
-	    X_1_(l,c + D_r) = pow( ages[l] - Age_mean, c );
+	  {
+	    for ( int c = 0 ; c <  D_r ; c++ )
+	      X_1_rand_(l,c) = pow( ages[l] - Age_mean, c );
+	    // fixed part of the design matrix
+	    for ( int c = 0 ; c <  D_f ; c++ )
+	      X_1_fixed_(l,c) = pow( ages[l] - Age_mean, c );
+	  }
 
-
-	std::cout << X_1_ << std::endl;
+	std::cout << "Random and fixed design matrices:" << std::endl;
+	std::cout << X_1_rand_ << std::endl;
+	std::cout << X_1_fixed_ << std::endl;
 	std::cout << std::endl;
 	
 	//
@@ -167,31 +184,23 @@ namespace MAC_bmle
 	//
 
 	
-//	//
-//	// Initialize the covariate matrix
-//	// and the random parameters
-//	std::map< int, std::list< float > >::const_iterator age_cov_it = age_covariates_.begin();
-//	//
-//	covariates_.resize( age_covariates_.size() * (D_ + 1), (*age_cov_it).second.size() * (D_ + 1));
-//	covariates_ = Eigen::MatrixXf::Zero(age_covariates_.size() * (D_ + 1), ((*age_cov_it).second.size() + 1 )* (D_ + 1));
-//	//
-//	//
-//	int line = 0;
-//	int col  = 0;
-//	for ( ; age_cov_it != age_covariates_.end() ; age_cov_it++ )
-//	  {
-//	    covariates_.block( line * (D_ + 1), 0, D_ + 1, D_ + 1 ) = Eigen::MatrixXf::Identity( D_ + 1, D_ + 1 );
-//	    col = 0;
-//	    // covariates
-//	    for ( auto cov : (*age_cov_it).second )
-//	      {
-//		covariates_.block( line * (D_ + 1), ++col * (D_ + 1), D_ + 1, D_ + 1 ) = cov * Eigen::MatrixXf::Identity( D_ + 1, D_ + 1 );
-//	      }
-//	    // next age
-//	    line++;
-//	  }
-//      
-//	std::cout << covariates_ << std::endl;
+	//
+	// Initialize the covariate matrix
+	// and the random parameters
+	std::map< int, std::list< float > >::const_iterator age_cov_it = age_covariates_.begin();
+	//
+	X_2_.resize( D_r, ((*age_cov_it).second.size() + 1) * D_r );
+	X_2_ = Eigen::MatrixXf::Zero( D_r, ((*age_cov_it).second.size() + 1)* D_r  );
+	//
+	//
+	int line = 0;
+	int col  = 0;
+	X_2_.block< D_r, D_r >( 0, 0 ) = Eigen::MatrixXf::Identity( D_r, D_r );
+	// covariates
+	for ( auto cov : (*age_cov_it).second )
+	  X_2_.block< D_r, D_r >( 0, ++col * D_r ) = cov * Eigen::MatrixXf::Identity( D_r, D_r );
+      
+	std::cout << X_2_ << std::endl;
       }
     catch( itk::ExceptionObject & err )
       {
@@ -227,6 +236,9 @@ namespace MAC_bmle
 		age_ITK_images_[ Age ] = Reader3D::New();
 		age_ITK_images_[ Age ]->SetFileName( image_ptr->GetFileName() );
 		age_ITK_images_[ Age ]->Update();
+		// create the result image, only one time
+		if ( age_ITK_images_.size() < 2 )
+		  create_theta_images();
 	      }
 	    else
 	      {
@@ -254,6 +266,14 @@ namespace MAC_bmle
 	return exit( -1 );
       }
   }
+  //
+  //
+  //
+  template < int D_r, int D_f > void
+    MAC_bmle::BmleSubject< D_r, D_f >::create_theta_images()
+    {
+      std::cout << "We create matrices only one time" << std::endl;
+    }
   //
   //
   //
