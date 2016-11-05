@@ -35,6 +35,8 @@ namespace MAC_bmle
 
 
     //
+    // This function will load all the patients images into a 4D image.
+    void build_groups_design_matrices();
 
     
   private:
@@ -56,12 +58,18 @@ namespace MAC_bmle
     // Arrange pidns inti groups
     std::set< int > groups_;
     std::vector< std::map< int /*pidn*/, BmleSubject< 3, 3 > > > group_pind_{10};
+    // Number of subjects per group
+    std::vector< int > group_num_subjects_{0,0,0,0,0,0,0,0,0,0};
     //
     // Measures in  4D image
     using Image4DType = itk::Image< float, 4 >;
     Image4DType::Pointer Y_;
-    // number of 3D images
+    // number of PIDN
+    long unsigned int num_subjects_{0};
+    // number of 3D images = number of time points (TP)
     long unsigned int num_3D_images_{0};
+    //
+    int num_covariates_{0};
   };
 }
 #endif

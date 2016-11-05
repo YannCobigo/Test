@@ -68,6 +68,10 @@ namespace MAC_bmle
       //
       inline const std::map< int, Reader3D::Pointer >&
       get_age_images() const { return age_ITK_images_ ;};
+      //
+      const Eigen::MatrixXf& get_random_matrix() const {return X_1_rand_;}
+      const Eigen::MatrixXf& get_fixed_matrix() const {return X_1_fixed_;}
+      const Eigen::MatrixXf& get_X2_matrix() const {return X_2_;}
 
       //
       // Add time point
@@ -85,7 +89,6 @@ namespace MAC_bmle
       //
       // Add time point
       void create_theta_images();
-
 
 
       //

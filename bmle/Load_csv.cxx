@@ -1,6 +1,10 @@
 #include <algorithm>
 #include <vector>
 #include <list>
+// Egen
+#include <Eigen/Core>
+#include <Eigen/Eigen>
+#include <Eigen/Sparse>
 //
 // ITK
 //
@@ -52,6 +56,7 @@ MAC_bmle::BmleLoadCSV::BmleLoadCSV( const std::string& CSV_file ):
 	    std::list< float > covariates;
 	    while( std::getline(lineStream, cell, ',') )
 	      covariates.push_back( std::stof(cell) );
+	    num_covariates_ = covariates.size();
 
 	    //
 	    // check we have less than 10 groups
@@ -63,7 +68,9 @@ MAC_bmle::BmleLoadCSV::BmleLoadCSV( const std::string& CSV_file ):
 	    if ( group_pind_[ group ].find( PIDN ) == group_pind_[ group ].end() )
 	      {
 		groups_.insert( group );
-		group_pind_[ group ][PIDN] = BmleSubject< 3, 3 >( PIDN, group );
+		group_pind_[ group ][PIDN] = BmleSubject< 3 /*D_r*/, 3 /*D_f*/ >( PIDN, group );
+		group_num_subjects_[ group ]++;
+		num_subjects_++;
 	      }
 	    //
 	    group_pind_[ group ][ PIDN ].add_tp( age, covariates, image );
@@ -80,13 +87,8 @@ MAC_bmle::BmleLoadCSV::BmleLoadCSV( const std::string& CSV_file ):
 	std::cout << "mean age: " << mean_age << std::endl;
 	//
 	for ( auto g : groups_ )
-	  for ( auto s : group_pind_[g] )
-	    {
-	      s.second.build_design_matrices( mean_age );
-	      //s.second.build_covariates_matrix();
-	    }
-
-	
+	  for ( auto& s : group_pind_[g] )
+	    s.second.build_design_matrices( mean_age );
 	//
 	// Create the 4D measurements image
 	image_concat();
@@ -195,17 +197,84 @@ MAC_bmle::BmleLoadCSV::image_concat()
 		}
 	    }
 
-      //
-      // Writer
-      filter->SetInput( Y_ );
-      itk::NiftiImageIO::Pointer nifti_io = itk::NiftiImageIO::New();
-      //
-      itk::ImageFileWriter< Image4DType >::Pointer writer = itk::ImageFileWriter< Image4DType >::New();
-      writer->SetFileName( "measures_4D.nii.gz" );
-      writer->SetInput( filter->GetOutput() );
-      writer->SetImageIO( nifti_io );
-      writer->Update();
+//      //
+//      // Writer
+//      filter->SetInput( Y_ );
+//      itk::NiftiImageIO::Pointer nifti_io = itk::NiftiImageIO::New();
+//      //
+//      itk::ImageFileWriter< Image4DType >::Pointer writer = itk::ImageFileWriter< Image4DType >::New();
+//      writer->SetFileName( "measures_4D.nii.gz" );
+//      writer->SetInput( filter->GetOutput() );
+//      writer->SetImageIO( nifti_io );
+//      writer->Update();
 
+    }
+  catch( itk::ExceptionObject & err )
+    {
+      std::cerr << err << std::endl;
+      exit( -1 );
+    }
+}
+//
+//
+//
+void
+MAC_bmle::BmleLoadCSV::build_groups_design_matrices()
+{
+  try
+    {
+      //Eigen::SparseMatrix< float > X1( num_3D_images_, num_subjects_ * 3 /*D_r*/ + 3 /*D_f*/);
+      int
+	X1_lines = num_3D_images_,
+	X1_cols  = num_subjects_ * 3 /*D_r*/ + groups_.size() * 3 /*D_f*/,
+	X2_lines = groups_.size() * ( num_subjects_ * 3 /*D_r*/ + 3 /*D_f*/ ),
+	X2_cols  = groups_.size() * ( 3 /*D_r*/ * (num_covariates_ + 1) + 3 /*D_f*/ );
+      Eigen::MatrixXf
+	X1( X1_lines, X1_cols ),
+	X2( X1_lines, X1_cols );
+      X1 = Eigen::MatrixXf::Zero( X1_lines, X1_cols );
+      X2 = Eigen::MatrixXf::Zero( X2_lines, X2_cols );
+      //
+      int line_x1 = 0, col_x1 = 0;
+      int line_x2 = 0, col_x2 = 0;
+      int current_gr = ( *groups_.begin() ), increme_dist_x1 = 0, increme_dist_x2 = 0;
+      for ( auto g : groups_ )
+	for ( auto subject : group_pind_[g] )
+	  {
+	    //
+	    // we change group
+	    if ( current_gr != g )
+	      {
+		increme_dist_x1 += group_num_subjects_[g] * 3 /*D_r*/ + 3 /*D_f*/;
+		increme_dist_x2 +=  3 /*D_r*/ * (num_covariates_ + 1) + 3 /*D_f*/;
+		col_x1          += 3 /*D_f*/;
+		current_gr       = g;
+	      }
+	    //
+	    // X1 design
+	    int
+	      sub_line_x1 = subject.second.get_random_matrix().rows(),
+	      sub_col_x1  = subject.second.get_random_matrix().cols();
+	    X1.block( line_x1, col_x1, sub_line_x1, sub_col_x1 ) = subject.second.get_random_matrix();
+	    X1.block( line_x1, increme_dist_x1 + group_num_subjects_[g]  * 3 /*D_r*/,
+		      sub_line_x1, sub_col_x1 ) = subject.second.get_fixed_matrix();
+	    //
+	    line_x1 += sub_line_x1;
+	    col_x1  += sub_col_x1;
+	    //
+	    // X2 design
+	    int
+	      sub_line_x2 = subject.second.get_X2_matrix().rows(),
+	      sub_col_x2  = subject.second.get_X2_matrix().cols();
+	    X2.block( line_x2, increme_dist_x2, sub_line_x2, sub_col_x2 ) = subject.second.get_X2_matrix();
+	    X2.block( line_x2 + 3 /*D_f*/, increme_dist_x2 + 3 /*D_f*/,
+	    	      3 /*D_f*/, 3 /*D_f*/ ) = Eigen::MatrixXf::Identity( 3 /*D_f*/, 3 /*D_f*/ );
+	    ////
+	    line_x2 += sub_line_x2 + 3 /*D_f*/;
+	    ////col_x2  += sub_col_x2;
+	  }
+      std::cout << X1 << std::endl;
+      std::cout << X2 << std::endl;
     }
   catch( itk::ExceptionObject & err )
     {

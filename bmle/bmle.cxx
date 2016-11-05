@@ -85,7 +85,7 @@ main( const int argc, const char **argv )
 	      // Load the CSV file
 	      MAC_bmle::BmleLoadCSV subject_mapping( filename );
 	      // create the 4D iamge with all the images
-	      //subject_mapping.image_concat();
+	      subject_mapping.build_groups_design_matrices();
 	    }
 	  else
 	    throw MAC_bmle::BmleException( __FILE__, __LINE__,
