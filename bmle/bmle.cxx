@@ -4,6 +4,14 @@
 #include <string>
 #include <vector>
 //
+// ITK
+//
+#include <itkImageFileReader.h>
+#include <itkSpatialOrientationAdapter.h>
+#include "itkChangeInformationImageFilter.h"
+using MaskType       = itk::Image< unsigned char, 3 >;
+using MaskReaderType = itk::ImageFileReader< MaskType >;
+//
 // 
 //
 #include "BmleException.h"
@@ -27,9 +35,7 @@ public:
 								tokens.end(),
 								option );
     if ( itr != tokens.end() && ++itr != tokens.end() )
-      {
-	return *itr;
-      }
+      return *itr;
 
     //
     //
@@ -59,7 +65,7 @@ main( const int argc, const char **argv )
 	  InputParser input( argc, argv );
 	  if( input.cmdOptionExists("-h") )
 	    throw MAC_bmle::BmleException( __FILE__, __LINE__,
-					   "./bmle -c file.csv < -m mask.nii.gz >",
+					   "./bmle -c file.csv -m mask.nii.gz >",
 					   ITK_LOCATION );
 
 	  //
@@ -70,10 +76,13 @@ main( const int argc, const char **argv )
 	  if ( !filename.empty() )
 	    {
 	      if ( mask.empty() )
-		std::cout << "No mask loaded. It would speed up the process to load a mask."
-			  << std::endl;
-	      else
-		std::cout << "You are loading the mask: " << mask << std::endl;
+		{
+		  std::string mess = "No mask loaded. A mask must be loaded.\n";
+		  mess += "./bmle -c file.csv -m mask.nii.gz";
+		  throw MAC_bmle::BmleException( __FILE__, __LINE__,
+						 mess.c_str(),
+						 ITK_LOCATION );
+		}
 
 	      ////////////////////////////
 	      ///////              ///////
@@ -86,15 +95,50 @@ main( const int argc, const char **argv )
 	      MAC_bmle::BmleLoadCSV< 3/*D_r*/, 3 /*D_f*/> subject_mapping( filename );
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();
+
+	      //
+	      // Expecttion Maximization
+	      //
+
+	      //
+	      // Mask
+	      MaskReaderType::Pointer reader_mask_{ MaskReaderType::New() };
+	      reader_mask_->SetFileName( mask );
+	      reader_mask_->Update();
+	      // Visiting region (Mask)
+	      MaskType::RegionType region;
+	      //
+	      MaskType::SizeType  img_size =
+		reader_mask_->GetOutput()->GetLargestPossibleRegion().GetSize();
+	      MaskType::IndexType start    = {0, 0, 0};
+	      //
+	      region.SetSize( img_size );
+	      region.SetIndex( start );
+	      //
+	      itk::ImageRegionIterator< MaskType >
+		imageIterator_mask( reader_mask_->GetOutput(), region );
+	      
+	      //
+	      // loop over Mask area for every images
+	      while( !imageIterator_mask.IsAtEnd() )
+		{
+		  if( static_cast<int>( imageIterator_mask.Value() ) != 0 )
+		    {
+		      //MaskType::IndexType idx = imageIterator_mask.GetIndex();
+		      subject_mapping.Expectation_Maximization( imageIterator_mask.GetIndex() );
+		    }
+		  //
+		  ++imageIterator_mask;
+		}
 	    }
 	  else
 	    throw MAC_bmle::BmleException( __FILE__, __LINE__,
-					   "./bmle -c file.csv < -m mask.nii.gz >",
+					   "./bmle -c file.csv -m mask.nii.gz >",
 					   ITK_LOCATION );
 	}
       else
 	throw MAC_bmle::BmleException( __FILE__, __LINE__,
-				       "./bmle -c file.csv < -m mask.nii.gz >",
+				       "./bmle -c file.csv -m mask.nii.gz >",
 				       ITK_LOCATION );
     }
   catch( itk::ExceptionObject & err )
