@@ -1,7 +1,7 @@
 #
 # CentOS
 # cat /etc/centos-release
-# sudo docker build -f Dockerfile --tag="imaging_core:01" .
+# sudo docker build -f Dockerfile --tag="imaging_core:03" .
 # ex. FROM centos:6 version 6 of CentOS
 FROM centos:7
 
@@ -9,10 +9,15 @@ MAINTAINER Yann Cobigo yann.cobigo@ucsf.edu
 
 # File system
 RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images /mnt/tempo
+
+# 
+# Modified PYTHON libraries
 # We have to copy /mnt/scratch/neuroimaging_CentOS7/Python/QAP
 # where we have the Dockerfile to be able to process this data
-# cp-r /mnt/scratch/neuroimaging_CentOS7/Python/QAP /mnt/tempo/QAP
+# cp -r /mnt/scratch/neuroimaging_CentOS7/Python/QAP .
+# cp -r /mnt/scratch/neuroimaging_CentOS7/Python/dipy .
 COPY QAP /mnt/tempo/QAP
+COPY dipy /mnt/tempo/dipy
 
 #
 # Update the image
@@ -26,10 +31,12 @@ RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 
     libpng12.x86_64 mlocate-0.26-5.el7.x86_64 \
     libyaml-0.1.4-11.el7_0.x86_64 yaml-cpp.x86_64 yaml-cpp-devel.x86_64 gsl.x86_64 \
     gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 \
+    gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 \
+    gmp-devel.x86_64 gmp-static.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
     sudo.x86_64 net-tools initscripts
 # GL
 RUN yum install -y mesa-libGL-devel.x86_64 \
-    mesa-libGLU.x86_64 mesa-libGLU-devel.x86_64 \
+    mesa-libGLU.x86_64 mesa-libGLU-devel.x86_64 mesa-libGLU.i686 mesa-libGLU-devel.i686 \
      mesa-libGLw.x86_64 mesa-libGLw-devel.x86_64 \
      mesa-libOSMesa.x86_64 mesa-libOSMesa-devel.x86_64 \
      mesa-libgbm-devel.x86_64
@@ -51,6 +58,13 @@ RUN yum install -y qt-config.x86_64 qt-creator.x86_64 qt-devel.x86_64 \
 	    graphviz.x86_64 graphviz-devel.x86_64 graphviz-doc.x86_64 graphviz-gd.x86_64 graphviz-graphs.x86_64 \
 	    graphviz-guile.x86_64 graphviz-python.x86_64
 
+#
+# Sublime text 3
+# PyCharm
+RUN  wget --directory-prefix=/mnt/tempo/  http://c758482.r82.cf2.rackcdn.com/sublime_text_3_build_3065_x64.tar.bz2 \
+     && tar -vxjf /mnt/tempo/sublime_text_3_build_3065_x64.tar.bz2 -C /opt/ \
+     && ln -s /opt/sublime_text_3/sublime_text /usr/bin/sublime3 
+
 # 
 # Python 
 RUN yum install -y  python-pip && pip install --upgrade pip setuptools
@@ -58,15 +72,16 @@ RUN yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy py
     libxml2-devel.x86_64 libxml2-python.x86_64 libxslt.x86_64 libxslt-devel.x86_64 libxslt-python.x86_64 
 # pip
 # Pip is part of Extra Packages for Enterprise Linux (EPEL),
-RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy && pip install lockfile future simplejson prov statsmodels psutil
+RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy sklearn progressbar \
+    && pip install lockfile future simplejson prov statsmodels psutil cython
 RUN pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype 
-RUN pip install dipy && pip install --upgrade dipy 
 RUN pip install --upgrade pygraphviz Pillow
 
 #
+# Modified PYTHON libraries
 # Quality Assessment Protocol software
 RUN cd /mnt/tempo/QAP && chmod u+x setup.py && python setup.py build && python setup.py install \
-    && rm -rf /mnt/tempo/QAP
+    && cd /mnt/tempo/dipy && chmod u+x setup.py && python setup.py build && python setup.py install 
 
 #
 # user features
@@ -86,7 +101,9 @@ RUN groupadd ic       -g 1100 && \
     useradd -u 1004 -G 1100 -g 1005 -p "vsamboju_tempo" -ms /bin/bash vsamboju && \
     useradd -u 1005 -G 1100 -g 1006 -p "kchiang_tempo"  -ms /bin/bash kchiang && \
     echo "ycobigo ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ycobigo && \
-    chmod 0440 /etc/sudoers.d/ycobigo 
+    echo "gmarx ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/gmarx && \
+    chmod 0440 /etc/sudoers.d/ycobigo && \
+    chmod 0440 /etc/sudoers.d/gmarx 
 
 USER guest
 
