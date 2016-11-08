@@ -23,7 +23,7 @@ COPY dipy /mnt/tempo/dipy
 # Update the image
 RUN yum update -y && yum install  -y epel-release.noarch && yum groupinstall -y "Development tools" && yum makecache fast
 #
-RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 \
+RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 \
     emacs tmux htop git wget tree.x86_64 cmake gcc.x86_64 gcc-c++ \
     fftw-libs-single-3.3.3-8.el7.x86_64 python-devel.x86_64 \
     xz zlib-devel bzip2-devel bzip2-libs-1.0.6-13.el7.x86_64 \
@@ -33,7 +33,7 @@ RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 
     gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 \
     gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 \
     gmp-devel.x86_64 gmp-static.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
-    sudo.x86_64 net-tools initscripts
+    sudo.x86_64 net-tools initscripts nautilus.x86_64
 # GL
 RUN yum install -y mesa-libGL-devel.x86_64 \
     mesa-libGLU.x86_64 mesa-libGLU-devel.x86_64 mesa-libGLU.i686 mesa-libGLU-devel.i686 \
@@ -72,8 +72,8 @@ RUN yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy py
     libxml2-devel.x86_64 libxml2-python.x86_64 libxslt.x86_64 libxslt-devel.x86_64 libxslt-python.x86_64 
 # pip
 # Pip is part of Extra Packages for Enterprise Linux (EPEL),
-RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz  scipy sklearn progressbar \
-    && pip install lockfile future simplejson prov statsmodels psutil cython
+RUN pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz scipy sklearn progressbar \
+    && pip install lockfile future simplejson prov statsmodels psutil cython untangle jsonpath-rw
 RUN pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype 
 RUN pip install --upgrade pygraphviz Pillow
 
@@ -89,17 +89,19 @@ RUN cd /mnt/tempo/QAP && chmod u+x setup.py && python setup.py build && python s
 # we give the user its Cloud-Instance specific user ID
 # run id in a terminal
 # uid=1002(ycobigo) gid=1002(ycobigo) groups=1002(ycobigo),4(adm),27(sudo),110(admin) \
-RUN groupadd ic       -g 1100 && \
-    groupadd ycobigo  -g 1002 && \
-    groupadd gmarx    -g 1003 && \
-    groupadd guest    -g 1004 && \
-    groupadd vsamboju -g 1005 && \
-    groupadd kchiang  -g 1006 && \
+RUN groupadd ic        -g 1100 && \
+    groupadd ycobigo   -g 1002 && \
+    groupadd gmarx     -g 1003 && \
+    groupadd guest     -g 1004 && \
+    groupadd vsamboju  -g 1005 && \
+    groupadd kchiang   -g 1006 && \
+    groupadd mmandelli -g 1007 && \
     useradd -u 1001 -G 1100 -g 1002 -p "ycobigo_tempo"  -ms /bin/bash ycobigo && \
     useradd -u 1002 -G 1100 -g 1003 -p "gmarx_tempo"    -ms /bin/bash gmarx && \
     useradd -u 1003 -G 1100 -g 1004 -p "guest_tempo"    -ms /bin/bash guest && \
     useradd -u 1004 -G 1100 -g 1005 -p "vsamboju_tempo" -ms /bin/bash vsamboju && \
     useradd -u 1005 -G 1100 -g 1006 -p "kchiang_tempo"  -ms /bin/bash kchiang && \
+    useradd -u 1006 -G 1100 -g 1007 -p "mmandelli_tempo"  -ms /bin/bash mmandelli && \
     echo "ycobigo ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ycobigo && \
     echo "gmarx ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/gmarx && \
     chmod 0440 /etc/sudoers.d/ycobigo && \
