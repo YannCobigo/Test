@@ -18,7 +18,7 @@ COPY QAP /mnt/tempo/QAP
 # Update the image
 RUN yum update -y && yum install  -y epel-release.noarch && yum groupinstall -y "Development tools" && yum makecache fast
 #
-RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 \
+RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 \
     emacs tmux htop git wget tree.x86_64 cmake gcc.x86_64 gcc-c++ \
     fftw-libs-single-3.3.3-8.el7.x86_64 python-devel.x86_64 \
     xz zlib-devel bzip2-devel bzip2-libs-1.0.6-13.el7.x86_64 \
