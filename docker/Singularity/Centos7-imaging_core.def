@@ -26,13 +26,15 @@ IncludeCmd: yes
 	  $SINGULARITY_ROOTFS/mnt/tempo \
 	  $SINGULARITY_ROOTFS/etc/singularity/
     cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
+
+    #
+    #
     exit 0
 
 %post
 	echo "Installing Development Tools YUM group"
 	#yum -y groupinstall "Development Tools"
-	yum install xeyes
-	mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images /mnt/tempo /etc/singularity/
+	yum -y install xeyes
 
 	#
 	#
