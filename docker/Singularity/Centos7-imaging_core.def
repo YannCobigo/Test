@@ -1,6 +1,10 @@
 # Bootstrap definition example for Centos-7 with the latest Open MPI from GitHub master
 # sudo singularity create --size 4096 /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
-# sudo singularity bootstrap /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img Docker/docker/Singularity/Centos7-imaging_core.def
+# in to Docker/docker/Singularity/
+# sudo singularity bootstrap /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img Centos7-imaging_core.def
+#
+# As a user
+# singularity shell  /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
 #
 # to avoid writing a new image:
 # sudo singularity shell --writable  /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
@@ -17,12 +21,19 @@ Include: yum
         echo "Hrmm, this container does not have /bin/sh installed..."
         exit 1
     fi
+    mkdir $SINGULARITY_ROOTFS/mnt/neuroimaging/ \
+    	  $SINGULARITY_ROOTFS/mnt/macdata \
+	  $SINGULARITY_ROOTFS/mnt/images \
+	  $SINGULARITY_ROOTFS/mnt/tempo \
+	  $SINGULARITY_ROOTFS/etc/singularity/
+    cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
     exit 0
 
 %post
 	echo "Installing Development Tools YUM group"
 	#yum -y groupinstall "Development Tools"
-	mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images /mnt/tempo
+	yum install xeyes
+	mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images /mnt/tempo /etc/singularity/
 
 	#
 	#
