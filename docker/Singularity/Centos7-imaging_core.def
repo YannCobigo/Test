@@ -3,10 +3,12 @@
 # sudo singularity bootstrap /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img centos7-ompi_master.def 
 
 
-BootStrap: yum
-OSVersion: 7
-MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
-Include: yum
+BootStrap: docker
+#OSVersion: 7
+From: centos:7
+IncludeCmd: yes
+#MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+#Include: yum
 
 %setup
     echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
@@ -28,5 +30,5 @@ Include: yum
 
 %test
 	#
-	
+	echo "Sounds ok"	
 	
