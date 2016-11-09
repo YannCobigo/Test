@@ -125,6 +125,11 @@ JOB=$( sudo docker run -it --rm --name  Check  \
     --volume="/usr/local/MATLAB:/usr/local/MATLAB" \
     imaging_core:01 )
 
+#
+# Singularity
+#
+
+singularity shell  -B /mnt/neuroimaging://mnt/coredata/Prod/   /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
 
 
 #
