@@ -128,7 +128,14 @@ JOB=$( sudo docker run -it --rm --name  Check  \
 #
 # Singularity
 #
-singularity shell --shell /bin/bash -B /mnt/coredata/neuroimaging_CentOS7/:/mnt/neuroimaging /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
+singularity shell --shell /bin/bash \
+ -B /mnt/coredata/neuroimaging_CentOS7/:/mnt/neuroimaging \
+ -B /mnt/coredata/home/ycobigo/study/:/mnt/production \
+ -B /mnt/macdata/:/mnt/macdata \
+ -B /mnt/images/:/mnt/images \
+ -B /etc/machine-id:/etc/machine-id \
+ /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
+
 
 #
 #
