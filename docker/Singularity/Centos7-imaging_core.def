@@ -26,15 +26,101 @@ IncludeCmd: yes
 	  $SINGULARITY_ROOTFS/mnt/tempo \
 	  $SINGULARITY_ROOTFS/etc/singularity/
     cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
+    # Customized applications 
+    cp -r QAP  $SINGULARITY_ROOTFS/mnt/tempo/
+    cp -r dipy $SINGULARITY_ROOTFS/mnt/tempo/
+    
 
     #
     #
     exit 0
 
 %post
-	echo "Installing Development Tools YUM group"
-	#yum -y groupinstall "Development Tools"
-	yum -y install xeyes
+	#
+	#
+	echo "Update the image"
+	yum update -y && yum install -y epel-release.noarch && yum groupinstall -y "Development tools" && yum makecache fast
+
+
+	#
+	#
+	echo "Basic installation"
+	yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 \
+	    emacs tmux htop git wget tree.x86_64 cmake gcc.x86_64 gcc-c++ \
+	    fftw-libs-single-3.3.3-8.el7.x86_64 python-devel.x86_64 \
+	    xz zlib-devel bzip2-devel bzip2-libs-1.0.6-13.el7.x86_64 \
+	    openssl-devel ncurses-devel sqlite-devel libreoffice.x86_64 gwenview.x86_64 \
+	    libpng12.x86_64 mlocate-0.26-5.el7.x86_64 \
+	    libyaml-0.1.4-11.el7_0.x86_64 yaml-cpp.x86_64 yaml-cpp-devel.x86_64 gsl.x86_64 \
+	    gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 \
+	    gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 \
+	    gmp-devel.x86_64 gmp-static.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
+	    sudo.x86_64 net-tools initscripts nautilus.x86_64
+
+	#
+	#
+	echo "GL installation"
+	yum install -y mesa-libGL-devel.x86_64 \
+	    mesa-libGLU.x86_64 mesa-libGLU-devel.x86_64 mesa-libGLU.i686 mesa-libGLU-devel.i686 \
+	    mesa-libGLw.x86_64 mesa-libGLw-devel.x86_64 \
+	    mesa-libOSMesa.x86_64 mesa-libOSMesa-devel.x86_64 \
+	    mesa-libgbm-devel.x86_64
+
+	#
+	#
+	echo "X11 installation"
+	yum install -y xorg-x11-apps.x86_64 \
+	    xorg-x11-xauth xorg-x11-drivers.x86_64 \
+	    xorg-x11-utils.x86_64 xorg-x11-xinit-session.x86_64
+
+	#
+	#
+	echo "Qt installation"
+	yum install -y qt-config.x86_64 qt-creator.x86_64 qt-devel.x86_64 \
+	     qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt5-designer.x86_64 \
+	     qt5-qt3d.x86_64 qt5-qt3d-devel.x86_64 qt5-qtbase.x86_64 qt5-qtbase-devel.x86_64 \
+	     qt5-qtbase-examples.x86_64 qt5-qtconfiguration.x86_64 \
+	     qt5-qtconfiguration-devel.x86_64 qt5ct.x86_64 qt5-qtx11extras.x86_64 qt5-qtx11extras-devel.x86_64 \
+	     qt5-qtsvg.x86_64 qt5-qtsvg-devel.x86_64 qt5-qtsvg-examples.x86_64 \
+	     qt5-qtbase-gui.x86_64 qt5-qtsvg.x86_64 qt5-qtsvg-devel.x86_64 qt5-qtsvg-examples.x86_64\
+	     graphviz.x86_64 graphviz-devel.x86_64 graphviz-doc.x86_64 graphviz-gd.x86_64 graphviz-graphs.x86_64 \
+	     graphviz-guile.x86_64 graphviz-python.x86_64
+
+	#
+	#
+	echo "Sublime text 3 and PyCharm"
+	wget --directory-prefix=/mnt/tempo/  http://c758482.r82.cf2.rackcdn.com/sublime_text_3_build_3065_x64.tar.bz2 \
+	     && tar -vxjf /mnt/tempo/sublime_text_3_build_3065_x64.tar.bz2 -C /opt/ \
+	     && ln -s /opt/sublime_text_3/sublime_text /usr/bin/sublime3
+
+	#
+	#
+	echo "Python installation"
+	yum install -y  python-pip && pip install --upgrade pip setuptools && yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy python-nose  \
+	    libxml2-devel.x86_64 libxml2-python.x86_64 libxslt.x86_64 libxslt-devel.x86_64 libxslt-python.x86_64
+
+	#
+	#
+	echo "Python pip installation"
+	pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz scipy sklearn progressbar \
+	    && pip install lockfile future simplejson prov statsmodels psutil cython untangle jsonpath-rw \
+	    bctpy h5py networkx
+	pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype && pip install --upgrade pygraphviz Pillow python-igraph
+
+	#
+	#
+	echo "Python louvain"
+	wget --directory-prefix=/mnt/tempo/ https://pypi.python.org/packages/f1/5f/1cd2040382f56b21ef731f09fd7a818ad2bbcd5a8201fd2ebd4ec15297bb/python-louvain-0.3.tar.gz  \
+	    && cd /mnt/tempo/ && tar -zxvf python-louvain-0.3.tar.gz && cd python-louvain-0.3/ \
+	    && python setup.py install
+
+	#
+	#
+	echo "Modified PYTHON libraries"
+	cd /mnt/tempo/QAP && chmod u+x setup.py && python setup.py build && python setup.py install \
+	    && cd /mnt/tempo/dipy && chmod u+x setup.py && python setup.py build && python setup.py install
+	#
+	rm -rf /mnt/tempo/*
 
 	#
 	#
@@ -46,5 +132,5 @@ IncludeCmd: yes
 
 %test
 	#
-	echo "Sounds ok"	
+	echo "Sounds OK"	
 	
