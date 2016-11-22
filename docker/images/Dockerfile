@@ -102,12 +102,14 @@ RUN groupadd ic        -g 1100 && \
     groupadd vsamboju  -g 1005 && \
     groupadd kchiang   -g 1006 && \
     groupadd mmandelli -g 1007 && \
+    groupadd pmumford  -g 1008 && \
     useradd -u 1001 -G 1100 -g 1002 -p "ycobigo_tempo"  -ms /bin/bash ycobigo && \
     useradd -u 1002 -G 1100 -g 1003 -p "gmarx_tempo"    -ms /bin/bash gmarx && \
     useradd -u 1003 -G 1100 -g 1004 -p "guest_tempo"    -ms /bin/bash guest && \
     useradd -u 1004 -G 1100 -g 1005 -p "vsamboju_tempo" -ms /bin/bash vsamboju && \
     useradd -u 1005 -G 1100 -g 1006 -p "kchiang_tempo"  -ms /bin/bash kchiang && \
-    useradd -u 1006 -G 1100 -g 1007 -p "mmandelli_tempo"  -ms /bin/bash mmandelli && \
+    useradd -u 1006 -G 1100 -g 1007 -p "mmandelli_tempo" -ms /bin/bash mmandelli && \
+    useradd -u 1007 -G 1100 -g 1008 -p "pmumford_tempo"  -ms /bin/bash pmumford && \
     echo "ycobigo ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ycobigo && \
     echo "gmarx ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/gmarx && \
     chmod 0440 /etc/sudoers.d/ycobigo && \
