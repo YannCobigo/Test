@@ -174,7 +174,7 @@ namespace MAC_bmle
 	      X_1_rand_(l,c) = pow( ages[l] - Age_mean, c );
 	    // fixed part of the design matrix
 	    for ( int c = 0 ; c <  D_f ; c++ )
-	      X_1_fixed_(l,c) = pow( ages[l] - Age_mean, c );
+	      X_1_fixed_(l,c) = pow( ages[l] - Age_mean, D_r + c );
 	  }
 
 	std::cout << "Random and fixed design matrices:" << std::endl;

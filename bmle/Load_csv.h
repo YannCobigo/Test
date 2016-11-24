@@ -97,6 +97,24 @@ namespace MAC_bmle
     Eigen::MatrixXf X1_;
     // X2
     Eigen::MatrixXf X2_;
+    // X augmented
+    Eigen::MatrixXf X_;
+
+    //
+    // Covariance base matrices
+    //
+
+    // Base matrices
+    std::vector< Eigen::MatrixXf > Q_{ D_r + 1 };
+
+    // Base matrix for covariance matrix epsilon level one
+    Eigen::MatrixXf C_eps_1_base_;
+    
+    // Base covariance matrix eps level two
+    Eigen::MatrixXf C_eps_2_base_;
+    
+    // Covariance matrix theta level two
+    Eigen::MatrixXf C_theta_2_;
   };
   //
   //
@@ -311,7 +329,12 @@ namespace MAC_bmle
   {
     try
       {
-	//Eigen::SparseMatrix< float > X1( num_3D_images_, num_subjects_ * 3 /*D_r*/ + 3 /*D_f*/);
+	//
+	// Build X1 and X2 design matrices
+	//
+
+	//
+	//
 	int
 	  X1_lines = num_3D_images_,
 	  X1_cols  = num_subjects_ * D_r + groups_.size() * D_f,
@@ -333,10 +356,10 @@ namespace MAC_bmle
 		{
 		  // Add the ID matrix for the fixed parameters
 		  X2_.block( line_x2, D_r * (num_covariates_ + 1) + increme_dist_x2,
-			    D_f, D_f ) = Eigen::MatrixXf::Identity( D_f, D_f );
+			     D_f, D_f ) = Eigen::MatrixXf::Identity( D_f, D_f );
 		  line_x2 += D_f;
 		  //
-		  increme_dist_x1 += group_num_subjects_[g] * D_r + D_f;
+		  increme_dist_x1 += group_num_subjects_[current_gr] * D_r + D_f;
 		  increme_dist_x2 += D_r * (num_covariates_ + 1) + D_f;
 		  col_x1          += D_f;
 		  current_gr       = g;
@@ -345,10 +368,12 @@ namespace MAC_bmle
 	      // X1 design
 	      int
 		sub_line_x1 = subject.second.get_random_matrix().rows(),
-		sub_col_x1  = subject.second.get_random_matrix().cols();
+		sub_col_x1  = subject.second.get_random_matrix().cols(),
+		sub_line_x1_fixed = subject.second.get_fixed_matrix().rows(),
+		sub_col_x1_fixed  = subject.second.get_fixed_matrix().cols();
 	      X1_.block( line_x1, col_x1, sub_line_x1, sub_col_x1 ) = subject.second.get_random_matrix();
 	      X1_.block( line_x1, increme_dist_x1 + group_num_subjects_[g]  * D_r,
-			 sub_line_x1, sub_col_x1 ) = subject.second.get_fixed_matrix();
+			 sub_line_x1_fixed, sub_col_x1_fixed ) = subject.second.get_fixed_matrix();
 	      //
 	      line_x1 += sub_line_x1;
 	      col_x1  += sub_col_x1;
@@ -371,6 +396,114 @@ namespace MAC_bmle
 	    std::cout << X1_ << std::endl;
 	    std::cout << X2_ << std::endl;
 	  }
+
+	//
+	// Build X augmented
+	//
+
+	//
+	// Before keeping going, we check the X1_cols == X2_lines
+	if ( X1_cols != X2_lines )
+	  {
+	    std::string mess = std::string("Number of lines first design (X1) must be equal to the ");
+	    mess += std::string("number of columns second design (X2).");
+	    //
+	    throw BmleException( __FILE__, __LINE__,
+				 mess.c_str(),
+				 ITK_LOCATION );
+	  }
+	
+	//
+	//
+	int
+	  X_lines = X1_cols + X2_cols + X1_lines,
+	  X_cols  = X1_cols + X2_cols;
+	//
+	X_ = Eigen::MatrixXf::Zero( X_lines, X_cols );
+	// lines 
+	X_.block( 0, 0, X1_lines, X1_cols )                 = X1_;
+	X_.block( X1_lines, 0, X1_cols, X1_cols )           = Eigen::MatrixXf::Identity( X1_cols, X1_cols );
+	X_.block( X1_lines + X1_cols, 0, X2_cols, X1_cols ) = Eigen::MatrixXf::Zero( X2_cols, X1_cols );
+	// Columns
+	X_.block( 0, X1_cols, X1_lines, X2_cols )                 = X1_ * X2_;
+	X_.block( X1_lines, X1_cols, X1_cols, X2_cols )           = Eigen::MatrixXf::Zero( X1_cols, X2_cols );
+	X_.block( X1_lines + X1_cols, X1_cols, X2_cols, X2_cols ) = Eigen::MatrixXf::Identity( X2_cols, X2_cols );
+	//
+	if ( false )
+	  {
+	    std::cout << X_ << std::endl;
+	  }
+
+	//
+	// Building the covariance base matrices & covariante matrices
+	//
+
+	//
+	// Based matrix for a subject
+	std::vector< Eigen::MatrixXf > q( D_r );
+	for ( int i = 0 ; i < D_r ; i++ )
+	  {
+	    q[i] = Eigen::MatrixXf::Zero( D_r, D_r );
+	    q[i](i,i) = 1.;
+	    std::cout << q[i] << std::endl;
+	  }
+
+	//
+	// Based matrix per group
+	std::map< int, std::vector< Eigen::MatrixXf > > Q_group;
+	for ( auto g : groups_ )
+	  {
+	    //
+	    // For each group we create D_r based matrix + 1 matrix for fixed effects over
+	    // D_r dimensions
+	    if ( Q_group.find( g ) == Q_group.end() )
+		Q_group[g] = std::vector< Eigen::MatrixXf >( D_r + 1 );
+	    // fixed effect matrix
+	    Q_group[g][D_r] = Eigen::MatrixXf::Zero( group_num_subjects_[g] * D_r + D_f,
+						     group_num_subjects_[g] * D_r + D_f );
+	    // We create each D_r dimensions
+	    for ( int d = 0 ; d < D_r ; d++ )
+	      {
+		Q_group[g][d] = Eigen::MatrixXf::Zero( group_num_subjects_[g] * D_r + D_f,
+						       group_num_subjects_[g] * D_r + D_f );
+		//
+		int linco = 0;
+		for ( int s = 0 ; s < group_num_subjects_[g] ; s++ )
+		  {
+		    Q_group[g][d].block( linco, linco, D_r, D_r ) = q[d];
+		    linco += D_r;
+		  }
+		// Add the fixed effect
+		Q_group[g][D_r].block( linco, linco,
+				       D_f, D_f ) = Eigen::MatrixXf::Identity( D_f, D_f );
+		if ( true )
+		  {
+		    std::cout << "Q_group[" << g << "][" << d << "] = \n"
+			      << Q_group[g][d] << std::endl;
+		    std::cout << "Fixed part: " << std::endl;
+		    std::cout << "Q_group[" << g << "][D_r] = \n"
+			      << Q_group[g][D_r] << std::endl;
+		  }
+	      }
+	  }
+
+	//
+	// Global Base matrices
+	for ( int d = 0 ; d < D_r ; d++ )
+	  {
+	    for ( auto g : groups_ )
+	      {
+	      }
+	  }
+	
+	//
+	// Building the starting block covariance matrix
+	// Base matrix for covariance matrix epsilon level one
+	C_eps_1_base_ = Eigen::MatrixXf::Identity( num_3D_images_, num_3D_images_ );
+	// Covariance matrix theta level two
+	C_theta_2_    = 1.e+32 * Eigen::MatrixXf::Identity( D_r + D_f, D_r + D_f );
+	
+	
       }
     catch( itk::ExceptionObject & err )
       {
@@ -386,8 +519,20 @@ namespace MAC_bmle
   {
     try
       {
-	std::cout << Idx << " " << Y_[0]->GetOutput()->GetPixel( Idx )
-		  << std::endl;
+	//
+	// Extented data Y
+	Eigen::MatrixXf Y = Eigen::MatrixXf::Zero( X_.rows(), 1 );
+	// First lines are set to the measure
+	// other lines are set to 0. 
+	for ( int img = 0 ; img < num_3D_images_ ; img++ )
+	  {
+	    // std::cout << Idx << " " << Y_[ img ]->GetOutput()->GetPixel( Idx )
+	    //           << std::endl;
+	    Y( img, 0 ) = Y_[ img ]->GetOutput()->GetPixel( Idx );
+	  }
+	//
+	if ( false )
+	  std::cout << Y << std::endl;
       }
     catch( itk::ExceptionObject & err )
       {
