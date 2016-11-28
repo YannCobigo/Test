@@ -105,16 +105,10 @@ namespace MAC_bmle
     //
 
     // Base matrices
-    std::vector< Eigen::MatrixXf > Q_{ D_r + 1 };
-
-    // Base matrix for covariance matrix epsilon level one
-    Eigen::MatrixXf C_eps_1_base_;
-    
-    // Base covariance matrix eps level two
-    Eigen::MatrixXf C_eps_2_base_;
-    
+    std::vector< Eigen::MatrixXf > Q_k_{ 1 /*C_eps_1_base*/+ D_r /*C_eps_2_base*/+ 1 /*fixed effect*/};
+    std::vector< double > lambda_k_{ 1 /*C_eps_1_base*/+ D_r /*C_eps_2_base*/+ 1 /*fixed effect*/};
     // Covariance matrix theta level two
-    Eigen::MatrixXf C_theta_2_;
+    Eigen::MatrixXf C_theta_;
   };
   //
   //
@@ -445,7 +439,6 @@ namespace MAC_bmle
 	  {
 	    q[i] = Eigen::MatrixXf::Zero( D_r, D_r );
 	    q[i](i,i) = 1.;
-	    std::cout << q[i] << std::endl;
 	  }
 
 	//
@@ -476,7 +469,7 @@ namespace MAC_bmle
 		// Add the fixed effect
 		Q_group[g][D_r].block( linco, linco,
 				       D_f, D_f ) = Eigen::MatrixXf::Identity( D_f, D_f );
-		if ( true )
+		if ( false )
 		  {
 		    std::cout << "Q_group[" << g << "][" << d << "] = \n"
 			      << Q_group[g][d] << std::endl;
@@ -487,23 +480,73 @@ namespace MAC_bmle
 	      }
 	  }
 
-	//
-	// Global Base matrices
-	for ( int d = 0 ; d < D_r ; d++ )
-	  {
-	    for ( auto g : groups_ )
-	      {
-	      }
-	  }
 	
 	//
 	// Building the starting block covariance matrix
-	// Base matrix for covariance matrix epsilon level one
-	C_eps_1_base_ = Eigen::MatrixXf::Identity( num_3D_images_, num_3D_images_ );
+	// 
+
+	//
+	// Global dimension of the base matrix
+	int
+	  C_theta_dim = groups_.size() * ( D_r * (num_covariates_+1) + D_f ) /*C_theta dimension*/,
+	  Q_k_linco = num_3D_images_ /*C_eps_1_base*/
+	  + num_subjects_ * D_r + groups_.size() * D_f /*C_eps_2_base*/
+	  + C_theta_dim;
+	int linco = 0;
+	// C_eps_1_base
+	Q_k_[0] = Eigen::MatrixXf::Zero( Q_k_linco, Q_k_linco );
+	Q_k_[0].block( 0, 0,
+		       num_3D_images_,  num_3D_images_ ) = Eigen::MatrixXf::Identity(num_3D_images_,
+										     num_3D_images_);
+	// C_eps_2_base and fixed effects
+	Q_k_[D_r + 1] = Eigen::MatrixXf::Zero( Q_k_linco, Q_k_linco );
+	for ( int d_r = 0 ; d_r < D_r ; d_r++ )
+	  {
+	    Q_k_[d_r + 1] = Eigen::MatrixXf::Zero( Q_k_linco, Q_k_linco );
+	    linco = num_3D_images_;
+	    for ( auto g : groups_ )
+	      {
+		int sub_linco = Q_group[g][d_r].rows();
+		Q_k_[d_r + 1].block( linco, linco,
+				     sub_linco, sub_linco) = Q_group[g][d_r];
+		// fixed effects
+		Q_k_[D_r + 1].block( linco + sub_linco - D_f, linco + sub_linco - D_f,
+				     D_f, D_f ) = Eigen::MatrixXf::Identity(D_f, D_f);
+		//
+		linco += sub_linco;
+	      }
+	  }
 	// Covariance matrix theta level two
-	C_theta_2_    = 1.e+32 * Eigen::MatrixXf::Identity( D_r + D_f, D_r + D_f );
-	
-	
+	C_theta_ = Eigen::MatrixXf::Zero( Q_k_linco, Q_k_linco );
+	C_theta_.block( linco, linco,
+			C_theta_dim,  C_theta_dim ) = 1.e+32 * Eigen::MatrixXf::Identity( C_theta_dim,
+											  C_theta_dim );
+	//
+	//
+	if ( false )
+	  {
+	    for ( int k = 0 ; k <  D_r + 2 ; k++ )
+	    std::cout << "Q_k_[" << k << "] = \n"
+		      << Q_k_[k] << "\n\n\n"
+		      << std::endl;
+	    std::cout << "C_theta_ = \n"
+		      << C_theta_ << "\n\n\n"
+		      << std::endl;
+	  }
+
+	//
+	//
+	if ( X_.rows() != Q_k_linco )
+	  {
+	    //std::cout << "[X_] = " << X_.rows() << "x" << X_.cols() << std::endl;
+	    //std::cout << "[Q_k_] = " << Q_k_linco << "x" << Q_k_linco << std::endl;
+	    std::string mess = std::string("Dimensions of the covriance matrix and ");
+	    mess += std::string("disign matrix must comply:");
+	    //
+	    throw BmleException( __FILE__, __LINE__,
+				 mess.c_str(),
+				 ITK_LOCATION );
+	  }
       }
     catch( itk::ExceptionObject & err )
       {
