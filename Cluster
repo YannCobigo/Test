@@ -3,17 +3,21 @@
 emacs -nw /etc/hostname 
 mac-node-ics{1,2,3}.ucsf.edu
 1: 10.36.52.172
+3: 10.36.56.164
 
 Large disk are not mounted:
 mount /dev/sdb1 /mnt/Production
 
 #
-# Singularity
-http://singularity.lbl.gov/install-linux
-
-#
 # CentOS
 yum update -y && yum install -y epel-release.noarch && yum groupinstall -y "Development tools" && yum makecache fast
+
+#
+# Singularity
+http://singularity.lbl.gov/install-linux
+# docker
+https://docs.docker.com/engine/installation/linux/centos/
+
 
 #
 # Setup NFS
