@@ -3,6 +3,7 @@
 emacs -nw /etc/hostname 
 mac-node-ics{1,2,3}.ucsf.edu
 1: 10.36.52.172
+2: 10.36.56.127
 3: 10.36.56.164
 
 Large disk are not mounted:
