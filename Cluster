@@ -36,7 +36,7 @@ tar -zxvf GE2011.11p1.tar.gz
 mv GE2011.11p1 /home/gsadmin/
 chown -R gsadmin:gsadmin /home/gsadmin/
 
-
+http://gridengine.org/pipermail/users/2012-April/003342.html
 
 
 
