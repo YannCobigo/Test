@@ -2,9 +2,9 @@
 # Hostname
 emacs -nw /etc/hostname 
 mac-node-ics{1,2,3}.ucsf.edu
-1: 10.36.52.172
-2: 10.36.56.127
-3: 10.36.56.164
+1: 10.36.52.172 otp1038102ots.ucsf.edu
+2: 10.36.56.127 otp1039057ots.ucsf.edu
+3: 10.36.56.164 otp1039094ots.ucsf.edu
 
 Large disk are not mounted:
 mount /dev/sdb1 /mnt/Production
