@@ -12,6 +12,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <math.h>
 // Egen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
@@ -62,6 +63,9 @@ namespace MAC_bmle
 
     // This function will load all the patients images into a 4D image.
     void image_concat();
+    // Thermodynamic free energy
+    float F_( const Eigen::MatrixXf& , const Eigen::MatrixXf& ,
+	      const Eigen::MatrixXf& , const Eigen::MatrixXf& ) const;
 
     //
     // Members
@@ -106,7 +110,6 @@ namespace MAC_bmle
 
     // Base matrices
     std::vector< Eigen::MatrixXf > Q_k_{ 1 /*C_eps_1_base*/+ D_r /*C_eps_2_base*/+ 1 /*fixed effect*/};
-    std::vector< double > lambda_k_{ 1 /*C_eps_1_base*/+ D_r /*C_eps_2_base*/+ 1 /*fixed effect*/};
     // Covariance matrix theta level two
     Eigen::MatrixXf C_theta_;
   };
@@ -511,7 +514,7 @@ namespace MAC_bmle
 				     sub_linco, sub_linco) = Q_group[g][d_r];
 		// fixed effects
 		Q_k_[D_r + 1].block( linco + sub_linco - D_f, linco + sub_linco - D_f,
-				     D_f, D_f ) = Eigen::MatrixXf::Identity(D_f, D_f);
+				     D_f, D_f ) = 1.e-16 * Eigen::MatrixXf::Identity(D_f, D_f);
 		//
 		linco += sub_linco;
 	      }
@@ -519,7 +522,7 @@ namespace MAC_bmle
 	// Covariance matrix theta level two
 	C_theta_ = Eigen::MatrixXf::Zero( Q_k_linco, Q_k_linco );
 	C_theta_.block( linco, linco,
-			C_theta_dim,  C_theta_dim ) = 1.e+32 * Eigen::MatrixXf::Identity( C_theta_dim,
+			C_theta_dim,  C_theta_dim ) = 1.e+16 * Eigen::MatrixXf::Identity( C_theta_dim,
 											  C_theta_dim );
 	//
 	//
@@ -563,7 +566,11 @@ namespace MAC_bmle
     try
       {
 	//
-	// Extented data Y
+	// Measure
+	//
+	
+	//
+	// Augmented measured data Y
 	Eigen::MatrixXf Y = Eigen::MatrixXf::Zero( X_.rows(), 1 );
 	// First lines are set to the measure
 	// other lines are set to 0. 
@@ -576,6 +583,141 @@ namespace MAC_bmle
 	//
 	if ( false )
 	  std::cout << Y << std::endl;
+
+	//
+	// Covariance
+	//
+	
+	//
+	// Hyper-parameters
+	std::vector< float > lambda_k( 1 /*C_eps_1*/+ D_r /*C_eps_2*/+ 1 /*fixed effect*/);
+	for ( auto&k : lambda_k )
+	  {
+	    k = 1.e-2;
+	  }
+	lambda_k[ D_r + 1 ] = 0.; // Always enforce this value to be 0
+	//
+	// Covariance
+	Eigen::MatrixXf Cov_eps = C_theta_;
+	for ( int k = 0 ; k < lambda_k.size() ; k++ )
+	  Cov_eps +=  exp( lambda_k[k] ) * Q_k_[k];
+	//
+	Eigen::MatrixXf inv_Cov_eps = Cov_eps.inverse();
+
+	//
+	// posterior
+	Eigen::MatrixXf cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
+	Eigen::MatrixXf eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
+	
+	float
+	  F_old = 1.,
+	  F     = 1.,
+	  delta_F = 100.;
+	
+	//
+	while( fabs( delta_F ) > 1.e-3  )
+	  {
+	    F_old = F;
+	    std::cout << "F = " << F << " delta_F = " << fabs( delta_F )
+		      << std::endl;
+
+	    //
+	    // Expectaction step
+	    cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
+	    eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
+
+	    //
+	    // Maximization step
+	    Eigen::MatrixXf P  = inv_Cov_eps - inv_Cov_eps * X_ * cov_theta_Y * X_.transpose() * inv_Cov_eps;
+	    // Fisher Information matrix
+	    Eigen::MatrixXf H = Eigen::MatrixXf::Zero( D_r + 1, D_r + 1 );
+	    // Fisher gradient
+	    Eigen::MatrixXf g = Eigen::MatrixXf::Zero( D_r + 1, 1 );
+	    for ( int i = 0 ; i < D_r + 1 ; i++ )
+	      {
+		// g(i,0) = - ( exp(lambda_k[i]) * ((P*Q_k_[i]).trace() - Y.transpose() * P.transpose() * Q_k_[i] * P * Y) )(0,0) / 2.;
+		g(i,0)  = - (Y.transpose() * P.transpose() * Q_k_[i] * P * Y)(0,0);
+		std::cout << "g(" << i << ",0) = " << g(i,0) << std::endl;
+		g(i,0) += (P*Q_k_[i]).trace();
+		std::cout << "g(" << i << ",0) = " << g(i,0) << std::endl;
+		g(i,0) *= - exp(lambda_k[i]) / 2.;
+		std::cout << "g(" << i << ",0) = " << g(i,0) << std::endl;
+		for ( int j = 0 ; j < D_r + 1 ; j++ )
+		  H(i,j) = exp(lambda_k[i] + lambda_k[j]) * ( P*Q_k_[i]*P*Q_k_[j] ).trace() / 2.;
+	      }
+	std::cout << std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
+//	std::cout << P  << std::endl;
+	std::cout <<  g << std::endl;
+	std::cout << H  << std::endl;
+	    //
+	    // Lambda update
+	    Eigen::MatrixXf delta_lambda = H.inverse() * g;
+	    std::cout << delta_lambda << std::endl;
+	    for ( int k = 0 ; k < lambda_k.size() - 1 ; k++ )
+	      lambda_k[k] += delta_lambda(k);
+	    // Update of the covariance matrix
+	    Cov_eps = C_theta_;
+	    for ( int k = 0 ; k < lambda_k.size() ; k++ )
+	      Cov_eps +=  exp( lambda_k[k] ) * Q_k_[k];
+	    //
+	    inv_Cov_eps = Cov_eps.inverse();
+	    //std::cout << inv_Cov_eps << std::endl;
+	    //
+	    // Free energy
+	    F = F_( Y, inv_Cov_eps, eta_theta_Y, cov_theta_Y );
+	    delta_F = F - F_old;
+	  }
+      }
+    catch( itk::ExceptionObject & err )
+      {
+	std::cerr << err << std::endl;
+	exit( -1 );
+      }
+  }
+  //
+  //
+  //
+  template< int D_r, int D_f > float
+    BmleLoadCSV< D_r, D_f >::F_( const Eigen::MatrixXf& Augmented_Y,
+				 const Eigen::MatrixXf& Inv_Cov_eps,
+				 const Eigen::MatrixXf& Eta_theta_Y,
+				 const Eigen::MatrixXf& Cov_theta_Y ) const
+  {
+    try
+      {
+	//
+	// residual
+	Eigen::MatrixXf r = Augmented_Y - X_ * Eta_theta_Y;
+
+	//
+	// Terms of free energy
+	//
+
+	//
+	// log of determinants
+	float F_1 = 0, F_4 = 0 ;
+	//
+	for ( int linco = 0 ; linco < Inv_Cov_eps.rows() ; linco++ )
+	  F_1 += log( Inv_Cov_eps(linco,linco) );
+	//
+	for ( int linco = 0 ; linco < Cov_theta_Y.rows() ; linco++ )
+	  F_4 += log( Cov_theta_Y(linco,linco) );
+	
+	float
+	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
+	  F_3 = - ( Cov_theta_Y * X_.transpose() * Inv_Cov_eps * X_ ).trace();
+	std::cout << "F_1 = " << F_1<< std::endl;
+	std::cout << "F_2 = " << F_2<< std::endl;
+	std::cout << "F_3 = " << F_3<< std::endl;
+	std::cout << "F_4 = " << F_4<< std::endl;
+	//
+	//
+	return ( F_1 + F_2 + F_3 + F_4 ) / 2.;
       }
     catch( itk::ExceptionObject & err )
       {
