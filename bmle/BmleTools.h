@@ -5,7 +5,7 @@
 //
 namespace MAC_bmle
 {
-  int power( float val, unsigned n )
+  int power( double val, unsigned n )
   {
     return ( n == 0 ? 1 : val * power( val, n-1 ) );
   }

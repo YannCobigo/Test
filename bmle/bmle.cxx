@@ -92,7 +92,7 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Load the CSV file
-	      MAC_bmle::BmleLoadCSV< 3/*D_r*/, 2 /*D_f*/> subject_mapping( filename );
+	      MAC_bmle::BmleLoadCSV< 2/*D_r*/, 1 /*D_f*/> subject_mapping( filename );
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();
 
