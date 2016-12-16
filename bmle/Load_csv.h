@@ -614,7 +614,7 @@ namespace MAC_bmle
 	std::map< int /*group*/, std::vector< double > > lambda_k;
 	// C_eps_1 lambda
 	lambda_k[0]    = std::vector< double >( 1 );
-	lambda_k[0][0] = 1.e+1 /*log( 1.e+8 )*/;
+	lambda_k[0][0] = 1.e+0 /*log( 1.e+8 )*/;
 	// C_eps_2_ and fixed effects lambda
 	for ( auto g : groups_ )
 	  {
@@ -623,7 +623,7 @@ namespace MAC_bmle
 	    //
 	    for ( int d_r = 0 ; d_r < D_r ; d_r++ )
 	      {
-		lambda_k[g][d_r] = 1.e-3;
+		lambda_k[g][d_r] = 1.e+0;
 	      }
 	    // fixed effects
 	    if ( D_f > 0 )
@@ -643,7 +643,8 @@ namespace MAC_bmle
 	//
 	//
 	// posterior
-	Eigen::MatrixXd cov_theta_Y = MAC_bmle::inverse( X_.transpose() * inv_Cov_eps * X_ );
+	// Eigen::MatrixXd cov_theta_Y = MAC_bmle::inverse( X_.transpose() * inv_Cov_eps * X_ );
+	Eigen::MatrixXd cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
 	Eigen::MatrixXd eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
 	
 	double
@@ -660,32 +661,31 @@ namespace MAC_bmle
 
 	    //
 	    // Expectaction step
-	    cov_theta_Y = MAC_bmle::inverse( X_.transpose() * inv_Cov_eps * X_ );
+	    //	    cov_theta_Y = MAC_bmle::inverse( X_.transpose() * inv_Cov_eps * X_ );
+	    cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
 	    eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
 	    std::cout << eta_theta_Y << std::endl;
 
 	    //
 	    // Maximization step
+	    int hyper_dim = D_r + (D_f > 0  ? 1 : 0);
 	    Eigen::MatrixXd P  = inv_Cov_eps - inv_Cov_eps * X_ * cov_theta_Y * X_.transpose() * inv_Cov_eps;
 	    // Fisher Information matrix
-	    Eigen::MatrixXd H = Eigen::MatrixXd::Zero( groups_.size() * (D_r + (D_f > 0  ? 1 : 0)),
-						       groups_.size() * (D_r + (D_f > 0  ? 1 : 0)) );
+	    Eigen::MatrixXd H = Eigen::MatrixXd::Zero( groups_.size() * hyper_dim,
+						       groups_.size() * hyper_dim );
 	    // Fisher gradient
-	    Eigen::MatrixXd grad = Eigen::MatrixXd::Zero( groups_.size() * (D_r + (D_f > 0  ? 1 : 0)), 1 );
+	    Eigen::MatrixXd grad = Eigen::MatrixXd::Zero( groups_.size() * hyper_dim, 1 );
 	    int count_group = 0;
 	    for ( auto g : groups_ )
 	      {
 		for ( int i = 0 ; i < D_r + (D_f > 0  ? 1 : 0) ; i++ )
 		  {
 		    // g(i,0) = - ( exp(lambda_k[i]) * ((P*Q_k_[i]).trace() - Y.transpose() * P.transpose() * Q_k_[i] * P * Y) )(0,0) / 2.;
-		    grad(i + count_group * (D_r + (D_f > 0  ? 1 : 0)),0)  = - (Y.transpose() * P.transpose() * Q_k_[g][i] * P * Y)(0,0);
-		    std::cout << "g(" << i + count_group * (D_r + (D_f > 0  ? 1 : 0)) << ",0) = " << grad(i + count_group * (D_r + (D_f > 0  ? 1 : 0)),0) << std::endl;
-		    grad(i + count_group * (D_r + (D_f > 0  ? 1 : 0)),0) += (P*Q_k_[g][i]).trace();
-		    std::cout << "g(" << i + count_group * (D_r + (D_f > 0  ? 1 : 0)) << ",0) = " << grad(i + count_group * (D_r + (D_f > 0  ? 1 : 0)),0) << std::endl;
-		    grad(i + count_group * (D_r + (D_f > 0  ? 1 : 0)),0) *= - exp(lambda_k[g][i]) / 2.;
-		    std::cout << "g(" << i + count_group * (D_r + (D_f > 0  ? 1 : 0)) << ",0) = " << grad(i + count_group * (D_r + (D_f > 0  ? 1 : 0)),0) << std::endl;
+		    grad(i + count_group * hyper_dim,0)  = - (Y.transpose() * P.transpose() * Q_k_[g][i] * P * Y)(0,0);
+		    grad(i + count_group * hyper_dim,0) += (P*Q_k_[g][i]).trace();
+		    grad(i + count_group * hyper_dim,0) *= - exp(lambda_k[g][i]) / 2.;
 		    for ( int j = 0 ; j < D_r + (D_f > 0  ? 1 : 0); j++ )
-		      H( i + count_group * (D_r + (D_f > 0  ? 1 : 0)),j + count_group * (D_r + (D_f > 0  ? 1 : 0)) ) =
+		      H( i + count_group * hyper_dim,j + count_group * hyper_dim ) =
 			exp(lambda_k[g][i] + lambda_k[g][j]) * ( P*Q_k_[g][i]*P*Q_k_[g][j] ).trace() / 2.;
 		  }
 		// next group
@@ -702,24 +702,30 @@ namespace MAC_bmle
 	std::cout << H  << std::endl;
 	    //
 	    // Lambda update
-	Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H ) * grad;
-	    std::cout << delta_lambda << std::endl;
+	Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 32.) * grad;
+	//Eigen::MatrixXd delta_lambda = 0.1 * grad;
+	std::cout << delta_lambda << std::endl;
 	    count_group = 0;
 	    for ( auto g : groups_ )
 	      {
-		for ( int k = 0 ; k < D_r ; k++ )
+		for ( int k = 1 ; k < hyper_dim ; k++ )
 		  {
-		    lambda_k[g][k] += delta_lambda( k + count_group * (D_r + (D_f > 0  ? 1 : 0)) );
+		    lambda_k[g][k] += delta_lambda( k + count_group * hyper_dim, 0 );
+		    std::cout << "lambda_k[" << g << "][" << k << "] = " << lambda_k[g][k] << " " << exp(lambda_k[g][k])<< std::endl;
 		  }
 		count_group++;
 	      }
 	    // Update of the covariance matrix
 	    Cov_eps = C_theta_;
+	    Cov_eps +=  exp( lambda_k[0][0] ) * Q_k_[0][0];
 	    for ( auto g : groups_ )
-	      for ( int k = 0 ; k < D_r + (D_f > 0  ? 1 : 0); k++ )
-		Cov_eps +=  exp( lambda_k[g][k] ) * Q_k_[g][k];
+	      for ( int k = 1 ; k < hyper_dim ; k++ )
+		{
+		  Cov_eps +=  exp( lambda_k[g][k] ) * Q_k_[g][k];
+		}
+	    std::cout << Cov_eps << std::endl;
 	    //
-	    inv_Cov_eps = Cov_eps.inverse();
+	    inv_Cov_eps =  MAC_bmle::inverse( Cov_eps );
 	    //std::cout << inv_Cov_eps << std::endl;
 	    //
 	    // Free energy
