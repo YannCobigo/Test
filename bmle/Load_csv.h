@@ -749,6 +749,24 @@ namespace MAC_bmle
 	    std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F )
 		      << std::endl;
 	  }
+
+	//
+	//
+	int eta_theta_Y_2_theta_Y_dim = X2_.cols();
+	int eta_theta_Y_2_eps_Y_dim   = cov_theta_Y.rows() - eta_theta_Y_2_theta_Y_dim;
+	//
+	Eigen::MatrixXd eta_theta_Y_2_eps_Y   = eta_theta_Y.block( 0, 0,
+								   eta_theta_Y_2_eps_Y_dim, 1 );
+	Eigen::MatrixXd eta_theta_Y_2_theta_Y = eta_theta_Y.block( eta_theta_Y_2_eps_Y_dim, 0,
+								   eta_theta_Y_2_theta_Y_dim, 1 );
+	//
+	std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
+	
+	std::cout << eta_theta_Y << std::endl;
+	std::cout << eta_theta_Y_2_theta_Y << std::endl;
+	std::cout  << std::endl;
+	std::cout << X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y << std::endl;
+	std::cout << cov_theta_Y << std::endl;
       }
     catch( itk::ExceptionObject & err )
       {
