@@ -124,8 +124,9 @@ main( const int argc, const char **argv )
 		{
 		  if( static_cast<int>( imageIterator_mask.Value() ) != 0 )
 		    {
-		      //MaskType::IndexType idx = imageIterator_mask.GetIndex();
-		      subject_mapping.Expectation_Maximization( imageIterator_mask.GetIndex() );
+		      MaskType::IndexType idx = imageIterator_mask.GetIndex();
+		      if ( idx[2] > 55 && idx[2] < 65 )
+			subject_mapping.Expectation_Maximization( imageIterator_mask.GetIndex() );
 		    }
 		  //
 		  ++imageIterator_mask;

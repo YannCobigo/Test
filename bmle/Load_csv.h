@@ -16,7 +16,9 @@
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
+#include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <Eigen/KroneckerProduct>
 //
 // ITK
 //
@@ -28,6 +30,7 @@ using MaskType = itk::Image< unsigned char, 3 >;
 //
 //
 #include "BmleException.h"
+#include "BmleMakeITKImage.h"
 #include "BmleTools.h"
 #include "Subject.h"
 //
@@ -78,7 +81,7 @@ namespace MAC_bmle
     // CSV file
     std::ifstream csv_file_;
     //
-    // Arrange pidns inti groups
+    // Arrange pidns into groups
     std::set< int > groups_;
     std::vector< std::map< int /*pidn*/, BmleSubject< D_r, D_f > > > group_pind_{10};
     // Number of subjects per group
@@ -116,6 +119,27 @@ namespace MAC_bmle
     std::map< int /*group*/, std::vector< Eigen::MatrixXd > > Q_k_;
     // Covariance matrix theta level two
     Eigen::MatrixXd C_theta_;
+
+    //
+    // Constrast matrix
+    //
+
+    // Contrast groupe
+    Eigen::MatrixXf constrast_;
+
+    
+    //
+    // Records
+    //
+
+    //
+    // Contrast vectors
+    
+    //
+    // Posterior Probability Maps
+    std::vector< BmleMakeITKImage > PPM_{1};
+    //
+    // Posterior t-maps
   };
   //
   //
@@ -202,6 +226,18 @@ namespace MAC_bmle
 	      for ( auto image : s.second.get_age_images() )
 		Y_[ sub_image++ ] = image.second;
 	    }
+
+	//
+	// Output images
+	//
+
+	//
+	// PPM
+	for ( auto& image : PPM_ )
+	  {
+	    image = BmleMakeITKImage( D_r, "LaVieEstBelle.nii.gz", Y_[0] );
+	  }
+	
 	//
 	// Create the 4D measurements image
 	//image_concat();
@@ -570,6 +606,69 @@ namespace MAC_bmle
 				 mess.c_str(),
 				 ITK_LOCATION );
 	  }
+
+	
+	//
+	// Build the contrast matrix
+	//
+
+	//
+	// We build the weight of the cohort and the global contrasts
+	int
+	  swap_row = 0,
+	  previouse_grp_size = 0;
+	//
+	Eigen::MatrixXf G             = - Eigen::MatrixXf::Identity( groups_.size(), groups_.size() );
+	Eigen::MatrixXf all_contrasts =   Eigen::MatrixXf::Zero( groups_.size(), groups_.size() * groups_.size() );
+	Eigen::MatrixXf cohort        =   Eigen::MatrixXf::Zero( num_subjects_, groups_.size() );
+	// First line is Ones
+	G.block(0,0,1,groups_.size()) =   Eigen::MatrixXf::Ones( 1, groups_.size() );
+	//
+	for ( auto g : groups_ )
+	  {
+	    Eigen::MatrixXf tempo_G = G;
+	    tempo_G.row(swap_row).swap( tempo_G.row(0) );
+	    all_contrasts.block( 0, 0 + groups_.size() * swap_row,
+				 groups_.size(), groups_.size() ) = tempo_G;
+	    
+	    cohort.block( previouse_grp_size , swap_row, group_num_subjects_[ g ], 1 ) =
+	      Eigen::MatrixXf::Ones( group_num_subjects_[ g ], 1 ) / group_num_subjects_[ g ];
+	    previouse_grp_size += group_num_subjects_[ g ];
+	    
+	    //
+	    //
+	    swap_row++;
+	  }
+	//
+	std::cout << "all_contrast For each of the parameters: \n" << all_contrasts << std::endl << std::endl;
+	//
+	// Cohort distribution
+	// All contrasts between groups
+	Eigen::MatrixXf all_cont_grps = Eigen::MatrixXf::Zero( num_subjects_,
+							       groups_.size() * groups_.size() );
+	//
+	int
+	  current_row = 0,
+	  past_rows   = 0;
+	//
+	for ( auto g : groups_ )
+	  {
+	    for ( int c = 0 ; c < all_contrasts.cols() ; c++ )
+	      all_cont_grps.block( past_rows, c,
+				   group_num_subjects_[ g ], 1 ) =
+		all_contrasts( current_row, c ) * Eigen::MatrixXf::Ones( group_num_subjects_[ g ], 1 ) / group_num_subjects_[ g ];
+	    // next row
+	    past_rows += group_num_subjects_[ g ];
+	    current_row++;
+	  }
+	//
+	// Global contrast
+	Eigen::MatrixXf Id_Dr_D_f = Eigen::MatrixXf::Identity( D_r + D_f, D_r + D_f );
+	//  
+	constrast_ = Eigen::kroneckerProduct( all_cont_grps, Id_Dr_D_f );
+	//
+	if ( false )
+	  std::cout << "constrast_ \n" << constrast_  << std::endl;
       }
     catch( itk::ExceptionObject & err )
       {
@@ -654,7 +753,7 @@ namespace MAC_bmle
 	  delta_F  = 100.;
 	int
 	  n = 0,
-	  N = 10;
+	  N = 10; // N regulate the EM loop to be sure converge smootly
 	
 	//
 	while( n < N  )
@@ -734,7 +833,7 @@ namespace MAC_bmle
 		{
 		  Cov_eps +=  exp( lambda_k[g][k] ) * Q_k_[g][k];
 		}
-//	    std::cout << Cov_eps << std::endl;
+	    //	    std::cout << Cov_eps << std::endl;
 	    //
 	    inv_Cov_eps =  MAC_bmle::inverse( Cov_eps );
 	    //std::cout << inv_Cov_eps << std::endl;
@@ -806,10 +905,10 @@ namespace MAC_bmle
 	double
 	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
 	  F_3 = - ( Cov_theta_Y * X_.transpose() * Inv_Cov_eps * X_ ).trace();
-	std::cout << "F_1 = " << F_1<< std::endl;
-	std::cout << "F_2 = " << F_2<< std::endl;
-	std::cout << "F_3 = " << F_3<< std::endl;
-	std::cout << "F_4 = " << F_4<< std::endl;
+	//std::cout << "F_1 = " << F_1<< std::endl;
+	//std::cout << "F_2 = " << F_2<< std::endl;
+	//std::cout << "F_3 = " << F_3<< std::endl;
+	//std::cout << "F_4 = " << F_4<< std::endl;
 	//
 	//
 	return ( F_1 + F_2 + F_3 + F_4 ) / 2.;
