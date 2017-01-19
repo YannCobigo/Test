@@ -23,6 +23,7 @@ IncludeCmd: yes
     mkdir $SINGULARITY_ROOTFS/mnt/neuroimaging/ \
     	  $SINGULARITY_ROOTFS/mnt/macdata \
 	  $SINGULARITY_ROOTFS/mnt/images \
+	  $SINGULARITY_ROOTFS/mnt/production \
 	  $SINGULARITY_ROOTFS/mnt/tempo \
 	  $SINGULARITY_ROOTFS/etc/singularity/
     cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
