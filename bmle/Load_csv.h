@@ -12,7 +12,8 @@
 #include <list>
 #include <map>
 #include <set>
-// Egen
+#include <math.h>
+// Eigen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
 #include <Eigen/Sparse>
@@ -27,6 +28,7 @@ using MaskType = itk::Image< unsigned char, 3 >;
 //
 //
 #include "BmleException.h"
+#include "BmleTools.h"
 #include "Subject.h"
 //
 //
@@ -62,6 +64,11 @@ namespace MAC_bmle
 
     // This function will load all the patients images into a 4D image.
     void image_concat();
+    // Thermodynamic free energy
+    double F_( const Eigen::MatrixXd& , const Eigen::MatrixXd& ,
+	       const Eigen::MatrixXd& , const Eigen::MatrixXd& ) const;
+    // Thermodynamic free energy
+    void Lambda_init_( const Eigen::MatrixXd& ) const;
 
     //
     // Members
@@ -78,7 +85,7 @@ namespace MAC_bmle
     std::vector< int > group_num_subjects_{0,0,0,0,0,0,0,0,0,0};
     //
     // Measures grouped in vector of 3D image
-    using Image3DType  = itk::Image< float, 3 >;
+    using Image3DType  = itk::Image< double, 3 >;
     using Reader3DType = itk::ImageFileReader< Image3DType >;
     std::vector< Reader3DType::Pointer > Y_;
 
@@ -94,9 +101,21 @@ namespace MAC_bmle
     //
 
     // X1
-    Eigen::MatrixXf X1_;
+    Eigen::MatrixXd X1_;
     // X2
-    Eigen::MatrixXf X2_;
+    Eigen::MatrixXd X2_;
+    // X augmented
+    Eigen::MatrixXd X_;
+
+    //
+    // Covariance base matrices
+    //
+
+    // Base matrices
+    // 1 /*C_eps_1_base*/+ D_r /*C_eps_2_base*/+ 1 /*fixed effect*/
+    std::map< int /*group*/, std::vector< Eigen::MatrixXd > > Q_k_;
+    // Covariance matrix theta level two
+    Eigen::MatrixXd C_theta_;
   };
   //
   //
@@ -109,7 +128,7 @@ namespace MAC_bmle
       {
 	//
 	//
-	float mean_age = 0.;
+	double mean_age = 0.;
 	std::string line;
 	//skip the first line
 	std::getline(csv_file_, line);
@@ -128,15 +147,19 @@ namespace MAC_bmle
 	    // Get the group
 	    std::getline(lineStream, cell, ',');
 	    const int group = std::stoi( cell );
+	    if ( group == 0 )
+	      throw BmleException( __FILE__, __LINE__,
+				   "Select another group name than 0 (e.g. 1, 2, ...). 0 is reserved.",
+				   ITK_LOCATION );
 	    // Get the age
 	    std::getline(lineStream, cell, ',');
 	    int age = std::stoi( cell );
-	    mean_age += static_cast< float >( age );
+	    mean_age += static_cast< double >( age );
 	    // Get the image
 	    std::string image;
 	    std::getline(lineStream, image, ',');
 	    // Covariates
-	    std::list< float > covariates;
+	    std::list< double > covariates;
 	    while( std::getline(lineStream, cell, ',') )
 	      covariates.push_back( std::stof(cell) );
 	    num_covariates_ = covariates.size();
@@ -166,7 +189,7 @@ namespace MAC_bmle
 
 	//
 	// mean age
-	mean_age /= static_cast< float >( num_3D_images_ );
+	mean_age /= static_cast< double >( num_3D_images_ );
 	std::cout << "mean age: " << mean_age << std::endl;
 	//
 	Y_.resize( num_3D_images_ );
@@ -207,7 +230,7 @@ namespace MAC_bmle
       {
 //	//
 //	// ITK image types
-//	using Image3DType = itk::Image< float, 3 >;
+//	using Image3DType = itk::Image< double, 3 >;
 //	using Reader3D    = itk::ImageFileReader< Image3DType >;
 //	// 
 //	using Iterator3D = itk::ImageRegionConstIterator< Image3DType >;
@@ -311,15 +334,20 @@ namespace MAC_bmle
   {
     try
       {
-	//Eigen::SparseMatrix< float > X1( num_3D_images_, num_subjects_ * 3 /*D_r*/ + 3 /*D_f*/);
+	//
+	// Build X1 and X2 design matrices
+	//
+
+	//
+	//
 	int
 	  X1_lines = num_3D_images_,
 	  X1_cols  = num_subjects_ * D_r + groups_.size() * D_f,
 	  X2_lines = num_subjects_ * D_r + groups_.size() * D_f ,
 	  X2_cols  = groups_.size() * ( D_r * (num_covariates_ + 1) + D_f );
 	//
-	X1_ = Eigen::MatrixXf::Zero( X1_lines, X1_cols );
-	X2_ = Eigen::MatrixXf::Zero( X2_lines, X2_cols );
+	X1_ = Eigen::MatrixXd::Zero( X1_lines, X1_cols );
+	X2_ = Eigen::MatrixXd::Zero( X2_lines, X2_cols );
 	//
 	int line_x1 = 0, col_x1 = 0;
 	int line_x2 = 0, col_x2 = 0;
@@ -333,10 +361,10 @@ namespace MAC_bmle
 		{
 		  // Add the ID matrix for the fixed parameters
 		  X2_.block( line_x2, D_r * (num_covariates_ + 1) + increme_dist_x2,
-			    D_f, D_f ) = Eigen::MatrixXf::Identity( D_f, D_f );
+			     D_f, D_f ) = Eigen::MatrixXd::Identity( D_f, D_f );
 		  line_x2 += D_f;
 		  //
-		  increme_dist_x1 += group_num_subjects_[g] * D_r + D_f;
+		  increme_dist_x1 += group_num_subjects_[current_gr] * D_r + D_f;
 		  increme_dist_x2 += D_r * (num_covariates_ + 1) + D_f;
 		  col_x1          += D_f;
 		  current_gr       = g;
@@ -345,10 +373,12 @@ namespace MAC_bmle
 	      // X1 design
 	      int
 		sub_line_x1 = subject.second.get_random_matrix().rows(),
-		sub_col_x1  = subject.second.get_random_matrix().cols();
+		sub_col_x1  = subject.second.get_random_matrix().cols(),
+		sub_line_x1_fixed = subject.second.get_fixed_matrix().rows(),
+		sub_col_x1_fixed  = subject.second.get_fixed_matrix().cols();
 	      X1_.block( line_x1, col_x1, sub_line_x1, sub_col_x1 ) = subject.second.get_random_matrix();
 	      X1_.block( line_x1, increme_dist_x1 + group_num_subjects_[g]  * D_r,
-			 sub_line_x1, sub_col_x1 ) = subject.second.get_fixed_matrix();
+			 sub_line_x1_fixed, sub_col_x1_fixed ) = subject.second.get_fixed_matrix();
 	      //
 	      line_x1 += sub_line_x1;
 	      col_x1  += sub_col_x1;
@@ -363,13 +393,182 @@ namespace MAC_bmle
 	    }
 	// And the last Id matrix of the X2 design
 	X2_.block( line_x2, D_r * (num_covariates_ + 1) + increme_dist_x2,
-		   D_f, D_f ) = Eigen::MatrixXf::Identity( D_f, D_f );
+		   D_f, D_f ) = Eigen::MatrixXd::Identity( D_f, D_f );
 	//
 	//
 	if ( false )
 	  {
 	    std::cout << X1_ << std::endl;
 	    std::cout << X2_ << std::endl;
+	  }
+
+	//
+	// Build X augmented
+	//
+
+	//
+	// Before keeping going, we check the X1_cols == X2_lines
+	if ( X1_cols != X2_lines )
+	  {
+	    std::string mess = std::string("Number of lines first design (X1) must be equal to the ");
+	    mess += std::string("number of columns second design (X2).");
+	    //
+	    throw BmleException( __FILE__, __LINE__,
+				 mess.c_str(),
+				 ITK_LOCATION );
+	  }
+	
+	//
+	//
+	int
+	  X_lines = X1_cols + X2_cols + X1_lines,
+	  X_cols  = X1_cols + X2_cols;
+	//
+	X_ = Eigen::MatrixXd::Zero( X_lines, X_cols );
+	// lines 
+	X_.block( 0, 0, X1_lines, X1_cols )                 = X1_;
+	X_.block( X1_lines, 0, X1_cols, X1_cols )           = Eigen::MatrixXd::Identity( X1_cols, X1_cols );
+	X_.block( X1_lines + X1_cols, 0, X2_cols, X1_cols ) = Eigen::MatrixXd::Zero( X2_cols, X1_cols );
+	// Columns
+	X_.block( 0, X1_cols, X1_lines, X2_cols )                 = X1_ * X2_;
+	X_.block( X1_lines, X1_cols, X1_cols, X2_cols )           = Eigen::MatrixXd::Zero( X1_cols, X2_cols );
+	X_.block( X1_lines + X1_cols, X1_cols, X2_cols, X2_cols ) = Eigen::MatrixXd::Identity( X2_cols, X2_cols );
+	//
+	if ( false )
+	  {
+	    std::cout << X_ << std::endl;
+	  }
+
+	//
+	// Building the covariance base matrices & covariante matrices
+	//
+
+	//
+	// Based matrix for a subject
+	std::vector< Eigen::MatrixXd > q( D_r );
+	for ( int i = 0 ; i < D_r ; i++ )
+	  {
+	    q[i] = Eigen::MatrixXd::Zero( D_r, D_r );
+	    q[i](i,i) = 1.;
+	  }
+
+	//
+	// Based matrix per group
+	std::map< int, std::vector< Eigen::MatrixXd > > Q_group;
+	for ( auto g : groups_ )
+	  {
+	    //
+	    // For each group we create D_r based matrix + 1 matrix for fixed effects over
+	    // D_r dimensions
+	    if ( Q_group.find( g ) == Q_group.end() )
+		Q_group[g] = std::vector< Eigen::MatrixXd >( D_r + 1 );
+	    // fixed effect matrix
+	    Q_group[g][D_r] = Eigen::MatrixXd::Zero( group_num_subjects_[g] * D_r + D_f,
+						     group_num_subjects_[g] * D_r + D_f );
+	    // We create each D_r dimensions
+	    for ( int d = 0 ; d < D_r ; d++ )
+	      {
+		Q_group[g][d] = Eigen::MatrixXd::Zero( group_num_subjects_[g] * D_r + D_f,
+						       group_num_subjects_[g] * D_r + D_f );
+		//
+		int linco = 0;
+		for ( int s = 0 ; s < group_num_subjects_[g] ; s++ )
+		  {
+		    Q_group[g][d].block( linco, linco, D_r, D_r ) = q[d];
+		    linco += D_r;
+		  }
+		// Add the fixed effect
+		Q_group[g][D_r].block( linco, linco,
+				       D_f, D_f ) = Eigen::MatrixXd::Identity( D_f, D_f );
+		if ( false )
+		  {
+		    std::cout << "Q_group[" << g << "][" << d << "] = \n"
+			      << Q_group[g][d] << std::endl;
+		    std::cout << "Fixed part: " << std::endl;
+		    std::cout << "Q_group[" << g << "][D_r] = \n"
+			      << Q_group[g][D_r] << std::endl;
+		  }
+	      }
+	  }
+
+	
+	//
+	// Building the starting block covariance matrix
+	// 
+
+	//
+	// Global dimension of the base matrix
+	int
+	  C_theta_dim = groups_.size() * ( D_r * (num_covariates_+1) + D_f ) /*C_theta dimension*/,
+	  Q_k_linco = num_3D_images_ /*C_eps_1_base*/
+	  + num_subjects_ * D_r + groups_.size() * D_f /*C_eps_2_base*/
+	  + C_theta_dim;
+	int linco = 0;
+	//
+	// C_eps_1_base
+	Q_k_[0]    = std::vector< Eigen::MatrixXd >( 1 );
+	Q_k_[0][0] = Eigen::MatrixXd::Zero( Q_k_linco, Q_k_linco );
+	Q_k_[0][0].block( 0, 0,
+			  num_3D_images_,  num_3D_images_ ) = Eigen::MatrixXd::Identity(num_3D_images_,
+											num_3D_images_);
+	//
+	// C_eps_2_base and fixed effects
+	linco = num_3D_images_;
+	for ( auto g : groups_ )
+	  {
+	    // check for a new group
+	    if ( Q_k_.find( g ) == Q_k_.end() )
+		Q_k_[g] = std::vector< Eigen::MatrixXd >( D_r + 1 );
+	    // fixed effect matrix
+	    Q_k_[g][D_r]  = Eigen::MatrixXd::Zero( Q_k_linco, Q_k_linco );
+	    int sub_linco = Q_group[g][0].rows();
+	    for ( int d_r = 0 ; d_r < D_r ; d_r++ )
+	      {
+		Q_k_[g][d_r] = Eigen::MatrixXd::Zero( Q_k_linco, Q_k_linco );
+		Q_k_[g][d_r ].block( linco, linco,
+				     sub_linco, sub_linco) = Q_group[g][d_r];
+	      }
+	    // fixed effects
+	    Q_k_[g][D_r ].block( linco + sub_linco - D_f, linco + sub_linco - D_f,
+				 D_f, D_f ) = 1.e-16 * Eigen::MatrixXd::Identity(D_f, D_f);
+	    //
+	    linco += sub_linco;
+	  }
+	//
+	// Covariance matrix theta level two
+	C_theta_ = Eigen::MatrixXd::Zero( Q_k_linco, Q_k_linco );
+	C_theta_.block( linco, linco,
+			C_theta_dim,  C_theta_dim ) = 1.e+16 * Eigen::MatrixXd::Identity( C_theta_dim,
+											  C_theta_dim );
+	//
+	//
+	if ( false )
+	  {
+	    std::cout << "Q_k_[0][0] = \n"
+		      << Q_k_[0][0] << "\n\n\n"
+		      << std::endl;
+	    for ( auto g : groups_ )
+	      for ( int k = 0 ; k <  D_r + 1 ; k++ )
+		std::cout << "Q_k_[" << g << "][" << k << "] = \n"
+			  << Q_k_[g][k] << "\n\n\n"
+			  << std::endl;
+	    std::cout << "C_theta_ = \n"
+		      << C_theta_ << "\n\n\n"
+		      << std::endl;
+	  }
+
+	//
+	//
+	if ( X_.rows() != Q_k_linco )
+	  {
+	    //std::cout << "[X_] = " << X_.rows() << "x" << X_.cols() << std::endl;
+	    //std::cout << "[Q_k_] = " << Q_k_linco << "x" << Q_k_linco << std::endl;
+	    std::string mess = std::string("Dimensions of the covriance matrix and ");
+	    mess += std::string("design matrix must comply:");
+	    //
+	    throw BmleException( __FILE__, __LINE__,
+				 mess.c_str(),
+				 ITK_LOCATION );
 	  }
       }
     catch( itk::ExceptionObject & err )
@@ -386,8 +585,288 @@ namespace MAC_bmle
   {
     try
       {
-	std::cout << Idx << " " << Y_[0]->GetOutput()->GetPixel( Idx )
-		  << std::endl;
+	//
+	// Measure
+	//
+	std::cout << Idx << std::endl;
+	
+	//
+	// Augmented measured data Y
+	Eigen::MatrixXd Y = Eigen::MatrixXd::Zero( X_.rows(), 1 );
+	// First lines are set to the measure
+	// other lines are set to 0. 
+	for ( int img = 0 ; img < num_3D_images_ ; img++ )
+	  {
+	    // std::cout << Idx << " " << Y_[ img ]->GetOutput()->GetPixel( Idx )
+	    //           << std::endl;
+	    Y( img, 0 ) = Y_[ img ]->GetOutput()->GetPixel( Idx );
+	  }
+	//
+	if ( false )
+	  std::cout << Y << std::endl;
+
+	//
+	// Covariance
+	//
+	
+	//
+	// Hyper-parameters
+	// 1 /*C_eps_1*/+ groups_.size * D_r /*C_eps_2*/+ 1 /*fixed effect*/
+	std::map< int /*group*/, std::vector< double > > lambda_k;
+	// C_eps_1 lambda
+	lambda_k[0]    = std::vector< double >( 1 );
+	lambda_k[0][0] = 1.e+0 /*log( 1.e+8 )*/;
+	// C_eps_2_ and fixed effects lambda
+	for ( auto g : groups_ )
+	  {
+	    if ( lambda_k.find( g ) == lambda_k.end() )
+	      lambda_k[g] = std::vector< double >( D_r + (D_f > 0  ? 1 : 0) );
+	    //
+	    for ( int d_r = 0 ; d_r < D_r ; d_r++ )
+	      {
+		lambda_k[g][d_r] = 1.e+0;
+	      }
+	    // fixed effects
+	    if ( D_f > 0 )
+	      lambda_k[g][D_r ] = 0.; // Always enforce this value to be 0
+	  }
+
+	//
+	// Covariance
+	Eigen::MatrixXd Cov_eps = C_theta_;
+	Cov_eps +=  exp( lambda_k[0][0] ) * Q_k_[0][0];
+	for ( auto g : groups_ )
+	  for ( int k = 0 ; k < D_r + (D_f > 0  ? 1 : 0) ; k++ )
+	    Cov_eps +=  exp( lambda_k[g][k] ) * Q_k_[g][k];
+	//
+	Eigen::MatrixXd inv_Cov_eps = Cov_eps.inverse();
+
+	//
+	//
+	// posterior
+	// Eigen::MatrixXd cov_theta_Y = MAC_bmle::inverse( X_.transpose() * inv_Cov_eps * X_ );
+	Eigen::MatrixXd cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
+	Eigen::MatrixXd eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
+	
+	double
+	  F_old = 1.,
+	  F     = 1.,
+	  delta_F  = 100.;
+	int
+	  n = 0,
+	  N = 10;
+	
+	//
+	while( n < N  )
+	  {
+	    F_old = F;
+
+	    //
+	    // Expectaction step
+	    //	    cov_theta_Y = MAC_bmle::inverse( X_.transpose() * inv_Cov_eps * X_ );
+	    cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
+	    eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
+//	    std::cout << eta_theta_Y << std::endl;
+
+	    //
+	    // Maximization step
+	    int hyper_dim = D_r + (D_f > 0  ? 1 : 0);
+	    Eigen::MatrixXd P  = inv_Cov_eps - inv_Cov_eps * X_ * cov_theta_Y * X_.transpose() * inv_Cov_eps;
+	    // Fisher Information matrix
+	    Eigen::MatrixXd H = Eigen::MatrixXd::Zero( groups_.size() * hyper_dim + 1,
+						       groups_.size() * hyper_dim + 1 );
+	    // Fisher gradient
+	    Eigen::MatrixXd grad = Eigen::MatrixXd::Zero( groups_.size() * hyper_dim + 1, 1 );
+	    int count_group = 0;
+	    // groupe 0 C_eps_1
+	    grad(0,0)  = - (Y.transpose() * P.transpose() * Q_k_[0][0] * P * Y)(0,0);
+	    grad(0,0) += (P*Q_k_[0][0]).trace();
+	    grad(0,0) *= - exp(lambda_k[0][0]) / 2.;
+	    H(0,0) = exp(lambda_k[0][0] + lambda_k[0][0]) * ( P*Q_k_[0][0]*P*Q_k_[0][0] ).trace() / 2.;
+	    //
+	    for ( auto g : groups_ )
+	      {
+		for ( int i = 0 ; i < hyper_dim ; i++ )
+		  {
+		    // 
+		    grad(i + count_group * hyper_dim + 1,0)  = - (Y.transpose() * P.transpose() * Q_k_[g][i] * P * Y)(0,0);
+		    grad(i + count_group * hyper_dim + 1,0) += (P*Q_k_[g][i]).trace();
+		    grad(i + count_group * hyper_dim + 1,0) *= - exp(lambda_k[g][i]) / 2.;
+		    for ( int j = 0 ; j < D_r + (D_f > 0  ? 1 : 0); j++ )
+		      H( i + count_group * hyper_dim + 1,j + count_group * hyper_dim + 1 ) =
+			exp(lambda_k[g][i] + lambda_k[g][j]) * ( P*Q_k_[g][i]*P*Q_k_[g][j] ).trace() / 2.;
+		  }
+		// next group
+		count_group++;
+	      }
+//	std::cout << std::endl;
+//	std::cout << std::endl;
+//	std::cout << std::endl;
+//	std::cout << std::endl;
+//	std::cout << std::endl;
+//	std::cout << std::endl;
+////	std::cout << P  << std::endl;
+//	std::cout <<  grad << std::endl;
+//	std::cout << H  << std::endl;
+	    //
+	    // Lambda update
+	Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 32.) * grad;
+	//Eigen::MatrixXd delta_lambda = 0.1 * grad;
+	//	std::cout << delta_lambda << std::endl;
+	    count_group = 0;
+	    for ( auto g : groups_ )
+	      {
+		for ( int k = 1 ; k < hyper_dim ; k++ )
+		  {
+		    lambda_k[g][k] += delta_lambda( k + count_group * hyper_dim, 0 );
+		    // std::cout << "lambda_k[" << g << "][" << k << "] = " << lambda_k[g][k] << " " << exp(lambda_k[g][k])<< std::endl;
+		  }
+		if ( D_f > 0 )
+		  lambda_k[g][D_r] += 0.;
+		//
+		count_group++;
+	      }
+	    // Update of the covariance matrix
+	    Cov_eps = C_theta_;
+	    Cov_eps +=  exp( lambda_k[0][0] ) * Q_k_[0][0];
+	    for ( auto g : groups_ )
+	      for ( int k = 1 ; k < hyper_dim ; k++ )
+		{
+		  Cov_eps +=  exp( lambda_k[g][k] ) * Q_k_[g][k];
+		}
+//	    std::cout << Cov_eps << std::endl;
+	    //
+	    inv_Cov_eps =  MAC_bmle::inverse( Cov_eps );
+	    //std::cout << inv_Cov_eps << std::endl;
+	    //
+	    // Free energy
+	    F = F_( Y, inv_Cov_eps, eta_theta_Y, cov_theta_Y );
+	    delta_F = F - F_old;
+	    if ( fabs( delta_F ) < 1.e-8 )
+	      n++;
+	    else
+	      n = 0;
+	    std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F )
+		      << std::endl;
+	  }
+
+	//
+	//
+	int eta_theta_Y_2_theta_Y_dim = X2_.cols();
+	int eta_theta_Y_2_eps_Y_dim   = cov_theta_Y.rows() - eta_theta_Y_2_theta_Y_dim;
+	//
+	Eigen::MatrixXd eta_theta_Y_2_eps_Y   = eta_theta_Y.block( 0, 0,
+								   eta_theta_Y_2_eps_Y_dim, 1 );
+	Eigen::MatrixXd eta_theta_Y_2_theta_Y = eta_theta_Y.block( eta_theta_Y_2_eps_Y_dim, 0,
+								   eta_theta_Y_2_theta_Y_dim, 1 );
+	//
+	std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
+	
+	std::cout << eta_theta_Y << std::endl;
+	std::cout << eta_theta_Y_2_theta_Y << std::endl;
+	std::cout  << std::endl;
+	std::cout << X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y << std::endl;
+	std::cout << cov_theta_Y << std::endl;
+      }
+    catch( itk::ExceptionObject & err )
+      {
+	std::cerr << err << std::endl;
+	exit( -1 );
+      }
+  }
+  //
+  //
+  //
+  template< int D_r, int D_f > double
+    BmleLoadCSV< D_r, D_f >::F_( const Eigen::MatrixXd& Augmented_Y,
+				 const Eigen::MatrixXd& Inv_Cov_eps,
+				 const Eigen::MatrixXd& Eta_theta_Y,
+				 const Eigen::MatrixXd& Cov_theta_Y ) const
+  {
+    try
+      {
+	//
+	// residual
+	Eigen::MatrixXd r = Augmented_Y - X_ * Eta_theta_Y;
+
+	//
+	// Terms of free energy
+	//
+
+	//
+	// log of determinants
+	double F_1 = 0, F_4 = 0 ;
+	//
+	for ( int linco = 0 ; linco < Inv_Cov_eps.rows() ; linco++ )
+	  F_1 += log( Inv_Cov_eps(linco,linco) );
+	//
+	for ( int linco = 0 ; linco < Cov_theta_Y.rows() ; linco++ )
+	  F_4 += log( Cov_theta_Y(linco,linco) );
+	
+	double
+	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
+	  F_3 = - ( Cov_theta_Y * X_.transpose() * Inv_Cov_eps * X_ ).trace();
+	std::cout << "F_1 = " << F_1<< std::endl;
+	std::cout << "F_2 = " << F_2<< std::endl;
+	std::cout << "F_3 = " << F_3<< std::endl;
+	std::cout << "F_4 = " << F_4<< std::endl;
+	//
+	//
+	return ( F_1 + F_2 + F_3 + F_4 ) / 2.;
+      }
+    catch( itk::ExceptionObject & err )
+      {
+	std::cerr << err << std::endl;
+	exit( -1 );
+      }
+  }
+  //
+  //
+  //
+  template< int D_r, int D_f > void
+    BmleLoadCSV< D_r, D_f >::Lambda_init_( const Eigen::MatrixXd& Augmented_Y ) const
+  {
+    try
+      {
+//	//
+//	// residual
+//	Eigen::MatrixXd r = Augmented_Y/* - X_ * Eta_theta_Y*/;
+//
+//	int
+//	  C_theta_dim = groups_.size() * ( D_r * (num_covariates_+1) + D_f ) /*C_theta dimension*/,
+//	  Q_k_linco = num_3D_images_ /*C_eps_1_base*/
+//	  + num_subjects_ * D_r + groups_.size() * D_f /*C_eps_2_base*/
+//	  + C_theta_dim;
+//
+//
+//	std::vector< double > lambda_k( 1 /*C_eps_1*/+ D_r /*C_eps_2*/+ 1 /*fixed effect*/);
+//	for ( int k = 0 ; k < lambda_k.size() - 1 ; k++ )
+//	  {
+//	    Eigen::MatrixXd inv_Q_k = Eigen::MatrixXd::Zero( Q_k_linco, Q_k_linco );
+//	    for ( int q = 0 ; q < Q_k_linco ; q++ )
+//	      if( Q_k_[k](q,q) != 0. )
+//		inv_Q_k(q,q) = 1. / Q_k_[k](q,q);
+//	    //
+//	    // lambda numerator
+//	    double l_num = (r.transpose() * inv_Q_k * r)(0,0);
+//	    //
+//	    // lambda denominator
+//	    Eigen::MatrixXd R = Eigen::MatrixXd::Identity( X_.rows(), Q_k_linco );
+//	    R -= X_ * ( X_.transpose() * inv_Q_k * X_ ).inverse() * X_.transpose() * inv_Q_k;
+//	    //
+//	    double l_denom = R.trace();
+//
+//	    std::cout << l_num << std::endl;
+//	    std::cout << l_denom << std::endl;
+//	    std::cout << "lamba[" << k << "] = " << l_num / l_denom << std::endl;
+//	  }
+//	lambda_k[ 0 ]       = log( 1.e+9 ); 
+//	lambda_k[ D_r + 1 ] = 0.; // Always enforce this value to be 0
+//
+//
+//
+//
+//
       }
     catch( itk::ExceptionObject & err )
       {

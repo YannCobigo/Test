@@ -11,3 +11,6 @@ PIDN,Groupe,Age,Image,EV1,EV2,EV3
 155,3,80,/home/cobigo/devel/CPP/BMLE/bmle/data/MP-LAS-long-3DC_NIFD155X1.nii,1.12,32,42
 156,3,80,/home/cobigo/devel/CPP/BMLE/bmle/data/MP-LAS-long-3DC_NIFD155X2.nii,1.21,41,31
 156,3,90,/home/cobigo/devel/CPP/BMLE/bmle/data/MP-LAS-long-3DC_NIFD155X1.nii,1.22,42,32
+166,3,82,/home/cobigo/devel/CPP/BMLE/bmle/data/MP-LAS-long-3DC_NIFD155X2.nii,1.31,43,21
+166,3,85,/home/cobigo/devel/CPP/BMLE/bmle/data/MP-LAS-long-3DC_NIFD155X1.nii,1.32,44,22
+166,3,87,/home/cobigo/devel/CPP/BMLE/bmle/data/MP-LAS-long-3DC_NIFD155X1.nii,1.34,45,22

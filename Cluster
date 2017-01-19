@@ -1,0 +1,47 @@
+#
+# Hostname
+emacs -nw /etc/hostname 
+mac-node-ics{1,2,3}.ucsf.edu
+1: 10.36.52.172 otp1038102ots.ucsf.edu
+2: 10.36.56.127 otp1039057ots.ucsf.edu
+3: 10.36.56.164 otp1039094ots.ucsf.edu
+
+Large disk are not mounted:
+mount /dev/sdb1 /mnt/Production
+
+#
+# CentOS
+yum update -y && yum install -y epel-release.noarch && yum groupinstall -y "Development tools" && yum makecache fast
+
+#
+# Singularity
+http://singularity.lbl.gov/install-linux
+# docker
+https://docs.docker.com/engine/installation/linux/centos/
+
+
+#
+# Setup NFS
+# http://www.itzgeek.com/how-tos/linux/centos-how-tos/how-to-setup-nfs-server-on-centos-7-rhel-7-fedora-22.html
+# https://www.howtoforge.com/tutorial/setting-up-an-nfs-server-and-client-on-centos-7/
+
+
+#
+# Grid engine
+# http://linoxide.com/ubuntu-how-to/setup-open-grid-engine-cluster-ubuntu/
+adduser gsadmin --uid 500
+# Download Grid Engine Package
+wget http://downloads.sourceforge.net/project/gridscheduler/GE2011.11p1/GE2011.11p1.tar.gz
+tar -zxvf GE2011.11p1.tar.gz
+mv GE2011.11p1 /home/gsadmin/
+chown -R gsadmin:gsadmin /home/gsadmin/
+
+http://gridengine.org/pipermail/users/2012-April/003342.html
+
+
+
+
+
+
+
+

@@ -48,7 +48,7 @@ namespace MAC_bmle
     {
       //
       // Some typedef
-      using Image3DType = itk::Image< float, 3 >;
+      using Image3DType = itk::Image< double, 3 >;
       using Reader3D    = itk::ImageFileReader< Image3DType >;
 
     public:
@@ -69,15 +69,15 @@ namespace MAC_bmle
       inline const std::map< int, Reader3D::Pointer >&
       get_age_images() const { return age_ITK_images_ ;};
       //
-      const Eigen::MatrixXf& get_random_matrix() const {return X_1_rand_;}
-      const Eigen::MatrixXf& get_fixed_matrix() const {return X_1_fixed_;}
-      const Eigen::MatrixXf& get_X2_matrix() const {return X_2_;}
+      const Eigen::MatrixXd& get_random_matrix() const {return X_1_rand_;}
+      const Eigen::MatrixXd& get_fixed_matrix() const {return X_1_fixed_;}
+      const Eigen::MatrixXd& get_X2_matrix() const {return X_2_;}
 
       //
       // Add time point
-      void add_tp( const int, const std::list< float >&, const std::string& );
+      void add_tp( const int, const std::list< double >&, const std::string& );
       // Convariates' model
-      void build_design_matrices( const float );
+      void build_design_matrices( const double );
       // Print
       void print() const;
 
@@ -101,7 +101,7 @@ namespace MAC_bmle
       int group_;
       // 
       // Age covariate map
-      std::map< int, std::list< float > > age_covariates_;
+      std::map< int, std::list< double > > age_covariates_;
       //
       // Age image maps
       // age-image name
@@ -121,11 +121,11 @@ namespace MAC_bmle
       //
       // Level 1
       // Random matrix
-      Eigen::MatrixXf X_1_rand_;
+      Eigen::MatrixXd X_1_rand_;
       // Fixed matrix
-      Eigen::MatrixXf X_1_fixed_;
+      Eigen::MatrixXd X_1_fixed_;
       // Second level design matrix, Matrix of covariates
-      Eigen::MatrixXf X_2_;
+      Eigen::MatrixXd X_2_;
       //
       // Random effect results
       Image3DType::Pointer Random_effect_ITK_image_;
@@ -147,7 +147,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::build_design_matrices( const float Age_mean )
+    MAC_bmle::BmleSubject< D_r, D_f >::build_design_matrices( const double Age_mean )
   {
     try
       {
@@ -161,10 +161,10 @@ namespace MAC_bmle
 	//
 	X_1_rand_.resize(  num_lignes, D_r );
 	X_1_fixed_.resize( num_lignes, D_f );
-	X_1_rand_  = Eigen::MatrixXf::Zero( num_lignes, D_r );
-	X_1_fixed_ = Eigen::MatrixXf::Zero( num_lignes, D_f );
+	X_1_rand_  = Eigen::MatrixXd::Zero( num_lignes, D_r );
+	X_1_fixed_ = Eigen::MatrixXd::Zero( num_lignes, D_f );
 	// record ages
-	std::vector< float > ages;
+	std::vector< double > ages;
 	for ( auto age : age_images_ )
 	  ages.push_back( age.first );
 	// random part of the design matrix
@@ -174,7 +174,7 @@ namespace MAC_bmle
 	      X_1_rand_(l,c) = pow( ages[l] - Age_mean, c );
 	    // fixed part of the design matrix
 	    for ( int c = 0 ; c <  D_f ; c++ )
-	      X_1_fixed_(l,c) = pow( ages[l] - Age_mean, c );
+	      X_1_fixed_(l,c) = pow( ages[l] - Age_mean, D_r + c );
 	  }
 
 	std::cout << "Random and fixed design matrices:" << std::endl;
@@ -190,18 +190,18 @@ namespace MAC_bmle
 	//
 	// Initialize the covariate matrix
 	// and the random parameters
-	std::map< int, std::list< float > >::const_iterator age_cov_it = age_covariates_.begin();
+	std::map< int, std::list< double > >::const_iterator age_cov_it = age_covariates_.begin();
 	//
 	X_2_.resize( D_r, ((*age_cov_it).second.size() + 1) * D_r );
-	X_2_ = Eigen::MatrixXf::Zero( D_r, ((*age_cov_it).second.size() + 1)* D_r  );
+	X_2_ = Eigen::MatrixXd::Zero( D_r, ((*age_cov_it).second.size() + 1)* D_r  );
 	//
 	//
 	int line = 0;
 	int col  = 0;
-	X_2_.block< D_r, D_r >( 0, 0 ) = Eigen::MatrixXf::Identity( D_r, D_r );
+	X_2_.block< D_r, D_r >( 0, 0 ) = Eigen::MatrixXd::Identity( D_r, D_r );
 	// covariates
 	for ( auto cov : (*age_cov_it).second )
-	  X_2_.block< D_r, D_r >( 0, ++col * D_r ) = cov * Eigen::MatrixXf::Identity( D_r, D_r );
+	  X_2_.block< D_r, D_r >( 0, ++col * D_r ) = cov * Eigen::MatrixXd::Identity( D_r, D_r );
       
 	std::cout << X_2_ << std::endl;
       }
@@ -216,7 +216,7 @@ namespace MAC_bmle
   //
   template < int D_r, int D_f > void
     MAC_bmle::BmleSubject< D_r, D_f >::add_tp( const int                 Age,
-					       const std::list< float >& Covariates,
+					       const std::list< double >& Covariates,
 					       const std::string&        Image )
   {
     try

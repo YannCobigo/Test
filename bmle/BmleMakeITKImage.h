@@ -42,9 +42,9 @@ namespace MAC_bmle
     {
       //
       // Some typedef
-      using Image3DType = itk::Image< float, 3 >;
+      using Image3DType = itk::Image< double, 3 >;
       using Reader3D    = itk::ImageFileReader< Image3DType >;
-      using Image4DType = itk::Image< float, 4 >;
+      using Image4DType = itk::Image< double, 4 >;
       using Reader4D    = itk::ImageFileReader< Image4DType >;
       using Writer4D    = itk::ImageFileWriter< Image4DType >;
 

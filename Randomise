@@ -1,1 +1,1 @@
-/usr/share/fsl/5.0/bin/randomise -i mapping.nii.gz -o ana -d design_bv.mat -t design_bv.con -m ../GM_template_mask.nii.gz -n 5000 -T -x
+/usr/share/fsl/5.0/bin/randomise -i mapping.nii.gz -o ana -d design_bv.mat -t design_bv.con -m ../GM_template_mask.nii.gz -n 5000 -T -x --uncorrp
