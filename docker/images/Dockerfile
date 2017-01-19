@@ -1,14 +1,15 @@
 #
 # CentOS
 # cat /etc/centos-release
-# sudo docker build -f Dockerfile --tag="imaging_core:03" .
+# sudo docker build -f Dockerfile --tag="imaging_core:04" .
 # ex. FROM centos:6 version 6 of CentOS
 FROM centos:7
 
 MAINTAINER Yann Cobigo yann.cobigo@ucsf.edu
 
 # File system
-RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images /mnt/tempo
+# /mnt/volume mount any type of volume we want to link with the host
+RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images /mnt/tempo /mnt/volume
 
 # 
 # Modified PYTHON libraries
