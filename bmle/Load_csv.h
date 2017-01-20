@@ -125,7 +125,7 @@ namespace MAC_bmle
     //
 
     // Contrast groupe
-    Eigen::MatrixXf constrast_;
+    Eigen::MatrixXd constrast_;
 
     
     //
@@ -618,21 +618,21 @@ namespace MAC_bmle
 	  swap_row = 0,
 	  previouse_grp_size = 0;
 	//
-	Eigen::MatrixXf G             = - Eigen::MatrixXf::Identity( groups_.size(), groups_.size() );
-	Eigen::MatrixXf all_contrasts =   Eigen::MatrixXf::Zero( groups_.size(), groups_.size() * groups_.size() );
-	Eigen::MatrixXf cohort        =   Eigen::MatrixXf::Zero( num_subjects_, groups_.size() );
+	Eigen::MatrixXd G             = - Eigen::MatrixXd::Identity( groups_.size(), groups_.size() );
+	Eigen::MatrixXd all_contrasts =   Eigen::MatrixXd::Zero( groups_.size(), groups_.size() * groups_.size() );
+	Eigen::MatrixXd cohort        =   Eigen::MatrixXd::Zero( num_subjects_, groups_.size() );
 	// First line is Ones
-	G.block(0,0,1,groups_.size()) =   Eigen::MatrixXf::Ones( 1, groups_.size() );
+	G.block(0,0,1,groups_.size()) =   Eigen::MatrixXd::Ones( 1, groups_.size() );
 	//
 	for ( auto g : groups_ )
 	  {
-	    Eigen::MatrixXf tempo_G = G;
+	    Eigen::MatrixXd tempo_G = G;
 	    tempo_G.row(swap_row).swap( tempo_G.row(0) );
 	    all_contrasts.block( 0, 0 + groups_.size() * swap_row,
 				 groups_.size(), groups_.size() ) = tempo_G;
 	    
 	    cohort.block( previouse_grp_size , swap_row, group_num_subjects_[ g ], 1 ) =
-	      Eigen::MatrixXf::Ones( group_num_subjects_[ g ], 1 ) / group_num_subjects_[ g ];
+	      Eigen::MatrixXd::Ones( group_num_subjects_[ g ], 1 ) / group_num_subjects_[ g ];
 	    previouse_grp_size += group_num_subjects_[ g ];
 	    
 	    //
@@ -644,7 +644,7 @@ namespace MAC_bmle
 	//
 	// Cohort distribution
 	// All contrasts between groups
-	Eigen::MatrixXf all_cont_grps = Eigen::MatrixXf::Zero( num_subjects_,
+	Eigen::MatrixXd all_cont_grps = Eigen::MatrixXd::Zero( num_subjects_,
 							       groups_.size() * groups_.size() );
 	//
 	int
@@ -656,18 +656,18 @@ namespace MAC_bmle
 	    for ( int c = 0 ; c < all_contrasts.cols() ; c++ )
 	      all_cont_grps.block( past_rows, c,
 				   group_num_subjects_[ g ], 1 ) =
-		all_contrasts( current_row, c ) * Eigen::MatrixXf::Ones( group_num_subjects_[ g ], 1 ) / group_num_subjects_[ g ];
+		all_contrasts( current_row, c ) * Eigen::MatrixXd::Ones( group_num_subjects_[ g ], 1 ) / group_num_subjects_[ g ];
 	    // next row
 	    past_rows += group_num_subjects_[ g ];
 	    current_row++;
 	  }
 	//
 	// Global contrast
-	Eigen::MatrixXf Id_Dr_D_f = Eigen::MatrixXf::Identity( D_r + D_f, D_r + D_f );
+	Eigen::MatrixXd Id_Dr = Eigen::MatrixXd::Identity( D_r, D_r );
 	//  
-	constrast_ = Eigen::kroneckerProduct( all_cont_grps, Id_Dr_D_f );
+	constrast_ = Eigen::kroneckerProduct( all_cont_grps, Id_Dr );
 	//
-	if ( false )
+	if ( true )
 	  std::cout << "constrast_ \n" << constrast_  << std::endl;
       }
     catch( itk::ExceptionObject & err )
@@ -798,15 +798,9 @@ namespace MAC_bmle
 		// next group
 		count_group++;
 	      }
-//	std::cout << std::endl;
-//	std::cout << std::endl;
-//	std::cout << std::endl;
-//	std::cout << std::endl;
-//	std::cout << std::endl;
-//	std::cout << std::endl;
-////	std::cout << P  << std::endl;
-//	std::cout <<  grad << std::endl;
-//	std::cout << H  << std::endl;
+	    //	std::cout << P  << std::endl;
+	    //	std::cout <<  grad << std::endl;
+	    //	std::cout << H  << std::endl;
 	    //
 	    // Lambda update
 	Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 32.) * grad;
@@ -859,13 +853,34 @@ namespace MAC_bmle
 	Eigen::MatrixXd eta_theta_Y_2_theta_Y = eta_theta_Y.block( eta_theta_Y_2_eps_Y_dim, 0,
 								   eta_theta_Y_2_theta_Y_dim, 1 );
 	//
-	std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
-	
-	std::cout << eta_theta_Y << std::endl;
-	std::cout << eta_theta_Y_2_theta_Y << std::endl;
-	std::cout  << std::endl;
-	std::cout << X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y << std::endl;
-	std::cout << cov_theta_Y << std::endl;
+	// Solution
+	Eigen::MatrixXd parameters = X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y;
+	Eigen::MatrixXd param_cov  = cov_theta_Y.block( 0, 0,
+							parameters.rows(), parameters.rows() );
+	//
+	// t-test
+	if ( D_f == 0 )
+	  {
+	    for ( int col = 0 ; col < constrast_.cols() ; col++ )
+	      {
+		Eigen::MatrixXd C = constrast_.block( 0, col,
+						      constrast_.rows(), 1 );
+		double T = ( C.transpose() * parameters )(0,0);
+		T /= sqrt( (C.transpose() * param_cov * C)(0,0) );
+		std::cout << "T = " << T << std::endl;
+	      }
+	  }
+
+	  
+	//std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
+	//
+	//std::cout << eta_theta_Y << std::endl;
+	//std::cout << eta_theta_Y_2_theta_Y << std::endl;
+	//std::cout  << std::endl;
+	//std::cout  << std::endl;
+	//std::cout << X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y << std::endl;
+	//std::cout  << std::endl;
+	//std::cout << cov_theta_Y << std::endl;
       }
     catch( itk::ExceptionObject & err )
       {
