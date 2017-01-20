@@ -81,8 +81,8 @@ RUN pip install --upgrade pygraphviz Pillow python-igraph
 # Python louvain
 # https://pypi.python.org/pypi/python-louvain/0.3
 RUN wget --directory-prefix=/mnt/tempo/ https://pypi.python.org/packages/f1/5f/1cd2040382f56b21ef731f09fd7a818ad2bbcd5a8201fd2ebd4ec15297bb/python-louvain-0.3.tar.gz  \
-    && tar -zxvf /mnt/tempo/python-louvain-0.3.tar.gz \
-    && python /mnt/tempo/python-louvain-0.3/setup.py install 
+    && cd /mnt/tempo/ && tar -zxvf /mnt/tempo/python-louvain-0.3.tar.gz \
+    && cd /mnt/tempo/python-louvain-0.3/ && python setup.py install 
 
 #
 # Modified PYTHON libraries
