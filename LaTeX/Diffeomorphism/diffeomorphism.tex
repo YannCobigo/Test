@@ -1,0 +1,344 @@
+%%  pdflatex diffeomorphism.tex 
+%%  bibtex diffeomorphism.aux 
+%%  pdflatex diffeomorphism.tex 
+%%  pdflatex diffeomorphism.tex
+%% pdflatex diffeomorphism.tex && bibtex diffeomorphism.aux && pdflatex diffeomorphism.tex && pdflatex diffeomorphism.tex
+
+
+%\documentclass[a4paper,12pt]{}
+%\documentclass[final, paper=letter,5p,times,twocolumn]{elsarticle}
+\documentclass[preprint,review,8pt,times]{elsarticle}
+
+
+%% or use the graphicx package for more complicated commands
+%\usepackage{changebar}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+%% or use the epsfig package if you prefer to use the old commands
+%% \usepackage{epsfig}
+
+%% The amssymb package provides various useful mathematical symbols
+\usepackage{tikz}
+\usepackage{amsmath,amsfonts,amsthm,multicol,bm} % Math packages
+%\usepackage{dsfont} % mathds{1}
+%\usepackage{widetext} % 
+\usepackage{listings}
+\usepackage{amssymb}
+\usepackage{hyperref}
+%
+%\usepackage[]{algorithm2e}
+%% Macro
+\newcommand{\ToDo}[1]{ToDo: \textbf{\textit{#1}}}
+\newcommand{\CA}{computational anatomy}
+%
+\newtheorem{theorem}{Theorem}%
+%\AtEndEnvironment{theorem}{\null\hfill\qedsymbol}%
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frontmatter}
+
+\title{Diffeomorphism for image matching}
+
+\author[label1]{Yann Cobigo\corref{cor1}}
+\address[label1]{University of California, San Francisco | ucsf.edu}
+%\address[label2]{Address Two\fnref{label4}}
+
+%\cortext[cor1]{I am corresponding author}
+%\fntext[label3]{I also want to inform about\ldots}
+%\fntext[label4]{Small city}
+
+\ead{yann.cobigo@ucsf.edu}
+\ead[url]{https://github.com/YannCobigo}
+
+%% \author[label5]{Author Two}
+%% \address[label5]{Some University}
+%% \ead{author.two@mail.com}
+%% 
+%% \author[label1,label5]{Author Three}
+%% \ead{author.three@mail.com}
+
+\begin{abstract}
+In this report we will \dots
+\end{abstract}
+
+\begin{keyword}
+%% keywords here, in the form: keyword \sep keyword
+Fijee \sep electrode \sep PEM \sep CEM
+%% MSC codes here, in the form: \MSC code \sep code
+%% or \MSC[2008] code \sep code (2000 is the default)
+\end{keyword}
+
+\end{frontmatter}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Metric space of anatomical images}
+
+The transformations arises from an evolution in time, or a flow $g(t)$, $t \in [0, 1]$ corresponding to the transport equations from continuum mechanics qt the rate $v_{g}$. The forward and inverse maps are uniquely defined according to $g^{-1}(g(x, t), t) = x$ for all $t \in [0, 1]$, $x \in X$, implying the equations of flow are linked according to
+
+\begin{eqnarray*}
+\left .
+\begin{array}{rcl}
+\frac{\partial}{\partial t}g(x,t) &=& v(g(x,t),t) \\
+\frac{\partial}{\partial t}g^{-1}(y,t) &=& -Dg^{-1}(y,t)v(y,t) \\
+g(0) &=& g^{-1}(0) = Id \\
+\end{array}
+\right .
+\label{Metric}
+\end{eqnarray*}
+
+$Id$ the identity map, the Jacobian operator giving the $d \times d$ matrix for $\mathbb{R}^{d}$-valued functions $(Df)_{ij} = (\frac{\partial f_{i}}{\partial x_{j}})$ and the $d \times 1$ row vector $Df = (\frac{\partial f}{\partial x_{1}}, \cdots, \frac{\partial f}{\partial x_{n}} )$ for scalar valued functions defined on $d$-dimensional domain. The flow equations are depicted in panel 1 of Figure~\ref{Euler-Lagrange-description}~\cite{pmid12117763}.\\
+The second equation can be understand as a symetric speed rate :
+
+\begin{eqnarray*}
+\frac{\partial}{\partial t}g^{-1}(y,t) & = & \frac{\partial g^{-1}(y,t)}{\partial g}\frac{\partial g}{\partial t} \\
+& = & D_{g} g^{-1}(y,t) (-v_{g}(y,t))
+\end{eqnarray*}
+
+
+\paragraph{Definition}{We define the group of transformations $\mathcal{G}$ to be diffeomorphisms $g(1) \in \mathcal{G}: x \rightarrow g(x, 1) \in X$, $1-1$ (bijective), onto, with continuous inverse and differentiable solutions of Equation~(\ref{Metric}), with $v(t)$, $t \in [0, 1]$ sufficiently smooth and vanishing at the boundary of $X$ ($\partial X$) for each $t$ to generate smooth solutions $g(1)$, $g^{-1}(1)$}
+
+%%\begin{figure}[htbp]
+%%   \begin{center}
+%%      \includegraphics[width=8cm,height=6cm, angle=0]{images/pmid12117763.png}\hfill
+%%   \end{center}
+%%   \caption{Panel 1 (left) shows the Lagrangian description of the flow; panel 2 (right) shows the variation of the group flow element $g(\cdot)$ by $\eta(\cdot)$~\cite{pmid12117763}.}
+%%\label{Euler-Lagrange-description}
+%%\end{figure}
+
+
+One principal aspect of \CA{} is to define the metric distance between anatomies through the mappings between them. We define distance between them via the geodesic length of the flows $g(\cdot): [0, 1] \rightarrow \mathcal{G}$ which connects them. The geodesic length is defined through the least action principal 
+
+$$
+S_{g} = \int_{0}^{1} \|v(t)\|_{L}^{2} \,dt = \int_{0}^{1} E_{v}(t) \,dt
+$$ 
+
+$v(t) = \partial g/ \partial t$ with $\| \cdot \|_{L}$ a proper norm on the vector fields on $X$ ({\it i.e.}, a Sobolev space with $L$ a differential operator). \\
+
+Investigators have used linear differential operators $L$ operating on the vector fields to enforce smoothness on the maps and to define the finite norm, generally differentiating only in space and constructed from the Laplacian and its powers. $L$ is a $d \times d$ matrix of differential operators $L = (L_{ij})$ on d $\mathbb{R}^{d}$ valued vector fields of the form $(Lv)_{j} = \sum_{i = 1}^{d} L_{ij}v_{i}$ inducing a finite norm constraint at each time $t$. Denote the norm-squared energy density according to 
+
+\begin{eqnarray}
+ E_{v}(t) = \int_{X}E_{v}(x,t) \, dx = \| v(t)\|_{L}^{2} = \langle Lv(\cdot, t), Lv(\cdot, t) \rangle < \infty, ~~t \in [0,1]
+\label{EnergyDensity}
+\end{eqnarray}
+
+The energy density has been defined through powers of the Laplacian for the classic {\bf thin-plate splines}(??) and the Cauchy-Navier operator for 3-dimensional elasticity. Differential operators with sufficient derivatives and proper boundary conditions insure the existence of solutions of the transport equation in the space of diffeomorphic flows.\\
+
+Now the metric between transformations $g_{0}, g_{1} \in \mathcal{G}$ is defined via the length of the shortest path $g(t)$, $t \in [0, 1]$ with the boundary conditions $g(0) = g_{0}$, $g(1) = g_{1}$. A crucial property of the metric $\rho_{\mathcal{G}}: \mathcal{G} \times \mathcal{G} \rightarrow \mathbb{R}^{+}$ is that it is invariant to $\mathcal{G}$, so that $\rho_{\mathcal{G}}(g_{0}, g_{1}) = \rho_{\mathcal{G}}(g' \cdot g_{0}, g' \cdot g_{1})$ for $g \in \mathcal{G}$, where $g' \cdot g = g \circ g'$.
+
+\paragraph{Theoreme}{\it The function $\rho_{\mathcal{G}}(\cdot, \cdot): \mathcal{G} \times \mathcal{G} \rightarrow \mathbb{R}^{+}$ between elements $g_{0}$, $g_{1} \in \mathcal{G}$ defined as
+
+$$
+\rho_{\mathcal{G}}^{2}(g_{0}, g_{1}) = \inf S_{g} = \underset{g(\cdot):\frac{\partial}{\partial t}g^{-1}(t) = -Dg^{-1}(t)v(t),\, g(0)=g_{0}, g(1) = g_{1}}{\inf} \int_{0}^{1} E_{v}(t) \, dt 
+$$
+
+is a left-invariant metric distance on $\mathcal{G}$. The geodesics satisfy the Euler-Lagrange equations:
+
+$$
+\frac{\partial}{\partial t} \nabla_{v}E_{v}(\cdot, t) + (Dv(\cdot, t))^{t} \nabla_{v}E_{v}(\cdot, t) + (D \nabla_{v}E_{v}(\cdot, t))v(\cdot, t) + div( v(\cdot, t)) \nabla_{v}E_{v}(\cdot, t) = 0
+$$
+
+where $\nabla$ is the gradient operator delivering a vector, $\nabla_{v}E_{v}(t) = 2L^{\dag}Lv(t)$ with the adjoint defined as $\langle Lf, g\rangle = \langle f, L^{\dag}g \rangle$, $div(v) = \sum_{i} \partial v/ \partial x_{i}$ the divergence operator.\\
+}
+
+The left-invariance follows from that fact that translation by another group element leaves the distance unchanged because $g(\cdot)$ satisfies $\partial g(\cdot, t) / \partial t = v(g(\cdot, t), t)$, $g(0) = Id$, $g(1) = g_{1}$ implying $g(0) \circ h = h$, $g(1) = g_{1} \circ h$, with an identical velocity field so that $\partial g(h(x),t)/\partial t = v(g(h(x),t),t)$, $g(0) = h, g(1) = g_{1}(h)$. The distances $\rho_{\mathcal{G}}(Id, g) = \rho_{\mathcal{G}}(h, g \circ h)$ are equal for all $h \in \mathcal{G}$.
+
+\paragraph{Partial demonstration}{To derive Euler-Lagrange equations for the velocity examine perturbations on the group elements and velocity fields, $g \rightarrow g + \epsilon \eta$, $v \rightarrow v + \epsilon \varphi$. For exact correspondence of the group elements, $\eta(0) = \eta(1) = 0$. For inexact image matching, only $\eta(0) = 0$ with $\eta(x, t) = 0$, $\forall x \in \partial X$, $\varphi(x, t) = 0$, $\forall x \in \partial X$. If $\eta$ is a perturbation of $g$, define the Gateaux differential of $E(v g): \mathcal{G} \rightarrow \mathbb{R}^{+}$ in the direction $\eta$ to be the limit, as the perturbation tends to 0. Also if $\varphi$ is a perturbation of $v$, define the Gateaux differential of $E(g_{v}): \mathcal{V} \rightarrow \mathbb{R}^{+}$ in the direction $\varphi$ to be the limit, as the perturbation tends to 0.
+
+\begin{eqnarray*}
+\varphi(x,t) = \partial_{\eta} v_{g}(x,t) & = & \underset{\epsilon \rightarrow 0}{\lim} \frac{v_{g+\epsilon \eta}(x,t) - v_{g}(x,t)}{\epsilon} \\
+& = & \frac{d}{dt} \eta(g^{-1}(x,t),t) - D v_{g}(x,t) \eta (g^{-1}(x,t),t)
+\end{eqnarray*}
+
+We have $dg/dt = \partial g / \partial t + Dg dx/dt$. we consider the anatomical images as fixed images: $dx/dt = 0$.
+
+\begin{eqnarray*}
+\eta(x,t) = \partial_{\varphi} g_{v}(x,t) & = & \underset{\epsilon \rightarrow 0}{\lim} \frac{g_{v + \epsilon \varphi}(x,t) - g_{v}(x,t)}{\epsilon} \\
+& = & Dg_{v}(x,t) \int_{0}^{1} du \, (Dg_{v}(x,u))^{-1} \varphi (g_{v}(x,u),u)
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\frac{d [g(x,t) + \epsilon \eta(x,t)]}{dt} & = & v_{g}(g(x,t), t) + \epsilon \frac{d \eta (x,t)}{dt} \\
+& = & v_{g + \epsilon \eta} \left( g(x,t) + \epsilon \eta(x,t) \right) \\
+\end{eqnarray*}
+
+$$
+\psi = \partial_{\eta} v_{g} (x) = \underset{\epsilon \rightarrow 0}{\lim} \frac{v_{g + \epsilon \eta}(x) - v_{g}(x)}{ \epsilon }
+$$
+
+Wish is
+
+$$
+v_{g + \epsilon \eta}(g + \epsilon \eta) \sim \epsilon \partial_{\eta} v_{g} (g + \epsilon \eta) + v_{g}(g + \epsilon \eta)
+$$
+
+A taylor development of $v$ gives:
+
+$$
+v_{g} \left( g(x,t) + \epsilon \eta(x,t) \right) \sim v_{g(x,t)}(g) + \epsilon D_{g} v_{g}(g(x,t)) \eta(x,t) + o(\epsilon) \\
+$$
+
+We can write:
+
+\begin{eqnarray*}
+v_{g + \epsilon \eta} \left( g(x,t) + \epsilon \eta(x,t) \right) & \sim & \epsilon \partial_{\eta} v_{g} \left( g(x,t) + \epsilon \eta(x,t) \right) + v_{g}(g,t) + \epsilon D_{g} v_{g}(g,t) \eta(x,t) + o(\epsilon)
+\end{eqnarray*}
+
+Then:
+
+$$
+\epsilon \partial_{\eta} v_{g}  \left( g(x,t) + \epsilon \eta(x,t) \right) = \frac{d \eta}{d t}(x,t) - D_{g}v_{g}(g) \eta(x,t)
+$$
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Inducing the metric space on anatomical images}
+
+The group of geometric transformations are not directly observable. Rather images are observed via sensors which measure physical properties of the tissues. Carrying out Grenander's metric pattern theory program, the space or orbit of anatomical images $I \in \mathcal{I}$ must be made into a metric space. The metric distance between anatomical imagery $I \in \mathcal{I}$ is constructed from distances between the mappings $g \in \mathcal{G}$. First, the anatomical orbit of all images is defined.
+
+\paragraph{Definition}{The mathematical anatomy are functions $I \in \mathcal{I}, I: x \in X \rightarrow I(x)$, an orbit under the geometric transformations: $\mathcal{I} = \lbrace I':I(\cdot) = I(g(\cdot)),~I \in \mathcal{I},~g \in \mathcal{G} \rbrace$.\\}
+
+This is a group action on I with $g \cdot I = I \circ g$ and group product $g \cdot g(\cdot) = g \circ g(\cdot) = g(g(\cdot))$, which defines the equivalence relation $I_{1} \sim I_{2}$ if $\exists g \in \mathcal{G}$ such that $I_{1}(\cdot) = I_{2}(g(\cdot))$, dividing $I$ into disjoint orbits.
+
+
+
+\paragraph{Theorem}{\it The function $\rho(\cdot, \cdot): \mathcal{I} \times \mathcal{I} \rightarrow \mathbb{R}^{+}$ between elements $I, I' \in \mathcal{I}$ defined as
+
+$$
+\rho^{2}(I,I') = \underset{g(\cdot):\frac{\partial}{\partial t}g^{-1}(t) = -Dg^{-1}(t)v(t),\, I(g^{-1}(\cdot,1)) = I'(\cdot), g^{-1}(0) = Id}{\inf} \int_{0}^{1} E_{v}(t) \, dt
+$$
+is a metric distance on I satisfying symmetry and the triangle inequality.
+}
+
+\begin{theorem}
+This is an important theorem.
+\end{theorem}
+
+HERE \qed
+
+The fact that $\rho_{\mathcal{G}}$ is left-invariant to $\mathcal{G}$ implies that for all $g \in \mathcal{G}$, $\rho(I \circ g, I' \circ g) = ρ(I, I')$. This also implies any element in the orbit can be taken as the template; all elements are equally good.
+
+\subsection{Expanding the Metric Space to Incorporate Photometric Variation}
+
+Thus far, the metric depends only on the geometric transformations of the background space $X$.
+
+\paragraph{Theorem}{\it Defining the image evolution in the orbit as $J(y, t) = I(g^{−1}(y, t), t)$, $\frac{\partial}{\partial t} g^{-1}(y, t) = −Dg^{−1}(y, t)v(y, t)$, then the function $\rho(\cdot, \cdot): I \times I \rightarrow \mathbb{R}^{+}$ between elements $I$, $I' \in \mathcal{I}$ defined as 
+
+$$
+\rho^{2}(I,I') = \underset{v(\cdot),I(\cdot):J(0) = I, J(1) = I'}{\inf} \int_{0}^{1} dt \, \left( \| v(t) \|_{L}^{2} \| \frac{\partial }{\partial t} J(t) + \nabla J^{T} (t)v(t)\|^{2} \right)
+$$
+
+is a metric satisfying symmetry and the triangle inequality. Defining
+
+$$
+\nabla_{v}E(y,t) = 2L^{\dag}Lv(y,t) + 2 \left( \frac{\partial}{\partial t} J(y,t) + \nabla J^{T}(y,t) v(y,t) \right) \nabla J(y,t)
+$$
+
+then the Euler Equation 4 holds with boundary term $\nabla E (\cdot, 1) = 0$ with the geodesics for photometric evolution satisfying:
+
+$$
+L^{\dag}Lv(\cdot,t) + \left( \frac{\partial}{\partial t} J(\cdot,t) + \nabla J^{T}(\cdot,t) v(\cdot,t) \right) \nabla J(\cdot,t) = 0
+$$
+
+$$
+\frac{\partial}{\partial t}\left( \frac{\partial J(\cdot,t)}{\partial t} + \nabla J^{T}(\cdot,t) v(\cdot,t) \right) + div\left( \frac{\partial J(\cdot,t)}{\partial t} v(\cdot, t) + (\nabla J^{T}(\cdot,t) v(\cdot,t)) v(\cdot, t) \right) = 0
+$$
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Euler-Lagrange equation for the inexact image matching and growth}
+
+A central problem in \CA{} is essentially diffeomorphic image interpolation, i.e., to infer the geometric image evolution that connects two elements $I_{0}$, $I_{1} \in \mathcal{I}$ under pure geometric evolution. For this a function of the path is defined; call it $I_{0}(g^{−1}(t))$, $t \in [0, 1]$. The goal is to construct the shortest length curve $g(t)$, $t \in [0, 1]$ which  the target norm squared $\| I_{0} (g^{−1}(1)) − I_{1} \|^{2}$. This is of course inexact matching, since there is a balance between metric length of the path and target correspondence. We can view the image evolution defined by the geodesic as an interpolation between images via the geodesic. Because of the introduction of the free boundary, there is a boundary term which is introduced.
+
+\paragraph{Theorem - Inexact Image Matching}{\it The minimizer
+$$
+\underset{g(\cdot): \frac{\partial}{\partial t} g^{-1}(t) = - Dg^{-1}(t)v(t), g(0) ) g_{0}}{\inf} \int_{0}^{1} E_{v}(t) \, dt + \| I_{1} - I_{0}(g^{-1}(1))\|^{2}
+$$
+
+satisfies the Euler-Lagrange Equation 4 with boundary term:
+
+$$
+\nabla_{v}E_{v}(\cdot, 1) + 2(I_{1}(\cdot) - I_{0}(g^{-1}(\cdot, 1)))D(I_{0}(g^{-1}(\cdot, 1)))^{T = 0} = 0
+$$
+
+where
+
+$$
+D(I_{0}(g^{-1}(\cdot,t))) = \nabla I_{0}^{T}(g^{-1}(\cdot, t))Dg^{-1}(\cdot, t)
+$$
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Computational image matching}
+
+\subsection{Beg's Geometric Transformations via Inexact Matching}
+
+
+In this section, we examine the results of solving the Euler-Lagrange equations for generating the geodesics. Faisal Beg solves inexact image matching (Equation 10) via variations with respect to the velocity field exploiting the vector space structure.
+
+\paragraph{Algorithm}{
+Fixed points of the following algorithm satisfy Equations 4 and 11. Initialize $v^{old} = 0$, choose constant $\epsilon$, then for all $t \in [0, 1]$,
+
+Step~1:
+
+$$
+\frac{\partial }{\partial t} g^{new}(t) = v^{old}(g^{new}(t), t) = v^{old}(g^{new}(t), t), \frac{\partial }{\partial t} (g^{new})^{-1}(t)v^{old}(t)
+$$
+
+$$
+\chi^{new}(t) = g^{new}((g^{new}(t))^{-1}, 1)
+$$
+
+Step~2: Compute
+
+$$
+v^{new}(t) = v^{old}(t) - \epsilon \nabla_{v}E(t)
+$$
+
+Set $v^{old} \leftarrow v^{new}$, return to Step 1. Where
+
+$$
+\nabla_{v} E(t) = v^{old}(t) + (L^{\dag}L)^{-1} \left( |D \chi^{new}(t)| \times D(I_{0}((g^{new}(t))^{-1}))^{T}(I_{1}(\chi^{new}(t)) - I_{0}((g^{new}(t))^{-1})) \right)
+$$
+
+Here $(L^{\dag}L)^{−1} f = Kf$ where $K$ is the Green's kernel. The space-time solution of Equation 13 has gradient
+
+
+\dots
+
+Where $\chi(t, \tau) = g(g^{-1}(t), \tau)$
+
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+
+\section*{References}
+%% References with bibTeX database:
+\bibliographystyle{Bibliography/elsarticle-num}
+
+\bibliography{Bibliography/sample}
+
+
+\end{document}
