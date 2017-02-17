@@ -35,7 +35,12 @@
 \newcommand{\ToDo}[1]{ToDo: \textbf{\textit{#1}}}
 \newcommand{\CA}{computational anatomy}
 %
+\newdefinition{definition}{Definition}%
 \newtheorem{theorem}{Theorem}%
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+%\newproposition{proposition}{Proposition}%
+%\newlemma{lemma}{Lemma}%
 %\AtEndEnvironment{theorem}{\null\hfill\qedsymbol}%
 
 \begin{document}
@@ -85,13 +90,36 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 \section{Introduction}
 
+\ToDo{Def. geodisic} \\
+\ToDo{Def. Manifold} \\
+\ToDo{Def. Atlas} \\
+\ToDo{Def. Orbit} \\
+
+\begin{definition}
+Invariance - Does not change the motion equations (Euler-Lagrange) under specific transformation (Roug\'e).
+\end{definition}
+where $\| . \|_{L^{2}}$ is the standard $L^{2}$ norm of square integrable functions $\| f \|_{L^{2}}^{2} = \int_{\Omega}  |f(x)|^{2} \, dx < \infty$
+
+\begin{theorem}
+test
+\end{theorem}
+\begin{lemma}
+test
+\end{lemma}
+\begin{proof}
+test proof
+\end{proof}
+
+The goal of registration is to compute a transformation $g:\Omega \rightarrow \Omega \subset \mathbb{R}^{n}$ where is the domain (n = 2 for 2D or n = 3 for 3D) on which the data (structural, orientational and functional) are defined. Let images representing this data be functions $I: \Omega \rightarrow \mathbb{R}^{d}$ defined on $\Omega$. Structural images acquired via MRI are scalar valued $d = 1$, color images such as RGB are vector valued $d = 3$ and anisotropy or orientational images acquired from diffusion tensor MRI are matrix valued. Let $I_{0}$ and $I_{1}$ denote the template and target images. The transformation of the template image $I_{0}$ under such a transformation is the pullback image defined to be $g.I_{0} = I_{0} \circ g^{-1} = I_{0}(g^{-1})$.\\
+In this setting, the transformation $g$ of the domain is generated as the endpoint $\phi_{1} = g(x,1)$ of the flow of a time-dependent velocity vector field $v_{t}: \Omega \rightarrow \mathbb{R}^{n}$, $t \in [0, 1]$ specified by the ODE $\partial_{t} g = v_{g}(g)$. This gives a path $g: \Omega \rightarrow \Omega$, $t \in [0, 1]$ in the space of transformations starting with $g(t = 0) = Id$, where $Id$ is the identity transformation $Id(x) = x$, $\forall x \in \Omega$, and terminating at the end-point $t = 1$ of the flow to the particular transformation $g = g( t = 0 ) + \int_{0}^{1} v_{g}(g) \, dt$ matching the given images.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Metric space of anatomical images}
 
-The transformations arises from an evolution in time, or a flow $g(t)$, $t \in [0, 1]$ corresponding to the transport equations from continuum mechanics qt the rate $v_{g}$. The forward and inverse maps are uniquely defined according to $g^{-1}(g(x, t), t) = x$ for all $t \in [0, 1]$, $x \in X$, implying the equations of flow are linked according to
+The transformations arises from an evolution in time, or a flow $g(t)$, $t \in [0, 1]$ corresponding to the transport equations from continuum mechanics qt the rate $v_{g}$. The forward and inverse maps are uniquely defined according to $g^{-1}(g(x, t), t) = x$ for all $t \in [0, 1]$, $x \in X \subset \mathbb{R}^{n}$, implying the equations of flow are linked according to
 
-\begin{eqnarray*}
+\begin{eqnarray}
 \left .
 \begin{array}{rcl}
 \frac{\partial}{\partial t}g(x,t) &=& v(g(x,t),t) \\
@@ -100,18 +128,22 @@ g(0) &=& g^{-1}(0) = Id \\
 \end{array}
 \right .
 \label{Metric}
-\end{eqnarray*}
+\end{eqnarray}
 
 $Id$ the identity map, the Jacobian operator giving the $d \times d$ matrix for $\mathbb{R}^{d}$-valued functions $(Df)_{ij} = (\frac{\partial f_{i}}{\partial x_{j}})$ and the $d \times 1$ row vector $Df = (\frac{\partial f}{\partial x_{1}}, \cdots, \frac{\partial f}{\partial x_{n}} )$ for scalar valued functions defined on $d$-dimensional domain. The flow equations are depicted in panel 1 of Figure~\ref{Euler-Lagrange-description}~\cite{pmid12117763}.\\
-The second equation can be understand as a symetric speed rate :
+The goal is to find the velocity field which, after integration of (\ref{Metric}), gives the diffeomorphism $g$ . The second equation can be understood as a symetric speed rate:
 
 \begin{eqnarray*}
 \frac{\partial}{\partial t}g^{-1}(y,t) & = & \frac{\partial g^{-1}(y,t)}{\partial g}\frac{\partial g}{\partial t} \\
-& = & D_{g} g^{-1}(y,t) (-v_{g}(y,t))
+& = & - D_{g} g^{-1}(y,t) (v_{g}(y,t))
 \end{eqnarray*}
 
+Bijective flows go in opposite directions.
 
-\paragraph{Definition}{We define the group of transformations $\mathcal{G}$ to be diffeomorphisms $g(1) \in \mathcal{G}: x \rightarrow g(x, 1) \in X$, $1-1$ (bijective), onto, with continuous inverse and differentiable solutions of Equation~(\ref{Metric}), with $v(t)$, $t \in [0, 1]$ sufficiently smooth and vanishing at the boundary of $X$ ($\partial X$) for each $t$ to generate smooth solutions $g(1)$, $g^{-1}(1)$}
+\begin{definition}
+We define the group of transformations $\mathcal{G}$ to be diffeomorphisms $g(1) \in \mathcal{G}: x \rightarrow g(x, 1) \in X$, $1-1$ (one-to-one, bijective), onto, with continuous inverse and differentiable solutions of Equation~(\ref{Metric}), with $v(t)$, $t \in [0, 1]$ sufficiently smooth and vanishing at the boundary of $X$ ($\partial X$) for each $t$ to generate smooth solutions $g(1)$, $g^{-1}(1)$
+\end{definition}
+
 
 %%\begin{figure}[htbp]
 %%   \begin{center}
