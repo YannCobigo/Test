@@ -1,0 +1,511 @@
+%%  pdflatex diffeomorphism.tex 
+%%  bibtex diffeomorphism.aux 
+%%  pdflatex diffeomorphism.tex 
+%%  pdflatex diffeomorphism.tex
+%% pdflatex diffeomorphism.tex && bibtex diffeomorphism.aux && pdflatex diffeomorphism.tex && pdflatex diffeomorphism.tex
+
+
+%\documentclass[a4paper,12pt]{}
+\documentclass[final, paper=letter,5p,times,twocolumn]{elsarticle}
+%\documentclass[preprint,review,8pt,times]{elsarticle}
+
+
+%% or use the graphicx package for more complicated commands
+%\usepackage{changebar}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+%% or use the epsfig package if you prefer to use the old commands
+%% \usepackage{epsfig}
+
+%% The amssymb package provides various useful mathematical symbols
+\usepackage{tikz}
+\usepackage{amsmath,amsfonts,amsthm,multicol,bm} % Math packages
+%\usepackage{dsfont} % mathds{1}
+%\usepackage{widetext} % 
+\usepackage{listings}
+\usepackage{amssymb}
+\usepackage{hyperref}
+%
+%\usepackage[]{algorithm2e}
+%% Macro
+\newcommand{\ToDo}[1]{ToDo: \textbf{\textit{#1}}}
+\newcommand{\CA}{computational anatomy}
+%
+\newtheorem{theorem}{Theorem} % reset theorem numbering for each section
+\newdefinition{definition}{Definition}%
+
+\theoremstyle{definition}
+%\newtheorem{defn}[thm]{Definition} % definition numbers are dependent on theorem numbers
+\newtheorem{example}[theorem]{Example} % same for example numbers
+
+%\newtheorem*{example}{Example}
+%\newtheorem{theorem}{Theorem}%
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+%\newproposition{proposition}{Proposition}%
+%\newlemma{lemma}{Lemma}%
+%\AtEndEnvironment{theorem}{\null\hfill\qedsymbol}%
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frontmatter}
+
+\title{Diffeomorphism for image matching}
+
+\author[label1]{Yann Cobigo\corref{cor1}}
+\address[label1]{University of California, San Francisco | ucsf.edu}
+%\address[label2]{Address Two\fnref{label4}}
+
+%\cortext[cor1]{I am corresponding author}
+%\fntext[label3]{I also want to inform about\ldots}
+%\fntext[label4]{Small city}
+
+\ead{yann.cobigo@ucsf.edu}
+\ead[url]{https://github.com/YannCobigo}
+
+%% \author[label5]{Author Two}
+%% \address[label5]{Some University}
+%% \ead{author.two@mail.com}
+%% 
+%% \author[label1,label5]{Author Three}
+%% \ead{author.three@mail.com}
+
+\begin{abstract}
+In this report we will \dots
+\end{abstract}
+
+\begin{keyword}
+%% keywords here, in the form: keyword \sep keyword
+Fijee \sep electrode \sep PEM \sep CEM
+%% MSC codes here, in the form: \MSC code \sep code
+%% or \MSC[2008] code \sep code (2000 is the default)
+\end{keyword}
+
+\end{frontmatter}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Notes}
+
+\ToDo{Def. geodisic} \\
+\ToDo{Def. Manifold} \\
+\ToDo{Def. Atlas} \\
+\ToDo{Def. Orbit} \\
+
+
+\begin{enumerate}
+\item Calculate new estimate of velocity $v^{k+1} = v^{k} - \varepsilon \nabla_{v^{k}} E$
+\item Reparametrize the velocity field to be constant speed. This is done every 10 simulations.
+\item Calculate for $j = N-1$ to $j = 0$ the mapping $\phi_{t_{j},T}^{k+1}$
+\item Calculate for $j = 0$ to $j = N-1$ the mapping $\phi_{t_{j},0}^{k+1}$
+\item Calculate for $j = 0$ to $j = N-1$ the mapping $J_{t_{j}}^{0} = I_{0} \circ \phi_{t_{j},0}^{k+1}$
+\item Calculate for $j = N-1$ to $j = 0$ the mapping $J_{t_{j}}^{1} = I_{1} \circ \phi_{t_{j},T}^{k+1}$
+\item Calculate for $j = 0$ to $j = N-1$ the gradient of the image $DJ_{t_{j}}^{0}$.
+\item Calculate for for $j = 0$ to $j = N-1$ the Jacobian of the transformation $|D \phi_{t_{j}}|$.
+\item Calculate for $j = 0$ to $j = N-1$ the gradient $\nabla_{v^{k+1}}E$ for $v^{k+1}$.
+\item Calculate the norm of the new gradient $\| \nabla_{v^{k+1}E} \|$. Stop if below threshold.
+\item Calculate the new Energy using Eq. (14).
+\item If the number of simulations greater than specified number then Stop. Else re-iterate with $k = k +1.$
+\item Denote the final velocity field as $\hat{v}$ which gives the estimate of the desired optimizer of Eq. (8).
+\item Calculate the length of the path on the manifold using Eq. (15). This is the length of the geodesic and hence the estimated metric between the given images.
+\end{enumerate}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+The goal of registration is to compute a transformation $g:\Omega \rightarrow \Omega \subset \mathbb{R}^{n}$ where is the domain ($n = 2$ for $2D$ or $n = 3$ for $3D$) on which the data (structural, orientational and functional) are defined. Let images representing this data be functions $I: \Omega \rightarrow \mathbb{R}^{d}$ defined on $\Omega$. Structural images acquired via MRI are scalar valued $d = 1$, color images such as RGB are vector valued $d = 3$ and anisotropy or orientational images acquired from diffusion tensor MRI are matrix valued. Let $I_{0}$ and $I_{1}$ denote the template and target images. The transformation of the template image $I_{0}$ under such a transformation is the pullback image defined to be $g.I_{0} = I_{0} \circ g^{-1} = I_{0}(g^{-1})$.\\
+In this setting, the transformation $g$ of the domain is generated as the end-point $\phi_{1} = g(x,t=1)$ of the flow of a time-dependent velocity vector field $v_{t}: \Omega \rightarrow \mathbb{R}^{n}$, $t \in [0, 1]$ specified by the ODE $\partial_{t} g = v_{g}(g)$. This gives a path $g: \Omega \rightarrow \Omega$, $t \in [0, 1]$ in the space of transformations starting with $g(t = 0) = Id$, where $Id$ is the identity transformation $Id(x) = x$, $\forall x \in \Omega$, and terminating at the end-point $t = 1$ of the flow to the particular transformation $g = g( t = 0 ) + \int_{0}^{1} v_{g}(g) \, dt$ matching the given images.\\
+The  starting  point  for  our approach to the analysis of shape and size in anatomical images is modelling anatomy  as  a  deformable  template  (Grenander  and Miller, 1998), {\it i.e.} the observed anatomical imagery $I$ is an orbit under diffeomorphic transformations $\mathcal{G}$ acting on the coordinate space of a family of exemplars. A homeomorphism on the background space $\Omega$ is a bijective (invertible) function $g: \Omega \rightarrow \Omega$, with its inverse $g^{-1}$ is continuous. Let the set of homeomorphisms acting on the background space be denoted by $Hom(\Omega)$. The homeomorphisms form a group for the usual law of composition $\psi \cdot \varphi = \varphi \circ \psi$. Moreover, for any $g \in Hom(\Omega)$ and any image $I: \Omega \rightarrow \mathbb{R}^{d}$, $g \cdot I = I \circ g^{-1}$ defines an action of $Hom(\Omega)$ on the set of all images. Let $\mathcal{G}$ be a sub-group of $Hom(\Omega)$ (for instance the set $Diff(\Omega)$ of any $\varphi \in Hom(\Omega)$ which are, with its inverse, continuously differentiable). Given a template $I_{template}$, the deformable template model of an anatomical ensemble is the orbit
+
+$$
+\mathcal{I} = \{ I_{template} \circ g^{-1} \, / \, g \in \mathcal{G} \}
+$$
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Sobolev-space}
+
+
+\subsection{Hilbert spaces}
+
+Let $V$ be a vector-space ({\it i.e.} $x, y \in V \Rightarrow x + y \in V$, and $kx \in V$ for all $k \in \mathbb{R}$) with a scalar product denoted $\cdot$ (also called inner product). This scalar product induces a norm $\| x \|_{V} = (x \cdot x)^{1/2}$. If $V$ is complete with respect to this norm then $V$ is called a Hilbert-space. Roughly speaking, we say that a space $V$ is complete if for any sequence $\{ x_{h} \}$ of elements in $V$ converging to an element $x$; {\it i.e.} $ \| x - x_{h}\|_{V} \underset{h \rightarrow \infty}{\rightarrow} 0$, we have that $x$ also belongs to $V$.
+
+\begin{example}
+  Soient $x = (x_{1}, x_{2}, \cdots, x_{n})^{T}$ and $y = (y_{1}, y_{2}, \cdots, y_{n})^{T}$ two vectors of an Hilbert space, then $x \cdot y = x_{1}y_{1} + \cdots + x_{n}y_{n}$, and the norm is $\| x \| = \sqrt{x_{1}x_{1} + \cdots + x_{n}x_{n}}$.
+\end{example}
+  
+
+\subsection{Sobolev- and Lebesgue-spaces}
+
+Sobolev- and Lebesgue-spaces are important examples of Hilbert-spaces. Let be $\Omega$ a bounded domain in $\mathbb{R}$: $L^{2}(\Omega)$ is made of all functions $v$ that has the property so that: \\
+
+$$
+\int_{\Omega} |v|^{2} \, dx < \infty
+$$
+
+$W^{1,2}(\Omega)$ is made of all functions $u$ where $u \in L^{2}(\Omega)$ and $\partial u / \partial x_{i} \in L^{2}(\Omega)$. The number 1 is used is used to indicate that the partial derivatives of order 1 should belong to $L^{2}(\Omega)$. The number 2 refers to power of the integrand. Functions belonging to $W^{1,2}(\Omega)$ do not have to be differentiable at every point; {\it e.g.} it is enough if they are continuous with piecewise continuous partial derivatives in the domain of definition and satisfy the above conditions. $W^{1,2}_{0}(\Omega) = \{ u~is~0~on~the~boundary~\partial \Omega\}$.\\
+
+The $W$- spaces are often called Sobolev-spaces. The space $L^{2}(\Omega)$ is called a Lebesgue-space.
+The scalar product ($*$) on $W^{1,2}(\Omega)$-space is defined by:
+
+$$
+u*v = \sqrt{\int_{\Omega} u \cdot v \, dx + \int_{\Omega} \nabla u \cdot \nabla v \, dx}
+$$
+
+and hence the norm is defined as
+
+$$
+\| u \|_{W^{1,2}}= \sqrt{\int_{\Omega} u^{2} \, dx + \int_{\Omega} |\nabla u|^{2} \, dx}
+$$
+
+In this section we establish sufficient conditions for the vector fields $v(\cdot,t):\Omega \leftarrow \mathbb{R}^{3}$ to generate diffeomorphisms. We first decribe the space $V$ in wich $v(\cdot,t)$ will take values. $V$ is taken to be a Sobolev space $W_{0}^{3,2}(\Omega)$, which is the closure of $C_{0}^{\infty}(\Omega)$ with the norm
+
+$$
+\| f \|_{W_{0}^{3,2}(\Omega)} = \sqrt{\int_{\Omega} \sum_{| \alpha | \le 3 } |D^{\alpha} f(x)|^{2} \, dx }
+$$
+
+The norm of the product space $V$ is denoted $\| \cdot \|_{W_{0}^{3,2}(\Omega)}$. A mesurable function $v:[0,t] \rightarrow V$ will be called an admissible velocity field or a admisible control or control process.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Metric space of anatomical images}
+
+The transformations arise from an evolution in time, or a flow $g(t)$, $t \in [0, 1]$ corresponding to the transport equations from continuum mechanics at the rate $v_{g}$. The forward and inverse maps are uniquely defined according to $g^{-1}(g(x, t), t) = x$ for all $t \in [0, 1]$, $x \in X \subset \mathbb{R}^{n}$, implying the equations of flow are linked according to
+
+\begin{eqnarray}
+\left \lbrace
+\begin{array}{rcl}
+\frac{\partial}{\partial t}g(x,t) &=& v(g(x,t),t) \\
+\frac{\partial}{\partial t}g^{-1}(y,t) &=& -Dg^{-1}(y,t)v(y,t) \\
+g(0) &=& g^{-1}(0) = Id \\
+\end{array}
+\right .
+\label{Metric}
+\end{eqnarray}
+
+$Id$ the identity map, the Jacobian operator giving the $d \times d$ matrix for $\mathbb{R}^{d}$-valued functions $(Df)_{ij} = (\frac{\partial f_{i}}{\partial x_{j}})$ and the $d \times 1$ row vector $Df = (\frac{\partial f}{\partial x_{1}}, \cdots, \frac{\partial f}{\partial x_{n}} )$ for scalar valued functions defined on $d$-dimensional domain. The flow equations are depicted in panel 1 of Figure~\ref{Euler-Lagrange-description}~\cite{pmid12117763}.\\
+The goal is to find the velocity field which, after integration of (\ref{Metric}), gives the diffeomorphism $g$. The second equation can be understood as a symetric speed rate:
+
+\begin{eqnarray*}
+\frac{\partial}{\partial t}g^{-1}(y,t) & = & \frac{\partial g^{-1}(y,t)}{\partial g}\frac{\partial g}{\partial t} \\
+& = & - D_{g} g^{-1}(y,t) (v_{g}(y,t))
+\end{eqnarray*}
+
+Bijective flows go in opposite directions.
+
+\begin{definition}
+We define the group of transformations $\mathcal{G}$ to be diffeomorphisms $g(1) \in \mathcal{G}: x \rightarrow g(x, 1) \in \Omega$, $1-1$ (one-to-one, bijective), onto, with continuous inverse and differentiable solutions of Equation~(\ref{Metric}), with $v(t)$, $t \in [0, 1]$ sufficiently smooth and vanishing at the boundary of $\Omega$ ($\partial \Omega$) for each $t$ to generate smooth solutions $g(1)$, $g^{-1}(1)$
+\end{definition}
+
+\subsection{Least action principal}
+
+The variational least action principal allow physicists to find the Euler-Lagrange motion equation
+
+$$
+S = \int_{q_{0}}^{q_{1}} \mathcal{L}(q, \dot{q}) \, dt
+$$
+
+Where $S$ is the action, $\mathcal{L}$ is the Lagrangian. Applying a infinitesimal variation on the Lagrangian.
+
+$$
+\delta S =  \int_{q_{0}}^{q_{1}} \frac{\partial\mathcal{L}(q, \dot{q})}{\partial q} \delta q + \frac{\partial\mathcal{L}(q, \dot{q})}{\partial \dot{q}} \delta \dot{q} \, dt = 0
+$$
+
+Using the linearity of the integration
+
+\begin{eqnarray*}
+    \frac{\partial\mathcal{L}(q, \dot{q})}{\partial \dot{q}} \delta \dot{q} & = & \frac{\partial\mathcal{L}(q, \dot{q})}{\partial \dot{q}} \frac{\partial }{\partial t} \delta q \\
+\end{eqnarray*}
+
+
+and derivation operator and the part integral
+
+\begin{eqnarray*}
+    \int_{q_{0}}^{q_{1}} \frac{\partial\mathcal{L}(q, \dot{q})}{\partial \dot{q}} \frac{\partial }{\partial t} \delta q  \, dt & = & \left \lbrack \frac{\partial\mathcal{L}(q, \dot{q})}{\partial \dot{q}} \delta q \right \rbrack_{q_{0}}^{q_{1}} \\
+    & - &  \int_{q_{0}}^{q_{1}} \frac{d}{dt} \frac{\partial\mathcal{L}(q, \dot{q})}{\partial \dot{q}} \delta q \, dt
+\end{eqnarray*}
+
+The backet expression is zero because of the null variation at the starting and ending point of the path. We can write the Euler-Lagrange equation of motion:
+
+$$
+\frac{d}{dt} \frac{\partial\mathcal{L}(q, \dot{q})}{\partial \dot{q}} - \frac{\partial\mathcal{L}(q, \dot{q})}{\partial q} = 0 
+\label{Euler_Lagrange}
+$$
+
+Using the Mecanics lagragien $\mathcal{L} = \mathcal{E}_{c} - \mathcal{E}_{p}$, where $\mathcal{E}_{c}$ is the kinetics energy and $\mathcal{E}_{p}$ is the potential energy, we recover the Newton equation of motion.  
+
+
+\subsection{Least action principal in anatomical imaging}
+
+
+%%\begin{figure}[htbp]
+%%   \begin{center}
+%%      \includegraphics[width=8cm,height=6cm, angle=0]{images/pmid12117763.png}\hfill
+%%   \end{center}
+%%   \caption{Panel 1 (left) shows the Lagrangian description of the flow; panel 2 (right) shows the variation of the group flow element $g(\cdot)$ by $\eta(\cdot)$~\cite{pmid12117763}.}
+%%\label{Euler-Lagrange-description}
+%%\end{figure}
+
+
+One principal aspect of \CA{} is to define the metric distance between anatomies through the mappings between them. We define distance between them via the geodesic length of the flows $g(\cdot): [0, 1] \rightarrow \mathcal{G}$ which connects them. The geodesic length is defined through the least action principal 
+
+$$
+S_{g} = \int_{0}^{1} \|v(t)\|_{L}^{2} \,dt = \int_{0}^{1} E_{v}(t) \,dt
+$$ 
+
+$v(t) = \partial_{t} g$ with $\| \cdot \|_{L}$ a proper norm on the vector fields on $\Omega$ ({\it i.e.}, a Sobolev space with $L$ a differential operator). Avoid confusion between operator $L$ and the Lebesgue space $L^{2}$.\\
+
+Investigators have used linear differential operators $L$ operating on the vector fields to enforce smoothness on the maps and to define the finite norm, generally differentiating only in space and constructed from the Laplacian and its powers. $L$ is a $d \times d$ matrix of differential operators $L = (L_{ij})$ on d $\mathbb{R}^{d}$ valued vector fields of the form $(Lv)_{j} = \sum_{i = 1}^{d} L_{ij}v_{i}$ inducing a finite norm constraint at each time $t$. Denote the norm-squared energy density according to 
+
+\begin{eqnarray*}
+  E_{v}(t) & = & \int_{\Omega}E_{v}(x,t) \, dx = \| v(t)\|_{L}^{2} \\
+  & = & \langle Lv(\cdot, t), Lv(\cdot, t) \rangle < \infty, ~~t \in [0,1]
+\label{EnergyDensity}
+\end{eqnarray*}
+
+The energy density has been defined through powers of the Laplacian for the classic {\bf thin-plate splines}(??) and the Cauchy-Navier operator for 3-dimensional elasticity. Differential operators with sufficient derivatives and proper boundary conditions insure the existence of solutions of the transport equation in the space of diffeomorphic flows.\\
+
+Now the metric between transformations $g_{0}, g_{1} \in \mathcal{G}$ is defined via the length of the shortest path $g(t)$, $t \in [0, 1]$ with the boundary conditions $g(0) = g_{0}$, $g(1) = g_{1}$. A crucial property of the metric $\rho_{\mathcal{G}}: \mathcal{G} \times \mathcal{G} \rightarrow \mathbb{R}^{+}$ is that it is invariant to $\mathcal{G}$, so that $\rho_{\mathcal{G}}(g_{0}, g_{1}) = \rho_{\mathcal{G}}(g' \cdot g_{0}, g' \cdot g_{1})$ for $g \in \mathcal{G}$, where $g' \cdot g = g \circ g'$. Then preserve the Euler-Lagrange motion equation, therefore the geodesics.\\
+The left-invariance follows from that fact that translation by another group element leaves the distance unchanged because $g(\cdot)$ satisfies $\partial g(\cdot, t) / \partial t = v(g(\cdot, t), t)$, $g(0) = Id$, $g(1) = g_{1}$ implying $g(0) \circ h = h$, $g(1) = g_{1} \circ h$, with an identical velocity field so that $\partial g(h(x),t)/\partial t = v(g(h(x),t),t)$, $g(0) = h, g(1) = g_{1}(h)$. The distances $\rho_{\mathcal{G}}(Id, g) = \rho_{\mathcal{G}}(h, g \circ h)$ are equal for all $h \in \mathcal{G}$.
+
+\begin{theorem}
+  The function $\rho_{\mathcal{G}}(\cdot, \cdot): \mathcal{G} \times \mathcal{G} \rightarrow \mathbb{R}^{+}$ between elements $g_{0}$, $g_{1} \in \mathcal{G}$ defined as
+
+
+
+\begin{eqnarray*}
+  \rho_{\mathcal{G}}^{2}(g_{0}, g_{1}) & = & \inf S_{g} \\
+  & = & \underset{g(\cdot):\frac{\partial}{\partial t}g^{-1}(t) = -Dg^{-1}(t)v(t),\, g(0)=g_{0}, g(1) = g_{1}}{\inf} \int_{0}^{1} E_{v}(t) \, dt \\
+\end{eqnarray*}
+
+
+is a left-invariant metric distance on $\mathcal{G}$. The geodesics satisfy the Euler-Lagrange equations:
+
+\begin{eqnarray*}
+  \frac{\partial}{\partial t} \nabla_{v}E_{v}(\cdot, t) + (Dv(\cdot, t))^{t} \nabla_{v}E_{v}(\cdot, t) \\
+  + (D \nabla_{v}E_{v}(\cdot, t))v(\cdot, t) + div( v(\cdot, t)) \nabla_{v}E_{v}(\cdot, t) = 0
+\end{eqnarray*}
+
+where $\nabla$ is the gradient operator delivering a vector, $\nabla_{v}E_{v}(t) = 2L^{\dag}Lv(t)$ with the adjoint defined as $\langle Lf, g\rangle = \langle f, L^{\dag}g \rangle$, $div(v) = \sum_{i} \partial v/ \partial x_{i}$ the divergence operator.
+\end{theorem}
+
+
+
+\subsubsection{Partial demonstration}
+
+To derive Euler-Lagrange equations for the velocity examine perturbations on the group elements and velocity fields, $g \rightarrow g + \epsilon \eta$, $v \rightarrow v + \epsilon \psi$. For exact correspondence of the group elements, $\eta(0) = \eta(1) = 0$. For inexact image matching, only $\eta(0) = 0$ with $\eta(x, t) = 0$, $\forall x \in \partial \Omega$, $\psi(x, t) = 0$, $\forall x \in \partial \Omega$. If $\eta$ is a perturbation of $g$, define the Gateaux differential of $E(v g): \mathcal{G} \rightarrow \mathbb{R}^{+}$ in the direction $\eta$ to be the limit, as the perturbation tends to 0. Also if $\psi$ is a perturbation of $v$, define the Gateaux differential of $E(g_{v}): \mathcal{V} \rightarrow \mathbb{R}^{+}$ in the direction $\psi$ to be the limit, as the perturbation tends to 0.
+
+\begin{lemma}
+
+\begin{eqnarray*}
+\psi(x,t) = \partial_{\eta} v_{g}(x,t) & = & \underset{\epsilon \rightarrow 0}{\lim} \frac{v_{g+\epsilon \eta}(x,t) - v_{g}(x,t)}{\epsilon} \\
+& = & \frac{d}{dt} \eta(g^{-1}(x,t),t) - D v_{g}(x,t) \eta (g^{-1}(x,t),t)
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\eta(x,t) = \partial_{\psi} g_{v}(x,t) & = & \underset{\epsilon \rightarrow 0}{\lim} \frac{g_{v + \epsilon \psi}(x,t) - g_{v}(x,t)}{\epsilon} \\
+& = & Dg_{v}(x,t) \int_{0}^{1} du \, (Dg_{v}(x,u))^{-1} \psi (g_{v}(x,u),u)
+\end{eqnarray*}
+\end{lemma}
+
+\begin{proof}
+  \begin{equation}
+    \begin{split}
+      \frac{d}{dt} (g+\varepsilon \eta) & =  v_{g}(g(x,t),t) + \varepsilon \frac{d}{dt} \eta(x,t) \\
+      & = v_{g+\varepsilon \eta}(g+\varepsilon \eta)
+    \end{split}
+  \end{equation}
+
+  $$
+  v_{g+\varepsilon \eta}(g+\varepsilon \eta) = v_{g}(g+\varepsilon \eta) + \varepsilon \psi
+  $$
+
+  Given $\psi = \partial_{\eta} v_{g} (x,t)$ (= $\delta v$ variational calculation in physics). Using the directional derivative:
+
+  $$
+  df = \underset{\varepsilon \rightarrow 0}{\lim} \frac{f(x + \varepsilon) - f(x)}{\varepsilon}
+  $$
+
+  The Taylor developpment gives:
+
+  $$
+  f(x + \varepsilon) = f(x) + \varepsilon df = f(x) + \varepsilon Df
+  $$
+  $$
+  v_{g+\varepsilon \eta}(g+\varepsilon \eta) \sim v_{g}(g(x,t),t) + D v_{g}(g) \varepsilon \eta + \varepsilon \partial_{\eta} v_{g}
+  $$
+  
+Therefore 
+
+  $$
+  \frac{d}{dt} \eta(x,t) = Dv_{g}(g) \eta(x,t) + \partial_{\eta} v_{g}
+  $$
+
+
+  Definition gives $\partial_{t} g = v_{g}(g,t)$. $D \partial_{t} g = \partial_{t} Dg = Dg Dv_{g}(g)$
+  $$
+  \frac{\partial}{\partial t} \eta = D v_{g} (g) \eta + \psi\\
+  = \left[ D \frac{\partial g}{\partial t} \right](Dg)^{-1} \eta + \psi
+  $$
+
+  Taking the equation (26) and derivating, we have:
+
+  \begin{equation*}
+    \begin{split}
+    \partial_{t} \eta(x) & = \partial_{t} \left[ D g_{v}(x,t) \int_{0}^{t} \left[ Dg_{v}(x,u) \right]^{-1} \psi(g_{v}(x,u), u) \, du \right]\\
+    & = \partial_{t}D g_{v}(x,t) \int_{0}^{t} \left[ Dg_{v}(x,u) \right]^{-1} \psi(g_{v}(x,u), u) \, du  \\
+    & + D g_{v}(x,t) \left[ Dg_{v}(x,t) \right]^{-1} \psi(g_{v}(x,t), t) \\
+    & = \partial_{t}D g_{v}(x,t) \left[ Dg_{v}(x,t) \right]^{-1} \eta(x,t) + \psi(g_{v}(x,t), t) \\
+    \end{split}
+  \end{equation*}
+
+   
+\end{proof}
+
+\subsection{Beg's geometry}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Inducing the metric space on anatomical images}
+
+The group of geometric transformations are not directly observable. Rather images are observed via sensors which measure physical properties of the tissues. Carrying out Grenander's metric pattern theory program, the space or orbit of anatomical images $I \in \mathcal{I}$ must be made into a metric space. The metric distance between anatomical imagery $I \in \mathcal{I}$ is constructed from distances between the mappings $g \in \mathcal{G}$. First, the anatomical orbit of all images is defined.
+
+\paragraph{Definition}{The mathematical anatomy are functions $I \in \mathcal{I}, I: x \in \Omega \rightarrow I(x)$, an orbit under the geometric transformations: $\mathcal{I} = \lbrace I':I(\cdot) = I(g(\cdot)),~I \in \mathcal{I},~g \in \mathcal{G} \rbrace$.\\}
+
+This is a group action on I with $g \cdot I = I \circ g$ and group product $g \cdot g(\cdot) = g \circ g(\cdot) = g(g(\cdot))$, which defines the equivalence relation $I_{1} \sim I_{2}$ if $\exists g \in \mathcal{G}$ such that $I_{1}(\cdot) = I_{2}(g(\cdot))$, dividing $I$ into disjoint orbits.
+
+
+
+\begin{theorem}
+The function $\rho(\cdot, \cdot): \mathcal{I} \times \mathcal{I} \rightarrow \mathbb{R}^{+}$ between elements $I, I' \in \mathcal{I}$ defined as
+
+$$
+\rho^{2}(I,I') = \underset{g(\cdot):\frac{\partial}{\partial t}g^{-1}(t) = -Dg^{-1}(t)v(t),\, I(g^{-1}(\cdot,1)) = I'(\cdot), g^{-1}(0) = Id}{\inf} \int_{0}^{1} E_{v}(t) \, dt
+$$
+is a metric distance on I satisfying symmetry and the triangle inequality.
+\end{theorem}
+
+
+The fact that $\rho_{\mathcal{G}}$ is left-invariant to $\mathcal{G}$ implies that for all $g \in \mathcal{G}$, $\rho(I \circ g, I' \circ g) = ρ(I, I')$. This also implies any element in the orbit can be taken as the template; all elements are equally good.
+
+\subsection{Expanding the Metric Space to Incorporate Photometric Variation}
+
+Thus far, the metric depends only on the geometric transformations of the background space $\Omega$.
+
+\paragraph{Theorem}{\it Defining the image evolution in the orbit as $J(y, t) = I(g^{−1}(y, t), t)$, $\frac{\partial}{\partial t} g^{-1}(y, t) = −Dg^{−1}(y, t)v(y, t)$, then the function $\rho(\cdot, \cdot): I \times I \rightarrow \mathbb{R}^{+}$ between elements $I$, $I' \in \mathcal{I}$ defined as 
+
+$$
+\rho^{2}(I,I') = \underset{v(\cdot),I(\cdot):J(0) = I, J(1) = I'}{\inf} \int_{0}^{1} dt \, \left( \| v(t) \|_{L}^{2} \| \frac{\partial }{\partial t} J(t) + \nabla J^{T} (t)v(t)\|^{2} \right)
+$$
+
+is a metric satisfying symmetry and the triangle inequality. Defining
+
+$$
+\nabla_{v}E(y,t) = 2L^{\dag}Lv(y,t) + 2 \left( \frac{\partial}{\partial t} J(y,t) + \nabla J^{T}(y,t) v(y,t) \right) \nabla J(y,t)
+$$
+
+then the Euler Equation 4 holds with boundary term $\nabla E (\cdot, 1) = 0$ with the geodesics for photometric evolution satisfying:
+
+$$
+L^{\dag}Lv(\cdot,t) + \left( \frac{\partial}{\partial t} J(\cdot,t) + \nabla J^{T}(\cdot,t) v(\cdot,t) \right) \nabla J(\cdot,t) = 0
+$$
+
+$$
+\frac{\partial}{\partial t}\left( \frac{\partial J(\cdot,t)}{\partial t} + \nabla J^{T}(\cdot,t) v(\cdot,t) \right) + div\left( \frac{\partial J(\cdot,t)}{\partial t} v(\cdot, t) + (\nabla J^{T}(\cdot,t) v(\cdot,t)) v(\cdot, t) \right) = 0
+$$
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Euler-Lagrange equation for the inexact image matching and growth}
+
+A central problem in \CA{} is essentially diffeomorphic image interpolation, i.e., to infer the geometric image evolution that connects two elements $I_{0}$, $I_{1} \in \mathcal{I}$ under pure geometric evolution. For this a function of the path is defined; call it $I_{0}(g^{−1}(t))$, $t \in [0, 1]$. The goal is to construct the shortest length curve $g(t)$, $t \in [0, 1]$ which  the target norm squared $\| I_{0} (g^{−1}(1)) − I_{1} \|^{2}$. This is of course inexact matching, since there is a balance between metric length of the path and target correspondence. We can view the image evolution defined by the geodesic as an interpolation between images via the geodesic. Because of the introduction of the free boundary, there is a boundary term which is introduced.
+
+\paragraph{Theorem - Inexact Image Matching}{\it The minimizer
+$$
+\underset{g(\cdot): \frac{\partial}{\partial t} g^{-1}(t) = - Dg^{-1}(t)v(t), g(0) ) g_{0}}{\inf} \int_{0}^{1} E_{v}(t) \, dt + \| I_{1} - I_{0}(g^{-1}(1))\|^{2}
+$$
+
+satisfies the Euler-Lagrange Equation 4 with boundary term:
+
+$$
+\nabla_{v}E_{v}(\cdot, 1) + 2(I_{1}(\cdot) - I_{0}(g^{-1}(\cdot, 1)))D(I_{0}(g^{-1}(\cdot, 1)))^{T = 0} = 0
+$$
+
+where
+
+$$
+D(I_{0}(g^{-1}(\cdot,t))) = \nabla I_{0}^{T}(g^{-1}(\cdot, t))Dg^{-1}(\cdot, t)
+$$
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Computational image matching}
+
+\subsection{Beg's Geometric Transformations via Inexact Matching}
+
+
+In this section, we examine the results of solving the Euler-Lagrange equations for generating the geodesics. Faisal Beg solves inexact image matching (Equation 10) via variations with respect to the velocity field exploiting the vector space structure.
+
+\paragraph{Algorithm}{
+Fixed points of the following algorithm satisfy Equations 4 and 11. Initialize $v^{old} = 0$, choose constant $\epsilon$, then for all $t \in [0, 1]$,
+
+Step~1:
+
+$$
+\frac{\partial }{\partial t} g^{new}(t) = v^{old}(g^{new}(t), t) = v^{old}(g^{new}(t), t), \frac{\partial }{\partial t} (g^{new})^{-1}(t)v^{old}(t)
+$$
+
+$$
+\chi^{new}(t) = g^{new}((g^{new}(t))^{-1}, 1)
+$$
+
+Step~2: Compute
+
+$$
+v^{new}(t) = v^{old}(t) - \epsilon \nabla_{v}E(t)
+$$
+
+Set $v^{old} \leftarrow v^{new}$, return to Step 1. Where
+
+$$
+\nabla_{v} E(t) = v^{old}(t) + (L^{\dag}L)^{-1} \left( |D \chi^{new}(t)| \times D(I_{0}((g^{new}(t))^{-1}))^{T}(I_{1}(\chi^{new}(t)) - I_{0}((g^{new}(t))^{-1})) \right)
+$$
+
+Here $(L^{\dag}L)^{−1} f = Kf$ where $K$ is the Green's kernel. The space-time solution of Equation 13 has gradient
+
+
+\dots
+
+Where $\chi(t, \tau) = g(g^{-1}(t), \tau)$
+
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+
+\section*{References}
+%% References with bibTeX database:
+\bibliographystyle{Bibliography/elsarticle-num}
+
+\bibliography{Bibliography/sample}
+
+
+\end{document}

@@ -123,19 +123,21 @@ JOB=$( sudo docker run -it --rm --name  Check  \
     --volume="/tmp/.X11-unix/X0:/tmp/.X11-unix/X0:rw" \
     --volume="/mnt/scratch/tmp:/tmp" \
     --volume="/usr/local/MATLAB:/usr/local/MATLAB" \
-    imaging_core:01 )
+    --volume="/usr/share/zoneinfo/America/Los_Angeles:/etc/localtime:ro" \
+      imaging_core:01 )
 
 #
 # Singularity
 #
-singularity shell --shell /bin/bash \
- -B /mnt/coredata/neuroimaging_CentOS7/:/mnt/neuroimaging \
- -B /mnt/coredata/home/ycobigo/study/:/mnt/production \
- -B /mnt/macdata/:/mnt/macdata \
- -B /mnt/images/:/mnt/images \
+singularity shell --shell /bin/bash  \
+ -B /mnt/coredata/neuroimaging_CentOS7/:/mnt/neuroimaging  \
+ -B /mnt/coredata/home/ycobigo/study/:/mnt/production  \
+ -B /mnt/macdata/:/mnt/macdata  \
+ -B /mnt/images/:/mnt/images  \
+ -B /mnt/coredata/MAC_QC/production_test:/mnt/images_test  \
  -B /etc/machine-id:/etc/machine-id \
- /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
-
+ -B /mnt/pacsdata/imaging_ctp_2/QC_NEW_DICOMS_test/:/mnt/SNC-PACS-GW1 \
+    /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
 
 #
 #
