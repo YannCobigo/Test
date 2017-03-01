@@ -128,7 +128,7 @@ namespace MAC_bmle
       Eigen::MatrixXd X_2_;
       //
       // Random effect results
-      Image3DType::Pointer Random_effect_ITK_image_;
+      BmleMakeITKImage Random_effect_ITK_image_;
     };
 
   //
@@ -276,6 +276,10 @@ namespace MAC_bmle
     MAC_bmle::BmleSubject< D_r, D_f >::create_theta_images()
     {
       std::cout << "We create matrices only one time" << std::endl;
+      //
+      Random_effect_ITK_image_ = BmleMakeITKImage( D_r,
+						   "LaVieEstBelle_sub.nii.gz",
+						   age_ITK_images_.begin()->second );
     }
   //
   //

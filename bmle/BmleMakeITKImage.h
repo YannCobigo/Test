@@ -52,7 +52,9 @@ namespace MAC_bmle
       /** Constructor. */
       BmleMakeITKImage():D_{0},image_name_{""}{};
       //
-      explicit BmleMakeITKImage( long unsigned int , std::string& );
+      explicit BmleMakeITKImage( const long unsigned int ,
+				 const std::string&,
+				 const Reader3D::Pointer );
     
       /**  */
       virtual ~BmleMakeITKImage(){};
@@ -69,8 +71,10 @@ namespace MAC_bmle
       long unsigned int D_;
       // Image name
       std::string image_name_;
+      // Take the dimension of the first subject image:
+      Reader3D::Pointer image_reader_;
       // Measures grouped in vector of 3D image
-      std::vector< Reader3D::Pointer > images_;
+      std::vector< Image3DType::Pointer > images_;
     };
 }
 #endif

@@ -3,10 +3,39 @@
 //
 //
 //
-MAC_bmle::BmleMakeITKImage::BmleMakeITKImage( long unsigned int Dimension, std::string& Image_name ):
-  D_{Dimension}, image_name_{ Image_name }
+MAC_bmle::BmleMakeITKImage::BmleMakeITKImage( const long unsigned int Dimension,
+					      const std::string&      Image_name,
+					      const Reader3D::Pointer Dim_template_image ):
+  D_{ Dimension }, image_name_{ Image_name }
   {
+    //
+    //
     images_.resize( Dimension );
+    //
+    // Take the dimension of the first subject image:
+    Reader3D::Pointer image_reader_ = Dim_template_image;
+
+    //
+    // Create the 3D image of measures
+    //
+
+    //
+    //
+    Image3DType::RegionType region;
+    Image3DType::IndexType  start = { 0, 0, 0 };
+    //
+    Image3DType::Pointer  raw_subject_image_ptr = image_reader_->GetOutput();
+    Image3DType::SizeType size = raw_subject_image_ptr->GetLargestPossibleRegion().GetSize();
+    //
+    region.SetSize( size );
+    region.SetIndex( start );
+    //
+    for ( auto& image : images_ )
+      {
+	image = Image3DType::New();
+	image->SetRegions( region );
+	image->Allocate();
+      }
   }
 //
 //
@@ -31,7 +60,7 @@ MAC_bmle::BmleMakeITKImage::write()
   Image4DType::IndexType  start = { 0, 0, 0, 0 };
   //
   // Take the dimension of the first subject image:
-  Reader3D::Pointer Sub_image_reader = images_[0];
+  Reader3D::Pointer Sub_image_reader = image_reader_;
   //
   Image3DType::Pointer  raw_subject_image_ptr = Sub_image_reader->GetOutput();
   Image3DType::SizeType size = raw_subject_image_ptr->GetLargestPossibleRegion().GetSize();
@@ -76,8 +105,8 @@ MAC_bmle::BmleMakeITKImage::write()
   //
   for ( auto image : images_ )
     {
-      Image3DType::RegionType region = image->GetOutput()->GetBufferedRegion();
-      Iterator3D it3( image->GetOutput(), region );
+      Image3DType::RegionType region = image->GetBufferedRegion();
+      Iterator3D it3( image, region );
       it3.GoToBegin();
       while( !it3.IsAtEnd() )
 	{
