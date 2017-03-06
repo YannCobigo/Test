@@ -746,8 +746,8 @@ namespace MAC_bmle
 	      n++;
 	    else
 	      n = 0;
-	    std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F )
-		      << std::endl;
+//	    std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F )
+//		      << std::endl;
 	  }
 
 	//
@@ -760,13 +760,12 @@ namespace MAC_bmle
 	Eigen::MatrixXd eta_theta_Y_2_theta_Y = eta_theta_Y.block( eta_theta_Y_2_eps_Y_dim, 0,
 								   eta_theta_Y_2_theta_Y_dim, 1 );
 	//
-	std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
-	
-	std::cout << eta_theta_Y << std::endl;
-	std::cout << eta_theta_Y_2_theta_Y << std::endl;
-	std::cout  << std::endl;
-	std::cout << X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y << std::endl;
-	std::cout << cov_theta_Y << std::endl;
+//	std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
+//	std::cout << eta_theta_Y << std::endl;
+//	std::cout << eta_theta_Y_2_theta_Y << std::endl;
+//	std::cout  << std::endl;
+//	std::cout << X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y << std::endl;
+//	std::cout << cov_theta_Y << std::endl;
       }
     catch( itk::ExceptionObject & err )
       {
@@ -806,10 +805,10 @@ namespace MAC_bmle
 	double
 	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
 	  F_3 = - ( Cov_theta_Y * X_.transpose() * Inv_Cov_eps * X_ ).trace();
-	std::cout << "F_1 = " << F_1<< std::endl;
-	std::cout << "F_2 = " << F_2<< std::endl;
-	std::cout << "F_3 = " << F_3<< std::endl;
-	std::cout << "F_4 = " << F_4<< std::endl;
+	//std::cout << "F_1 = " << F_1<< std::endl;
+	//std::cout << "F_2 = " << F_2<< std::endl;
+	//std::cout << "F_3 = " << F_3<< std::endl;
+	//std::cout << "F_4 = " << F_4<< std::endl;
 	//
 	//
 	return ( F_1 + F_2 + F_3 + F_4 ) / 2.;
