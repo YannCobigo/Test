@@ -92,7 +92,7 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Load the CSV file
-	      MAC_bmle::BmleLoadCSV< 2/*D_r*/, 1 /*D_f*/> subject_mapping( filename );
+	      MAC_bmle::BmleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename );
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();
 
@@ -124,12 +124,17 @@ main( const int argc, const char **argv )
 		{
 		  if( static_cast<int>( imageIterator_mask.Value() ) != 0 )
 		    {
-		      //MaskType::IndexType idx = imageIterator_mask.GetIndex();
-		      subject_mapping.Expectation_Maximization( imageIterator_mask.GetIndex() );
+		      MaskType::IndexType idx = imageIterator_mask.GetIndex();
+		      if ( idx[0] > 20 && idx[0] < 40 && 
+			   idx[1] > 60 && idx[1] < 80 &&
+			   idx[2] > 55 && idx[2] < 65 )
+			subject_mapping.Expectation_Maximization( idx );
 		    }
+		  std::cout << imageIterator_mask.GetIndex() << std::endl;
 		  //
 		  ++imageIterator_mask;
 		}
+	      std::cout << "All the mask has been covered" << std::endl;
 	    }
 	  else
 	    throw MAC_bmle::BmleException( __FILE__, __LINE__,

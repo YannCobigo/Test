@@ -50,7 +50,8 @@ namespace MAC_bmle
       // Some typedef
       using Image3DType = itk::Image< double, 3 >;
       using Reader3D    = itk::ImageFileReader< Image3DType >;
-
+      using MaskType    = itk::Image< unsigned char, 3 >;
+ 
     public:
       /** Constructor. */
     BmleSubject():
@@ -58,20 +59,23 @@ namespace MAC_bmle
       //
       explicit BmleSubject( const int, const int );
     
-      /**  */
+      /** Destructor */
       virtual ~BmleSubject(){};
 
       //
-      //
-      inline const int get_PIDN() const { return PIDN_ ;};
-      //
+      // Accessors
+      inline const int get_PIDN() const { return PIDN_ ;}
       //
       inline const std::map< int, Reader3D::Pointer >&
-      get_age_images() const { return age_ITK_images_ ;};
+	get_age_images() const { return age_ITK_images_ ;}
       //
       const Eigen::MatrixXd& get_random_matrix() const {return X_1_rand_;}
       const Eigen::MatrixXd& get_fixed_matrix() const {return X_1_fixed_;}
       const Eigen::MatrixXd& get_X2_matrix() const {return X_2_;}
+
+      //
+      //
+      void set_fit( const MaskType::IndexType, const Eigen::MatrixXd , const Eigen::MatrixXd );
 
       //
       // Add time point
@@ -97,7 +101,8 @@ namespace MAC_bmle
     
       // Identification number
       int PIDN_;
-      // Group for multi-group comparisin (controls, MCI, FTD, ...)
+      // Group for multi-group comparison (controls, MCI, FTD, ...)
+      // It can only take 1, 2, ... value
       int group_;
       // 
       // Age covariate map
@@ -128,7 +133,9 @@ namespace MAC_bmle
       Eigen::MatrixXd X_2_;
       //
       // Random effect results
-      Image3DType::Pointer Random_effect_ITK_image_;
+      BmleMakeITKImage Random_effect_ITK_model_;
+      // Random effect results
+      BmleMakeITKImage Random_effect_ITK_variance_;
     };
 
   //
@@ -215,9 +222,9 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::add_tp( const int                 Age,
+    MAC_bmle::BmleSubject< D_r, D_f >::add_tp( const int                  Age,
 					       const std::list< double >& Covariates,
-					       const std::string&        Image )
+					       const std::string&         Image )
   {
     try
       {
@@ -273,9 +280,56 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
+    MAC_bmle::BmleSubject< D_r, D_f >::set_fit( const MaskType::IndexType Idx, 
+						const Eigen::MatrixXd Model_fit, 
+						const Eigen::MatrixXd Cov_fit )
+    {
+      //
+      // ToDo: I would like to write the goodness of the score (r-square ...)
+      //
+      // copy Eigen Matrix information into a vector
+      // We only record the diagonal sup of the covariance.
+      std::vector< double > model( D_r ), cov( D_r * (D_r + 1) / 2 );
+      int current_mat_coeff = 0;
+      for ( int d ; d < D_r ; d++ )
+	{
+	  model[d] = Model_fit(d,0);
+	  Random_effect_ITK_model_.set_val( d, Idx, Model_fit(d,0) );
+	  for ( int c = d ; c < D_r ; c++)
+	    {
+	      cov[d]  = Cov_fit(d,c);
+	      Random_effect_ITK_variance_.set_val( current_mat_coeff++, Idx, Cov_fit(d,c) );
+	    }
+	}
+    }
+  //
+  //
+  //
+  template < int D_r, int D_f > void
     MAC_bmle::BmleSubject< D_r, D_f >::create_theta_images()
     {
-      std::cout << "We create matrices only one time" << std::endl;
+      //std::cout << "We create output only one time" << std::endl;
+      // Model output
+      std::string output_model = "model_" 
+	+ std::to_string( PIDN_ ) + "_" + std::to_string( group_ )
+	+ "_" + std::to_string( time_points_ ) + "_" + std::to_string( D_ ) 
+	+ ".nii.gz";
+      Random_effect_ITK_model_ = BmleMakeITKImage( D_r,
+						   output_model,
+						   age_ITK_images_.begin()->second );
+      // Variance output
+      // We only record the diagonal sup elements
+      //
+      // | 1 2 3 |
+      // | . 4 5 |
+      // | . . 6 |
+      std::string output_var = "var_" 
+	+ std::to_string( PIDN_ ) + "_" + std::to_string( group_ )
+	+ "_" + std::to_string( time_points_ ) + "_" + std::to_string( D_ ) 
+	+ ".nii.gz";
+      Random_effect_ITK_variance_ = BmleMakeITKImage( D_r * (D_r + 1) / 2 /*we make sure it is a int*/,
+						      output_var,
+						      age_ITK_images_.begin()->second );
     }
   //
   //

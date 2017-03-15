@@ -16,7 +16,9 @@
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
+#include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <Eigen/KroneckerProduct>
 //
 // ITK
 //
@@ -28,6 +30,7 @@ using MaskType = itk::Image< unsigned char, 3 >;
 //
 //
 #include "BmleException.h"
+#include "BmleMakeITKImage.h"
 #include "BmleTools.h"
 #include "Subject.h"
 //
@@ -78,7 +81,7 @@ namespace MAC_bmle
     // CSV file
     std::ifstream csv_file_;
     //
-    // Arrange pidns inti groups
+    // Arrange pidns into groups
     std::set< int > groups_;
     std::vector< std::map< int /*pidn*/, BmleSubject< D_r, D_f > > > group_pind_{10};
     // Number of subjects per group
@@ -116,6 +119,27 @@ namespace MAC_bmle
     std::map< int /*group*/, std::vector< Eigen::MatrixXd > > Q_k_;
     // Covariance matrix theta level two
     Eigen::MatrixXd C_theta_;
+
+    //
+    // Constrast matrix
+    //
+
+    // Contrast groupe
+    Eigen::MatrixXd constrast_;
+
+    
+    //
+    // Records
+    //
+
+    //
+    // Contrast vectors
+    
+    //
+    // Posterior Probability Maps
+    std::vector< BmleMakeITKImage > PPM_{1};
+    //
+    // Posterior t-maps
   };
   //
   //
@@ -202,6 +226,18 @@ namespace MAC_bmle
 	      for ( auto image : s.second.get_age_images() )
 		Y_[ sub_image++ ] = image.second;
 	    }
+
+	//
+	// Output images
+	//
+
+	//
+	// PPM
+	for ( auto& image : PPM_ )
+	  {
+	    image = BmleMakeITKImage( D_r, "LaVieEstBelle.nii.gz", Y_[0] );
+	  }
+	
 	//
 	// Create the 4D measurements image
 	//image_concat();
@@ -436,6 +472,7 @@ namespace MAC_bmle
 	//
 	if ( false )
 	  {
+	    std::cout << "Augmented model:" << std::endl;
 	    std::cout << X_ << std::endl;
 	  }
 
@@ -570,6 +607,69 @@ namespace MAC_bmle
 				 mess.c_str(),
 				 ITK_LOCATION );
 	  }
+
+	
+	//
+	// Build the contrast matrix
+	//
+
+	//
+	// We build the weight of the cohort and the global contrasts
+	int
+	  swap_row = 0,
+	  previouse_grp_size = 0;
+	//
+	Eigen::MatrixXd G             = - Eigen::MatrixXd::Identity( groups_.size(), groups_.size() );
+	Eigen::MatrixXd all_contrasts =   Eigen::MatrixXd::Zero( groups_.size(), groups_.size() * groups_.size() );
+	Eigen::MatrixXd cohort        =   Eigen::MatrixXd::Zero( num_subjects_, groups_.size() );
+	// First line is Ones
+	G.block(0,0,1,groups_.size()) =   Eigen::MatrixXd::Ones( 1, groups_.size() );
+	//
+	for ( auto g : groups_ )
+	  {
+	    Eigen::MatrixXd tempo_G = G;
+	    tempo_G.row(swap_row).swap( tempo_G.row(0) );
+	    all_contrasts.block( 0, 0 + groups_.size() * swap_row,
+				 groups_.size(), groups_.size() ) = tempo_G;
+	    
+	    cohort.block( previouse_grp_size , swap_row, group_num_subjects_[ g ], 1 ) =
+	      Eigen::MatrixXd::Ones( group_num_subjects_[ g ], 1 ) / group_num_subjects_[ g ];
+	    previouse_grp_size += group_num_subjects_[ g ];
+	    
+	    //
+	    //
+	    swap_row++;
+	  }
+	//
+	std::cout << "all_contrast For each of the parameters: \n" << all_contrasts << std::endl << std::endl;
+	//
+	// Cohort distribution
+	// All contrasts between groups
+	Eigen::MatrixXd all_cont_grps = Eigen::MatrixXd::Zero( num_subjects_,
+							       groups_.size() * groups_.size() );
+	//
+	int
+	  current_row = 0,
+	  past_rows   = 0;
+	//
+	for ( auto g : groups_ )
+	  {
+	    for ( int c = 0 ; c < all_contrasts.cols() ; c++ )
+	      all_cont_grps.block( past_rows, c,
+				   group_num_subjects_[ g ], 1 ) =
+		all_contrasts( current_row, c ) * Eigen::MatrixXd::Ones( group_num_subjects_[ g ], 1 ) / group_num_subjects_[ g ];
+	    // next row
+	    past_rows += group_num_subjects_[ g ];
+	    current_row++;
+	  }
+	//
+	// Global contrast
+	Eigen::MatrixXd Id_Dr = Eigen::MatrixXd::Identity( D_r, D_r );
+	//  
+	constrast_ = Eigen::kroneckerProduct( all_cont_grps, Id_Dr );
+	//
+	if ( true )
+	  std::cout << "constrast_ \n" << constrast_  << std::endl;
       }
     catch( itk::ExceptionObject & err )
       {
@@ -654,7 +754,7 @@ namespace MAC_bmle
 	  delta_F  = 100.;
 	int
 	  n = 0,
-	  N = 10;
+	  N = 10; // N regulate the EM loop to be sure converge smootly
 	
 	//
 	while( n < N  )
@@ -699,15 +799,9 @@ namespace MAC_bmle
 		// next group
 		count_group++;
 	      }
-//	std::cout << std::endl;
-//	std::cout << std::endl;
-//	std::cout << std::endl;
-//	std::cout << std::endl;
-//	std::cout << std::endl;
-//	std::cout << std::endl;
-////	std::cout << P  << std::endl;
-//	std::cout <<  grad << std::endl;
-//	std::cout << H  << std::endl;
+	    //	std::cout << P  << std::endl;
+	    //	std::cout <<  grad << std::endl;
+	    //	std::cout << H  << std::endl;
 	    //
 	    // Lambda update
 	Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 32.) * grad;
@@ -734,7 +828,7 @@ namespace MAC_bmle
 		{
 		  Cov_eps +=  exp( lambda_k[g][k] ) * Q_k_[g][k];
 		}
-//	    std::cout << Cov_eps << std::endl;
+	    //	    std::cout << Cov_eps << std::endl;
 	    //
 	    inv_Cov_eps =  MAC_bmle::inverse( Cov_eps );
 	    //std::cout << inv_Cov_eps << std::endl;
@@ -760,12 +854,50 @@ namespace MAC_bmle
 	Eigen::MatrixXd eta_theta_Y_2_theta_Y = eta_theta_Y.block( eta_theta_Y_2_eps_Y_dim, 0,
 								   eta_theta_Y_2_theta_Y_dim, 1 );
 	//
-//	std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
-//	std::cout << eta_theta_Y << std::endl;
-//	std::cout << eta_theta_Y_2_theta_Y << std::endl;
-//	std::cout  << std::endl;
-//	std::cout << X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y << std::endl;
-//	std::cout << cov_theta_Y << std::endl;
+	// Solution
+	//
+
+	//
+	//
+	Eigen::MatrixXd parameters = X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y;
+	Eigen::MatrixXd param_cov  = cov_theta_Y.block( 0, 0,
+							parameters.rows(), parameters.rows() );
+	//
+	// t-test
+	if ( D_f == 0 )
+	  {
+	    for ( int col = 0 ; col < constrast_.cols() ; col++ )
+	      {
+		Eigen::MatrixXd C = constrast_.block( 0, col,
+						      constrast_.rows(), 1 );
+		double T = ( C.transpose() * parameters )(0,0);
+		T /= sqrt( (C.transpose() * param_cov * C)(0,0) );
+		std::cout << "T = " << T << std::endl;
+	      }
+	  }
+
+	  
+	std::cout << "parameters" << "\n" << parameters << std::endl;
+	std::cout << "param_cov"  << "\n" << param_cov  << std::endl;
+	
+	int increme_subject = 0;
+	for ( auto g : groups_ )
+	  for ( auto subject : group_pind_[g] )
+	    subject.second.set_fit( Idx,
+				    parameters.block( increme_subject * D_r, 0, D_r, 1 ),
+				    param_cov.block( increme_subject * D_r, increme_subject * D_r, 
+						     D_r, D_r ) );
+
+	
+	//std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
+	//
+	//std::cout << eta_theta_Y << std::endl;
+	//std::cout << eta_theta_Y_2_theta_Y << std::endl;
+	//std::cout  << std::endl;
+	//std::cout  << std::endl;
+	//std::cout << X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y << std::endl;
+	//std::cout  << std::endl;
+	//std::cout << cov_theta_Y << std::endl;
       }
     catch( itk::ExceptionObject & err )
       {
