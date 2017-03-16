@@ -26,8 +26,12 @@ IncludeCmd: yes
     	  $SINGULARITY_ROOTFS/mnt/macdata \
 	  $SINGULARITY_ROOTFS/mnt/images \
 	  $SINGULARITY_ROOTFS/mnt/production \
-	  $SINGULARITY_ROOTFS/mnt/tempo \
-	  $SINGULARITY_ROOTFS/etc/singularity/
+	  $SINGULARITY_ROOTFS/mnt/Quarantine \
+	  $SINGULARITY_ROOTFS/mnt/SNC-PACS-GW1 \
+	  $SINGULARITY_ROOTFS/netapp \
+	  $SINGULARITY_ROOTFS/netapp/home \
+	  $SINGULARITY_ROOTFS/etc/singularity/ 
+	  
     cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
     # Customized applications 
     cp -r QAP  $SINGULARITY_ROOTFS/mnt/tempo/

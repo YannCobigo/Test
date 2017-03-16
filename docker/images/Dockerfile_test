@@ -1,0 +1,46 @@
+#
+# CentOS
+# cat /etc/centos-release
+# sudo docker build -f Dockerfile --tag="imaging_core:TEST_TEMPO" .
+# ex. FROM centos:6 version 6 of CentOS
+FROM centos:7
+
+MAINTAINER Yann Cobigo yann.cobigo@ucsf.edu
+
+# File system
+# /mnt/volume mount any type of volume we want to link with the host
+RUN mkdir /etc/sudoers.d/ /mnt/neuroimaging/ /mnt/macdata /mnt/images /mnt/tempo /mnt/volume /mnt/QB3
+
+RUN yum erase iputils -y
+RUN yum update -y && yum install  -y epel-release.noarch && yum groupinstall -y "Development tools" && yum makecache fast
+RUN yum install sudo.x86_64  -y
+
+#
+# user features
+# To avoid the interactive questions by adduser, you can call it with these parameters: RUN adduser --disabled-password --gecos '' newuser
+# we give the user its Cloud-Instance specific user ID
+# run id in a terminal
+# uid=1002(ycobigo) gid=1002(ycobigo) groups=1002(ycobigo),4(adm),27(sudo),110(admin) \
+RUN groupadd ic        -g 1100 && \
+    groupadd mac-imaging-core-admins -g 44502 && \
+    groupadd ycobigo   -g 40010 && \
+    groupadd gmarx     -g 1003 && \
+    groupadd guest     -g 1004 && \
+    groupadd vsamboju  -g 1005 && \
+    groupadd kchiang   -g 1006 && \
+    groupadd mmandelli -g 1007 && \
+    groupadd pmumford  -g 1008 && \
+    useradd -u 40010 -G 1100,44502 -g 40010 -p "ycobigo_tempo"  -ms /bin/bash ycobigo && \
+    useradd -u 1002 -G 1100 -g 1003 -p "gmarx_tempo"    -ms /bin/bash gmarx && \
+    useradd -u 1003 -G 1100 -g 1004 -p "guest_tempo"    -ms /bin/bash guest && \
+    useradd -u 1004 -G 1100 -g 1005 -p "vsamboju_tempo" -ms /bin/bash vsamboju && \
+    useradd -u 1005 -G 1100 -g 1006 -p "kchiang_tempo"  -ms /bin/bash kchiang && \
+    useradd -u 1006 -G 1100 -g 1007 -p "mmandelli_tempo" -ms /bin/bash mmandelli && \
+    useradd -u 1007 -G 1100 -g 1008 -p "pmumford_tempo"  -ms /bin/bash pmumford 
+RUN echo "ycobigo ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ycobigo && \
+    echo "gmarx ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/gmarx && \
+    chmod 0440 /etc/sudoers.d/ycobigo && \
+    chmod 0440 /etc/sudoers.d/gmarx 
+
+USER guest
+

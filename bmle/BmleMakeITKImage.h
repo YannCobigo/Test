@@ -47,6 +47,7 @@ namespace MAC_bmle
       using Image4DType = itk::Image< double, 4 >;
       using Reader4D    = itk::ImageFileReader< Image4DType >;
       using Writer4D    = itk::ImageFileWriter< Image4DType >;
+      using MaskType    = itk::Image< unsigned char, 3 >;
 
     public:
       /** Constructor. */
@@ -61,7 +62,7 @@ namespace MAC_bmle
 
       //
       // Record results
-      void record(){};
+      void set_val( const std::size_t, const MaskType::IndexType, const double );
       // Write image
       void write();
 

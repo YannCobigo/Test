@@ -125,12 +125,16 @@ main( const int argc, const char **argv )
 		  if( static_cast<int>( imageIterator_mask.Value() ) != 0 )
 		    {
 		      MaskType::IndexType idx = imageIterator_mask.GetIndex();
-		      if ( idx[2] > 55 && idx[2] < 65 )
-			subject_mapping.Expectation_Maximization( imageIterator_mask.GetIndex() );
+		      if ( idx[0] > 20 && idx[0] < 40 && 
+			   idx[1] > 60 && idx[1] < 80 &&
+			   idx[2] > 55 && idx[2] < 65 )
+			subject_mapping.Expectation_Maximization( idx );
 		    }
+		  std::cout << imageIterator_mask.GetIndex() << std::endl;
 		  //
 		  ++imageIterator_mask;
 		}
+	      std::cout << "All the mask has been covered" << std::endl;
 	    }
 	  else
 	    throw MAC_bmle::BmleException( __FILE__, __LINE__,

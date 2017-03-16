@@ -41,6 +41,16 @@ MAC_bmle::BmleMakeITKImage::BmleMakeITKImage( const long unsigned int Dimension,
 //
 //
 void
+MAC_bmle::BmleMakeITKImage::set_val( const std::size_t Image_number, 
+				     const MaskType::IndexType Idx, 
+				     const double Val )
+{
+  images_[ Image_number ]->SetPixel( Idx, Val );
+}
+//
+//
+//
+void
 MAC_bmle::BmleMakeITKImage::write()
 {
   //

@@ -472,6 +472,7 @@ namespace MAC_bmle
 	//
 	if ( false )
 	  {
+	    std::cout << "Augmented model:" << std::endl;
 	    std::cout << X_ << std::endl;
 	  }
 
@@ -839,8 +840,8 @@ namespace MAC_bmle
 	      n++;
 	    else
 	      n = 0;
-	    std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F )
-		      << std::endl;
+//	    std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F )
+//		      << std::endl;
 	  }
 
 	//
@@ -854,6 +855,10 @@ namespace MAC_bmle
 								   eta_theta_Y_2_theta_Y_dim, 1 );
 	//
 	// Solution
+	//
+
+	//
+	//
 	Eigen::MatrixXd parameters = X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y;
 	Eigen::MatrixXd param_cov  = cov_theta_Y.block( 0, 0,
 							parameters.rows(), parameters.rows() );
@@ -872,6 +877,18 @@ namespace MAC_bmle
 	  }
 
 	  
+	std::cout << "parameters" << "\n" << parameters << std::endl;
+	std::cout << "param_cov"  << "\n" << param_cov  << std::endl;
+	
+	int increme_subject = 0;
+	for ( auto g : groups_ )
+	  for ( auto subject : group_pind_[g] )
+	    subject.second.set_fit( Idx,
+				    parameters.block( increme_subject * D_r, 0, D_r, 1 ),
+				    param_cov.block( increme_subject * D_r, increme_subject * D_r, 
+						     D_r, D_r ) );
+
+	
 	//std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
 	//
 	//std::cout << eta_theta_Y << std::endl;
