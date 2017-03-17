@@ -14,6 +14,7 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 //
 // 
 //
+#include "Thread_dispatching.h"
 #include "BmleException.h"
 #include "Load_csv.h"
 //
@@ -120,21 +121,36 @@ main( const int argc, const char **argv )
 	      
 	      //
 	      // loop over Mask area for every images
+#ifndef DEBUG
+	      std::cout << "Multi-threading" << std::endl;
+	      MAC_bmle::Thread_dispatching pool( 8 /*num_thread_*/ );
+#endif
 	      while( !imageIterator_mask.IsAtEnd() )
 		{
 		  if( static_cast<int>( imageIterator_mask.Value() ) != 0 )
 		    {
 		      MaskType::IndexType idx = imageIterator_mask.GetIndex();
-		      if ( idx[0] > 20 && idx[0] < 40 && 
-			   idx[1] > 60 && idx[1] < 80 &&
-			   idx[2] > 55 && idx[2] < 65 )
-			subject_mapping.Expectation_Maximization( idx );
+#ifdef DEBUG
+//		      if ( idx[0] > 25 && idx[0] < 35 && 
+//			   idx[1] > 65 && idx[1] < 75 &&
+//			   idx[2] > 55 && idx[2] < 65 )
+			{
+			  std::cout << imageIterator_mask.GetIndex() << std::endl;
+			  subject_mapping.Expectation_Maximization( idx );
+			}
+#else
+			// Please do not remove the bracket!!
+			{
+			  pool.enqueue( std::ref(subject_mapping), idx );
+			}
+#endif
 		    }
-		  std::cout << imageIterator_mask.GetIndex() << std::endl;
 		  //
 		  ++imageIterator_mask;
 		}
 	      std::cout << "All the mask has been covered" << std::endl;
+	      subject_mapping.write_subjects_solutions();
+	      std::cout << "All output have been written." << std::endl;
 	    }
 	  else
 	    throw MAC_bmle::BmleException( __FILE__, __LINE__,
