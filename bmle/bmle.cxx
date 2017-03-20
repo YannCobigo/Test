@@ -92,6 +92,12 @@ main( const int argc, const char **argv )
 	      ////////////////////////////
 
 	      //
+	      // Number of THREADS in case of multi-threading
+	      // this program hadles the multi-threading it self
+	      // in no-debug mode
+	      const int THREAD_NUM = 8;
+
+	      //
 	      // Load the CSV file
 	      MAC_bmle::BmleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename );
 	      // create the 4D iamge with all the images
@@ -123,7 +129,9 @@ main( const int argc, const char **argv )
 	      // loop over Mask area for every images
 #ifndef DEBUG
 	      std::cout << "Multi-threading" << std::endl;
-	      MAC_bmle::Thread_dispatching pool( 8 /*num_thread_*/ );
+	      // Start the pool of threads
+	      {
+		MAC_bmle::Thread_dispatching pool( THREAD_NUM );
 #endif
 	      while( !imageIterator_mask.IsAtEnd() )
 		{
@@ -140,6 +148,9 @@ main( const int argc, const char **argv )
 			}
 #else
 			// Please do not remove the bracket!!
+			if ( idx[0] > 0 && idx[0] < 60 && 
+			     idx[1] > 0 && idx[1] < 140 &&
+			     idx[2] > 50 && idx[2] < 70 )
 			{
 			  pool.enqueue( std::ref(subject_mapping), idx );
 			}
@@ -147,7 +158,11 @@ main( const int argc, const char **argv )
 		    }
 		  //
 		  ++imageIterator_mask;
+#ifndef DEBUG
+		  // Keep the brack to end the pool of threads
 		}
+#endif
+	      }
 	      std::cout << "All the mask has been covered" << std::endl;
 	      subject_mapping.write_subjects_solutions();
 	      std::cout << "All output have been written." << std::endl;
