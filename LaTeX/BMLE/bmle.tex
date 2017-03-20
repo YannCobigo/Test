@@ -55,7 +55,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frontmatter}
 
-\title{Bayesian Mixted Linear Effect for image matching}
+\title{Bayesian Mixted Linear Effect}
 
 \author[label1]{Yann Cobigo\corref{cor1}}
 \address[label1]{University of California, San Francisco | ucsf.edu}
@@ -76,12 +76,12 @@
 %% \ead{author.three@mail.com}
 
 \begin{abstract}
-In this report we will \dots
+In this report we will present the model based rate of atrophy. The model will be contrained to a longitudinal data acquisition over several years and different age subject having different variant of frontotemporal lobar dementia (FTLD). The model will be fitted with a Bayesian Mixted Linear algorithm.
 \end{abstract}
 
 \begin{keyword}
 %% keywords here, in the form: keyword \sep keyword
-Fijee \sep electrode \sep PEM \sep CEM
+Bayesian Mixted Linear Effect \sep parametric empirical Bayes \sep Model based atrophy
 %% MSC codes here, in the form: \MSC code \sep code
 %% or \MSC[2008] code \sep code (2000 is the default)
 \end{keyword}
@@ -93,24 +93,404 @@ Fijee \sep electrode \sep PEM \sep CEM
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Notes}
-
-\ToDo{Def. geodisic} \\
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \section{Introduction}
 
+\paragraph{MRI blabla}{MRI best for {\it in-vivo} study, cost, long run longitudinal study.}
+
+\paragraph{Mixted Linear Effect blabla}{A lot of study has been done in a cross-sectional fashion, some study appears with longitudinal inference on the slop of the atrophy rate. Possibility to assess group difference and each individual within the same framework (random-effect).}
+
+\paragraph{Bayesian treatment blabla}{The conditional mean can be caracterize for each level of the hierarchical model. At the lowest level, the bayesian model characterizes the model parameters witht the same accuracy as a Maximum-Likelyhood algorithm (ML).}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Hierachic models}
+\section{Model Based Atrophy Rate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Hierarchical models}
+
+\ToDo{talk. parametric empirical Bayes (PEB)} \\
+\ToDo{talk. } \\
+\ToDo{talk. } \\
+
+The statistical will be based on a time-dependant PEB hierarchical model over $(n)$ levels:
+
+\begin{equation}
+  \left .
+  \begin{array}{rcl}
+    Y & = & X^{(1)} \theta^{(1)} + \epsilon^{(1)} \\
+    \theta^{(1)}& = & X^{(2)} \theta^{(2)} + \epsilon^{(2)} \\
+    \vdots && \\
+    \theta^{(n-1)}& = & X^{(n)} \theta^{(n)} + \epsilon^{(n)} \\
+  \end{array}
+  \right .
+  \label{hierarchical_model}
+\end{equation}
+
+The matrix $Y$ represents the measure at every voxel for different time-points. the matrix $X^{(i)}$ represent the design matrix for the level $i$ embeding the explanatory variables and higher level constriants. The matrix $\theta_{i}$ are the level parameters and $\epsilon^{(i)}$ is the error at the level $i$. The error is supposed to be a Gaussian noise $\epsilon^{(i)} \sim \mathcal{N}(0,C_{\epsilon}^{i})$ with null mean and covariance $C_{\epsilon}^{i}$.\\
+The model (\ref{hierarchical_model}) can be written recursively in the following matter:
+
+\begin{equation}
+  \left .
+  \begin{array}{rcl}
+    Y & = & \epsilon^{(1)} +  X^{(1)} \epsilon^{(2)} + \cdots + X^{(1)} \cdots X^{(n-1)} \epsilon^{(n)}   \\
+    & + & X^{(1)} \cdots X^{(n)} \theta^{(n)}\\
+    & = & X\theta + \epsilon^{(1)} 
+  \end{array}
+  \right .
+  \label{hierarchical_model_recursive}
+\end{equation}
+
+In the Baysian framework, $X = [X^{(1)}, \cdots, X^{(1)} \cdots X^{(n)}]$ and $\theta = [\epsilon^{(2)}, \cdots, \epsilon^{(n)}, \theta^{(n)}]^{T}$. The form (\ref{hierarchical_model_recursive}) has the following covariance matrix:
+
+\begin{equation}
+  \left .
+  \begin{array}{rcl}
+    E\{YY^{T}\} & = & \underset{error}{\underbrace{C_{\epsilon}^{(1)}}} +  \underset{random~effects~level~2}{\underbrace{X^{(1)} C_{\epsilon}^{(2)} X^{(1)T}}} + \cdots \\
+    & + & \underset{random~effects~level~i}{\underbrace{X^{(1)} \cdots X^{(i-1)} C_{\epsilon}^{(i)} X^{(i-1)T} \cdots X^{(1)T}}}  \\
+    & + & \cdots + \underset{fixed~effects}{\underbrace{X^{(1)} \cdots X^{(n)} C_{\theta}^{(n)}X^{(n)T} \cdots X^{(1)T}}} \\
+    & = & C_{\epsilon}^{(1)} + XC_{\theta}X^{T} \\
+  \end{array}
+  \right .
+  \label{hierarchical_cov_recursive}
+\end{equation}
+
+where
+
+\begin{equation}
+  Cov\{\theta\} = C_{\theta} = \left (
+  \begin{array}{cccc}
+   C_{\epsilon}^{(2)} & \cdots & 0 & 0\\
+   \vdots & \ddots & \vdots & \vdots \\
+   0 & \cdots & C_{\epsilon}^{(n)} & 0 \\
+   0 & \cdots & 0 & C_{\theta}^{(n)}\\
+  \end{array}
+  \right )
+  \label{C_theta}
+\end{equation}
+
+and
+
+\begin{equation}
+  E\{\theta\} = \eta_{\theta} = \left (
+  \begin{array}{c}
+   0 \\
+   \vdots  \\
+   0  \\
+   \eta_{\theta}^{(n)}\\
+  \end{array}
+  \right )
+  \label{eta_theta}
+\end{equation}
 
 
+In the PEB framework, we set an infinit covariance for the highest level: $C_{\theta}^{(n)} = \infty$ (unknown).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Maximum \`a posteriori}
+
+The baysian inference is based on the conditional probability distribution of the parameters, $p(\theta^{(i)}|Y)$, at a level $(i)$ given the data. We assume our data are distributed arround the model with a gaussian distribution and our parameters, at each level, are also \`a priori distributed in a gaussian manner. Since the likelyhood and the parameters \`a priori are gaussian distributed, we assume the posterior distribution will also be gaussian distributed (\ToDo{site Bishop}). The Bayse rule can be written
+
+\begin{equation}
+  p(\theta | Y) =   p(Y | \theta) p(\theta) / p(Y) 
+\end{equation}
+
+In the remainer of the manuscript, the marginal probability $p(Y)$ will be ignored. The PEB offers, at a level $(i)$, inferences of the gaussian first and second moments: $\eta_{\theta|Y}^{(i)}$ and $C_{\theta|Y}^{(i)}$, representing the maximum \`a prosteriori (MAP). The level $(i)$ is thought as prior constraints on the expectation and the covariance
+
+
+\begin{equation}
+  \left .
+  \begin{array}{rcl}
+    E\{\theta^{(i-1)}\}   & = & \eta_{\theta}^{(i-1)} = X^{(i)}\theta^{(i)} \\
+    Cov\{\theta^{(i-1)}\} & = & C_{\theta}^{(i-1)} = C_{\epsilon}^{(i)}\\
+  \end{array}
+  \right .
+  \label{Prior_constraint}
+\end{equation}
+
+The likelyhood and the priors can be written with the gaussian distribution using the precision matrix ($\Lambda^{(i)} = C^{(i)-1}$):
+
+
+\begin{equation*}
+  \left .
+  \begin{array}{rcl}
+    p(Y|\theta) & \propto & \exp\lbrace -\frac{1}{2} (X\theta - Y)^{T} \Lambda_{\epsilon}^{(1)} (X\theta - Y) \rbrace \\
+    p(\theta)   & \propto & \exp\lbrace -\frac{1}{2} (\theta - \eta_{\theta})^{T} \Lambda_{\theta} (\theta - \eta_{\theta}) \rbrace \\
+  \end{array}
+  \right .
+\end{equation*}
+
+The distribution \`a posteriori is
+
+\begin{equation*}
+  \left .
+  \begin{array}{rcl}
+    p(\theta|Y) & \propto & \exp\lbrace -\frac{1}{2} (\theta - \eta_{\theta|Y})^{T} \Lambda_{\theta|Y} (\theta - \eta_{\theta|Y}) \rbrace \\
+  \end{array}
+  \right .
+\end{equation*}
+
+Where
+
+\begin{equation}
+  \left .
+  \begin{array}{rcl}
+    \Lambda_{\theta|Y} & = & X^{T}\Lambda_{\epsilon}^{(1)}X + \Lambda_{\theta}\\
+    & = &
+    \left (
+    \begin{array}{cccc}
+      \Lambda_{\epsilon|Y}^{(2)} & \cdots & & \\
+      \vdots & \ddots && \\
+      && \Lambda_{\epsilon|Y}^{(n)} & \\
+      &&& \Lambda_{\theta|Y}^{(n)}  \\
+  \end{array} 
+    \right ) \\
+    \eta_{\theta|Y}  & = & C_{\theta|Y} \left( X^{T}\Lambda_{\epsilon}^{(1)}Y + \Lambda_{\theta}\eta_{\theta} \right)\\
+    & = &
+    \left (
+    \begin{array}{c}
+      \eta_{\epsilon|Y}^{(2)} \\
+      \vdots \\
+      \eta_{\epsilon|Y}^{(n)} \\
+      \eta_{\theta|Y}^{(n)} \\
+    \end{array}
+    \right )
+  \end{array}
+  \right .
+  \label{Moments}
+\end{equation}
+
+In the PEB framework, $C_{\theta}^{(n)} = \infty$, then $\Lambda_{\theta}\eta_{\theta} = {\bm 0}$. One can access each level conditional mean and covariance with $\eta_{\theta|Y}^{(i-1)} = X^{(i)}\eta_{\theta|Y}^{(i)} + \eta_{\epsilon|Y}^{(i)}$ and $\Lambda_{\theta|Y}^{(i-1)} = \Lambda_{\epsilon|Y}^{(i)}$. With the \`a priori moments, one can evaluate the {\it T statistic} at each level:
+
+\begin{equation}
+  T^{(i)} = \frac{c^{T}\eta_{\theta|Y}^{(i)}}{\sqrt{c^{T}C_{\theta|Y}^{(i)}c}}
+  \label{T_stat}
+\end{equation}
+
+Where $c$ represents the contrast.
+
+\begin{proof}
+Developping the argument of the three gaussian distributions: likelihood, prior and \`a posteriori
+  
+\begin{equation*}
+  \left .
+  \begin{array}{rcl}
+    \arg\{p(Y|\theta)\} & = & (X\theta - Y)^{T} \Lambda_{\epsilon}^{(1)} (X\theta - Y)  \\
+    & = & (X\theta)^{T} \Lambda_{\epsilon}^{(1)}(X\theta) - 2 Y^{T} \Lambda_{\epsilon}^{(1)}(X\theta) + Y^{T} \Lambda_{\epsilon}^{(1)}Y  \\
+    \arg\{p(\theta)\}   & = & (\theta - \eta_{\theta})^{T} \Lambda_{\theta} (\theta - \eta_{\theta}) \\
+    & = & \theta^{T} \Lambda_{\theta} \theta - 2 \eta_{\theta}^{T}\Lambda_{\theta}\theta + \eta_{\theta}^{T} \Lambda_{\theta} \eta_{\theta}\\
+    \arg\{p(\theta|Y)\} & = & (\theta - \eta_{\theta|Y})^{T} \Lambda_{\theta|Y} (\theta - \eta_{\theta|Y}) \\
+    & = & \theta^{T} \Lambda_{\theta|Y}\theta - 2 \eta_{\theta|Y}^{T} \Lambda_{\theta|Y}\theta + \eta_{\theta|Y}^{T} \Lambda_{\theta|Y}\theta - \eta_{\theta|Y}\\
+  \end{array}
+  \right .
+\end{equation*}
+
+We can identify the terms:
+
+\begin{equation*}
+  \left .
+  \begin{array}{rcl}
+    \Lambda_{\theta|Y} & = & X^{T}\Lambda_{\epsilon}^{(1)}X + \Lambda_{\theta}\\
+    \eta_{\theta|Y}^{T} \Lambda_{\theta|Y} & = & \eta_{\theta}^{T}\Lambda_{\theta} + Y^{T} \Lambda_{\epsilon}^{(1)}X\\
+  \end{array}
+  \right .
+\end{equation*}
+
+Which correspond to the moments equation~(\ref{Moments})
+\end{proof}
+
+The equation~(\ref{Moments}) can be written in a more compact fashion with augmented matrices:
+
+\begin{equation}
+  \left .
+  \begin{array}{rcl}
+    \Lambda_{\theta|Y} & = & \bar{X}^{T}\Lambda_{\epsilon}\bar{X} \\
+    \eta_{\theta|Y}    & = & C_{\theta|Y} \left( \bar{X}^{T}\Lambda_{\epsilon}\bar{Y} \right)\\
+  \end{array}
+  \right .
+  \label{Moments_augmented}
+\end{equation}
+
+Where
+
+\begin{equation*}
+  \left .
+  \begin{array}{rcl}
+    \Lambda_{\epsilon} & = & \left(
+    \begin{array}{cc}
+      \Lambda_{\epsilon}^{(1)} & 0 \\
+      0 & \Lambda_{\theta} \\ 
+    \end{array}
+    \right) \\
+   \bar{X} & = & \left(
+    \begin{array}{c}
+      X \\
+      I \\ 
+    \end{array}
+    \right) \\
+   \bar{Y} & = & \left(
+    \begin{array}{cc}
+      Y \\
+      \eta_{\theta} \\ 
+    \end{array}
+    \right) \\
+  \end{array}
+  \right .
+\end{equation*}
+
+We are using the augmented model to rewrite the recursive hierarchical model equation~(\ref{hierarchical_model_recursive}).
+
+\begin{equation*}
+  \bar{X}\theta = 
+  \left (
+  \begin{array}{cccc}
+    X^{(1)}, & X^{(1)}X^{(2)}, & \cdots, &    X^{(1)}X^{(2)} \cdots X^{(n)}  \\
+    I & 0 & \cdots & 0 \\
+    0 & I & \cdots & 0 \\
+    \vdots &&& \vdots\\
+    0 & \cdots & 0 & I\\
+  \end{array}
+  \right )
+  \left (
+  \begin{array}{c}
+    \epsilon^{(2)}  \\
+    \vdots \\
+    \epsilon^{(n)}  \\
+    \theta^{(n)}  \\
+  \end{array}
+  \right )
+\end{equation*}
+
+The augmented hierarchical model equation become
+
+\begin{equation}
+  \left .
+  \begin{array}{rcl}
+    \bar{Y} & = & \bar{X}\theta + \bar{\epsilon} \\
+    \left (
+    \begin{array}{c}
+      Y \\
+      \eta_{\theta}  \\
+    \end{array}
+    \right ) & = & \bar{X}\theta + 
+    \left (
+    \begin{array}{c}
+      \epsilon^{(1)} \\
+      \eta_{\theta} - \theta  \\
+    \end{array}
+    \right )
+  \end{array}
+  \right .
+  \label{hierarchical_augmented_model_recursive}
+\end{equation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Covariance estimation}
+
+The parameter estimation can be infered by estimating the covariance components. The covariance componants must be estimated at every level. We can use the iterative procedure, using the error covariances as priors $C_{\theta}^{(i-1)} = C_{\epsilon}^{(i)}$. We use $C_{\epsilon}^{(i)} = \sum_{j} \lambda_{j}^{(i)}Q_{j}^{(i)}$, where $\lambda_{j}^{(i)}$ are the hyperparameters and $Q_{j}^{(i)}$ represent some bases set for covariance matrix. The bases can be constructed as a constraints on the prior covariance structures in the same way as the $X^{(i)}$ specify constrains on the prior expectation. $Q_{j}^{(i)}$ emabodies the form of the $j$th component at the $i$th level and model different variances for different levels and different forms of correlations within the levels. A linear decomposition of $C_{\epsilon}^{(i)}$ is a natural parametrization because the different sources of conditionally independent variance add linearly and the constraints can be specified directly in terms of these components $C_{\epsilon} = C_{\theta,(n)} + \sum_{k} \lambda_{k}Q_{k}$.
+
+\begin{equation}
+  C_{\theta,(n)} =
+  \left (
+  \begin{array}{cccc}
+    0 & \cdots & 0 & 0 \\
+    \vdots & \ddots &\vdots & \vdots \\
+    0 & \cdots & 0 & 0 \\
+    0 & \cdots & 0 & C_{\theta}^{(n)} \\
+  \end{array}
+    \right )
+  \label{C_theta_n}
+\end{equation}
+
+\begin{equation}
+  Q_{k} =
+  \left (
+  \begin{array}{cccccc}
+    0 &  &\cdots&& 0 & 0 \\
+      & \ddots &  &&  &  \\
+    \vdots &  & Q_{j}^{(i)} && \vdots & \vdots \\
+      &        &  &\ddots&  &  \\
+    0 &  &\cdots&& 0 & 0 \\
+    0 &  &\cdots&& 0 & 0 \\
+  \end{array}
+    \right )
+  \label{Covariance_base_matrix}
+\end{equation}
+
+Nevertheless, the linear decomposition does not avoid negative covariance. To ensure the symetrical positive definite form of the covariance matrix the optimization will be based on the exponantial of the hyperparameters $\exp(\lambda)$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Expectation-Maximization}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Adaptation to a two level problem}
+
+The first level error covariance represents the error on the measure and uses an isotropic noise model $C_{\epsilon}^{(1)} = \exp(\ln(\sigma^{2}))I_{M}$ \ToDo{Define M} with $I_{M}$ the identity matrix and $\sigma$ the noise level \ToDo{what value for $\sigma$?}. however there is unknown variability of individual parameters across subjects which is either explecitly modeled by the covariates in the design $X^{(2)}$ or captures by the second level error covariance matrix $C_{\epsilon}^{(2)}$. The unexplained individual differences might differentilly affect all trajectory coefficients and thus one further hyperparameter for each of the trajectory parameters is requiered. We therefore use $\lambda_{0}$, $\lambda_{1}$, \dots to describe unexplained individual differences of intercept, slope, \dots For that purpose we use $R_{i}$ to denote the covariance matrix of residual parameter vector $Cov\{\epsilon_{i}\}$ and we suppose
+
+\begin{equation}
+  R_{i} =
+  \left (
+  \begin{array}{ccc}
+    e^{\lambda_{0}} && \\
+    & \ddots & \\
+    && e^{\lambda_{D_{r}}}\\
+  \end{array}
+    \right )
+  \label{Residual_covariance}
+\end{equation}
+
+We assume the same residual covariance for all subjects $R_{i} = R$. the full second level can e specified as follow
+
+\begin{equation}
+  C_{\epsilon}^{(2)} =
+  \left (
+  \begin{array}{ccc}
+    R && \\
+    & \ddots & \\
+    && R\\
+  \end{array}
+    \right ) = I_{N} \otimes R = \sum_{k = 0}^{D_{r}} e^{\lambda_{k}} Q_{k}
+  \label{Residual_second_level}
+\end{equation}
+
+$[\sigma, \lambda_{0}, \lambda_{1}, \cdots, \lambda_{D_{r}}]$ fully parametrise the covariance componants of the model. \\
+We set the top level prior covariance to a high value $C_{\theta}^{(2)} = e^{32}I$
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Multiple groups}
+
+In this paper, we want to infere the woxelwise rate of atrophy for healthy subject and several variants of FTLD. We adapt the algorithm to $G$ groups of subjects $N = N_{1} + \dots, N_{G}$. The subject-specific covariates are $Z_{1}, \dots, Z_{G}$. The second level design matrix
+
+\begin{equation*}
+  X^{(2)} =
+  \left (
+  \begin{array}{cccc}
+    {\bm 1}_{N_{1}}Z_{1} &&& \\
+    &{\bm 1}_{N_{2}}Z_{2} && \\
+    &&\ddots&\\
+    &&& {\bm 1}_{N_{G}}Z_{G} \\
+  \end{array}
+    \right ) \otimes I_{D_{r}}
+\end{equation*}
+
+\ToDo{Check on the dimension $I_{D_{r}}$} \\
+The second level error covariance
+  
+\begin{equation}
+  C_{\epsilon}^{(2)} =
+  \left (
+  \begin{array}{cccc}
+    I_{N_{1}} \otimes R_{1} &&& \\
+    &I_{N_{1}} \otimes R_{2} && \\
+    && \ddots & \\
+    &&& I_{N_{G}} \otimes R_{G} \\
+  \end{array}
+  \right ) =  \sum_{k = 0}^{G \times D_{r}} e^{\lambda_{k}} Q_{k}
+  \label{}
+\end{equation}
+
+\ToDo{Check on the dimensions} \\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
