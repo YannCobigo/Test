@@ -4,8 +4,8 @@
 
 
 %\documentclass[a4paper,12pt]{}
-%\documentclass[final, paper=letter,5p,times,twocolumn]{elsarticle}
-\documentclass[preprint,review,8pt,times]{elsarticle}
+\documentclass[final, paper=letter,5p,times,twocolumn]{elsarticle}
+%\documentclass[preprint,review,8pt,times]{elsarticle}
 
 
 %% or use the graphicx package for more complicated commands
@@ -87,6 +87,61 @@ Fijee \sep electrode \sep PEM \sep CEM
 \section{Introduction}
 
 \ToDo{Def. geodisic} \\
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Networ measures of the brain connectivity}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Measures of functional segregation}
+
+Functional segregation in the brain is the ability for specialized processing to occur within densely interconnected groups of brain regions. Measures of segregation primarily quantify the presence of such groups, known as clusters or modules, within the network. Measures of segregation have straightforward interpretations in anatomical and functional networks. The presence of clusters in anatomical networks suggests the potential for functional segregation in these networks, while the presence of clusters in functional networks suggests an organization of statistical dependencies indicative of segregated neural processing.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Finding community structure -- Newman}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Measures of functional integration}
+
+Functional integration in the brain is the ability to rapidly combine specialized information from distributed brain regions. Measures of integration characterize this concept by estimating the ease with which brain regions communicate and are commonly based on the concept of a path. Paths are sequences of distinct nodes and links and in anatomical networks represent potential routes of information flow between pairs of brain regions. Lengths of paths consequently estimate the potential for functional integration between brain regions, with shorter paths implying stronger potential for integration. On the other hand, functional connectivity data, by its nature, already contain such information for all pairs of brain regions. Paths in functional networks represent sequences of statistical associations and may not correspond to information flow on anatomical connections. Consequently, network measures based on functional paths are less straightforward to interpret. Such measures may be easier to interpret when information about anatomical connections is available for the same subjects.
+
+\begin{definition}
+  {\bf Characteristic path length $L$.} Here $L$ is defined as the number of edges in the shortest path between two vertices $i$ and $j$ along the geodesic $g_{i \leftrightarrow j}$, averaged over all pairs of vertices where:
+  $$
+  d_{ij} = \sum_{a_{uv} \in g_{i \leftrightarrow j}} a_{uv}
+  $$
+
+  And
+
+  $$
+  L = \frac{1}{n} \sum_{v \in N} L_{i} =  \frac{1}{n} \sum_{v \in N} \frac{\sum_{u \in N, u \ne v} d_{vu}}{n-1}
+  $$
+\end{definition}
+
+\begin{definition}
+  {\bf Clustering coefficient $C$.} Suppose that a vertex $v$ has $k_{v}$ neighbours; then at most $k_{v}(k_{v} -1)/2$ edges can exist between them (this occurs when every neighbour of $v$ is connected to every other neighbour of $v$). Let $C_{v}$ denote the fraction of these allowable edges that actually exist. Define $C$ as the average of $C_{v}$ over all $v$.
+
+  $$
+  C = \frac{1}{n} \sum_{v \in N} C_{i} = \frac{1}{n} \sum_{v \in N} t_{v} \times \frac{2}{k_{v}(k_{v} -1)}
+  $$
+
+  $t_{v}$ representes the number of edges that actually exist arround $v$.
+\end{definition}
+
+For friendship networks, these statistics have intuitive meanings: $L$ is the average number of friendships in the shortest chain connecting two people; $C_{v}$ reflects the extent to which friends of $v$ are also friends of each other; and thus $C$ measures the cliquishness of a typical friendship circle.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Small-worldness}
+
+We quantify the structural properties of these graphs by their characteristic path length $L$ and clustering coefficient $C$. Here $L$ measures the typical separation between two vertices in the graph (a global property), whereas $C$ measures the {\it cliquishness} of a typical neighbourhood (a local property). The networks of interest to us have many vertices with sparse connections, but not so sparse that the graph is in danger of becoming disconnected. Specifically, we require $n \gg k \gg \ln(n) \gg 1$, where $k \gg \ln(n)$ guarantees that a random graph will be connected. In this regime, we find that $L \sim n/2k \gg 1$ and $C \sim 3/4$, while $L < L_{random} \sim \ln(n) / \ln(p)$ and $C < C_{random} \sim k/n \ll 1$. Thus the regular lattice is a highly clustered, large world where $L$ grows linearly with $n$, whereas the random network at is a poorly clustered, small world where $L$ grows only logarithmically with $n$. These limiting cases might lead one to suspect that large $C$ is always associated with large $L$, and small $C$ with small $L$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{sect}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{sect}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

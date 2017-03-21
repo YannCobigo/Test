@@ -55,7 +55,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frontmatter}
 
-\title{Bayesian Mixted Linear Effect for image matching}
+\title{Bayesian Mixted Linear Effect for neuroimaging}
 
 \author[label1]{Yann Cobigo\corref{cor1}}
 \address[label1]{University of California, San Francisco | ucsf.edu}
@@ -98,25 +98,145 @@ Fijee \sep electrode \sep PEM \sep CEM
 \ToDo{Def. geodisic} \\
 
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}
 
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Hierachic models}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Linear model}
+
+For each subject a linear model is built based on the patient age (demeaned). For instance, if we have a subject $s$, at the time-point $tp$, and we develope the time dependante polynomial up to the random degree $D_{r}$.
+
+$$
+Y_{s,tp}(x) = \theta_{s,tp}^{(1)T} X^{(1)} =  a_{s,tp,0} + a_{s,tp,1} t + \cdots + a_{s,tp,D_{r} - 1}t^{D_{r} - 1}
+$$
+
+The group fixed effect can be capture by appending the $X^{(1)}$ design matrix: $[X^{(1)}, X_{f}^{D_{r}}, \cdots, X_{f}^{D_{f} - 1}]$.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Implemenation}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Load the CSV}
 
+The design is built in the csv (Tab.~\ref{CSVinput}) file given as input of the code. All the information before the images are the raw design based on a simple temporal linear model. All the information after the images are the explenatory variable giving an apriori information on the temporal function of atrophy. The $Dx$ column represent the diagnosis and the group the subject belong. $Dx \ne 0$, 0 is a reserved value, and the analyse won't accept more than 10 groups. The age will be demeaned.
+
+\begin{table}[]
+\centering
+\caption{CSV input}
+\label{CSVinput}
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+ PIDN &  $Dx$ &  Age &  Image & Ev1 & Ev2 & ... \\ \hline \hline
+3673  & 1 &  53 & /path/to/img1.nii &  43 & 0.2 &  \\ \hline
+3673  & 1 &  54 & /path/to/img1.nii &  43 & 0.2 &  \\ \hline
+3673  & 1 &  55 & /path/to/img1.nii &  43 & 0.1 &  \\ \hline
+\dots &   &     &                   &     &     &  \\ \hline
+10032 & 2 &  69 & /path/to/img1.nii &  22 & 0.1 &  \\ \hline
+10032 & 2 &  71 & /path/to/img1.nii &  25 & 0.2 &  \\ \hline
+10032 & 2 &  72 & /path/to/img1.nii &  29 & 0.3 &  \\ \hline
+\end{tabular}
+\end{table}
+
+For the first subject his random matrix and fixed matrix are:
+
+$$
+x_{1} = \left(
+\begin{array}{cc}
+1 & -8.82353 \\
+1 & -7.82353 \\
+1 & -6.82353 \\
+\end{array}
+\right)
+$$
+and
+$$
+x_{2} = \left(
+\begin{array}{cccc}
+1 & 0 & 43 &  0 \\
+0 & 1 &  0 & 43 \\
+\end{array}
+\right)
+$$
+
+For several patients:
+
+$$
+X_{1} = \left(
+\begin{array}{cccccccccc}
+        1  & -8.82      &       0&          0 &         0&          0&          0&          0&          0&      0 \\
+        1  & -7.82      &       0&          0 &         0&          0&          0&          0&          0&      0 \\
+        1  & -6.82      &       0&          0 &         0&          0&          0&          0&          0&      0 \\
+        0  &        0   &       1&   -1.82    &         0&          0&          0&          0&          0&      0 \\
+        0  &        0   &       1&  -0.82     &         0&          0&          0&          0&          0&      0 \\
+        0  &        0   &       1&   0.17     &         0&          0&          0&          0&          0&      0 \\
+        0  &        0   &       0&          0 &         1&   -6.82   &          0&          0&          0&      0 \\
+        0  &        0   &       0&          0 &         1&   -5.82   &          0&          0&          0&      0 \\
+        0  &        0   &       0&          0 &         1&   -3.82   &          0&          0&          0&      0 \\
+        0  &        0   &       0&          0 &         1&   -2.82   &          0&          0&          0&      0 \\
+        0  &        0   &       0&          0 &         0&          0&          1&    7.17   &          0&      0 \\
+        0  &        0   &       0&          0 &         0&          0&          1&    9.17   &          0&      0 \\
+        0  &        0   &       0&          0 &         0&          0&          1&    10.17  &          0&      0 \\
+        0  &        0   &       0&          0 &         0&          0&          1&    11.17  &          0&      0 \\
+        0  &        0   &       0&          0 &         0&          0&          0&          0&          1&    1.17 \\
+        0  &        0   &       0&          0 &         0&          0&          0&          0&          1&    2.17 \\
+        0  &        0   &       0&          0 &         0&          0&          0&          0&          1&    4.17 \\
+\end{array}
+\right)
+$$
+
+And
+
+$$
+X_{2} = \left(
+\begin{array}{cccccccc}
+ 1 &   0 &  43 &   0 &   0 &   0 &   0 &   0 \\
+ 0 &   1 &   0 &  43 &   0 &   0 &   0 &   0 \\
+ 1 &   0 &  54 &   0 &   0 &   0 &   0 &   0 \\
+ 0 &   1 &   0 &  54 &   0 &   0 &   0 &   0 \\
+ 1 &   0 &  46 &   0 &   0 &   0 &   0 &   0 \\
+ 0 &   1 &   0 &  46 &   0 &   0 &   0 &   0 \\
+ 0 &   0 &   0 &   0 &   1 &   0 &  63 &   0 \\
+ 0 &   0 &   0 &   0 &   0 &   1 &   0 &  63 \\
+ 0 &   0 &   0 &   0 &   1 &   0 &  53 &   0 \\
+ 0 &   0 &   0 &   0 &   0 &   1 &   0 &  53 \\
+\end{array}
+\right)
+$$
+
+
+Each subject will have a set of two output images. The first four dimension image will be {\it model\_PIDN\_Gr\_ntp\_Dim.nii.gz} and represent the coefficients of the linear model: where {\it Gr} stand for the group the subject belong too, {\it ntp} represent the number of time points the model used for the fit, and {\it Dim} represent the dimension of the fitting model (random effect dimension). The second set of images will be the variance of each coefficients: {\it var\_PIDN\_Gr\_ntp\_Dim.nii.gz}.
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Methode}
+
+Symmetric diffeomorphic registration and image preprocessing ADNI provides preprocessed T1-weighted images that have undergone specific correction steps to reduce scanner induced biases. To reduce these influences and minimize effects due to heterogeneity of protocols, all included images were chosen to match the MPRAGE with Gradwarp, B1 correction and N3 specification (see http://adni.loni.usc.edu/methods/mri-analysis/mri-pre-processing/). For further details about the applied ADNI MRI protocols please see http://adni. loni.usc.edu/methods/documents/mri-protocols/. All further preprocessing steps were performed in SPM12b r6080 (Wellcome Trust Centre for Neuroimaging, London, UK, http://www. fil.ion.ucl.ac.uk/spm). Because longitudinal MR-based morphometry is particularly prone to artifacts due to scanner inhomogeneities, registration inconsistency, and subtle age-related deformations of the brains, it requires sophisticated preprocessing pipelines in order to detect the changes of interest and achieve unbiased results (Ashburner and Ridgway, 2013; Reuter and Fischl, 2011). \\
+Thus, at first we applied the symmetric diffeomorphic registration for longitudinal MRI (Ashburner and Ridgway, 2013). In particular, this rests on a intra-subject modeling framework that combines non-linear diffeomorphic and rigid-body registration and further corrects for intensity inhomogeneity artifacts. The optimization is realized in a single generative model and provides internally consistent estimates of within-subject brain deformations during the study period. The registration model creates an average T1-image for each subject and the corresponding deformation fields for every individual scan. Second, we applied SPM12b's unified segmentation to each subject's average T1-image, which assumes every voxel to be drawn from an unknown mixture of six distinct tissue classes: gray matter (GM), white matter (WM), and cerebrospinal fluid (CSF), bone, other tissue and air (see also Ashburner and Friston, 2005). Third, all voxels within-subject average tissue maps were multiplied by the Jacobian determinants from the above longitudinal registration. Note, that this within-subject modulation is expected to encode all local individual volume changes during the study period. Fourthly, nonlinear template generation and image registration was performed on the individual average GM and WM tissue maps using a geodesic shooting procedure (Ashburner and Friston, 2011). This defined the template space for all subsequent mixed-modeling steps. Fifthly, the within-subject modulated (native space) segment images were subsequently deformed to this study template space. Note that only within- but no between-subject modulation was applied. We further quality checked the ensuing images manually and using covariance-based inhomogeneity measures as implemented in the VBM8 toolbox for SPM (http://www.neuro.uni-jena.de/vbm/). Finally, images were smoothed using Gaussian kernels of 4 mm full width at half maximum. Subsequent modeling and analysis was performed for all tissue classes within corresponding binary masks. The masks were defined by a voxelwise sample mean of GM, WM and CSF tissue maps exceeding an absolute threshold of 0.1, 0.4, and 0.2 respectively. All mixed-effects modeling steps were performed on 1.5 mm resolution images of ADNI subsamples using the above steps. The resulting images are assumed to reflect age-related effects, as well as healthy and pathological individual variability in terms of fine-grained maps of local gray matter (GMV), white matter (WMV) and cerebrospinal fluid volume (CSFV) content.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discussion}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Article}
+
+\begin{enumerate}
+  \item {\it Bayesian Mixted Linear Effect for longitudinal study of neuroimaging in FTD}. Study of variance reduction. What sort of prior information in the first time-point could bring the variance down. Priors could be chosen like CDR, DTI region of interests in the white matter, ASL, \dots
+  \item {\it }.
+  \item 
+  \item 
+\end{enumerate}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
