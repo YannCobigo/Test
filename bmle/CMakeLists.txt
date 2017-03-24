@@ -3,10 +3,20 @@ cmake_minimum_required(VERSION 2.8)
 project(bmle)
 
 #
-# Compilation 
+# Compilation
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  add_definitions(/DYOURDEFINITION)
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCXX)
   add_definitions(-std=c++11)
   set(CMAKE_CXX_FLAGS "-O3")
+#  if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+#    set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG")
+#    set(CMAKE_CXX_FLAGS "-O3")
+#  else()
+#  endif()
 endif()
 
 #

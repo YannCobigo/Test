@@ -492,6 +492,14 @@ namespace MAC_bmle
 
 	//
 	// Based matrix for a subject
+	// D_r qi matrices (D_r x D_r)
+	// 
+	// | 0           |
+	// |  0          |
+	// |    ...      |
+	// |      1      | ith element
+	// |        ...  |
+	// |           0 |
 	std::vector< Eigen::MatrixXd > q( D_r );
 	for ( int i = 0 ; i < D_r ; i++ )
 	  {
@@ -743,6 +751,7 @@ namespace MAC_bmle
 
 	//
 	// Covariance
+	// Cov_eps = C_theta_ + C_eps_2 + C_eps_1
 	Eigen::MatrixXd Cov_eps = C_theta_;
 	Cov_eps +=  exp( lambda_k[0][0] ) * Q_k_[0][0];
 	for ( auto g : groups_ )
@@ -792,7 +801,7 @@ namespace MAC_bmle
 	    grad(0,0)  = - (Y.transpose() * P.transpose() * Q_k_[0][0] * P * Y)(0,0);
 	    grad(0,0) += (P*Q_k_[0][0]).trace();
 	    grad(0,0) *= - exp(lambda_k[0][0]) / 2.;
-	    H(0,0) = exp(lambda_k[0][0] + lambda_k[0][0]) * ( P*Q_k_[0][0]*P*Q_k_[0][0] ).trace() / 2.;
+	    H(0,0) = exp( 2 * lambda_k[0][0] ) * ( P*Q_k_[0][0]*P*Q_k_[0][0] ).trace() / 2.;
 	    //
 	    for ( auto g : groups_ )
 	      {
@@ -803,20 +812,25 @@ namespace MAC_bmle
 		    grad(i + count_group * hyper_dim + 1,0) += (P*Q_k_[g][i]).trace();
 		    grad(i + count_group * hyper_dim + 1,0) *= - exp(lambda_k[g][i]) / 2.;
 		    for ( int j = 0 ; j < D_r + (D_f > 0  ? 1 : 0); j++ )
-		      H( i + count_group * hyper_dim + 1,j + count_group * hyper_dim + 1 ) =
+		      H( i + count_group * hyper_dim + 1, j + count_group * hyper_dim + 1 ) =
 			exp(lambda_k[g][i] + lambda_k[g][j]) * ( P*Q_k_[g][i]*P*Q_k_[g][j] ).trace() / 2.;
 		  }
 		// next group
 		count_group++;
 	      }
-	    //	std::cout << P  << std::endl;
-	    //	std::cout <<  grad << std::endl;
-	    //	std::cout << H  << std::endl;
+	    /// AAAAAAAAAAAAAA comment
+	    //std::cout << P  << std::endl;
+	    //std::cout <<  grad << std::endl;
+	    //std::cout << H  << std::endl;
+	    /// AAAAAAAAAAAAAA comment
 	    //
 	    // Lambda update
 	    Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 256.) * grad;
+	    //Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) ) * grad;
 	    //Eigen::MatrixXd delta_lambda = 0.1 * grad;
 	    //	std::cout << delta_lambda << std::endl;
+	    lambda_k[0][0] += delta_lambda( 0, 0 );
+	    //
 	    count_group = 0;
 	    for ( auto g : groups_ )
 	      {
@@ -887,8 +901,8 @@ namespace MAC_bmle
 	  }
 
 	  
-	//sol//std::cout << "parameters" << "\n" << parameters << std::endl;
-	//sol//std::cout << "param_cov"  << "\n" << param_cov  << std::endl;
+	std::cout << "parameters" << "\n" << parameters << std::endl;
+	std::cout << "param_cov"  << "\n" << param_cov  << std::endl;
 	
 	int increme_subject = 0;
 	for ( auto g : groups_ )
