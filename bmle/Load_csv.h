@@ -13,6 +13,7 @@
 #include <map>
 #include <set>
 #include <math.h>
+//#include <cmath.h>
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
@@ -82,6 +83,10 @@ namespace MAC_bmle
 	       const Eigen::MatrixXd& , const Eigen::MatrixXd& ) const;
     // Thermodynamic free energy
     void Lambda_init_( const Eigen::MatrixXd& ) const;
+    // Cumulative centered normal cumulative distribution function
+    // https://en.wikipedia.org/wiki/Error_function
+    double Normal_CFD_( const double value ) const
+    { return 0.5 * erfc( - value * M_SQRT1_2 ); };
 
     //
     // Members
@@ -147,9 +152,11 @@ namespace MAC_bmle
     
     //
     // Posterior Probability Maps
-    std::vector< BmleMakeITKImage > PPM_{1};
-    //
+    BmleMakeITKImage PPM_;
     // Posterior t-maps
+    BmleMakeITKImage post_T_maps_;
+    // Posterior groups parameters
+    BmleMakeITKImage post_groups_param_;
   };
   //
   //
@@ -241,12 +248,12 @@ namespace MAC_bmle
 	// Output images
 	//
 
-	//
-	// PPM
-	for ( auto& image : PPM_ )
-	  {
-	    image = BmleMakeITKImage( D_r, "LaVieEstBelle.nii.gz", Y_[0] );
-	  }
+// to remove	//
+// to remove	// PPM
+// to remove	for ( auto& image : PPM_ )
+// to remove	  {
+// to remove	    //image = BmleMakeITKImage( D_r, "LaVieEstBelle.nii.gz", Y_[0] );
+// to remove	  }
 	
 	//
 	// Create the 4D measurements image
@@ -688,6 +695,12 @@ namespace MAC_bmle
 	//
 	if ( true )
 	  std::cout << "constrast_ \n" << constrast_  << std::endl;
+	//
+	// Contrast output
+	PPM_               = BmleMakeITKImage( constrast_.cols(), "PPM.nii.gz", Y_[0] );
+	post_T_maps_       = BmleMakeITKImage( constrast_.cols(), "Posterior_t_maps.nii.gz", Y_[0] );
+	post_groups_param_ = BmleMakeITKImage( constrast_.cols(), "Post_groups_param.nii.gz", Y_[0] );
+
       }
     catch( itk::ExceptionObject & err )
       {
@@ -808,8 +821,8 @@ namespace MAC_bmle
 	    // groupe 0 C_eps_1
 	    grad(0,0)  = - (Y.transpose() * P.transpose() * Q_k_[0][0] * P * Y)(0,0);
 	    grad(0,0) += (P*Q_k_[0][0]).trace();
-	    grad(0,0) *= - exp(lambda_k[0][0]) / 2.;
-	    // Fisher H -- H(0,0) = exp( 2 * lambda_k[0][0] ) * ( P*Q_k_[0][0]*P*Q_k_[0][0] ).trace() / 2.;
+	    grad(0,0) *= - exp(lambda_k[0][0]) * 0.5 ;
+	    // Fisher H -- H(0,0) = exp( 2 * lambda_k[0][0] ) * ( P*Q_k_[0][0]*P*Q_k_[0][0] ).trace() * 0.5;
 	    //std::cout << "Q_k_g0_[0][0] = \n" << Q_k_[0][0] << std::endl;
 
 	    //
@@ -820,11 +833,11 @@ namespace MAC_bmle
 		    // 
 		    grad(i + count_group * hyper_dim + 1,0)  = - (Y.transpose() * P.transpose() * Q_k_[g][i] * P * Y)(0,0);
 		    grad(i + count_group * hyper_dim + 1,0) += (P*Q_k_[g][i]).trace();
-		    grad(i + count_group * hyper_dim + 1,0) *= - exp(lambda_k[g][i]) / 2.;
+		    grad(i + count_group * hyper_dim + 1,0) *= - exp(lambda_k[g][i]) * 0.5;
 		    //std::cout << "Q_k_g_[" << g << "][" << i << "] = \n" << Q_k_[g][i] << std::endl;
 		    // Fisher H -- for ( int j = 0 ; j < D_r + (D_f > 0  ? 1 : 0); j++ )
 		    // Fisher H --   H( i + count_group * hyper_dim + 1, j + count_group * hyper_dim + 1 ) = 
-		    // Fisher H -- 	exp(lambda_k[g][i] + lambda_k[g][j]) * ( P*Q_k_[g][i]*P*Q_k_[g][j] ).trace() / 2.;
+		    // Fisher H -- 	exp(lambda_k[g][i] + lambda_k[g][j]) * ( P*Q_k_[g][i]*P*Q_k_[g][j] ).trace() * 0.5;
 		  }
 		// next group
 		count_group++;
@@ -908,15 +921,21 @@ namespace MAC_bmle
 							parameters.rows(), parameters.rows() );
 	//
 	// t-test
-	if ( D_f == 0 && false )
+	if ( D_f == 0 )
 	  {
 	    for ( int col = 0 ; col < constrast_.cols() ; col++ )
 	      {
 		Eigen::MatrixXd C = constrast_.block( 0, col,
 						      constrast_.rows(), 1 );
 		double T = ( C.transpose() * parameters )(0,0);
+		// Record the parameters
+		post_groups_param_.set_val( col, Idx, T );
+		// T-score
 		T /= sqrt( (C.transpose() * param_cov * C)(0,0) );
-		std::cout << "T = " << T << std::endl;
+		// Record T map and PPM
+		post_T_maps_.set_val( col, Idx, T );
+		PPM_.set_val( col, Idx, Normal_CFD_(T) );
+		//std::cout << "T = " << T << std::endl;
 	      }
 	  }
 
@@ -988,7 +1007,7 @@ namespace MAC_bmle
 	//std::cout << "Inv_Cov_eps = " << Inv_Cov_eps << std::endl;
 	//
 	//
-	return ( F_1 + F_2 + F_3 + F_4 ) / 2.;
+	return ( F_1 + F_2 + F_3 + F_4 ) * 0.5;
       }
     catch( itk::ExceptionObject & err )
       {
@@ -1058,6 +1077,16 @@ namespace MAC_bmle
   {
     try
       {
+	//
+	std::cout << "Global solutions" << std::endl;
+	PPM_.write();
+	// Posterior t-maps
+	post_T_maps_.write();
+	// Posterior groups parameters
+	post_groups_param_.write();
+
+	//
+	std::cout << "Subjects solutions" << std::endl;
 	for ( auto g : groups_ )
 	  for ( auto subject : group_pind_[g] )
 	    subject.second.write_solution();
