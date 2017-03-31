@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <chrono>
 //
 // ITK
 //
@@ -123,7 +124,14 @@ main( const int argc, const char **argv )
 	      region.SetIndex( start );
 	      //
 	      itk::ImageRegionIterator< MaskType >
-		imageIterator_mask( reader_mask_->GetOutput(), region );
+		imageIterator_mask( reader_mask_->GetOutput(), region ),
+		imageIterator_progress( reader_mask_->GetOutput(), region );
+
+	      //
+	      // Task progress: elapse time
+	      using  ms         = std::chrono::milliseconds;
+	      using get_time    = std::chrono::steady_clock ;
+	      auto start_timing = get_time::now();
 	      
 	      //
 	      // loop over Mask area for every images
@@ -166,6 +174,17 @@ main( const int argc, const char **argv )
 		}
 #endif
 	      }
+
+	      //
+	      // Task progress
+	      // End the elaps time
+	      auto end_timing  = get_time::now();
+	      auto diff        = end_timing - start_timing;
+	      std::cout << "Process Elapsed time is :  " << std::chrono::duration_cast< ms >(diff).count()
+			<< " ms "<< std::endl;
+
+	      //
+	      //
 	      std::cout << "All the mask has been covered" << std::endl;
 	      subject_mapping.write_subjects_solutions();
 	      std::cout << "All output have been written." << std::endl;
