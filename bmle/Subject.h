@@ -74,8 +74,11 @@ namespace MAC_bmle
       const Eigen::MatrixXd& get_X2_matrix() const {return X_2_;}
 
       //
-      //
+      // Write the fitted solution to the output image pointer
       void set_fit( const MaskType::IndexType, const Eigen::MatrixXd , const Eigen::MatrixXd );
+      //
+      // Write the output matrix: fitted parameters and the covariance matrix
+      void write_solution();
 
       //
       // Add time point
@@ -330,6 +333,15 @@ namespace MAC_bmle
       Random_effect_ITK_variance_ = BmleMakeITKImage( D_r * (D_r + 1) / 2 /*we make sure it is a int*/,
 						      output_var,
 						      age_ITK_images_.begin()->second );
+    }
+  //
+  //
+  //
+  template < int D_r, int D_f > void
+    MAC_bmle::BmleSubject< D_r, D_f >::write_solution( )
+    {
+      Random_effect_ITK_model_.write();
+      Random_effect_ITK_variance_.write();
     }
   //
   //
