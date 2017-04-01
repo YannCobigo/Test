@@ -156,9 +156,9 @@ main( const int argc, const char **argv )
 			}
 #else
 			// Please do not remove the bracket!!
-		      if ( idx[0] > 25 && idx[0] < 35 && 
-			   idx[1] > 65 && idx[1] < 75 &&
-			   idx[2] > 55 && idx[2] < 65 )
+		      if ( idx[0] > 20 && idx[0] < 40 && 
+			   idx[1] > 60 && idx[1] < 80 &&
+			   idx[2] > 50 && idx[2] < 70 )
 //		      if ( idx[0] > 0 && idx[0] < 60 && 
 //			   idx[1] > 0 && idx[1] < 140 &&
 //			   idx[2] > 50 && idx[2] < 70 )
