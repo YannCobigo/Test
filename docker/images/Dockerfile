@@ -1,7 +1,7 @@
 #
 # CentOS
 # cat /etc/centos-release
-# sudo docker build -f Dockerfile --tag="imaging_core:04" .
+# sudo docker build -f Dockerfile --tag="imaging_core:05" .
 # ex. FROM centos:6 version 6 of CentOS
 FROM centos:7
 
@@ -9,7 +9,7 @@ MAINTAINER Yann Cobigo yann.cobigo@ucsf.edu
 
 # File system
 # /mnt/volume mount any type of volume we want to link with the host
-RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images /mnt/tempo /mnt/volume
+RUN mkdir /mnt/neuroimaging/ /mnt/macdata /mnt/images /mnt/tempo /mnt/volume /mnt/QB3
 
 # 
 # Modified PYTHON libraries
@@ -22,9 +22,9 @@ COPY dipy /mnt/tempo/dipy
 
 #
 # Update the image
-RUN yum update -y && yum install  -y epel-release.noarch && yum groupinstall -y "Development tools" && yum makecache fast
+RUN yum erase iputils -y && yum update -y && yum install  -y epel-release.noarch && yum groupinstall -y "Development tools" && yum makecache fast
 #
-RUN yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 \
+RUN yum erase iputils -y && yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 \
     emacs tmux htop git wget tree.x86_64 cmake gcc.x86_64 gcc-c++ \
     fftw-libs-single-3.3.3-8.el7.x86_64 python-devel.x86_64 \
     xz zlib-devel bzip2-devel bzip2-libs-1.0.6-13.el7.x86_64 dos2unix.x86_64 \
@@ -97,14 +97,15 @@ RUN cd /mnt/tempo/QAP && chmod u+x setup.py && python setup.py build && python s
 # run id in a terminal
 # uid=1002(ycobigo) gid=1002(ycobigo) groups=1002(ycobigo),4(adm),27(sudo),110(admin) \
 RUN groupadd ic        -g 1100 && \
-    groupadd ycobigo   -g 1002 && \
+    groupadd mac-imaging-core-admins -g 44502 && \
+    groupadd ycobigo   -g 40010 && \
     groupadd gmarx     -g 1003 && \
     groupadd guest     -g 1004 && \
     groupadd vsamboju  -g 1005 && \
     groupadd kchiang   -g 1006 && \
     groupadd mmandelli -g 1007 && \
     groupadd pmumford  -g 1008 && \
-    useradd -u 1001 -G 1100 -g 1002 -p "ycobigo_tempo"  -ms /bin/bash ycobigo && \
+    useradd -u 40010 -G 1100,44502 -g 40010 -p "ycobigo_tempo"  -ms /bin/bash ycobigo && \
     useradd -u 1002 -G 1100 -g 1003 -p "gmarx_tempo"    -ms /bin/bash gmarx && \
     useradd -u 1003 -G 1100 -g 1004 -p "guest_tempo"    -ms /bin/bash guest && \
     useradd -u 1004 -G 1100 -g 1005 -p "vsamboju_tempo" -ms /bin/bash vsamboju && \

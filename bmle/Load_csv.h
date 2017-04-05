@@ -59,7 +59,17 @@ namespace MAC_bmle
     void build_groups_design_matrices();
     // Expectation maximization algorithm
     void Expectation_Maximization( MaskType::IndexType );
-    
+    // Expectation maximization algorithm
+    void write_subjects_solutions( );
+    // multi-threading
+    void operator ()( const MaskType::IndexType idx )
+    {
+      std::cout << "treatment for parameters: " 
+		<< idx;
+      Expectation_Maximization( idx );
+    };
+
+
   private:
     //
     // Functions
@@ -472,6 +482,7 @@ namespace MAC_bmle
 	//
 	if ( false )
 	  {
+	    std::cout << "Augmented model:" << std::endl;
 	    std::cout << X_ << std::endl;
 	  }
 
@@ -803,19 +814,19 @@ namespace MAC_bmle
 	    //	std::cout << H  << std::endl;
 	    //
 	    // Lambda update
-	Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 32.) * grad;
-	//Eigen::MatrixXd delta_lambda = 0.1 * grad;
-	//	std::cout << delta_lambda << std::endl;
+	    Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 256.) * grad;
+	    //Eigen::MatrixXd delta_lambda = 0.1 * grad;
+	    //	std::cout << delta_lambda << std::endl;
 	    count_group = 0;
 	    for ( auto g : groups_ )
 	      {
 		for ( int k = 1 ; k < hyper_dim ; k++ )
 		  {
 		    lambda_k[g][k] += delta_lambda( k + count_group * hyper_dim, 0 );
-		    // std::cout << "lambda_k[" << g << "][" << k << "] = " << lambda_k[g][k] << " " << exp(lambda_k[g][k])<< std::endl;
+		    //std::cout << "lambda_k[" << g << "][" << k << "] = " << lambda_k[g][k] << " " << exp(lambda_k[g][k])<< std::endl;
 		  }
 		if ( D_f > 0 )
-		  lambda_k[g][D_r] += 0.;
+		  lambda_k[g][D_r] = 0.;
 		//
 		count_group++;
 	      }
@@ -839,8 +850,8 @@ namespace MAC_bmle
 	      n++;
 	    else
 	      n = 0;
-	    std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F )
-		      << std::endl;
+	    //std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F )
+	    // << std::endl;
 	  }
 
 	//
@@ -854,6 +865,10 @@ namespace MAC_bmle
 								   eta_theta_Y_2_theta_Y_dim, 1 );
 	//
 	// Solution
+	//
+
+	//
+	//
 	Eigen::MatrixXd parameters = X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y;
 	Eigen::MatrixXd param_cov  = cov_theta_Y.block( 0, 0,
 							parameters.rows(), parameters.rows() );
@@ -867,11 +882,25 @@ namespace MAC_bmle
 						      constrast_.rows(), 1 );
 		double T = ( C.transpose() * parameters )(0,0);
 		T /= sqrt( (C.transpose() * param_cov * C)(0,0) );
-		std::cout << "T = " << T << std::endl;
+		//std::cout << "T = " << T << std::endl;
 	      }
 	  }
 
 	  
+	//sol//std::cout << "parameters" << "\n" << parameters << std::endl;
+	//sol//std::cout << "param_cov"  << "\n" << param_cov  << std::endl;
+	
+	int increme_subject = 0;
+	for ( auto g : groups_ )
+	  for ( auto subject : group_pind_[g] )
+	    {
+	      subject.second.set_fit( Idx,
+				      parameters.block( increme_subject, 0, D_r, 1 ),
+				      param_cov.block( increme_subject, increme_subject, 
+						       D_r, D_r ) );
+	      increme_subject += D_r;
+	    }
+	
 	//std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
 	//
 	//std::cout << eta_theta_Y << std::endl;
@@ -981,6 +1010,24 @@ namespace MAC_bmle
 //
 //
 //
+      }
+    catch( itk::ExceptionObject & err )
+      {
+	std::cerr << err << std::endl;
+	exit( -1 );
+      }
+  }
+  //
+  //
+  //
+  template< int D_r, int D_f > void
+    BmleLoadCSV< D_r, D_f >::write_subjects_solutions( )
+  {
+    try
+      {
+	for ( auto g : groups_ )
+	  for ( auto subject : group_pind_[g] )
+	    subject.second.write_solution();
       }
     catch( itk::ExceptionObject & err )
       {

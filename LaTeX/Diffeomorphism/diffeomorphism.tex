@@ -100,7 +100,6 @@ Fijee \sep electrode \sep PEM \sep CEM
 \ToDo{Def. geodisic} \\
 \ToDo{Def. Manifold} \\
 \ToDo{Def. Atlas} \\
-\ToDo{Def. Orbit} \\
 
 
 \begin{enumerate}
@@ -134,6 +133,9 @@ $$
 \mathcal{I} = \{ I_{template} \circ g^{-1} \, / \, g \in \mathcal{G} \}
 $$
 
+\begin{definition}
+  The mathematical anatomy are functions $I \in \mathcal{I}, I: x \in \Omega \rightarrow I(x)$, an orbit under the geometric transformations: $\mathcal{I} = \lbrace I':I(\cdot) = I(g(\cdot)),~I \in \mathcal{I},~g \in \mathcal{G} \rbrace$.
+\end{definition}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -288,17 +290,19 @@ The left-invariance follows from that fact that translation by another group ele
 
 
 \begin{eqnarray*}
-  \rho_{\mathcal{G}}^{2}(g_{0}, g_{1}) & = & \inf S_{g} \\
-  & = & \underset{g(\cdot):\frac{\partial}{\partial t}g^{-1}(t) = -Dg^{-1}(t)v(t),\, g(0)=g_{0}, g(1) = g_{1}}{\inf} \int_{0}^{1} E_{v}(t) \, dt \\
+  \rho_{\mathcal{G}}^{2}(g_{0}, g_{1}) & = & \inf S_{g} = \underset{g(\cdot), g(0)=g_{0}, g(1) = g_{1}}{\inf} \int_{0}^{1} E_{v}(t) \, dt \\
 \end{eqnarray*}
 
 
 is a left-invariant metric distance on $\mathcal{G}$. The geodesics satisfy the Euler-Lagrange equations:
 
-\begin{eqnarray*}
+\begin{eqnarray}
+  \begin{array}{l}
   \frac{\partial}{\partial t} \nabla_{v}E_{v}(\cdot, t) + (Dv(\cdot, t))^{t} \nabla_{v}E_{v}(\cdot, t) \\
   + (D \nabla_{v}E_{v}(\cdot, t))v(\cdot, t) + div( v(\cdot, t)) \nabla_{v}E_{v}(\cdot, t) = 0
-\end{eqnarray*}
+  \end{array}
+  \label{Euler_Lagrange}
+\end{eqnarray}
 
 where $\nabla$ is the gradient operator delivering a vector, $\nabla_{v}E_{v}(t) = 2L^{\dag}Lv(t)$ with the adjoint defined as $\langle Lf, g\rangle = \langle f, L^{\dag}g \rangle$, $div(v) = \sum_{i} \partial v/ \partial x_{i}$ the divergence operator.
 \end{theorem}
@@ -310,25 +314,31 @@ where $\nabla$ is the gradient operator delivering a vector, $\nabla_{v}E_{v}(t)
 To derive Euler-Lagrange equations for the velocity examine perturbations on the group elements and velocity fields, $g \rightarrow g + \epsilon \eta$, $v \rightarrow v + \epsilon \psi$. For exact correspondence of the group elements, $\eta(0) = \eta(1) = 0$. For inexact image matching, only $\eta(0) = 0$ with $\eta(x, t) = 0$, $\forall x \in \partial \Omega$, $\psi(x, t) = 0$, $\forall x \in \partial \Omega$. If $\eta$ is a perturbation of $g$, define the Gateaux differential of $E(v g): \mathcal{G} \rightarrow \mathbb{R}^{+}$ in the direction $\eta$ to be the limit, as the perturbation tends to 0. Also if $\psi$ is a perturbation of $v$, define the Gateaux differential of $E(g_{v}): \mathcal{V} \rightarrow \mathbb{R}^{+}$ in the direction $\psi$ to be the limit, as the perturbation tends to 0.
 
 \begin{lemma}
+\label{lemma}
 
 \begin{eqnarray*}
 \psi(x,t) = \partial_{\eta} v_{g}(x,t) & = & \underset{\epsilon \rightarrow 0}{\lim} \frac{v_{g+\epsilon \eta}(x,t) - v_{g}(x,t)}{\epsilon} \\
-& = & \frac{d}{dt} \eta(g^{-1}(x,t),t) - D v_{g}(x,t) \eta (g^{-1}(x,t),t)
+& = & \frac{d}{dt} \eta(g^{-1}(x,t),t) \\
+& - & D_{g} v_{g}(x,t) \eta (g^{-1}(x,t),t)
 \end{eqnarray*}
 
-\begin{eqnarray*}
+\begin{equation}
+  \begin{array}{lcl}
 \eta(x,t) = \partial_{\psi} g_{v}(x,t) & = & \underset{\epsilon \rightarrow 0}{\lim} \frac{g_{v + \epsilon \psi}(x,t) - g_{v}(x,t)}{\epsilon} \\
-& = & Dg_{v}(x,t) \int_{0}^{1} du \, (Dg_{v}(x,u))^{-1} \psi (g_{v}(x,u),u)
-\end{eqnarray*}
+& = & Dg_{v}(x,t) \\
+& \times & \int_{0}^{1} du \, (Dg_{v}(x,u))^{-1} \psi_{u} \circ g_{v}(x,u)
+\end{array}
+\label{lemma_eq}
+\end{equation}
 \end{lemma}
 
 \begin{proof}
-  \begin{equation}
+  \begin{equation*}
     \begin{split}
       \frac{d}{dt} (g+\varepsilon \eta) & =  v_{g}(g(x,t),t) + \varepsilon \frac{d}{dt} \eta(x,t) \\
       & = v_{g+\varepsilon \eta}(g+\varepsilon \eta)
     \end{split}
-  \end{equation}
+  \end{equation*}
 
   $$
   v_{g+\varepsilon \eta}(g+\varepsilon \eta) = v_{g}(g+\varepsilon \eta) + \varepsilon \psi
@@ -346,17 +356,17 @@ To derive Euler-Lagrange equations for the velocity examine perturbations on the
   f(x + \varepsilon) = f(x) + \varepsilon df = f(x) + \varepsilon Df
   $$
   $$
-  v_{g+\varepsilon \eta}(g+\varepsilon \eta) \sim v_{g}(g(x,t),t) + D v_{g}(g) \varepsilon \eta + \varepsilon \partial_{\eta} v_{g}
+  v_{g+\varepsilon \eta}(g+\varepsilon \eta) \sim v_{g}(g(x,t),t) + D_{g} v_{g}(g) \varepsilon \eta + \varepsilon \partial_{\eta} v_{g}
   $$
   
 Therefore 
 
   $$
-  \frac{d}{dt} \eta(x,t) = Dv_{g}(g) \eta(x,t) + \partial_{\eta} v_{g}
+  \frac{d}{dt} \eta(x,t) = D_{g}v_{g}(g) \eta(x,t) + \partial_{\eta} v_{g}
   $$
 
 
-  Definition gives $\partial_{t} g = v_{g}(g,t)$. $D \partial_{t} g = \partial_{t} Dg = Dg Dv_{g}(g)$
+  Definition gives $\partial_{t} g = v_{g}(g,t)$. $D \partial_{t} g = \partial_{t} Dg = Dg D_{g}v_{g}(g)$
   $$
   \frac{\partial}{\partial t} \eta = D v_{g} (g) \eta + \psi\\
   = \left[ D \frac{\partial g}{\partial t} \right](Dg)^{-1} \eta + \psi
@@ -376,8 +386,6 @@ Therefore
    
 \end{proof}
 
-\subsection{Beg's geometry}
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -385,7 +393,6 @@ Therefore
 
 The group of geometric transformations are not directly observable. Rather images are observed via sensors which measure physical properties of the tissues. Carrying out Grenander's metric pattern theory program, the space or orbit of anatomical images $I \in \mathcal{I}$ must be made into a metric space. The metric distance between anatomical imagery $I \in \mathcal{I}$ is constructed from distances between the mappings $g \in \mathcal{G}$. First, the anatomical orbit of all images is defined.
 
-\paragraph{Definition}{The mathematical anatomy are functions $I \in \mathcal{I}, I: x \in \Omega \rightarrow I(x)$, an orbit under the geometric transformations: $\mathcal{I} = \lbrace I':I(\cdot) = I(g(\cdot)),~I \in \mathcal{I},~g \in \mathcal{G} \rbrace$.\\}
 
 This is a group action on I with $g \cdot I = I \circ g$ and group product $g \cdot g(\cdot) = g \circ g(\cdot) = g(g(\cdot))$, which defines the equivalence relation $I_{1} \sim I_{2}$ if $\exists g \in \mathcal{G}$ such that $I_{1}(\cdot) = I_{2}(g(\cdot))$, dividing $I$ into disjoint orbits.
 
@@ -394,9 +401,10 @@ This is a group action on I with $g \cdot I = I \circ g$ and group product $g \c
 \begin{theorem}
 The function $\rho(\cdot, \cdot): \mathcal{I} \times \mathcal{I} \rightarrow \mathbb{R}^{+}$ between elements $I, I' \in \mathcal{I}$ defined as
 
-$$
+\begin{equation}
 \rho^{2}(I,I') = \underset{g(\cdot):\frac{\partial}{\partial t}g^{-1}(t) = -Dg^{-1}(t)v(t),\, I(g^{-1}(\cdot,1)) = I'(\cdot), g^{-1}(0) = Id}{\inf} \int_{0}^{1} E_{v}(t) \, dt
-$$
+\end{equation}
+
 is a metric distance on I satisfying symmetry and the triangle inequality.
 \end{theorem}
 
@@ -419,7 +427,7 @@ $$
 \nabla_{v}E(y,t) = 2L^{\dag}Lv(y,t) + 2 \left( \frac{\partial}{\partial t} J(y,t) + \nabla J^{T}(y,t) v(y,t) \right) \nabla J(y,t)
 $$
 
-then the Euler Equation 4 holds with boundary term $\nabla E (\cdot, 1) = 0$ with the geodesics for photometric evolution satisfying:
+then the Euler Equation~(\ref{Euler_Lagrange}) holds with boundary term $\nabla E (\cdot, 1) = 0$ with the geodesics for photometric evolution satisfying:
 
 $$
 L^{\dag}Lv(\cdot,t) + \left( \frac{\partial}{\partial t} J(\cdot,t) + \nabla J^{T}(\cdot,t) v(\cdot,t) \right) \nabla J(\cdot,t) = 0
@@ -430,21 +438,113 @@ $$
 $$
 }
 
+\subsection{Beg's notation}
+
+Let the notation $g_{s,t}: \Omega \leftarrow \Omega$ ($s$ represent the step ) denote the composition $g_{s,t} = g_{t} \circ g_{s}^{-1}$. The interpretation of $g_{s,t}(y)$ is that it is the position at time $t$ of a particle that is at position $y$ at time $s$. Therefore $g_{1}^{v}(x) = g_{0,1}^{v}(x)$  is the function that denotes the position at time $t = 1$ of particle that is at position $x$ at time 0. Let the Jacobian of mapping $g_{s,t}$, the matrix composed with the space derivatives of $g_{s,t}$, be denoted by $Dg_{s,t}$. The lemma equation~(\ref{lemma_eq}) n be written, in Beg's notations
+
+\begin{equation*}
+\begin{array}{lcl}
+\partial_{h} g_{s,t}^{v} = \underset{\epsilon \leftarrow 0}{\lim} \frac{g_{s,t}^{v + \epsilon h} - g_{s,t}^{v}}{\epsilon}\\
+D g_{s,t}^{v} \int_{s}^{t} \left( D g_{s,u}^{v} \right)^{-1} h_{u} \circ g_{s,u}^{v} \, du
+\end{array}
+\end{equation*}
+
+Given a continuously differentiable idealized template image $I_{0}$ and a noisy observation of anatomy $I_{1}$, then $\hat{v} \in L^{2}([0,1],V)$ for inexact matching of $I_{0}$ and $I_{1}$ is given by
+
+\begin{equation*}
+\begin{array}{rcl}
+\hat{v} & = &  \underset{v \in L^{2}([0,1],V)}{\arg\min} E(v)\\
+& = & \int_{0}^{1} \| v_{t} \|_{V}^{2}\, dt + \frac{1}{\sigma^{2}} \| I_{0} \circ g_{1,0}^{v} - I_{1}\|_{L^{2}}^{2}
+\end{array}
+\end{equation*}
+
+which satisfies the Euler-Lagrange equation given by
+
+\begin{equation}
+\begin{array}{rcl}
+2\hat{v}_{t} - K \left( \frac{2}{\sigma^{2}} |D g_{t,1}^{\hat{v}}| \nabla J_{t}^{0}(J_{t}^{0} - J_{t}^{1}) \right) = 0
+\end{array}
+\end{equation}
+
+where $J_{t}^{0} = I_{0} \circ g_{1,0}^{v}$ and $J_{t}^{1} = I_{1} \circ g_{t,1}^{v}$
+
+\begin{proof}
+  Let the velocity $v \in L^{2}([0,1],V)$ be perturbated by an $\epsilon$ amount along the direction $h \in L^{2}([0,1],V)$. the G\^ateau variation $\partial_{h}E(v)$ of the enregy functional related to the Fr\'echet derivative $\nabla_{v}E$ by
+
+  \begin{equation*}
+    \begin{array}{rcl}
+      \partial_{h}E(v) & = & \underset{\epsilon \leftarrow 0}{\lim} \frac{E(v + vh) - E(v)}{\epsilon} \\
+      & = & \int_{0}^{1} <\nabla_{v}E_{t}, h_{t}>\, dt 
+      \end{array}
+    \end{equation*}
+
+    \paragraph{Nota -- Physics}{$dE = \nabla E \cdot dl$}
+
+    The variation of $E_{1} = \int_{0}^{1} \| v_{t} \|_{V}^{2} \, dt$ is given by: $\partial_{h} E_{1}(v) = 2 \int_{0}^{1} <v_{t},h_{t}> \, dt$. Variation of $E_{2}(v) = \frac{1}{\sigma^{2}} \| I_{0} \circ g_{1,0}^{v} - I_{1}\|_{L^{2}}^{2}$ is
+
+  \begin{equation*}
+    \begin{array}{lcl}
+      \partial_{h} E_{2}(v) & = & \frac{2}{\sigma^{2}} \left< I_{0} \circ g_{1,0}^{v} - I_{1}, D\left( I_{0} \circ g_{1,0}^{v} \right) \partial_{h} g_{1,0}^{v}  \right>_{L^{2}} \\
+      & = & \frac{2}{\sigma^{2}} \left< I_{0} \circ g_{1,0}^{v} - I_{1}, D I_{0} \circ g_{1,0}^{v} \right . \\
+      & \times & \left. \left( -D g_{1,0}^{v} \int_{0}^{1} \left( D g_{1,t}^{v} \right)^{-1} h_{t} \circ g_{1,t}^{v} \, dt \right) \right>_{L^{2}}\\
+      & = & \frac{2}{\sigma^{2}} \int_{0}^{1} \left< I_{0} \circ g_{1,0}^{v} - I_{1}, D\left( I_{0} \circ g_{1,0}^{v} \right) \right . \\
+      & \times & \left. \left( D g_{1,t}^{v} \right)^{-1} h_{t} \circ g_{1,t}^{v}\right>_{L^{2}} \, dt \\
+      \end{array}
+  \end{equation*}
+
+  In the second equality we substitued of $\partial_{h} g_{1,0}$ is made using Lemma (\ref{lemma_eq}) and in third equality collecting $D(I_{0} \circ g_{1,0}) = DI_{0} \circ g_{1,0}Dg_{1,0}$. Setting $g_{1,t}(y) = x$ {\it i.e}. $g_{t,1}(x) = y$, gives the Jacobian change of variables $|D g_{t,1}(x)| \, dx = dy$. With this, $g_{1,0} \leftarrow g_{1,0} \circ g_{t,1} = g_{t,0}$ and substituting in above, we get:
+
+
+    \begin{equation*}
+    \begin{array}{lcl}
+      \partial_{h} E_{2}(v) & = & \\
+      & = & - \frac{2}{\sigma^{2}} \int_{0}^{1} \left< |D g_{t,1}^{v}| (I_{0} \circ g_{t,0}^{v} - I_{1} \circ g_{t,1}^{v}), \right . \\  
+      & \times & \left. D \left( I_{0} \circ g_{t,0}^{v} \right)^{-1} h_{t} \right>_{L^{2}} \, dt \\
+      & = & - \frac{2}{\sigma^{2}} \int_{0}^{1} \left< |D g_{t,1}^{v}| (J_{t}^{0}  - J_{t}^{1}) \nabla J_{t}^{0}, h_{t} \right>_{L^{2}} \, dt \\
+      & = & - \frac{2}{\sigma^{2}} \int_{0}^{1} \left< K \left( |D g_{t,1}^{v}| (J_{t}^{0}  - J_{t}^{1}) \nabla J_{t}^{0} \right), h_{t} \right>_{V} \, dt \\
+      \end{array}
+    \end{equation*}
+    
+    Collecting terms, the gradient of the energy functional is thus
+
+    \begin{equation}
+      \begin{array}{lcl}
+        \left( \nabla_{v} E_{t} \right)_{V} = 2v_{t} - \frac{2}{\sigma^{2}} K \left( |D g_{t,1}^{v}| (J_{t}^{0}  - J_{t}^{1}) \nabla J_{t}^{0} \right)
+      \end{array}
+      \label{gradient_descent}
+    \end{equation}
+
+    where the subscript $V$ in $\left( \nabla_{v} E_{t} \right)_{V}$ indicates the gradient is in the space $V$. The optimizing velocity field satisfies the Euler-Lagrange equation
+
+     \begin{equation}
+      \begin{array}{lcl}
+        \partial_{h}E(\hat{v}) & = & \int_{0}^{1} \left< 2\hat{v}_{t} \right .\\ 
+        & - & \left. \frac{2}{\sigma^{2}} K \left( |D g_{t,1}^{\hat{v}}| (J_{t}^{0}  - J_{t}^{1}) \nabla J_{t}^{0} \right), h_{t} \right>_{V} \, dt \\
+        & = & 0
+      \end{array}
+      \label{gradient_descent}
+    \end{equation}
+   
+    
+\end{proof}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Euler-Lagrange equation for the inexact image matching and growth}
 
-A central problem in \CA{} is essentially diffeomorphic image interpolation, i.e., to infer the geometric image evolution that connects two elements $I_{0}$, $I_{1} \in \mathcal{I}$ under pure geometric evolution. For this a function of the path is defined; call it $I_{0}(g^{−1}(t))$, $t \in [0, 1]$. The goal is to construct the shortest length curve $g(t)$, $t \in [0, 1]$ which  the target norm squared $\| I_{0} (g^{−1}(1)) − I_{1} \|^{2}$. This is of course inexact matching, since there is a balance between metric length of the path and target correspondence. We can view the image evolution defined by the geodesic as an interpolation between images via the geodesic. Because of the introduction of the free boundary, there is a boundary term which is introduced.
+A central problem in \CA{} is essentially diffeomorphic image interpolation, i.e., to infer the geometric image evolution that connects two elements $I_{0}$, $I_{1} \in \mathcal{I}$ under pure geometric evolution. For this a function of the path is defined; call it $I_{0}(g^{-1}(t))$, $t \in [0, 1]$. The goal is to construct the shortest length curve $g(t)$, $t \in [0, 1]$ which  the target norm squared $\| I_{0} (g^{-1}(1)) - I_{1} \|^{2}$. This is of course inexact matching, since there is a balance between metric length of the path and target correspondence. We can view the image evolution defined by the geodesic as an interpolation between images via the geodesic. Because of the introduction of the free boundary, there is a boundary term which is introduced.
 
-\paragraph{Theorem - Inexact Image Matching}{\it The minimizer
-$$
-\underset{g(\cdot): \frac{\partial}{\partial t} g^{-1}(t) = - Dg^{-1}(t)v(t), g(0) ) g_{0}}{\inf} \int_{0}^{1} E_{v}(t) \, dt + \| I_{1} - I_{0}(g^{-1}(1))\|^{2}
+\begin{theorem}
+  {\bf Inexact Image Matching} The minimizer
+
+  $$
+\underset{g(\cdot):  g(0) = g_{0}}{\inf} \int_{0}^{1} E_{v}(t) \, dt + \| I_{1} - I_{0}(g^{-1}(1))\|^{2}
 $$
 
-satisfies the Euler-Lagrange Equation 4 with boundary term:
+satisfies the Euler-Lagrange Equation~(\ref{Euler_Lagrange}) with boundary term:
 
 $$
-\nabla_{v}E_{v}(\cdot, 1) + 2(I_{1}(\cdot) - I_{0}(g^{-1}(\cdot, 1)))D(I_{0}(g^{-1}(\cdot, 1)))^{T = 0} = 0
+\nabla_{v}E_{v}(\cdot, 1) + 2(I_{1}(\cdot) - I_{0}(g^{-1}(\cdot, 1)))D(I_{0}(g^{-1}(\cdot, 1)))^{T} = 0
 $$
 
 where
@@ -452,7 +552,9 @@ where
 $$
 D(I_{0}(g^{-1}(\cdot,t))) = \nabla I_{0}^{T}(g^{-1}(\cdot, t))Dg^{-1}(\cdot, t)
 $$
-}
+\end{theorem}
+
+
 
 
 

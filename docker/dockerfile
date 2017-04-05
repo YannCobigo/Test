@@ -109,7 +109,7 @@ JOB=$( sudo docker run -it --rm --name  Neuro  \
     imaging_core:01 )
 
 #10.36.2.41
-JOB=$( sudo docker run -it --rm --name  Check  \
+JOB=$( sudo docker run --privileged -it --rm --name  Check  \
     --user=$USER \
     --env="DISPLAY" \
     --net=host \

@@ -13,7 +13,8 @@ MAC_bmle::BmleMakeITKImage::BmleMakeITKImage( const long unsigned int Dimension,
     images_.resize( Dimension );
     //
     // Take the dimension of the first subject image:
-    Reader3D::Pointer image_reader_ = Dim_template_image;
+    //Reader3D::Pointer image_reader_ = Dim_template_image;
+    image_reader_ = Dim_template_image;
 
     //
     // Create the 3D image of measures
@@ -41,12 +42,23 @@ MAC_bmle::BmleMakeITKImage::BmleMakeITKImage( const long unsigned int Dimension,
 //
 //
 void
-MAC_bmle::BmleMakeITKImage::write()
+MAC_bmle::BmleMakeITKImage::set_val( const std::size_t Image_number, 
+				     const MaskType::IndexType Idx, 
+				     const double Val )
+{
+  images_[ Image_number ]->SetPixel( Idx, Val );
+}
+//
+//
+//
+void
+MAC_bmle::BmleMakeITKImage::write() 
 {
   //
   // 
   using Iterator3D = itk::ImageRegionConstIterator< Image3DType >;
   using Iterator4D = itk::ImageRegionIterator< Image4DType >;
+  using FilterType = itk::ChangeInformationImageFilter< Image4DType >;
 
   //
   // Create the 4D image of measures
@@ -65,6 +77,8 @@ MAC_bmle::BmleMakeITKImage::write()
   Image3DType::Pointer  raw_subject_image_ptr = Sub_image_reader->GetOutput();
   Image3DType::SizeType size = raw_subject_image_ptr->GetLargestPossibleRegion().GetSize();
   Image4DType::SizeType size_4D{ size[0], size[1], size[2], D_ };
+
+  
   //
   region.SetSize( size_4D );
   region.SetIndex( start );
@@ -74,8 +88,6 @@ MAC_bmle::BmleMakeITKImage::write()
   //
   // ITK orientation, most likely does not match our orientation
   // We have to reset the orientation
-  using FilterType = itk::ChangeInformationImageFilter< Image4DType >;
-  FilterType::Pointer filter = FilterType::New();
   // Origin
   Image3DType::PointType orig_3d = raw_subject_image_ptr->GetOrigin();
   Image4DType::PointType origin;
@@ -92,12 +104,18 @@ MAC_bmle::BmleMakeITKImage::write()
   direction[2][0] = direction_3d[2][0]; direction[2][1] = direction_3d[2][1]; direction[2][2] = direction_3d[2][2];
   direction[3][3] = 1.; // 
   //
-  filter->SetOutputSpacing( spacing );
-  filter->ChangeSpacingOn();
-  filter->SetOutputOrigin( origin );
-  filter->ChangeOriginOn();
-  filter->SetOutputDirection( direction );
-  filter->ChangeDirectionOn();
+
+  //
+  // image filter
+  FilterType::Pointer images_filter;
+  images_filter = FilterType::New();
+  //
+  images_filter->SetOutputSpacing( spacing );
+  images_filter->ChangeSpacingOn();
+  images_filter->SetOutputOrigin( origin );
+  images_filter->ChangeOriginOn();
+  images_filter->SetOutputDirection( direction );
+  images_filter->ChangeDirectionOn();
   //
   //
   Iterator4D it4( records, records->GetBufferedRegion() );
@@ -115,17 +133,17 @@ MAC_bmle::BmleMakeITKImage::write()
 	}
     }
   //
-  filter->SetInput( records );
-
-  //	//
-  //	// Writer
-  //	std::cout << "Writing the 4d measure image." << std::endl;
-  //	//
-  //	itk::NiftiImageIO::Pointer nifti_io = itk::NiftiImageIO::New();
-  //	//
-  //	itk::ImageFileWriter< Image4DType >::Pointer writer = itk::ImageFileWriter< Image4DType >::New();
-  //	writer->SetFileName( "measures_4D.nii.gz" );
-  //	writer->SetInput( filter->GetOutput() );
-  //	writer->SetImageIO( nifti_io );
-  //	writer->Update();
+  images_filter->SetInput( records );
+  
+  //
+  // Writer
+  std::cout << "Writing the 4d output image for "<< image_name_ <<  std::endl;
+  //
+  itk::NiftiImageIO::Pointer nifti_io = itk::NiftiImageIO::New();
+  //
+  itk::ImageFileWriter< Image4DType >::Pointer writer = itk::ImageFileWriter< Image4DType >::New();
+  writer->SetFileName( image_name_ );
+  writer->SetInput( images_filter->GetOutput() );
+  writer->SetImageIO( nifti_io );
+  writer->Update();
 }
