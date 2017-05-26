@@ -13,6 +13,7 @@
 #include <map>
 #include <set>
 #include <math.h>
+//#include <cmath.h>
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
@@ -82,6 +83,10 @@ namespace MAC_bmle
 	       const Eigen::MatrixXd& , const Eigen::MatrixXd& ) const;
     // Thermodynamic free energy
     void Lambda_init_( const Eigen::MatrixXd& ) const;
+    // Cumulative centered normal cumulative distribution function
+    // https://en.wikipedia.org/wiki/Error_function
+    double Normal_CFD_( const double value ) const
+    { return 0.5 * erfc( - value * M_SQRT1_2 ); };
 
     //
     // Members
@@ -147,9 +152,11 @@ namespace MAC_bmle
     
     //
     // Posterior Probability Maps
-    std::vector< BmleMakeITKImage > PPM_{1};
-    //
+    BmleMakeITKImage PPM_;
     // Posterior t-maps
+    BmleMakeITKImage post_T_maps_;
+    // Posterior groups parameters
+    BmleMakeITKImage post_groups_param_;
   };
   //
   //
@@ -241,12 +248,12 @@ namespace MAC_bmle
 	// Output images
 	//
 
-	//
-	// PPM
-	for ( auto& image : PPM_ )
-	  {
-	    image = BmleMakeITKImage( D_r, "LaVieEstBelle.nii.gz", Y_[0] );
-	  }
+// to remove	//
+// to remove	// PPM
+// to remove	for ( auto& image : PPM_ )
+// to remove	  {
+// to remove	    //image = BmleMakeITKImage( D_r, "LaVieEstBelle.nii.gz", Y_[0] );
+// to remove	  }
 	
 	//
 	// Create the 4D measurements image
@@ -492,6 +499,14 @@ namespace MAC_bmle
 
 	//
 	// Based matrix for a subject
+	// D_r qi matrices (D_r x D_r)
+	// 
+	// | 0           |
+	// |  0          |
+	// |    ...      |
+	// |      1      | ith element
+	// |        ...  |
+	// |           0 |
 	std::vector< Eigen::MatrixXd > q( D_r );
 	for ( int i = 0 ; i < D_r ; i++ )
 	  {
@@ -680,6 +695,12 @@ namespace MAC_bmle
 	//
 	if ( true )
 	  std::cout << "constrast_ \n" << constrast_  << std::endl;
+	//
+	// Contrast output
+	PPM_               = BmleMakeITKImage( constrast_.cols(), "PPM.nii.gz", Y_[0] );
+	post_T_maps_       = BmleMakeITKImage( constrast_.cols(), "Posterior_t_maps.nii.gz", Y_[0] );
+	post_groups_param_ = BmleMakeITKImage( constrast_.cols(), "Post_groups_param.nii.gz", Y_[0] );
+
       }
     catch( itk::ExceptionObject & err )
       {
@@ -725,7 +746,7 @@ namespace MAC_bmle
 	std::map< int /*group*/, std::vector< double > > lambda_k;
 	// C_eps_1 lambda
 	lambda_k[0]    = std::vector< double >( 1 );
-	lambda_k[0][0] = 1.e+0 /*log( 1.e+8 )*/;
+	lambda_k[0][0] = .01 /*log( 1.e+8 )*/;
 	// C_eps_2_ and fixed effects lambda
 	for ( auto g : groups_ )
 	  {
@@ -734,7 +755,7 @@ namespace MAC_bmle
 	    //
 	    for ( int d_r = 0 ; d_r < D_r ; d_r++ )
 	      {
-		lambda_k[g][d_r] = 1.e+0;
+		lambda_k[g][d_r] = .02;
 	      }
 	    // fixed effects
 	    if ( D_f > 0 )
@@ -743,11 +764,18 @@ namespace MAC_bmle
 
 	//
 	// Covariance
+	// Cov_eps = C_theta_ + C_eps_2 + C_eps_1
 	Eigen::MatrixXd Cov_eps = C_theta_;
 	Cov_eps +=  exp( lambda_k[0][0] ) * Q_k_[0][0];
 	for ( auto g : groups_ )
 	  for ( int k = 0 ; k < D_r + (D_f > 0  ? 1 : 0) ; k++ )
-	    Cov_eps +=  exp( lambda_k[g][k] ) * Q_k_[g][k];
+	    {
+	      Cov_eps +=  exp( lambda_k[g][k] ) * Q_k_[g][k];
+	      //std::cout << "lambda_k__[" << g << "][" << k << "] = " << lambda_k[g][k] << std::endl;
+	      //std::cout << "Q_k__[" << g << "][" << k << "] = \n" << Q_k_[g][k] << std::endl;
+	    }
+	//std::cout << "Cov_eps__ = \n" << Cov_eps << std::endl;
+
 	//
 	Eigen::MatrixXd inv_Cov_eps = Cov_eps.inverse();
 
@@ -763,11 +791,12 @@ namespace MAC_bmle
 	  F     = 1.,
 	  delta_F  = 100.;
 	int
-	  n = 0,
-	  N = 10; // N regulate the EM loop to be sure converge smootly
+	  n = 0, it = 0,
+	  N = 10,   // N regulate the EM loop to be sure converge smootly
+	  NN = 20000; // failed convergence criterias
 	
 	//
-	while( n < N  )
+	while( n < N && it++ < NN )
 	  {
 	    F_old = F;
 
@@ -776,23 +805,26 @@ namespace MAC_bmle
 	    //	    cov_theta_Y = MAC_bmle::inverse( X_.transpose() * inv_Cov_eps * X_ );
 	    cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
 	    eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
-//	    std::cout << eta_theta_Y << std::endl;
+	    //std::cout << "eta_theta_Y = \n" << eta_theta_Y << std::endl;
+	    //std::cout << "cov_theta_Y = \n" << cov_theta_Y << std::endl;
 
 	    //
 	    // Maximization step
 	    int hyper_dim = D_r + (D_f > 0  ? 1 : 0);
 	    Eigen::MatrixXd P  = inv_Cov_eps - inv_Cov_eps * X_ * cov_theta_Y * X_.transpose() * inv_Cov_eps;
-	    // Fisher Information matrix
-	    Eigen::MatrixXd H = Eigen::MatrixXd::Zero( groups_.size() * hyper_dim + 1,
-						       groups_.size() * hyper_dim + 1 );
+	    // Fisher H -- // Fisher Information matrix
+	    // Fisher H -- Eigen::MatrixXd H = Eigen::MatrixXd::Zero( groups_.size() * hyper_dim + 1,
+	    // Fisher H -- 					       groups_.size() * hyper_dim + 1 );
 	    // Fisher gradient
 	    Eigen::MatrixXd grad = Eigen::MatrixXd::Zero( groups_.size() * hyper_dim + 1, 1 );
 	    int count_group = 0;
 	    // groupe 0 C_eps_1
 	    grad(0,0)  = - (Y.transpose() * P.transpose() * Q_k_[0][0] * P * Y)(0,0);
 	    grad(0,0) += (P*Q_k_[0][0]).trace();
-	    grad(0,0) *= - exp(lambda_k[0][0]) / 2.;
-	    H(0,0) = exp(lambda_k[0][0] + lambda_k[0][0]) * ( P*Q_k_[0][0]*P*Q_k_[0][0] ).trace() / 2.;
+	    grad(0,0) *= - exp(lambda_k[0][0]) * 0.5 ;
+	    // Fisher H -- H(0,0) = exp( 2 * lambda_k[0][0] ) * ( P*Q_k_[0][0]*P*Q_k_[0][0] ).trace() * 0.5;
+	    //std::cout << "Q_k_g0_[0][0] = \n" << Q_k_[0][0] << std::endl;
+
 	    //
 	    for ( auto g : groups_ )
 	      {
@@ -801,28 +833,41 @@ namespace MAC_bmle
 		    // 
 		    grad(i + count_group * hyper_dim + 1,0)  = - (Y.transpose() * P.transpose() * Q_k_[g][i] * P * Y)(0,0);
 		    grad(i + count_group * hyper_dim + 1,0) += (P*Q_k_[g][i]).trace();
-		    grad(i + count_group * hyper_dim + 1,0) *= - exp(lambda_k[g][i]) / 2.;
-		    for ( int j = 0 ; j < D_r + (D_f > 0  ? 1 : 0); j++ )
-		      H( i + count_group * hyper_dim + 1,j + count_group * hyper_dim + 1 ) =
-			exp(lambda_k[g][i] + lambda_k[g][j]) * ( P*Q_k_[g][i]*P*Q_k_[g][j] ).trace() / 2.;
+		    grad(i + count_group * hyper_dim + 1,0) *= - exp(lambda_k[g][i]) * 0.5;
+		    //std::cout << "Q_k_g_[" << g << "][" << i << "] = \n" << Q_k_[g][i] << std::endl;
+		    // Fisher H -- for ( int j = 0 ; j < D_r + (D_f > 0  ? 1 : 0); j++ )
+		    // Fisher H --   H( i + count_group * hyper_dim + 1, j + count_group * hyper_dim + 1 ) = 
+		    // Fisher H -- 	exp(lambda_k[g][i] + lambda_k[g][j]) * ( P*Q_k_[g][i]*P*Q_k_[g][j] ).trace() * 0.5;
 		  }
 		// next group
 		count_group++;
 	      }
-	    //	std::cout << P  << std::endl;
-	    //	std::cout <<  grad << std::endl;
-	    //	std::cout << H  << std::endl;
+	    // AAAAAAAAAAAAAA comment
+	    //std::cout << P  << std::endl;
+	    //std::cout <<  grad << std::endl;
+	    //std::cout << H  << std::endl;
+	    /// AAAAAAAAAAAAAA comment
 	    //
 	    // Lambda update
-	    Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 256.) * grad;
-	    //Eigen::MatrixXd delta_lambda = 0.1 * grad;
-	    //	std::cout << delta_lambda << std::endl;
+	    // | add a learning rate
+	    // _
+	    //Eigen::MatrixXd delta_lambda = H.inverse()  * grad;
+	    // Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H ) * grad;
+	    //Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
+	    //Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 32. ) * grad;
+	    //Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) ) * grad;
+	    Eigen::MatrixXd delta_lambda = 0.1 * grad;
+	    //std::cout << delta_lambda << std::endl;
+	    //std::cout << MAC_bmle::inverse( H  - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32.)  << std::endl;
+	    lambda_k[0][0] += delta_lambda( 0, 0 );
+	    //std::cout << "lambda_k[0][0] = " << lambda_k[0][0] << " " << exp(lambda_k[0][0])<< std::endl;
+	    //
 	    count_group = 0;
 	    for ( auto g : groups_ )
 	      {
-		for ( int k = 1 ; k < hyper_dim ; k++ )
+		for ( int k = 0 ; k < hyper_dim ; k++ )
 		  {
-		    lambda_k[g][k] += delta_lambda( k + count_group * hyper_dim, 0 );
+		    lambda_k[g][k] += delta_lambda( 1 + k + count_group * hyper_dim, 0 );
 		    //std::cout << "lambda_k[" << g << "][" << k << "] = " << lambda_k[g][k] << " " << exp(lambda_k[g][k])<< std::endl;
 		  }
 		if ( D_f > 0 )
@@ -834,24 +879,26 @@ namespace MAC_bmle
 	    Cov_eps = C_theta_;
 	    Cov_eps +=  exp( lambda_k[0][0] ) * Q_k_[0][0];
 	    for ( auto g : groups_ )
-	      for ( int k = 1 ; k < hyper_dim ; k++ )
+	      for ( int k = 0 ; k < hyper_dim ; k++ )
 		{
 		  Cov_eps +=  exp( lambda_k[g][k] ) * Q_k_[g][k];
+		  //std::cout << "lambda_k[" << g << "][" << k << "] = " << lambda_k[g][k] << std::endl;
+		  //std::cout << "Q_k_[" << g << "][" << k << "] = \n" << Q_k_[g][k] << std::endl;
 		}
-	    //	    std::cout << Cov_eps << std::endl;
+	    //std::cout << "Cov_eps_g_ = \n" << Cov_eps << std::endl;
 	    //
-	    inv_Cov_eps =  MAC_bmle::inverse( Cov_eps );
-	    //std::cout << inv_Cov_eps << std::endl;
+	    inv_Cov_eps = Cov_eps.inverse();
+	    //inv_Cov_eps =  MAC_bmle::inverse( Cov_eps );
+	    //std::cout << "inv_Cov_eps_g_ = \n" << inv_Cov_eps << std::endl;
 	    //
 	    // Free energy
 	    F = F_( Y, inv_Cov_eps, eta_theta_Y, cov_theta_Y );
 	    delta_F = F - F_old;
-	    if ( fabs( delta_F ) < 1.e-8 )
+	    if ( fabs( delta_F ) < 1.e-3 )
 	      n++;
 	    else
 	      n = 0;
-	    //std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F )
-	    // << std::endl;
+	    //std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F ) << std::endl;
 	  }
 
 	//
@@ -881,14 +928,20 @@ namespace MAC_bmle
 		Eigen::MatrixXd C = constrast_.block( 0, col,
 						      constrast_.rows(), 1 );
 		double T = ( C.transpose() * parameters )(0,0);
+		// Record the parameters
+		post_groups_param_.set_val( col, Idx, T );
+		// T-score
 		T /= sqrt( (C.transpose() * param_cov * C)(0,0) );
+		// Record T map and PPM
+		post_T_maps_.set_val( col, Idx, T );
+		PPM_.set_val( col, Idx, Normal_CFD_(T) );
 		//std::cout << "T = " << T << std::endl;
 	      }
 	  }
 
 	  
-	//sol//std::cout << "parameters" << "\n" << parameters << std::endl;
-	//sol//std::cout << "param_cov"  << "\n" << param_cov  << std::endl;
+	//std::cout << "parameters" << "\n" << parameters << std::endl;
+	//std::cout << "param_cov"  << "\n" << param_cov  << std::endl;
 	
 	int increme_subject = 0;
 	for ( auto g : groups_ )
@@ -943,19 +996,18 @@ namespace MAC_bmle
 	for ( int linco = 0 ; linco < Inv_Cov_eps.rows() ; linco++ )
 	  F_1 += log( Inv_Cov_eps(linco,linco) );
 	//
-	for ( int linco = 0 ; linco < Cov_theta_Y.rows() ; linco++ )
-	  F_4 += log( Cov_theta_Y(linco,linco) );
+	//for ( int linco = 0 ; linco < Cov_theta_Y.rows() ; linco++ )
+	//  F_4 += log( Cov_theta_Y(linco,linco) );
+	F_4 =  log( Cov_theta_Y.determinant() );
 	
 	double
 	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
 	  F_3 = - ( Cov_theta_Y * X_.transpose() * Inv_Cov_eps * X_ ).trace();
-	//std::cout << "F_1 = " << F_1<< std::endl;
-	//std::cout << "F_2 = " << F_2<< std::endl;
-	//std::cout << "F_3 = " << F_3<< std::endl;
-	//std::cout << "F_4 = " << F_4<< std::endl;
+	//std::cout << "F_1 = " << F_1 << " -- F_2 = " << F_2 << " -- F_3 = " << F_3 << " -- F_4 = " << F_4 << std::endl;
+	//std::cout << "Inv_Cov_eps = " << Inv_Cov_eps << std::endl;
 	//
 	//
-	return ( F_1 + F_2 + F_3 + F_4 ) / 2.;
+	return ( F_1 + F_2 + F_3 + F_4 ) * 0.5;
       }
     catch( itk::ExceptionObject & err )
       {
@@ -1025,6 +1077,16 @@ namespace MAC_bmle
   {
     try
       {
+	//
+	std::cout << "Global solutions" << std::endl;
+	PPM_.write();
+	// Posterior t-maps
+	post_T_maps_.write();
+	// Posterior groups parameters
+	post_groups_param_.write();
+
+	//
+	std::cout << "Subjects solutions" << std::endl;
 	for ( auto g : groups_ )
 	  for ( auto subject : group_pind_[g] )
 	    subject.second.write_solution();

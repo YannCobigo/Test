@@ -122,6 +122,44 @@ After $t$ unit of time, the volume is $V(t) = V_{0}\exp(t \times \ln(1-r))$.\\
 
 At a maturity stage of life we considere the Total Intracranial volume (TIV) as being constant and the gray matter fully devloped \ToDo{ref which age?}. After this maturity age gray and white matter decreases in volume, then cerebrospinal fluid (CSF) volume increases: $V_{TIV} = V_{gm} + V_{wm} + V_{csf} = n_{gm}V_{TIV} + n_{wm}V_{TIV} + n_{csf}V_{TIV}$ where $V_{TIV}$ represent the TIV, $V_{gm}$ and $n_{gm}$ the gray matter volume and proportion of the TIV, $V_{wm}$ and $n_{wm}$ the white matter volume and proportion of the TIV, and $V_{csf}$ and $n_{csf}$ the CSF volume and proportion of the TIV. 
 
+\paragraph{$V_{0}$ problematics}{The first probelmatic brought with a model like $V(t) = V_{0}(1 - r(t))^{t}$ is we don't know what represents $V_{0}$ or when $t=t_{0}$ has to be considered. We can considere a cannonical age when the skull is supposed to have reached the threasholding age, then the gray matter is $V(t=t_{0}) = V_{0} = n_{gm}TIV$. Another possibility is to create a temaplate targetting a mean age $t = <age>$ (the best would be close to the oldest age of subjects not seek, 40 years old for instance). At the voxel level we can state $V_{0,i} = \alpha_{i}V_{T,i}$, where $V_{0,i}$ is the normalized, modulated subject's gray matter intensity in the voxel $i$, $V_{T,i}$ represents the template intensity at the voxel $i$, $\alpha_{i}$ represents the proportionality coefficient between the subject and the template at the voxel level. Then the model can be written:
+
+  \begin{equation}
+    \left .
+    \begin{array}{rcl}
+      V_{i}(t) & = & \alpha_{i}V_{T,i} (1 - r_{i}(t))^{t}
+    \end{array}
+    \right .
+    \label{template_model_based}
+  \end{equation}
+
+  The logarithm of the former expression, using a very weak rate of atrophy
+
+  \begin{equation}
+    \left .
+    \begin{array}{rcl}
+      \ln\frac{V_{i}(t)}{V_{T,i}} & = & \ln(\alpha_{i}) + t \times \ln(1 - r_{i}(t)) \\
+      & \sim & \ln(\alpha_{i}) - t \times \left(r_{i}(t) + \frac{1}{2} r_{i}^{2}(t) + \cdots \right)
+    \end{array}
+    \right .
+    \label{log_template_model_based}
+  \end{equation}
+
+  Mostlikely, with the instrument precision the rate will be seen as a constant. We develop the model to be a first degree lenear model in each voxel $r_{i}(t) = a + bt$ the case where the model is constant is easely derived from the affine model.
+
+    \begin{equation}
+    \left .
+    \begin{array}{rcl}
+      \arg & = & \ln(\alpha_{i}) + t \times \left \lbrack -a - bt - \frac{1}{2} \left(  a + bt \right)^{2} \right \rbrack \\
+      & = & \ln(\alpha_{i}) + t \times \left \lbrack -a - bt - \frac{1}{2}  a^{2} - abt - \frac{1}{2}(bt)^{2} \right \rbrack \\
+    \end{array}
+    \right .
+    \label{affine_rate_atrophy_model}
+  \end{equation}
+
+  
+}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Hierarchical models}
@@ -617,6 +655,7 @@ Each subject will have a set of two output images. The first four dimension imag
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Methode}
 
+T1-weighted images undergone biases field correction using N4 algorithm~\cite{pmid20378467}. Tissue segmentation is performed by SPM12 (Wellcome Trust Centre for Neuroimaging, London, UK, http://www. fil.ion.ucl.ac.uk/spm) unified segmentation~\cite{pmid15955494}. An intra-subject template is created by non-linear diffeomorphic and rigid-body registration proposed by the symmetric diffeomorphic registration for longitudinal MRI framework~\cite{pmid23386806}. The intra-subject template is segmented also using SPM12's unified segmentation. The within-subject average tissue probability maps were multiplied by the Jacobian determinants from a time point to the intra-subject template. A group template was generated from the within-subject averages by non-linear and rigid-body registration template generation, and image registration was performed on the individual average GM and WM tissue maps using a geodesic shooting procedure~\cite{pmid21216294}. The within-subject modulated segmented tissues were deformed to the group template. Note that only within- but no between-subject modulation was applied. \\ \\
 Symmetric diffeomorphic registration and image preprocessing ADNI provides preprocessed T1-weighted images that have undergone specific correction steps to reduce scanner induced biases. To reduce these influences and minimize effects due to heterogeneity of protocols, all included images were chosen to match the MPRAGE with Gradwarp, B1 correction and N3 specification (see http://adni.loni.usc.edu/methods/mri-analysis/mri-pre-processing/). For further details about the applied ADNI MRI protocols please see http://adni. loni.usc.edu/methods/documents/mri-protocols/. All further preprocessing steps were performed in SPM12b r6080 (Wellcome Trust Centre for Neuroimaging, London, UK, http://www. fil.ion.ucl.ac.uk/spm). Because longitudinal MR-based morphometry is particularly prone to artifacts due to scanner inhomogeneities, registration inconsistency, and subtle age-related deformations of the brains, it requires sophisticated preprocessing pipelines in order to detect the changes of interest and achieve unbiased results (Ashburner and Ridgway, 2013; Reuter and Fischl, 2011). \\
 Thus, at first we applied the symmetric diffeomorphic registration for longitudinal MRI (Ashburner and Ridgway, 2013). In particular, this rests on a intra-subject modeling framework that combines non-linear diffeomorphic and rigid-body registration and further corrects for intensity inhomogeneity artifacts. The optimization is realized in a single generative model and provides internally consistent estimates of within-subject brain deformations during the study period. The registration model creates an average T1-image for each subject and the corresponding deformation fields for every individual scan. Second, we applied SPM12b's unified segmentation to each subject's average T1-image, which assumes every voxel to be drawn from an unknown mixture of six distinct tissue classes: gray matter (GM), white matter (WM), and cerebrospinal fluid (CSF), bone, other tissue and air (see also Ashburner and Friston, 2005). Third, all voxels within-subject average tissue maps were multiplied by the Jacobian determinants from the above longitudinal registration. Note, that this within-subject modulation is expected to encode all local individual volume changes during the study period. Fourthly, nonlinear template generation and image registration was performed on the individual average GM and WM tissue maps using a geodesic shooting procedure (Ashburner and Friston, 2011). This defined the template space for all subsequent mixed-modeling steps. Fifthly, the within-subject modulated (native space) segment images were subsequently deformed to this study template space. Note that only within- but no between-subject modulation was applied. We further quality checked the ensuing images manually and using covariance-based inhomogeneity measures as implemented in the VBM8 toolbox for SPM (http://www.neuro.uni-jena.de/vbm/). Finally, images were smoothed using Gaussian kernels of 4 mm full width at half maximum. Subsequent modeling and analysis was performed for all tissue classes within corresponding binary masks. The masks were defined by a voxelwise sample mean of GM, WM and CSF tissue maps exceeding an absolute threshold of 0.1, 0.4, and 0.2 respectively. All mixed-effects modeling steps were performed on 1.5 mm resolution images of ADNI subsamples using the above steps. The resulting images are assumed to reflect age-related effects, as well as healthy and pathological individual variability in terms of fine-grained maps of local gray matter (GMV), white matter (WMV) and cerebrospinal fluid volume (CSFV) content.
 

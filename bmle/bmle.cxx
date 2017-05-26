@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <chrono>
 //
 // ITK
 //
@@ -123,7 +124,14 @@ main( const int argc, const char **argv )
 	      region.SetIndex( start );
 	      //
 	      itk::ImageRegionIterator< MaskType >
-		imageIterator_mask( reader_mask_->GetOutput(), region );
+		imageIterator_mask( reader_mask_->GetOutput(), region ),
+		imageIterator_progress( reader_mask_->GetOutput(), region );
+
+	      //
+	      // Task progress: elapse time
+	      using  ms         = std::chrono::milliseconds;
+	      using get_time    = std::chrono::steady_clock ;
+	      auto start_timing = get_time::now();
 	      
 	      //
 	      // loop over Mask area for every images
@@ -139,18 +147,21 @@ main( const int argc, const char **argv )
 		    {
 		      MaskType::IndexType idx = imageIterator_mask.GetIndex();
 #ifdef DEBUG
-//		      if ( idx[0] > 25 && idx[0] < 35 && 
-//			   idx[1] > 65 && idx[1] < 75 &&
-//			   idx[2] > 55 && idx[2] < 65 )
+		      if ( idx[0] > 25 && idx[0] < 35 && 
+			   idx[1] > 65 && idx[1] < 75 &&
+			   idx[2] > 55 && idx[2] < 65 )
 			{
 			  std::cout << imageIterator_mask.GetIndex() << std::endl;
 			  subject_mapping.Expectation_Maximization( idx );
 			}
 #else
 			// Please do not remove the bracket!!
-			if ( idx[0] > 0 && idx[0] < 60 && 
-			     idx[1] > 0 && idx[1] < 140 &&
-			     idx[2] > 50 && idx[2] < 70 )
+		      if ( idx[0] > 20 && idx[0] < 40 && 
+			   idx[1] > 60 && idx[1] < 80 &&
+			   idx[2] > 50 && idx[2] < 70 )
+//		      if ( idx[0] > 0 && idx[0] < 60 && 
+//			   idx[1] > 0 && idx[1] < 140 &&
+//			   idx[2] > 50 && idx[2] < 70 )
 			{
 			  pool.enqueue( std::ref(subject_mapping), idx );
 			}
@@ -163,6 +174,17 @@ main( const int argc, const char **argv )
 		}
 #endif
 	      }
+
+	      //
+	      // Task progress
+	      // End the elaps time
+	      auto end_timing  = get_time::now();
+	      auto diff        = end_timing - start_timing;
+	      std::cout << "Process Elapsed time is :  " << std::chrono::duration_cast< ms >(diff).count()
+			<< " ms "<< std::endl;
+
+	      //
+	      //
 	      std::cout << "All the mask has been covered" << std::endl;
 	      subject_mapping.write_subjects_solutions();
 	      std::cout << "All output have been written." << std::endl;
