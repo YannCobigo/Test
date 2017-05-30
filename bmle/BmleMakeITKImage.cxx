@@ -36,6 +36,7 @@ MAC_bmle::BmleMakeITKImage::BmleMakeITKImage( const long unsigned int Dimension,
 	image = Image3DType::New();
 	image->SetRegions( region );
 	image->Allocate();
+	image->FillBuffer( 0.0 );
       }
   }
 //
