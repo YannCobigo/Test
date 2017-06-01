@@ -1,0 +1,17 @@
+{
+    inputs:{
+	images: [["image_1_1.nii.gz","image_2_1.nii.gz","image_3_1.nii.gz"],
+		 ["image_1_2.nii.gz","image_2_2.nii.gz","image_3_2.nii.gz"]]
+	labels: ["label_1.nii.gz","label_2.nii.gz","label_3.nii.gz"]
+	mask: "mask.nii.gz"
+    }
+    strategy:{
+	# linear_regression, Logistic_regression
+	algorithm: "logistic_regression"
+	learning_rate: ""
+	weights: "weights_strategy.nii.gz"
+    }
+    output:{
+	map: "probability_map.nii.gz"
+    }
+}

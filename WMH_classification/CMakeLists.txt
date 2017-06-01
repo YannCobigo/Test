@@ -21,10 +21,12 @@ endif()
 
 #
 # Eigen
-#set( EIGEN /mnt/neuroimaging/Eigen-3/install/include/eigen3/ /mnt/neuroimaging/Eigen-3/install/include/eigen3/unsupported/ )
-set( EIGEN /home/cobigo/devel/CPP/Eigen/install/include/eigen3/  /home/cobigo/devel/CPP/Eigen/install/include/eigen3/unsupported/)
+set( EIGEN /mnt/neuroimaging/Eigen-3/install/include/eigen3/ /mnt/neuroimaging/Eigen-3/install/include/eigen3/unsupported/ )
+#set( EIGEN /home/cobigo/devel/CPP/Eigen/install/include/eigen3/  /home/cobigo/devel/CPP/Eigen/install/include/eigen3/unsupported/)
+set( JSON /mnt/neuroimaging/json/src/ )
+#set( JSON /home/cobigo/devel/CPP/Eigen/install/include/eigen3/  /home/cobigo/devel/CPP/Eigen/install/include/eigen3/unsupported/)
 #
-include_directories( ${EIGEN}/ ${ITK_INC})
+include_directories( ${EIGEN}/ ${JSON}/ ${ITK_INC})
 list( APPEND SOURCES ${DLIB_ALL_SOURCES} )
 
 
