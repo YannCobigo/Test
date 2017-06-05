@@ -33,7 +33,7 @@ using MaskType = itk::Image< unsigned char, 3 >;
 #include "Classification.h"
 #include "MACException.h"
 #include "MACMakeITKImage.h"
-#include "Subject.h"
+//#include "Subject.h"
 //
 //
 //
@@ -49,7 +49,9 @@ namespace MAC
   {
   public:
     /** Constructor. */
-    explicit Classification_linear_regression(){};
+    explicit Classification_linear_regression():
+    Classification< Dim >()
+      {};
     
     /** Destructor */
     virtual ~Classification_linear_regression(){};

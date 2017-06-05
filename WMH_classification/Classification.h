@@ -18,7 +18,10 @@ namespace MAC
    *
    * \brief 
    *
-   * Dim: dimension of the linear model used for the classification
+   * The template argument Dim represents modalities dimensions of the linear/non-linear models used 
+   * for the classification. The feature space is composed of Dim dimensions of modality: Dim = 1, 
+   * we are using only one modality, Dim = 2: two modalities.
+   * The rest of the feature space dimensions are not yet accessible from the input data set.
    * 
    */
   template< int Dim >

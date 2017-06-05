@@ -1,9 +1,15 @@
 {
     "inputs":{
-	"images":[["image_1_1.nii.gz","image_2_1.nii.gz","image_3_1.nii.gz"],
-		  ["image_1_2.nii.gz","image_2_2.nii.gz","image_3_2.nii.gz"]],
-	"labels":["label_1.nii.gz","label_2.nii.gz","label_3.nii.gz"],
-	"mask":"mask.nii.gz"
+	"images":[["/home/cobigo/devel/CPP/WMH_classification/WMH_classification/images/c1MP-LAS-long-3DC_NIFD151X3.nii",
+		   "/home/cobigo/devel/CPP/WMH_classification/WMH_classification/images/c2MP-LAS-long-3DC_NIFD151X3.nii",
+		   "/home/cobigo/devel/CPP/WMH_classification/WMH_classification/images/c3MP-LAS-long-3DC_NIFD151X3.nii"],
+		  ["/home/cobigo/devel/CPP/WMH_classification/WMH_classification/images/c1MP-LAS-long-3DC_NIFD151X3.nii",
+		   "/home/cobigo/devel/CPP/WMH_classification/WMH_classification/images/c2MP-LAS-long-3DC_NIFD151X3.nii",
+		   "/home/cobigo/devel/CPP/WMH_classification/WMH_classification/images/c3MP-LAS-long-3DC_NIFD151X3.nii"]],
+	"labels":["/home/cobigo/devel/CPP/WMH_classification/WMH_classification/images/c1_80_mask.nii.gz",
+		  "/home/cobigo/devel/CPP/WMH_classification/WMH_classification/images/c1_80_mask.nii.gz",
+		  "/home/cobigo/devel/CPP/WMH_classification/WMH_classification/images/c1_80_mask.nii.gz"],
+	"mask":"/home/cobigo/devel/CPP/WMH_classification/WMH_classification/images/c1_80_mask.nii.gz"
     },
     "strategy":{
 	"comment_algo":"linear_regression, Logistic_regression",
