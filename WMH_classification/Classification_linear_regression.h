@@ -14,6 +14,11 @@
 #include <set>
 #include <math.h>
 //#include <cmath.h>
+//
+// JSON interface
+//
+#include "json.hpp"
+using json = nlohmann::json;
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
@@ -49,9 +54,7 @@ namespace MAC
   {
   public:
     /** Constructor. */
-    explicit Classification_linear_regression():
-    Classification< Dim >()
-      {};
+    explicit Classification_linear_regression();
     
     /** Destructor */
     virtual ~Classification_linear_regression(){};
@@ -79,8 +82,45 @@ namespace MAC
       optimize( idx );
     };
 
-
-
+    
+  private:
+    //
+    // Number of modalities
+    int modalities_number_{ Dim };
+    // Number of subjects
+    int subject_number_;
+    //
+    // For each of the Dim modalities we load the measures of 3D images
+    using Image3DType  = itk::Image< double, 3 >;
+    using Reader3DType = itk::ImageFileReader< Image3DType >;
+    std::vector< std::vector< Reader3DType::Pointer > > modalities_{Dim}; 
+    
   };
+  //
+  //
+  //
+  template< int Dim >
+    Classification_linear_regression< Dim >::Classification_linear_regression():
+  Classification< Dim >()
+    {
+      //
+      // We check the number of modalities is the same as the number of dimensions
+      if ( MAC::Singleton::instance()->get_data()["inputs"]["images"].size() != Dim )
+	{
+	  std::string mess = "This code has been compiled for " + std::to_string(Dim);
+	  mess += " modalities.\n";
+	  mess += "The data set is asking for ";
+	  mess += std::to_string( MAC::Singleton::instance()->get_data()["inputs"]["images"].size() );
+	  mess += " modalities.\n ";
+	  throw MAC::MACException( __FILE__, __LINE__,
+				   mess.c_str(),
+				   ITK_LOCATION );
+	}
+
+      //
+      //
+      subject_number_ = MAC::Singleton::instance()->get_data()["inputs"]["images"][0].size();
+      //std::cout << "Number of sujbjects: " << subject_number_ << std::endl;
+    };
 }
 #endif
