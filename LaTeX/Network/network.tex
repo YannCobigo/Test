@@ -86,11 +86,13 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 \section{Introduction}
 
+Attempts to characterize these datasets have, over the last decade, led to the emergence of a new, multidisciplinary approach to the study of complex systems. This approach, known as complex network analysis, describes important properties of complex systems by quantifying topologies of their respective network representations. Complex network analysis has its origins in the mathematical study of networks, known as graph theory. However, unlike classical graph theory, the analysis primarily deals with real-life networks that are large and complex—neither uniformly random nor ordered.
+
 \ToDo{Def. geodisic} \\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Networ measures of the brain connectivity}
+\section{Network measures of the brain connectivity}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Measures of functional segregation}
@@ -114,7 +116,7 @@ Functional integration in the brain is the ability to rapidly combine specialize
   And
 
   $$
-  L = \frac{1}{n} \sum_{v \in N} L_{i} =  \frac{1}{n} \sum_{v \in N} \frac{\sum_{u \in N, u \ne v} d_{vu}}{n-1}
+  L = \frac{1}{n} \sum_{v \in N} L_{v} =  \frac{1}{n} \sum_{v \in N} \frac{\sum_{u \in N, u \ne v} d_{vu}}{n-1}
   $$
 \end{definition}
 
@@ -134,6 +136,17 @@ For friendship networks, these statistics have intuitive meanings: $L$ is the av
 \subsection{Small-worldness}
 
 We quantify the structural properties of these graphs by their characteristic path length $L$ and clustering coefficient $C$. Here $L$ measures the typical separation between two vertices in the graph (a global property), whereas $C$ measures the {\it cliquishness} of a typical neighbourhood (a local property). The networks of interest to us have many vertices with sparse connections, but not so sparse that the graph is in danger of becoming disconnected. Specifically, we require $n \gg k \gg \ln(n) \gg 1$, where $k \gg \ln(n)$ guarantees that a random graph will be connected. In this regime, we find that $L \sim n/2k \gg 1$ and $C \sim 3/4$, while $L < L_{random} \sim \ln(n) / \ln(p)$ and $C < C_{random} \sim k/n \ll 1$. Thus the regular lattice is a highly clustered, large world where $L$ grows linearly with $n$, whereas the random network at is a poorly clustered, small world where $L$ grows only logarithmically with $n$. These limiting cases might lead one to suspect that large $C$ is always associated with large $L$, and small $C$ with small $L$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Assortativity}
+
+A network is said to show assortative mixing if the nodes in the network that have many connections tend to be connected to other nodes with many connections. Within the framework of this model we find that assortative networks tend to percolate more easily than their disassortative counterparts and that they are also more robust to vertex removal. One particularly well-studied model is the cumulative advantage or preferential attachment model in which the probability of a given source vertex forming a connection to a target vertex is some (usually increasing) function of the degree of the target vertex. (The degree of a vertex is the number of other vertices to which it is attached.) Preferential attachment processes are widely accepted as the probable explanation for the power-law and other skewed degree distributions seen in many networks. However, there is an important element missing from these as well as other network models: in none of these models does the probability of attachment to the target vertex depend also on the degree of the source vertex. In the real world on the other hand such dependencies are common. Many networks show "assortative mixing" on their degrees, i.e., a preference for high-degree vertices to attach to other high-degree vertices. Others show disassortative mixing-high-degree vertices attach to low-degree ones.\\
+
+%{Assortative mixing in networks, Newman}
+
+$$
+r = \frac{l^{-1} \sum_{(i,j) \in L} k_{i}k_{j} - \lbrack l^{-1} \sum_{(i,j) \in L} (k_{i} + k_{j})/2 \rbrack^{2}}{l^{-1} \sum_{(i,j) \in L} (k_{i}^{2} + k_{j}^{2})/2 - \lbrack l^{-1} \sum_{(i,j) \in L} (k_{i} + k_{j})/2 \rbrack^{2}}
+$$
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
