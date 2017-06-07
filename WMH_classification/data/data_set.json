@@ -18,6 +18,8 @@
 	"weights":"weights_strategy.nii.gz"
     },
     "output":{
-	"map": "probability_map.nii.gz"
+	"map": ["probability_map_1.nii.gz",
+		"probability_map_2.nii.gz",
+		"probability_map_3.nii.gz"]
     }
 }
