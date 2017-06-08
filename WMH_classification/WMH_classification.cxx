@@ -81,7 +81,7 @@ main( const int argc, const char **argv )
 	  //
 	  // takes the csv file ans the mask
 	  const std::string& filename = input.getCmdOption("-c");
-	  const std::string& mask = input.getCmdOption("-m");
+	  const std::string& mask     = input.getCmdOption("-m");
 	  //
 	  if ( !filename.empty() )
 	    {
@@ -92,7 +92,6 @@ main( const int argc, const char **argv )
 	      MAC::Singleton::instance()->print_data_set();
 	      // load the mask
 	      std::string mask = MAC::Singleton::instance()->get_data()["inputs"]["mask"].get< std::string >();
-	      std::cout << MAC::Singleton::instance()->get_status() << std::endl;
 	      
 
 	      if ( mask.empty() )
@@ -174,9 +173,9 @@ main( const int argc, const char **argv )
 			  }
 #else
 			// Please do not remove the bracket!!
-			if ( idx[0] > 20 && idx[0] < 40 && 
-			     idx[1] > 60 && idx[1] < 80 &&
-			     idx[2] > 50 && idx[2] < 70 )
+			if ( idx[0] > 120 && idx[0] < 122 && 
+			     idx[1] > 100 && idx[1] < 102 &&
+			     idx[2] > 175 && idx[2] < 177 )
 			  //		      if ( idx[0] > 0 && idx[0] < 60 && 
 			  //			   idx[1] > 0 && idx[1] < 140 &&
 			  //			   idx[2] > 50 && idx[2] < 70 )

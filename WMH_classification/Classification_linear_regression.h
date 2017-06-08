@@ -73,13 +73,13 @@ namespace MAC
     virtual void write_subjects_map(){};
     // Optimization
     // Optimization algorithm implemented in this class
-    virtual void optimize( const MaskType::IndexType ){};
+    virtual void optimize( const MaskType::IndexType );
     // multi-threading
-    void operator () ( const MaskType::IndexType idx )
+    void operator () ( const MaskType::IndexType Idx )
     {
       std::cout << "treatment for parameters: " 
-		<< idx;
-      optimize( idx );
+		<< Idx;
+      optimize( Idx );
     };
 
     
@@ -94,6 +94,16 @@ namespace MAC
     Classification_linear_regression< Dim >::Classification_linear_regression():
   Classification< Dim >()
     {
+    };
+  //
+  //
+  //
+  template< int Dim > void
+    Classification_linear_regression< Dim >::optimize( const MaskType::IndexType Idx)
+    {
+      std::cout << Classification<Dim>::subjects_[0].get_label(Idx) << std::endl;
+      std::cout << (Classification<Dim>::subjects_[0].get_modalities(Idx))[0] << std::endl;
+      std::cout << (Classification<Dim>::subjects_[0].get_modalities(Idx))[0] << std::endl;
     };
 }
 #endif

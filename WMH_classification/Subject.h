@@ -68,11 +68,19 @@ namespace MAC
       void write_solution();
 
       //
+      // Get voxels
+      //
+      std::vector< double > get_modalities( const MaskType::IndexType );
+      //
+      int get_label( const MaskType::IndexType );
+      //
       void set_fit( const MaskType::IndexType, 
 		    const Eigen::MatrixXd, 
 		    const Eigen::MatrixXd );
-       // Add modality
+      // Add modality
       void add_modality( const int, const int );
+      // Add label
+      void add_label( const int );
       //
       void create_output_map();
       // get a sample image for image information
@@ -91,6 +99,8 @@ namespace MAC
       int id_;
       // Modality images
       std::vector< Reader3D::Pointer > modality_images_{ Dim }; 
+      // Label
+      Reader3D::Pointer                label_; 
       //
       // Output probability map and R2
       //MACMakeITKImage probability_map_;
@@ -103,6 +113,55 @@ namespace MAC
     MAC::Subject< D >::Subject( const int Id):id_{Id}
   {
   }
+  //
+  //
+  //
+  template < int D > void
+    MAC::Subject< D >::add_label( const int Subject )
+    {
+      try
+	{
+	  if ( Subject == id_ )
+	    {
+	      std::string Image = MAC::Singleton::instance()->get_data()["inputs"]["labels"][Subject];
+	      //
+	      // load the ITK images
+	      if ( file_exists(Image) )
+		{
+		  //
+		  // load the image ITK pointer
+		  auto image_ptr = itk::ImageIOFactory::CreateImageIO( Image.c_str(),
+								       itk::ImageIOFactory::ReadMode );
+		  image_ptr->SetFileName( Image );
+		  image_ptr->ReadImageInformation();
+		// Read the ITK image
+		  label_ = Reader3D::New();
+		  label_->SetFileName( image_ptr->GetFileName() );
+		  label_->Update();
+		}
+	      else
+		{
+		  std::string mess = "Image (" + std::to_string(Subject) + ") does not exists.";
+		  throw MAC::MACException( __FILE__, __LINE__,
+					    mess.c_str(),
+					    ITK_LOCATION );
+		}
+	    }
+	  else
+	    {
+	      std::string mess = "This modality does not match the subject. ";
+	      //
+	      throw MAC::MACException( __FILE__, __LINE__,
+					mess.c_str(),
+					ITK_LOCATION );
+	    }
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  return exit( -1 );
+      }
+    }
   //
   //
   //
@@ -178,6 +237,26 @@ namespace MAC
 //	      Random_effect_ITK_variance_.set_val( current_mat_coeff++, Idx, Cov_fit(d,c) );
 //	    }
 //	}
+    }
+  //
+  //
+  //
+  template < int D > std::vector< double >
+    MAC::Subject< D >::get_modalities( const MaskType::IndexType Idx )
+    {
+      std::vector< double > mod(D);
+      for ( auto mod_image : modality_images_ )
+	mod.push_back( mod_image->GetOutput()->GetPixel(Idx) );
+      //
+      return mod;
+    }
+  //
+  //
+  //
+  template < int D > int
+    MAC::Subject< D >::get_label( const MaskType::IndexType Idx )
+    {
+      return static_cast< int >( label_->GetOutput()->GetPixel(Idx) );
     }
   //
   //

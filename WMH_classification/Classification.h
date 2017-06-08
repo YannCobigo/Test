@@ -86,22 +86,27 @@ namespace MAC
 				   mess.c_str(),
 				   ITK_LOCATION );
 	}
-
-      //
       //
       subject_number_ = MAC::Singleton::instance()->get_data()["inputs"]["images"][0].size();
       //std::cout << "Number of sujbjects: " << subject_number_ << std::endl;
 
+      
       //
-      // Load the subjects
+      // Load the subjects data and mask
       subjects_.resize( subject_number_ );
       for ( int sub = 0 ; sub < subject_number_ ; sub++ )
 	{
+	  // modalities
 	  subjects_[sub] = Subject< Dim >( sub );
 	  for ( int mod = 0 ; mod < modalities_number_ ; mod++ )
 	    subjects_[sub].add_modality( sub, mod );
+	  // if trainning: mask
+	  if ( MAC::Singleton::instance()->get_status() )
+	    subjects_[sub].add_label( sub );
 	}
 
+      
+      
       //
       // Output weights
       std::string output_model = MAC::Singleton::instance()->get_data()["strategy"]["weights"];
