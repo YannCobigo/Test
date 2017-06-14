@@ -57,7 +57,7 @@ IncludeCmd: yes
 	    fftw-libs-single-3.3.3-8.el7.x86_64 python-devel.x86_64 \
 	    xz zlib-devel bzip2-devel bzip2-libs-1.0.6-13.el7.x86_64 dos2unix.x86_64 \
 	    openssl-devel ncurses-devel sqlite-devel libreoffice.x86_64 gwenview.x86_64 \
-	    libpng12.x86_64 mlocate-0.26-5.el7.x86_64  tetex g2clib-devel \
+	    libpng12.x86_64 mlocate-0.26-5.el7.x86_64  tetex g2clib-devel compat-libf2c-34.x86_64 \
 	    libyaml-0.1.4-11.el7_0.x86_64 yaml-cpp.x86_64 yaml-cpp-devel.x86_64 gsl.x86_64 \
 	    gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 \
 	    gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 \
