@@ -50,6 +50,10 @@ namespace MAC
     // Optimization
     virtual void optimize( const MaskType::IndexType ) = 0;
 
+    //
+    //
+    int get_subject_number(){return subject_number_;};
+
 
   private:
     //
@@ -90,6 +94,7 @@ namespace MAC
       subject_number_ = MAC::Singleton::instance()->get_data()["inputs"]["images"][0].size();
       //std::cout << "Number of sujbjects: " << subject_number_ << std::endl;
 
+      
       
       //
       // Load the subjects data and mask

@@ -245,8 +245,8 @@ namespace MAC
     MAC::Subject< D >::get_modalities( const MaskType::IndexType Idx )
     {
       std::vector< double > mod(D);
-      for ( auto mod_image : modality_images_ )
-	mod.push_back( mod_image->GetOutput()->GetPixel(Idx) );
+      for ( int mod_image = 0 ; mod_image < D ; mod_image++ )
+	mod[mod_image] = modality_images_[mod_image]->GetOutput()->GetPixel(Idx);
       //
       return mod;
     }

@@ -78,7 +78,7 @@ namespace MAC
     void operator () ( const MaskType::IndexType Idx )
     {
       std::cout << "treatment for parameters: " 
-		<< Idx;
+		<< Idx << std::endl;
       optimize( Idx );
     };
 
@@ -101,9 +101,27 @@ namespace MAC
   template< int Dim > void
     Classification_linear_regression< Dim >::optimize( const MaskType::IndexType Idx)
     {
-      std::cout << Classification<Dim>::subjects_[0].get_label(Idx) << std::endl;
-      std::cout << (Classification<Dim>::subjects_[0].get_modalities(Idx))[0] << std::endl;
-      std::cout << (Classification<Dim>::subjects_[0].get_modalities(Idx))[0] << std::endl;
+      std::cout << "IDX: " << Idx << std::endl;
+      std::cout << "image: " << MAC::Singleton::instance()->get_data()["inputs"]["images"][0][0]
+		<< std::endl;
+
+      //
+      // Design matrix
+      Eigen::MatrixXd X( Classification<Dim>::get_subject_number(), Dim + 1 );
+      Eigen::VectorXd Y( Classification<Dim>::get_subject_number() );
+      for ( int subject = 0 ; subject < Classification<Dim>::get_subject_number() ; subject++ )
+	{
+	  //
+	  // Label
+	  Y(subject) = static_cast< double >( Classification<Dim>::subjects_[subject].get_label(Idx) );
+	  //
+	  // subject design matrix
+	  X( subject, 0 ) = 1.;
+	  for ( int mod = 0 ; mod < Dim ; mod++ )
+	    X( subject, mod + 1 ) = (Classification<Dim>::subjects_[subject].get_modalities(Idx))[mod];
+	}
+      std::cout << Y << std::endl;
+      std::cout << X << std::endl;
     };
 }
 #endif
