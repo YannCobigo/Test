@@ -37,14 +37,14 @@ namespace MAC
 
 
     //
+    // write the optimaized parameter of the classifiaction engine
+     void write_parameters_images();
+    // load the optimaized parameter of the classifiaction engine
+     void load_parameters_images(){};
     // train the calssification engin
     virtual void train() = 0;
     // use the calssification engin
     virtual void use()   = 0;
-    // write the optimaized parameter of the classifiaction engine
-    virtual void write_parameters_images()  = 0;
-    // load the optimaized parameter of the classifiaction engine
-    virtual void load_parameters_images()   = 0;
     // write the subject maps
     virtual void write_subjects_map()       = 0;
     // Optimization
@@ -115,10 +115,18 @@ namespace MAC
       //
       // Output weights
       std::string output_model = MAC::Singleton::instance()->get_data()["strategy"]["weights"];
-      fit_weights_ = MACMakeITKImage( Dim,
+      fit_weights_ = MACMakeITKImage( Dim + 1,
 				      output_model,
 				      subjects_[0].get_sample() );
       
     };
+  //
+  //
+  //
+  template< int Dim > void
+    Classification< Dim >::write_parameters_images()
+    {
+      fit_weights_.write();
+    }
 }
 #endif

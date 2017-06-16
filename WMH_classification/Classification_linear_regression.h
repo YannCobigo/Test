@@ -65,10 +65,6 @@ namespace MAC
     virtual void train(){};
     // use the calssification engin
     virtual void use(){};
-    // write the optimaized parameter of the classifiaction engine
-    virtual void write_parameters_images(){};
-    // load the optimaized parameter of the classifiaction engine
-    virtual void load_parameters_images(){};
     // write the subject maps
     virtual void write_subjects_map(){};
     // Optimization
@@ -109,6 +105,7 @@ namespace MAC
       // Design matrix
       Eigen::MatrixXd X( Classification<Dim>::get_subject_number(), Dim + 1 );
       Eigen::VectorXd Y( Classification<Dim>::get_subject_number() );
+      Eigen::VectorXd W( Classification<Dim>::get_subject_number() );
       for ( int subject = 0 ; subject < Classification<Dim>::get_subject_number() ; subject++ )
 	{
 	  //
@@ -122,6 +119,18 @@ namespace MAC
 	}
       std::cout << Y << std::endl;
       std::cout << X << std::endl;
+
+      //
+      // Linear regression
+      // \hat{W} = (XX^{T})^(-1)X^{T}Y
+      W = X.transpose() * Y;
+      std::cout << W << std::endl;
+
+
+      //
+      // Record the weigths
+      for ( int w = 0 ; w < W.rows() ; w++ )
+	Classification<Dim>::fit_weights_.set_val( w, Idx, W(w) );
     };
 }
 #endif
