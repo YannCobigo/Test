@@ -1,5 +1,5 @@
-#ifndef CLASSIFICATION_LINEAR_REGRESSION_H
-#define CLASSIFICATION_LINEAR_REGRESSION_H
+#ifndef CLASSIFICATION_LOGISTIC_REGRESSION_H
+#define CLASSIFICATION_LOGISTIC_REGRESSION_H
 //
 //
 //
@@ -44,20 +44,20 @@ using MaskType = itk::Image< unsigned char, 3 >;
 //
 namespace MAC
 {
-  /** \class Classification_linear_regression
+  /** \class Classification_logistic_regression
    *
    * \brief 
    * 
    */
   template< int Dim >
-    class Classification_linear_regression : public Classification< Dim >
+    class Classification_logistic_regression : public Classification< Dim >
   {
   public:
     /** Constructor. */
-    explicit Classification_linear_regression();
+    explicit Classification_logistic_regression();
     
     /** Destructor */
-    virtual ~Classification_linear_regression(){};
+    virtual ~Classification_logistic_regression(){};
 
 
     //
@@ -87,7 +87,7 @@ namespace MAC
   //
   //
   template< int Dim >
-    Classification_linear_regression< Dim >::Classification_linear_regression():
+    Classification_logistic_regression< Dim >::Classification_logistic_regression():
   Classification< Dim >()
     {
     };
@@ -95,7 +95,7 @@ namespace MAC
   //
   //
   template< int Dim > void
-    Classification_linear_regression< Dim >::optimize( const MaskType::IndexType Idx)
+    Classification_logistic_regression< Dim >::optimize( const MaskType::IndexType Idx)
     {
       std::cout << "IDX: " << Idx << std::endl;
       std::cout << "image: " << MAC::Singleton::instance()->get_data()["inputs"]["images"][0][0]
@@ -117,11 +117,8 @@ namespace MAC
 	  for ( int mod = 0 ; mod < Dim ; mod++ )
 	    X( subject, mod + 1 ) = (Classification<Dim>::subjects_[subject].get_modalities(Idx))[mod];
 	}
-      // Normlize
-      
       std::cout << Y << std::endl;
       std::cout << X << std::endl;
-      std::cout << Classification<Dim>::normalization( X ) << std::endl;
 
       //
       // Linear regression

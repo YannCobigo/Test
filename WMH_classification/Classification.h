@@ -5,6 +5,12 @@
 //
 #include <itkImageFileReader.h>
 using MaskType = itk::Image< unsigned char, 3 >;
+// Eigen
+#include <Eigen/Core>
+#include <Eigen/Eigen>
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+#include <Eigen/KroneckerProduct>
 //
 //
 //
@@ -37,19 +43,24 @@ namespace MAC
 
 
     //
+    // write the optimaized parameter of the classifiaction engine
+    void write_parameters_images();
+    // load the optimaized parameter of the classifiaction engine
+    void load_parameters_images(){};
     // train the calssification engin
     virtual void train() = 0;
     // use the calssification engin
     virtual void use()   = 0;
-    // write the optimaized parameter of the classifiaction engine
-    virtual void write_parameters_images()  = 0;
-    // load the optimaized parameter of the classifiaction engine
-    virtual void load_parameters_images()   = 0;
     // write the subject maps
     virtual void write_subjects_map()       = 0;
     // Optimization
     virtual void optimize( const MaskType::IndexType ) = 0;
 
+    //
+    //
+    Eigen::MatrixXd normalization( const Eigen::MatrixXd );
+
+    
     //
     //
     int get_subject_number(){return subject_number_;};
@@ -115,10 +126,52 @@ namespace MAC
       //
       // Output weights
       std::string output_model = MAC::Singleton::instance()->get_data()["strategy"]["weights"];
-      fit_weights_ = MACMakeITKImage( Dim,
+      fit_weights_ = MACMakeITKImage( Dim + 1,
 				      output_model,
 				      subjects_[0].get_sample() );
       
     };
+  //
+  //
+  //
+  template< int Dim > void
+    Classification< Dim >::write_parameters_images()
+    {
+      fit_weights_.write();
+    }
+  //
+  //
+  //
+  template< int Dim > Eigen::MatrixXd
+    Classification< Dim >::normalization( const Eigen::MatrixXd Mat)
+    {
+      int ls = Mat.rows();
+      int cs = Mat.cols();
+      //
+      Eigen::MatrixXd tempo = Mat;
+      //
+      for ( int col = 0 ; col < cs ; col++ )
+	{
+	  double
+	    mean      = 0.,
+	    sigma_sqr = 0.;
+	  //
+	  for ( int l = 0 ; l < ls ; l++ )
+	    mean += Mat.col( col )(l);
+	  mean /= static_cast< double >( ls );
+	  //
+	  for ( int l = 0 ; l < ls ; l++ )
+	    sigma_sqr += (mean - Mat.col( col )(l))*(mean - Mat.col( col )(l));
+	  sigma_sqr /= static_cast< double >( ls - 1 );
+	  //
+	  for ( int l = 0 ; l < ls ; l++ )
+	    tempo.col( col )(l) = ( Mat.col( col )(l) - mean ) / sqrt( sigma_sqr );
+
+	  //
+	  //
+	  tempo.col( 0 ) = Mat.col( 0 );
+	}
+      return tempo;
+    }
 }
 #endif

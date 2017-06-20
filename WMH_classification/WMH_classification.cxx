@@ -25,7 +25,7 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 #include "MACLoadDataSet.h"
 #include "Classification.h"
 #include "Classification_linear_regression.h"
-//#include "Classification_logistic_regression.h"
+#include "Classification_logistic_regression.h"
 //
 //
 //
@@ -118,6 +118,7 @@ main( const int argc, const char **argv )
 	      //
 	      // Create the feature mapping for each voxel
 	      MAC::Classification_linear_regression< /*Dim = */ 2 > features_mapping;
+	      //MAC::Classification_logistic_regression< /*Dim = */ 2 > features_mapping;
 	      features_mapping.load_parameters_images();
 
 
@@ -146,9 +147,9 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Task progress: elapse time
-	      using  ms         = std::chrono::milliseconds;
-	      using get_time    = std::chrono::steady_clock ;
-	      auto start_timing = get_time::now();
+	      using ms           = std::chrono::milliseconds;
+	      using get_time     = std::chrono::steady_clock ;
+	      auto  start_timing = get_time::now();
 	      
 	      //
 	      // loop over Mask area for every images
@@ -175,10 +176,7 @@ main( const int argc, const char **argv )
 			// Please do not remove the bracket!!
 			if ( idx[0] > 120 && idx[0] < 122 && 
 			     idx[1] > 100 && idx[1] < 102 &&
-			     idx[2] > 175 && idx[2] < 177 )
-			  //		      if ( idx[0] > 0 && idx[0] < 60 && 
-			  //			   idx[1] > 0 && idx[1] < 140 &&
-			  //			   idx[2] > 50 && idx[2] < 70 )
+			     idx[2] > 165 && idx[2] < 167 )
 			  {
 			    pool.enqueue( std::ref(features_mapping), idx );
 			  }
@@ -203,6 +201,8 @@ main( const int argc, const char **argv )
 	      //
 	      //
 	      std::cout << "All the mask has been covered" << std::endl;
+	      if ( true /* if we are in the training step */)
+		features_mapping.write_parameters_images();
 	      features_mapping.write_subjects_map();
 	      std::cout << "All output have been written." << std::endl;
 	    }
