@@ -117,8 +117,11 @@ namespace MAC
 	  for ( int mod = 0 ; mod < Dim ; mod++ )
 	    X( subject, mod + 1 ) = (Classification<Dim>::subjects_[subject].get_modalities(Idx))[mod];
 	}
+      // Normlize
+      
       std::cout << Y << std::endl;
       std::cout << X << std::endl;
+      std::cout << Classification<Dim>::normalization( X ) << std::endl;
 
       //
       // Linear regression

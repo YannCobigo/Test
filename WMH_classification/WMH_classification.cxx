@@ -117,8 +117,8 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Create the feature mapping for each voxel
-	      //MAC::Classification_linear_regression< /*Dim = */ 2 > features_mapping;
-	      MAC::Classification_logistic_regression< /*Dim = */ 2 > features_mapping;
+	      MAC::Classification_linear_regression< /*Dim = */ 2 > features_mapping;
+	      //MAC::Classification_logistic_regression< /*Dim = */ 2 > features_mapping;
 	      features_mapping.load_parameters_images();
 
 
@@ -178,7 +178,6 @@ main( const int argc, const char **argv )
 			     idx[1] > 100 && idx[1] < 102 &&
 			     idx[2] > 165 && idx[2] < 167 )
 			  {
-			    std::cout << "QU EST PASSA??" << std::endl;
 			    pool.enqueue( std::ref(features_mapping), idx );
 			  }
 #endif
