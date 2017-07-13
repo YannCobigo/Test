@@ -52,7 +52,7 @@ namespace MAC
     // use the calssification engin
     virtual void use()   = 0;
     // write the subject maps
-    virtual void write_subjects_map()       = 0;
+    virtual void write_subjects_map() = 0;
     // Optimization
     virtual void optimize( const MaskType::IndexType ) = 0;
 

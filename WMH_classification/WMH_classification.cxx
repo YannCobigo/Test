@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#include <memory>
 //
 // JSON interface
 //
@@ -81,7 +82,7 @@ main( const int argc, const char **argv )
 	  //
 	  // takes the csv file ans the mask
 	  const std::string& filename = input.getCmdOption("-c");
-	  const std::string& mask     = input.getCmdOption("-m");
+	  //const std::string& mask     = input.getCmdOption("-m");
 	  //
 	  if ( !filename.empty() )
 	    {
@@ -174,9 +175,9 @@ main( const int argc, const char **argv )
 			  }
 #else
 			// Please do not remove the bracket!!
-			if ( idx[0] > 120 && idx[0] < 122 && 
-			     idx[1] > 100 && idx[1] < 102 &&
-			     idx[2] > 165 && idx[2] < 167 )
+			if ( idx[0] > 60 && idx[0] < 62 && 
+			     idx[1] > 90 && idx[1] < 92 &&
+			     idx[2] > 100 && idx[2] < 102 )
 			  {
 			    pool.enqueue( std::ref(features_mapping), idx );
 			  }

@@ -38,6 +38,7 @@ using MaskType = itk::Image< unsigned char, 3 >;
 #include "Classification.h"
 #include "MACException.h"
 #include "MACMakeITKImage.h"
+#include "MACCrossValidation_k_folds.h"
 //#include "Subject.h"
 //
 //
@@ -100,6 +101,10 @@ namespace MAC
       std::cout << "IDX: " << Idx << std::endl;
       std::cout << "image: " << MAC::Singleton::instance()->get_data()["inputs"]["images"][0][0]
 		<< std::endl;
+      //
+      // Cross validation
+      MACCrossValidation_k_folds<Dim> CV( this, 
+					  3, Classification<Dim>::get_subject_number() );
 
       //
       // Design matrix
@@ -125,7 +130,7 @@ namespace MAC
 
       //
       // Linear regression
-      // \hat{W} = (XX^{T})^(-1)X^{T}Y
+      // \hat{W} = (X^{T}X)^(-1)X^{T}Y
       W = X.transpose() * Y;
       std::cout << W << std::endl;
 
