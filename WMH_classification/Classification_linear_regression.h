@@ -66,6 +66,9 @@ namespace MAC
     virtual void train(){};
     // use the calssification engin
     virtual void use(){};
+    // Fit the model
+    virtual Eigen::VectorXd fit( const Eigen::MatrixXd& X, const Eigen::VectorXd& Y ) const
+    { return (X.transpose() * X).inverse() * X.transpose() * Y;};
     // write the subject maps
     virtual void write_subjects_map(){};
     // Optimization
@@ -103,8 +106,11 @@ namespace MAC
 		<< std::endl;
       //
       // Cross validation
-      MACCrossValidation_k_folds<Dim> CV( this, 
-					  3, Classification<Dim>::get_subject_number() );
+      MACCrossValidation_k_folds<Dim> statistics( this, 
+						  Idx,
+						  /*k = */ 7, 
+						  /*n = */ Classification<Dim>::get_subject_number() );
+      statistics.CV();
 
       //
       // Design matrix

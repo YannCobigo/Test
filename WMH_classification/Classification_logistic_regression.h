@@ -65,6 +65,8 @@ namespace MAC
     virtual void train(){};
     // use the calssification engin
     virtual void use(){};
+    // Fit the model
+    virtual Eigen::VectorXd fit( const Eigen::MatrixXd& X, const Eigen::VectorXd& Y ) const {};
     // write the subject maps
     virtual void write_subjects_map(){};
     // Optimization

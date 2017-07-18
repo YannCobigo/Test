@@ -13,6 +13,13 @@
 #include <Eigen/Core>
 #include <Eigen/Eigen>
 //
+// ITK
+//
+#include <itkImageFileReader.h>
+#include <itkSpatialOrientationAdapter.h>
+#include "itkChangeInformationImageFilter.h"
+using MaskType = itk::Image< unsigned char, 3 >;
+//
 //
 //
 #include "MACException.h"
@@ -32,8 +39,12 @@ namespace MAC
     {
     public:
       /** Constructor. */
-    MACCrossValidation( const MAC::Classification< Dim >* Classify ):
-      classify_{Classify}{};
+    MACCrossValidation( const MAC::Classification< Dim >* Classify,
+			const MaskType::IndexType         Idx ):
+      classify_{Classify}
+      {
+	voxel_ = Idx;
+      };
       
       /**  */
       virtual ~MACCrossValidation( )
@@ -41,9 +52,14 @@ namespace MAC
 	  // no delete, it is a strategy: delete classify_;
 	  classify_ = nullptr;
 	};
+
+      //
+      //
+      virtual void CV() const = 0;
       
-    private:
+    protected:
       const Classification< Dim >* classify_;
+      MaskType::IndexType          voxel_;
     };
 }
 #endif

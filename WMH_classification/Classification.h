@@ -51,6 +51,8 @@ namespace MAC
     virtual void train() = 0;
     // use the calssification engin
     virtual void use()   = 0;
+    // Fit the model
+    virtual Eigen::VectorXd fit ( const Eigen::MatrixXd&, const Eigen::VectorXd& ) const = 0;
     // write the subject maps
     virtual void write_subjects_map() = 0;
     // Optimization
@@ -64,6 +66,8 @@ namespace MAC
     //
     //
     int get_subject_number(){return subject_number_;};
+    //
+    const std::vector< Subject< Dim > >& get_subjects() const {return subjects_;};
 
 
   private:

@@ -70,9 +70,9 @@ namespace MAC
       //
       // Get voxels
       //
-      std::vector< double > get_modalities( const MaskType::IndexType );
+      std::vector< double > get_modalities( const MaskType::IndexType ) const;
       //
-      int get_label( const MaskType::IndexType );
+      int get_label( const MaskType::IndexType ) const;
       //
       void set_fit( const MaskType::IndexType, 
 		    const Eigen::MatrixXd, 
@@ -242,7 +242,7 @@ namespace MAC
   //
   //
   template < int D > std::vector< double >
-    MAC::Subject< D >::get_modalities( const MaskType::IndexType Idx )
+    MAC::Subject< D >::get_modalities( const MaskType::IndexType Idx ) const
     {
       std::vector< double > mod(D);
       for ( int mod_image = 0 ; mod_image < D ; mod_image++ )
@@ -254,7 +254,7 @@ namespace MAC
   //
   //
   template < int D > int
-    MAC::Subject< D >::get_label( const MaskType::IndexType Idx )
+    MAC::Subject< D >::get_label( const MaskType::IndexType Idx ) const 
     {
       return static_cast< int >( label_->GetOutput()->GetPixel(Idx) );
     }
