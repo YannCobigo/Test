@@ -68,6 +68,8 @@ namespace MAC
     int get_subject_number(){return subject_number_;};
     //
     const std::vector< Subject< Dim > >& get_subjects() const {return subjects_;};
+    MACMakeITKImage& get_fit_weights(){return fit_weights_;};
+    MACMakeITKImage& get_ACC_FDR(){return ACC_FDR_;};
 
 
   private:
@@ -85,6 +87,8 @@ namespace MAC
     //
     // Output
     MACMakeITKImage fit_weights_;
+    // Accuracy and False descovery rate
+    MACMakeITKImage ACC_FDR_;
   };
   //
   //
@@ -133,7 +137,10 @@ namespace MAC
       fit_weights_ = MACMakeITKImage( Dim + 1,
 				      output_model,
 				      subjects_[0].get_sample() );
-      
+      // Output weights
+      ACC_FDR_ = MACMakeITKImage( 4,
+				  "Acc_sd_FDR_sd.nii.gz",
+				  subjects_[0].get_sample() );
     };
   //
   //
@@ -142,6 +149,7 @@ namespace MAC
     Classification< Dim >::write_parameters_images()
     {
       fit_weights_.write();
+      ACC_FDR_.write();
     }
   //
   //

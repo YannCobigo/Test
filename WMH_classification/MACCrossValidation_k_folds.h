@@ -41,7 +41,7 @@ namespace MAC
     {
     public:
       /** Constructor. */
-      explicit MACCrossValidation_k_folds( const Classification< Dim >*,
+      explicit MACCrossValidation_k_folds( Classification< Dim >*,
 					   const MaskType::IndexType,
 					   const int, const int );
       
@@ -72,7 +72,7 @@ namespace MAC
   //
   //
   template< int Dim >
-    MAC::MACCrossValidation_k_folds<Dim>::MACCrossValidation_k_folds( const Classification< Dim >* Classify,
+    MAC::MACCrossValidation_k_folds<Dim>::MACCrossValidation_k_folds( Classification< Dim >* Classify,
 								      const MaskType::IndexType Idx,
 								      const int K,
 								      const int Num_subjects ): 
@@ -316,14 +316,36 @@ namespace MAC
 	  // Calculate the coeff
 	  //W = (X.transpose() * X).inverse() * X.transpose() * Y;
 	  W = MACCrossValidation<Dim>::classify_->fit( X, Y );
+	  // Record the weigths
+	  for ( int w = 0 ; w < W.rows() ; w++ )
+	    {
+	      MACCrossValidation<Dim>::classify_->get_fit_weights().set_val( w, 
+									     MACCrossValidation< Dim >::voxel_, 
+									     W(w) );
+	      std::cout << "W[" << w << "] = " <<  W(w) << std::endl;
+	    }
+	  // Record the statistics
+	  MACCrossValidation<Dim>::classify_->get_ACC_FDR().set_val( 0, 
+								     MACCrossValidation< Dim >::voxel_, 
+								     mean_acc );
+	  MACCrossValidation<Dim>::classify_->get_ACC_FDR().set_val( 1, 
+								     MACCrossValidation< Dim >::voxel_, 
+								     stdev_acc );
+	  MACCrossValidation<Dim>::classify_->get_ACC_FDR().set_val( 2, 
+								     MACCrossValidation< Dim >::voxel_, 
+								     mean_fdr );
+	  MACCrossValidation<Dim>::classify_->get_ACC_FDR().set_val( 3, 
+								     MACCrossValidation< Dim >::voxel_, 
+								     stdev_fdr );
 
-	  std::cout << "Global W = " 
-		    << W
-		    << "Y = \n"
-		    << Y 
-		    << "W * X = \n"
-		    << X * W
-		    << std::endl;
+
+	//std::cout << "Global W = " 
+	//	    << W
+	//	    << "Y = \n"
+	//	    << Y 
+	//	    << "W * X = \n"
+	//	    << X * W
+	//	    << std::endl;
 
 
 	}

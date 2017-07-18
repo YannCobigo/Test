@@ -39,7 +39,7 @@ namespace MAC
     {
     public:
       /** Constructor. */
-    MACCrossValidation( const MAC::Classification< Dim >* Classify,
+    MACCrossValidation( MAC::Classification< Dim >* Classify,
 			const MaskType::IndexType         Idx ):
       classify_{Classify}
       {
@@ -58,7 +58,7 @@ namespace MAC
       virtual void CV() const = 0;
       
     protected:
-      const Classification< Dim >* classify_;
+      Classification< Dim >* classify_;
       MaskType::IndexType          voxel_;
     };
 }

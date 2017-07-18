@@ -112,39 +112,39 @@ namespace MAC
 						  /*n = */ Classification<Dim>::get_subject_number() );
       statistics.CV();
 
-      //
-      // Design matrix
-      Eigen::MatrixXd X( Classification<Dim>::get_subject_number(), Dim + 1 );
-      Eigen::VectorXd Y( Classification<Dim>::get_subject_number() );
-      Eigen::VectorXd W( Classification<Dim>::get_subject_number() );
-      for ( int subject = 0 ; subject < Classification<Dim>::get_subject_number() ; subject++ )
-	{
-	  //
-	  // Label
-	  Y(subject) = static_cast< double >( Classification<Dim>::subjects_[subject].get_label(Idx) );
-	  //
-	  // subject design matrix
-	  X( subject, 0 ) = 1.;
-	  for ( int mod = 0 ; mod < Dim ; mod++ )
-	    X( subject, mod + 1 ) = (Classification<Dim>::subjects_[subject].get_modalities(Idx))[mod];
-	}
-      // Normlize
-      
-      std::cout << Y << std::endl;
-      std::cout << X << std::endl;
-      std::cout << Classification<Dim>::normalization( X ) << std::endl;
-
-      //
-      // Linear regression
-      // \hat{W} = (X^{T}X)^(-1)X^{T}Y
-      W = X.transpose() * Y;
-      std::cout << W << std::endl;
-
-
-      //
-      // Record the weigths
-      for ( int w = 0 ; w < W.rows() ; w++ )
-	Classification<Dim>::fit_weights_.set_val( w, Idx, W(w) );
+//      //
+//      // Design matrix
+//      Eigen::MatrixXd X( Classification<Dim>::get_subject_number(), Dim + 1 );
+//      Eigen::VectorXd Y( Classification<Dim>::get_subject_number() );
+//      Eigen::VectorXd W( Classification<Dim>::get_subject_number() );
+//      for ( int subject = 0 ; subject < Classification<Dim>::get_subject_number() ; subject++ )
+//	{
+//	  //
+//	  // Label
+//	  Y(subject) = static_cast< double >( Classification<Dim>::subjects_[subject].get_label(Idx) );
+//	  //
+//	  // subject design matrix
+//	  X( subject, 0 ) = 1.;
+//	  for ( int mod = 0 ; mod < Dim ; mod++ )
+//	    X( subject, mod + 1 ) = (Classification<Dim>::subjects_[subject].get_modalities(Idx))[mod];
+//	}
+//      // Normlize
+//      
+//      std::cout << Y << std::endl;
+//      std::cout << X << std::endl;
+//      std::cout << Classification<Dim>::normalization( X ) << std::endl;
+//
+//      //
+//      // Linear regression
+//      // \hat{W} = (X^{T}X)^(-1)X^{T}Y
+//      W = X.transpose() * Y;
+//      std::cout << W << std::endl;
+//
+//
+//      //
+//      // Record the weigths
+//      for ( int w = 0 ; w < W.rows() ; w++ )
+//	Classification<Dim>::fit_weights_.set_val( w, Idx, W(w) );
     };
 }
 #endif
