@@ -82,7 +82,6 @@ namespace MAC
       optimize( Idx );
     };
 
-    
   private:
     //
     // For each of the Dim modalities we load the measures of 3D images
@@ -104,6 +103,7 @@ namespace MAC
       std::cout << "IDX: " << Idx << std::endl;
       std::cout << "image: " << MAC::Singleton::instance()->get_data()["inputs"]["images"][0][0]
 		<< std::endl;
+
       //
       // Cross validation
       MACCrossValidation_k_folds<Dim> statistics( this, 
@@ -111,40 +111,6 @@ namespace MAC
 						  /*k = */ 7, 
 						  /*n = */ Classification<Dim>::get_subject_number() );
       statistics.CV();
-
-//      //
-//      // Design matrix
-//      Eigen::MatrixXd X( Classification<Dim>::get_subject_number(), Dim + 1 );
-//      Eigen::VectorXd Y( Classification<Dim>::get_subject_number() );
-//      Eigen::VectorXd W( Classification<Dim>::get_subject_number() );
-//      for ( int subject = 0 ; subject < Classification<Dim>::get_subject_number() ; subject++ )
-//	{
-//	  //
-//	  // Label
-//	  Y(subject) = static_cast< double >( Classification<Dim>::subjects_[subject].get_label(Idx) );
-//	  //
-//	  // subject design matrix
-//	  X( subject, 0 ) = 1.;
-//	  for ( int mod = 0 ; mod < Dim ; mod++ )
-//	    X( subject, mod + 1 ) = (Classification<Dim>::subjects_[subject].get_modalities(Idx))[mod];
-//	}
-//      // Normlize
-//      
-//      std::cout << Y << std::endl;
-//      std::cout << X << std::endl;
-//      std::cout << Classification<Dim>::normalization( X ) << std::endl;
-//
-//      //
-//      // Linear regression
-//      // \hat{W} = (X^{T}X)^(-1)X^{T}Y
-//      W = X.transpose() * Y;
-//      std::cout << W << std::endl;
-//
-//
-//      //
-//      // Record the weigths
-//      for ( int w = 0 ; w < W.rows() ; w++ )
-//	Classification<Dim>::fit_weights_.set_val( w, Idx, W(w) );
     };
 }
 #endif

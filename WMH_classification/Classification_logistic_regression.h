@@ -38,6 +38,7 @@ using MaskType = itk::Image< unsigned char, 3 >;
 #include "Classification.h"
 #include "MACException.h"
 #include "MACMakeITKImage.h"
+#include "MACCrossValidation_k_folds.h"
 //#include "Subject.h"
 //
 //
@@ -66,7 +67,7 @@ namespace MAC
     // use the calssification engin
     virtual void use(){};
     // Fit the model
-    virtual Eigen::VectorXd fit( const Eigen::MatrixXd& X, const Eigen::VectorXd& Y ) const {};
+    virtual Eigen::VectorXd fit( const Eigen::MatrixXd& X, const Eigen::VectorXd& Y ) const;
     // write the subject maps
     virtual void write_subjects_map(){};
     // Optimization
@@ -80,10 +81,18 @@ namespace MAC
       optimize( Idx );
     };
 
-    
   private:
+    // Sigmoid
+    double sigmoid( const Eigen::VectorXd& B,  const Eigen::VectorXd& X ) const
+    { return 1. / ( 1. + exp( B.transpose() * X ) );};
     //
-    // For each of the Dim modalities we load the measures of 3D images
+    // Error function
+    // E(W) = - \sum_{i=1}^{n} t_{i} \ln y_{i} + (1+t_{i}) \ln (1+y_{i})
+    // Using the derivative of \sigma(a):
+    // \frac{d \sigma}{d a} = \sigma(a) ( 1 - \sigma(a) )
+    // \nabla E(W) = \sum_{i=1}^{n} (y_{i} - t_{i}) X_{i}
+    Eigen::VectorXd nabla_E( const Eigen::VectorXd&,  
+			     const Eigen::MatrixXd& ) const;
   };
   //
   //
@@ -97,42 +106,76 @@ namespace MAC
   //
   //
   template< int Dim > void
-    Classification_logistic_regression< Dim >::optimize( const MaskType::IndexType Idx)
+    Classification_logistic_regression< Dim >::optimize( const MaskType::IndexType Idx )
     {
       std::cout << "IDX: " << Idx << std::endl;
       std::cout << "image: " << MAC::Singleton::instance()->get_data()["inputs"]["images"][0][0]
 		<< std::endl;
 
       //
-      // Design matrix
-      Eigen::MatrixXd X( Classification<Dim>::get_subject_number(), Dim + 1 );
-      Eigen::VectorXd Y( Classification<Dim>::get_subject_number() );
-      Eigen::VectorXd W( Classification<Dim>::get_subject_number() );
-      for ( int subject = 0 ; subject < Classification<Dim>::get_subject_number() ; subject++ )
+      // Cross validation
+      MACCrossValidation_k_folds<Dim> statistics( this, 
+						  Idx,
+						  /*k = */ 7, 
+						  /*n = */ Classification<Dim>::get_subject_number() );
+      statistics.CV();
+    };
+  //
+  //
+  // The logistic regression is based on the sigmoid: S(x) = \frac{1.}{1. + \exp{a + b.x}}
+  // W = (a, b_{1}, b_{2}, ..., b_{Dim})
+  template< int Dim > Eigen::VectorXd
+    Classification_logistic_regression< Dim >::fit( const Eigen::MatrixXd& X, 
+						    const Eigen::VectorXd& Y ) const
+    {
+      double 
+	epsilon = 1.e-03, // convergence of the model
+	rho     = 0.001; // learning rate
+      // sigmoid coefficients
+      Eigen::VectorXd W = Eigen::VectorXd::Ones( Dim + 1 );
+      // result
+      Eigen::VectorXd 
+	hat_Y = Eigen::VectorXd::Ones( Y.rows() ),
+	res   = Eigen::VectorXd::Ones( Y.rows() );
+      
+      //
+      int count = 0;
+      while ( res.transpose() * res > epsilon )
 	{
-	  //
-	  // Label
-	  Y(subject) = static_cast< double >( Classification<Dim>::subjects_[subject].get_label(Idx) );
-	  //
-	  // subject design matrix
-	  X( subject, 0 ) = 1.;
-	  for ( int mod = 0 ; mod < Dim ; mod++ )
-	    X( subject, mod + 1 ) = (Classification<Dim>::subjects_[subject].get_modalities(Idx))[mod];
+	  W  += rho * nabla_E( res, X );
+	  // reset the data
+	  for ( int r = 0 ; r < Y.rows() ; r++ )
+	    hat_Y(r) = sigmoid( W, X.row(r).transpose() );
+	  res = ( hat_Y - Y );
+	  std::cout << "At the iteration : " << count++ 
+		    << " the Residual: " << res.transpose() * res
+		    << " W = \n" << W
+		    << "\n the Y-hat: \n" << hat_Y
+		    << "\n the tag: \n" << Y
+		    << std::endl;
 	}
-      std::cout << Y << std::endl;
-      std::cout << X << std::endl;
 
+      std::cout << "Final W is " << W << std::endl;
+      
       //
-      // Linear regression
-      // \hat{W} = (XX^{T})^(-1)X^{T}Y
-      W = X.transpose() * Y;
-      std::cout << W << std::endl;
-
-
       //
-      // Record the weigths
-      for ( int w = 0 ; w < W.rows() ; w++ )
-	Classification<Dim>::fit_weights_.set_val( w, Idx, W(w) );
+      return W;
+    };
+  //
+  //
+  // The logistic regression is based on the sigmoid: S(x) = \frac{1.}{1. + \exp{a + b.x}}
+  // W = (a, b_{1}, b_{2}, ..., b_{Dim})
+  template< int Dim > Eigen::VectorXd
+    Classification_logistic_regression< Dim >::nabla_E( const Eigen::VectorXd& Res,  
+							const Eigen::MatrixXd& X ) const
+    {
+      Eigen::VectorXd nabla = Eigen::VectorXd::Zero( X.cols() );
+      //
+      for ( int r = 0 ; r < Res.rows() ; r++ )
+	nabla += Res(r) * X.row(r).transpose();
+      //
+      //
+      return nabla;
     };
 }
 #endif

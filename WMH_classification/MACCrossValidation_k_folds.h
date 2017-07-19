@@ -212,18 +212,17 @@ namespace MAC
 		      X_test.row(samp) = k_groups_X_[ kk ][samp];
 		    }
 	      
-	      std::cout << "TRAIN k = " << k << "\n Y = \n" 
-	       		<< Y_train
-	       		<< "X = \n"
-	       		<< X_train << std::endl;
-	      std::cout << "TEST k = " << k << "\n Y = \n" 
-	       		<< Y_test
-	       		<< "X = \n"
-			<< X_test << std::endl;
+	      //std::cout << "TRAIN k = " << k << "\n Y = \n" 
+	      // 		<< Y_train
+	      // 		<< "X = \n"
+	      // 		<< X_train << std::endl;
+	      //std::cout << "TEST k = " << k << "\n Y = \n" 
+	      // 		<< Y_test
+	      // 		<< "X = \n"
+	      //		<< X_test << std::endl;
 	      
 	      //
 	      //
-	      // W_train = (X_train.transpose() * X_train).inverse() * X_train.transpose() * Y_train;
 	      W_train = MACCrossValidation<Dim>::classify_->fit( X_train, Y_train );
 	      // prediction
 	      Eigen::VectorXd XW = X_test * W_train;
@@ -251,13 +250,13 @@ namespace MAC
 	      ACC.push_back( static_cast<double>(TP+TN) / static_cast<double>(pop) );
 	      FDR.push_back( static_cast<double>(FP) / static_cast<double>(pop) );
 	      
-	      std::cout << "TEST W = " 
-	       		<< W_train
-	       		<< "Y_test = \n"
-	       		<< Y_test 
-			<< "W * X = \n"
-			<< X_test * W_train
-			<< std::endl;
+	      //std::cout << "TEST W = " 
+	      // 		<< W_train
+	      // 		<< "Y_test = \n"
+	      // 		<< Y_test 
+	      //		<< "W * X = \n"
+	      //		<< X_test * W_train
+	      //		<< std::endl;
 
 	      
 	      
@@ -285,15 +284,15 @@ namespace MAC
 	    });
 	  double stdev_fdr = sqrt( accum_fdr / (FDR.size() - 1) );
 	  //
-	  for ( int i = 0 ; i < ACC.size(); i++ )
-	    {
-	      std::cout << "ACC = " << ACC[i] 
-			<< ", FDR = " << FDR[i]
-			<< std::endl;
-	    }
-	  std::cout << "ACC = " << mean_acc << " +- " << stdev_acc
-			<< ", FDR = " << mean_fdr << " +- " << stdev_fdr
-			<< std::endl;
+	  //for ( int i = 0 ; i < ACC.size(); i++ )
+	  //  {
+	  //    std::cout << "ACC = " << ACC[i] 
+	  //		<< ", FDR = " << FDR[i]
+	  //		<< std::endl;
+	  //  }
+	  //std::cout << "ACC = " << mean_acc << " +- " << stdev_acc
+	  //		<< ", FDR = " << mean_fdr << " +- " << stdev_fdr
+	  //		<< std::endl;
 
 	  //
 	  // Global coefficients
@@ -322,7 +321,7 @@ namespace MAC
 	      MACCrossValidation<Dim>::classify_->get_fit_weights().set_val( w, 
 									     MACCrossValidation< Dim >::voxel_, 
 									     W(w) );
-	      std::cout << "W[" << w << "] = " <<  W(w) << std::endl;
+	      //std::cout << "W[" << w << "] = " <<  W(w) << std::endl;
 	    }
 	  // Record the statistics
 	  MACCrossValidation<Dim>::classify_->get_ACC_FDR().set_val( 0, 
