@@ -225,7 +225,7 @@ namespace MAC
 	      //
 	      W_train = MACCrossValidation<Dim>::classify_->fit( X_train, Y_train );
 	      // prediction
-	      Eigen::VectorXd XW = X_test * W_train;
+	      Eigen::VectorXd XW = MACCrossValidation<Dim>::classify_->prediction( X_test, W_train );
 	      //
 	      int 
 		pop = Y_test.rows(),
@@ -283,7 +283,7 @@ namespace MAC
 	      accum_fdr += (d - mean_fdr) * (d - mean_fdr);
 	    });
 	  double stdev_fdr = sqrt( accum_fdr / (FDR.size() - 1) );
-	  //
+	  
 	  //for ( int i = 0 ; i < ACC.size(); i++ )
 	  //  {
 	  //    std::cout << "ACC = " << ACC[i] 
@@ -343,7 +343,7 @@ namespace MAC
 	//	    << "Y = \n"
 	//	    << Y 
 	//	    << "W * X = \n"
-	//	    << X * W
+	//	    << MACCrossValidation<Dim>::classify_->prediction( X, W )
 	//	    << std::endl;
 
 

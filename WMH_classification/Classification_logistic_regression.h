@@ -68,6 +68,8 @@ namespace MAC
     virtual void use(){};
     // Fit the model
     virtual Eigen::VectorXd fit( const Eigen::MatrixXd& X, const Eigen::VectorXd& Y ) const;
+    // Prediction from the model
+    virtual Eigen::VectorXd prediction( const Eigen::MatrixXd& X, const Eigen::VectorXd& W ) const;
     // write the subject maps
     virtual void write_subjects_map(){};
     // Optimization
@@ -84,7 +86,7 @@ namespace MAC
   private:
     // Sigmoid
     double sigmoid( const Eigen::VectorXd& B,  const Eigen::VectorXd& X ) const
-    { return 1. / ( 1. + exp( B.transpose() * X ) );};
+    { return 1. / ( 1. + exp( X.transpose() * B ) );};
     //
     // Error function
     // E(W) = - \sum_{i=1}^{n} t_{i} \ln y_{i} + (1+t_{i}) \ln (1+y_{i})
@@ -145,22 +147,38 @@ namespace MAC
 	  W  += rho * nabla_E( res, X );
 	  // reset the data
 	  for ( int r = 0 ; r < Y.rows() ; r++ )
-	    hat_Y(r) = sigmoid( W, X.row(r).transpose() );
+	    hat_Y(r) = sigmoid( W, X.row(r) );
 	  res = ( hat_Y - Y );
-	  std::cout << "At the iteration : " << count++ 
-		    << " the Residual: " << res.transpose() * res
-		    << " W = \n" << W
-		    << "\n the Y-hat: \n" << hat_Y
-		    << "\n the tag: \n" << Y
-		    << std::endl;
+	//std::cout << "At the iteration : " << count++ 
+	//	    << " the Residual: " << res.transpose() * res
+	//	    << " W = \n" << W
+	//	    << "\n the Y-hat: \n" << hat_Y
+	//	    << "\n the tag: \n" << Y
+	//	    << std::endl;
 	}
 
-      std::cout << "Final W is " << W << std::endl;
+      //std::cout << "Final W is " << W << std::endl;
       
       //
       //
       return W;
     };
+  //
+  //
+  // The logistic regression is based on the sigmoid: S(x) = \frac{1.}{1. + \exp{a + b.x}}
+  // W = (a, b_{1}, b_{2}, ..., b_{Dim})
+  template< int Dim > Eigen::VectorXd
+    Classification_logistic_regression< Dim >::prediction( const Eigen::MatrixXd& X, 
+							   const Eigen::VectorXd& W ) const
+    {
+      Eigen::VectorXd res = Eigen::VectorXd::Zero( X.rows() );
+      for ( int r = 0 ; r < X.rows() ; r++ )
+	res(r) = sigmoid( W, X.row(r) );
+
+      //
+      //
+      return res;
+    }
   //
   //
   // The logistic regression is based on the sigmoid: S(x) = \frac{1.}{1. + \exp{a + b.x}}

@@ -69,6 +69,9 @@ namespace MAC
     // Fit the model
     virtual Eigen::VectorXd fit( const Eigen::MatrixXd& X, const Eigen::VectorXd& Y ) const
     { return (X.transpose() * X).inverse() * X.transpose() * Y;};
+    // Prediction from the model
+    virtual Eigen::VectorXd prediction( const Eigen::MatrixXd& X, const Eigen::VectorXd& W ) const
+    {return X * W;};
     // write the subject maps
     virtual void write_subjects_map(){};
     // Optimization

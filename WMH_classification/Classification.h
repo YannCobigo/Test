@@ -53,6 +53,8 @@ namespace MAC
     virtual void use()   = 0;
     // Fit the model
     virtual Eigen::VectorXd fit ( const Eigen::MatrixXd&, const Eigen::VectorXd& ) const = 0;
+    // Prediction from the model
+    virtual Eigen::VectorXd prediction( const Eigen::MatrixXd& X, const Eigen::VectorXd& W ) const = 0;
     // write the subject maps
     virtual void write_subjects_map() = 0;
     // Optimization
