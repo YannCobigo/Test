@@ -3,8 +3,16 @@
 //
 // ITK
 //
+#include <itkImage.h>
 #include <itkImageFileReader.h>
-using MaskType = itk::Image< unsigned char, 3 >;
+#include <itkImageFileWriter.h>
+#include <itkImageRegionIterator.h>
+#include <itkNiftiImageIO.h>
+#include <itkOrientImageFilter.h>
+#include <itkSpatialOrientation.h>
+using Image4DType = itk::Image< double, 4 >;
+using Reader4D    = itk::ImageFileReader< Image4DType >;
+using MaskType    = itk::Image< unsigned char, 3 >;
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
@@ -87,10 +95,18 @@ namespace MAC
     std::vector< Subject< Dim > > subjects_;
 
     //
-    // Output
+    // Input/Outputs
+    //
+    
+    //
+    // Training 
     MACMakeITKImage fit_weights_;
     // Accuracy and False descovery rate
     MACMakeITKImage ACC_FDR_;
+    
+    //
+    // Using 
+    Reader4D::Pointer weights_fitted_;
   };
   //
   //
@@ -126,23 +142,48 @@ namespace MAC
 	  subjects_[sub] = Subject< Dim >( sub );
 	  for ( int mod = 0 ; mod < modalities_number_ ; mod++ )
 	    subjects_[sub].add_modality( sub, mod );
-	  // if trainning: mask
+	  // if training
 	  if ( MAC::Singleton::instance()->get_status() )
 	    subjects_[sub].add_label( sub );
+	  // if using
+	  else
+	    subjects_[sub].create_output_map( sub,
+					      MAC::Singleton::instance()->get_data()["output"]["map"][sub] );
 	}
 
       
       
       //
-      // Output weights
+      // If training
       std::string output_model = MAC::Singleton::instance()->get_data()["strategy"]["weights"];
-      fit_weights_ = MACMakeITKImage( Dim + 1,
-				      output_model,
+      if ( MAC::Singleton::instance()->get_status() )
+	{
+	  //
+	  // Output weights
+	  fit_weights_ = MACMakeITKImage( Dim + 1,
+					  output_model,
+					  subjects_[0].get_sample() );
+	  // Output weights
+	  ACC_FDR_ = MACMakeITKImage( 4,
+				      "Acc_sd_FDR_sd.nii.gz",
 				      subjects_[0].get_sample() );
-      // Output weights
-      ACC_FDR_ = MACMakeITKImage( 4,
-				  "Acc_sd_FDR_sd.nii.gz",
-				  subjects_[0].get_sample() );
+	}
+      // If using
+      else
+	{
+	  //
+	  // Load the regression coefficients
+	  weights_fitted_ = Reader4D::New();
+	  weights_fitted_->SetFileName( output_model );
+	  weights_fitted_->Update();
+	  // Check the dimensions comply
+	  Image4DType::SizeType size = 
+	    Classification<Dim>::weights_fitted_->GetOutput()->GetLargestPossibleRegion().GetSize();
+	  if ( size[3] != Dim + 1 )
+	    throw MAC::MACException( __FILE__, __LINE__,
+				     "The dimension of the design and the number of weight don't comply.",
+				     ITK_LOCATION );
+	}
     };
   //
   //

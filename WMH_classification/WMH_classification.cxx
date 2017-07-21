@@ -118,8 +118,8 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Create the feature mapping for each voxel
-	      //MAC::Classification_linear_regression< /*Dim = */ 2 > features_mapping;
-	      MAC::Classification_logistic_regression< /*Dim = */ 2 > features_mapping;
+	      MAC::Classification_linear_regression< /*Dim = */ 2 > features_mapping;
+	      //MAC::Classification_logistic_regression< /*Dim = */ 2 > features_mapping;
 	      features_mapping.load_parameters_images();
 
 
@@ -175,9 +175,12 @@ main( const int argc, const char **argv )
 			  }
 #else
 			// Please do not remove the bracket!!
-			if ( idx[0] > 60 && idx[0] < 62 && 
-			     idx[1] > 90 && idx[1] < 92 &&
-			     idx[2] > 100 && idx[2] < 102 )
+//			if ( idx[0] > 60 && idx[0] < 62 && 
+//			     idx[1] > 90 && idx[1] < 92 &&
+//			     idx[2] > 100 && idx[2] < 102 )
+			if ( idx[0] > 0 && idx[0] < 180 && 
+			     idx[1] > 0 && idx[1] < 210 &&
+			     idx[2] > 0 && idx[2] < 182 )
 			  {
 			    pool.enqueue( std::ref(features_mapping), idx );
 			  }
@@ -202,9 +205,10 @@ main( const int argc, const char **argv )
 	      //
 	      //
 	      std::cout << "All the mask has been covered" << std::endl;
-	      if ( true /* if we are in the training step */)
+	      if ( MAC::Singleton::instance()->get_status() )
 		features_mapping.write_parameters_images();
-	      features_mapping.write_subjects_map();
+	      else
+		features_mapping.write_subjects_map();
 	      std::cout << "All output have been written." << std::endl;
 	    }
 	  else

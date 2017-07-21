@@ -111,14 +111,14 @@ namespace MAC
     Classification_logistic_regression< Dim >::optimize( const MaskType::IndexType Idx )
     {
       std::cout << "IDX: " << Idx << std::endl;
-      std::cout << "image: " << MAC::Singleton::instance()->get_data()["inputs"]["images"][0][0]
-		<< std::endl;
+      //std::cout << "image: " << MAC::Singleton::instance()->get_data()["inputs"]["images"][0][0]
+      // << std::endl;
 
       //
       // Cross validation
       MACCrossValidation_k_folds<Dim> statistics( this, 
 						  Idx,
-						  /*k = */ 7, 
+						  /*k = */ MAC::Singleton::instance()->get_data()["strategy"]["CV_k_fold"], 
 						  /*n = */ Classification<Dim>::get_subject_number() );
       statistics.CV();
     };
@@ -132,7 +132,8 @@ namespace MAC
     {
       double 
 	epsilon = 1.e-03, // convergence of the model
-	rho     = 0.001; // learning rate
+	// learning rate
+	rho     = MAC::Singleton::instance()->get_data()["strategy"]["learning_rate"]; 
       // sigmoid coefficients
       Eigen::VectorXd W = Eigen::VectorXd::Ones( Dim + 1 );
       // result

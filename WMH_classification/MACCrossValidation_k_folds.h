@@ -83,7 +83,7 @@ namespace MAC
       {
 	//
 	// Population
-	std::cout << "n_: " << n_ << " k_: " << k_ << std::endl;
+	//std::cout << "n_: " << n_ << " k_: " << k_ << std::endl;
 
 	//
 	// Groups mapping
@@ -166,6 +166,7 @@ namespace MAC
 	  //
 	  // Accuracy and False discovery rate
 	  std::vector< double > ACC, FDR;
+
 	  //
 	  // the current k will be the test fold
 	  for ( int k = 0 ; k < k_ ; k++ )
@@ -313,7 +314,6 @@ namespace MAC
 	      current_group_samp += groups_size_mapping_[kk];
 	    }
 	  // Calculate the coeff
-	  //W = (X.transpose() * X).inverse() * X.transpose() * Y;
 	  W = MACCrossValidation<Dim>::classify_->fit( X, Y );
 	  // Record the weigths
 	  for ( int w = 0 ; w < W.rows() ; w++ )

@@ -50,7 +50,8 @@ namespace MAC
       using Image3DType = itk::Image< double, 3 >;
       using Reader3D    = itk::ImageFileReader< Image3DType >;
       using MaskType    = itk::Image< unsigned char, 3 >;
- 
+      using FilterType  = itk::ChangeInformationImageFilter< Image3DType >;
+
     public:
       /** Constructor. */
     Subject():id_(-1){};
@@ -74,15 +75,13 @@ namespace MAC
       //
       int get_label( const MaskType::IndexType ) const;
       //
-      void set_fit( const MaskType::IndexType, 
-		    const Eigen::MatrixXd, 
-		    const Eigen::MatrixXd );
+      void set_fit( const MaskType::IndexType, const double );
       // Add modality
       void add_modality( const int, const int );
       // Add label
       void add_label( const int );
       //
-      void create_output_map();
+      void create_output_map( const int, const std::string );
       // get a sample image for image information
       Reader3D::Pointer get_sample() const
 	{return modality_images_[0];};
@@ -102,8 +101,13 @@ namespace MAC
       // Label
       Reader3D::Pointer                label_; 
       //
-      // Output probability map and R2
-      //MACMakeITKImage probability_map_;
+      // Output probability map
+      Image3DType::Pointer             probability_map_;
+      // Output probability map name
+      std::string                      probability_map_name_;
+      // Take the dimension of the first subject image:
+      Reader3D::Pointer                template_img_;
+
     };
   
   //
@@ -217,26 +221,9 @@ namespace MAC
   //
   template < int D > void
     MAC::Subject< D >::set_fit( const MaskType::IndexType Idx, 
-				const Eigen::MatrixXd Model_fit, 
-				const Eigen::MatrixXd Cov_fit )
+				const double Fit_value )
     {
-//      //
-//      // ToDo: I would like to write the goodness of the score (r-square ...)
-//      //
-//      // copy Eigen Matrix information into a vector
-//      // We only record the diagonal sup of the covariance.
-//      std::vector< double > model( D_r ), cov( D_r * (D_r + 1) / 2 );
-//      int current_mat_coeff = 0;
-//      for ( int d ; d < D_r ; d++ )
-//	{
-//	  model[d] = Model_fit(d,0);
-//	  Random_effect_ITK_model_.set_val( d, Idx, Model_fit(d,0) );
-//	  for ( int c = d ; c < D_r ; c++)
-//	    {
-//	      cov[d]  = Cov_fit(d,c);
-//	      Random_effect_ITK_variance_.set_val( current_mat_coeff++, Idx, Cov_fit(d,c) );
-//	    }
-//	}
+      probability_map_->SetPixel( Idx,Fit_value  );
     }
   //
   //
@@ -262,39 +249,102 @@ namespace MAC
   //
   //
   template < int D > void
-    MAC::Subject< D >::create_output_map()
+    MAC::Subject< D >::create_output_map( const int Subject, const std::string Output_name )
     {
-//      //std::cout << "We create output only one time" << std::endl;
-//      // Model output
-//      std::string output_model = "model_" 
-//	+ std::to_string( PIDN_ ) + "_" + std::to_string( group_ )
-//	+ "_" + std::to_string( time_points_ ) + "_" + std::to_string( D_ ) 
-//	+ ".nii.gz";
-//      Random_effect_ITK_model_ = MACMakeITKImage( D_r,
-//						   output_model,
-//						   age_ITK_images_.begin()->second );
-//      // Variance output
-//      // We only record the diagonal sup elements
-//      //
-//      // | 1 2 3 |
-//      // | . 4 5 |
-//      // | . . 6 |
-//      std::string output_var = "var_" 
-//	+ std::to_string( PIDN_ ) + "_" + std::to_string( group_ )
-//	+ "_" + std::to_string( time_points_ ) + "_" + std::to_string( D_ ) 
-//	+ ".nii.gz";
-//      Random_effect_ITK_variance_ = MACMakeITKImage( D_r * (D_r + 1) / 2 /*we make sure it is a int*/,
-//						      output_var,
-//						      age_ITK_images_.begin()->second );
+      try
+	{
+	  if ( Subject == id_ )
+	    {
+	      std::string Image = MAC::Singleton::instance()->get_data()["inputs"]["images"][0][Subject];
+	      // load the ITK images
+	      if ( file_exists(Image) )
+		{
+		  //
+		  // Create a template image to get the output image dimension
+		  template_img_ = Reader3D::New();
+		  template_img_->SetFileName( Image );
+		  template_img_->Update();
+		  // 
+		  Image3DType::RegionType region;
+		  Image3DType::IndexType  start = { 0, 0, 0 };
+		  //
+		  Image3DType::Pointer  raw_subject_image_ptr = template_img_->GetOutput();
+		  Image3DType::SizeType size = raw_subject_image_ptr->GetLargestPossibleRegion().GetSize();
+		  //
+		  region.SetSize( size );
+		  region.SetIndex( start );
+		  //
+		  probability_map_ = Image3DType::New();
+		  probability_map_->SetRegions( region );
+		  probability_map_->Allocate();
+		  probability_map_->FillBuffer( 0.0 );
+		  // name of the output
+		  probability_map_name_ = Output_name;
+		}
+	      else
+		{
+		  std::string mess = "Image (" + Image + ",";
+		  mess += std::to_string(Subject) + ") does not exists.";
+		  throw MAC::MACException( __FILE__, __LINE__,
+					    mess.c_str(),
+					    ITK_LOCATION );
+		}
+	    }
+	  else
+	    {
+	      std::string mess = "This modality does not match the subject. ";
+	      //
+	      throw MAC::MACException( __FILE__, __LINE__,
+					mess.c_str(),
+					ITK_LOCATION );
+	    }
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  return exit( -1 );
+      }
     }
   //
   //
   //
   template < int D > void
-    MAC::Subject< D >::write_solution( )
+    MAC::Subject< D >::write_solution()
     {
-//      Random_effect_ITK_model_.write();
-//      Random_effect_ITK_variance_.write();
+
+      //
+      // ITK orientation, most likely does not match our orientation
+      // We have to reset the orientation
+      // Origin
+      Image3DType::Pointer  raw_subject_image_ptr = template_img_->GetOutput();
+      Image3DType::PointType origin = raw_subject_image_ptr->GetOrigin();
+      // Spacing 
+      Image3DType::SpacingType spacing = raw_subject_image_ptr->GetSpacing();
+      // Direction
+      Image3DType::DirectionType direction = raw_subject_image_ptr->GetDirection();
+      //
+      // image filter
+      FilterType::Pointer images_filter;
+      images_filter = FilterType::New();
+      //
+      images_filter->SetOutputSpacing( spacing );
+      images_filter->ChangeSpacingOn();
+      images_filter->SetOutputOrigin( origin );
+      images_filter->ChangeOriginOn();
+      images_filter->SetOutputDirection( direction );
+      images_filter->ChangeDirectionOn();
+      //
+      images_filter->SetInput( probability_map_ );
+  
+      //
+      // write 
+      itk::NiftiImageIO::Pointer nifti_io = itk::NiftiImageIO::New();
+      //
+      itk::ImageFileWriter< Image3DType >::Pointer writer = itk::ImageFileWriter< Image3DType >::New();
+      writer->SetFileName( probability_map_name_ );
+      writer->SetInput( images_filter->GetOutput() );
+      writer->SetImageIO( nifti_io );
+      writer->Update();
     }
   //
   //
