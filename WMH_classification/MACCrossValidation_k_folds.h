@@ -243,9 +243,15 @@ namespace MAC
 		else if ( Y_test(l) < epsilon &&  Y_test(l) > - epsilon && XW(l) > 0.5 - epsilon )
 		  FP++;
 		else
-		  throw MAC::MACException( __FILE__, __LINE__,
-					   "Situation not covered",
-					   ITK_LOCATION );
+		  {
+		    std::cout << "\nY_test(l): " << Y_test(l)
+			      << "\n XW(l): " << XW(l)
+			      << std::endl;
+		      
+		    throw MAC::MACException( __FILE__, __LINE__,
+					     "Situation not covered",
+					     ITK_LOCATION );
+		  }
 	      //
 	      // Stat metrics
 	      ACC.push_back( static_cast<double>(TP+TN) / static_cast<double>(pop) );

@@ -114,12 +114,12 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 8;
+	      const int THREAD_NUM = 16;
 
 	      //
 	      // Create the feature mapping for each voxel
-	      MAC::Classification_linear_regression< /*Dim = */ 2 > features_mapping;
-	      //MAC::Classification_logistic_regression< /*Dim = */ 2 > features_mapping;
+	      //MAC::Classification_linear_regression< /*Dim = */ 2 > features_mapping;
+	      MAC::Classification_logistic_regression< /*Dim = */ 2 > features_mapping;
 	      features_mapping.load_parameters_images();
 
 

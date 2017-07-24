@@ -116,7 +116,7 @@ namespace MAC
   template< int Dim > void
     Classification_linear_regression< Dim >::optimize( const MaskType::IndexType Idx)
     {
-      std::cout << "IDX: " << Idx << std::endl;
+      //std::cout << "IDX: " << Idx << std::endl;
       //std::cout << "image: " << MAC::Singleton::instance()->get_data()["inputs"]["images"][0][0]
       //<< std::endl;
 
