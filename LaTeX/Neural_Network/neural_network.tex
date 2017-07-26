@@ -1,0 +1,127 @@
+%% sudo yum install tetex
+%% sudo yum install texlive-elsarticle.noarch
+%% pdflatex neural_network.tex && bibtex neural_network.aux && pdflatex neural_network.tex && pdflatex neural_network.tex
+
+
+%\documentclass[a4paper,12pt]{}
+\documentclass[final, paper=letter,5p,times,twocolumn]{elsarticle}
+%\documentclass[preprint,review,8pt,times]{elsarticle}
+
+
+%% or use the graphicx package for more complicated commands
+%\usepackage{changebar}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+%% or use the epsfig package if you prefer to use the old commands
+%% \usepackage{epsfig}
+
+%% The amssymb package provides various useful mathematical symbols
+\usepackage{tikz}
+\usepackage{amsmath,amsfonts,amsthm,multicol,bm} % Math packages
+%\usepackage{dsfont} % mathds{1}
+%\usepackage{widetext} % 
+\usepackage{listings}
+\usepackage{amssymb}
+\usepackage{hyperref}
+%
+%\usepackage[]{algorithm2e}
+%% Macro
+\newcommand{\ToDo}[1]{ToDo: \textbf{\textit{#1}}}
+\newcommand{\CA}{computational anatomy}
+%
+\newdefinition{definition}{Definition}%
+\newtheorem{theorem}{Theorem}%
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+%\newproposition{proposition}{Proposition}%
+%\newlemma{lemma}{Lemma}%
+%\AtEndEnvironment{theorem}{\null\hfill\qedsymbol}%
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frontmatter}
+
+\title{Neural network}
+
+\author[label1]{Yann Cobigo\corref{cor1}}
+\address[label1]{University of California, San Francisco | ucsf.edu}
+%\address[label2]{Address Two\fnref{label4}}
+
+%\cortext[cor1]{I am corresponding author}
+%\fntext[label3]{I also want to inform about\ldots}
+%\fntext[label4]{Small city}
+
+\ead{yann.cobigo@ucsf.edu}
+\ead[url]{https://github.com/YannCobigo}
+
+%% \author[label5]{Author Two}
+%% \address[label5]{Some University}
+%% \ead{author.two@mail.com}
+%% 
+%% \author[label1,label5]{Author Three}
+%% \ead{author.three@mail.com}
+
+\begin{abstract}
+In this report we will \dots
+\end{abstract}
+
+\begin{keyword}
+%% keywords here, in the form: keyword \sep keyword
+Fijee \sep electrode \sep PEM \sep CEM
+%% MSC codes here, in the form: \MSC code \sep code
+%% or \MSC[2008] code \sep code (2000 is the default)
+\end{keyword}
+
+\end{frontmatter}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+
+\ToDo{Def. geodisic} \\
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{bla}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{bal bal}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{blablabla}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{sect}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{sect}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{sect}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+
+\section*{References}
+%% References with bibTeX database:
+\bibliographystyle{Bibliography/elsarticle-num}
+
+\bibliography{Bibliography/sample}
+
+
+\end{document}
