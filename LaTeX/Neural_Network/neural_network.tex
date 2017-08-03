@@ -86,15 +86,16 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 \section{Introduction}
 
+\paragraph{Inputs}{For the different type of neural networks we would like to accomplish, the input classes must be very differents. Most of the time we are going to work with medical images, implying using a dimensional correlation like the convolutional neural network (CNN). Unlike most of the machine learning algorithm taking vectors as input, CNN void the space decorrelation from the vectorization. However, providing different calsses for different inputs could offer some flexibility.}
 
-\ToDo{Def. geodisic} \\
+\ToDo{check ll sort of input we would want.} \\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Densly connected neural network}
 \subsection{Description and notation}
 
-Dense neural network are cracterized by a full connection of a neuron of one layer with all the neuron from the previouse layer. Table~\ref{Layers_activations} presents the activation function for each layer. In this document, the convention is $l = l_{0}$ for the input layer: $z_{l_{0} = 1} = x_{1}$, $z_{l_{0} = 2} = x_{2}$, \dots. The convention is to save the index 0 for the bias: $z_{l_{0} = 0} = x_{0} = b_{0}$ the bias on the input level. The last level is the output level: $l = l_{k}$, $z_{l_{k}} = y_{k}$. The output level doest not have a bias node.
+Dense neural networks are cracterized by a full connection of a neuron of one layer with all neurons from the previouse layer. Table~\ref{Layers_activations} presents the activation function for each layer. In this document, the convention is $l = l_{0}$ for the input layer: $z_{l_{0} = 1} = x_{1}$, $z_{l_{0} = 2} = x_{2}$, \dots The convention is to save the index 0 for the bias: $z_{l_{0} = 0} = x_{0} = b_{0}$ the bias on the input level. The last level is the output level: $l = l_{k}$, $z_{l_{k}} = y_{k}$. The output level does not have a bias node.
 
 \begin{table}[]
 \centering
@@ -115,7 +116,7 @@ Each neuron is an activated function of a linear combinaison of the neurons from
     \item [$l = l_{k}$] $a_{l_{k}} = \sum_{l_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l_{k-1}} z_{l_{k-1}} = \omega_{l_{k}}^{T} z^{(k-1)}$. Activation: $z_{l_{k}} = g(a_{l_{k}})$
 \end{itemize}
 
-In this enumeration $z^{(i)}$ is the vector of all neuron on the layer $i$. There are several choises for the activation function and will try to provide the possibility of using several of them. However, the first developpments will be done with the hyperbolic tangent for the activation of the inside layers nerons: $f = \tanh$ and $f' = (1 - \tanh^{2})$. The last layer, the output layer, will be calculated with a soft maximum: $g(z_{l_{k}}) = e^{z_{l_{k}}} / \mathcal{Z}$, where $\mathcal{Z} = \sum_{l_{k} = 1}^{L_{k}} e^{z_{l_{k}}}$, and $g' = g(1 - g)$.
+In this enumeration $z^{(i)}$ is the vector of all neurons on the layer $i$. There are several choises for the activation function and we will try to provide the possibility of using several of them. However, the first developpments will be done with the hyperbolic tangent for the activation of the inside layers nerons: $f = \tanh$ and $f' = (1 - \tanh^{2})$. The last layer, the output layer, will be calculated with a soft maximum: $g(z_{l_{k}}) = e^{z_{l_{k}}} / \mathcal{Z}$, where the partition function $\mathcal{Z} = \sum_{l_{k} = 1}^{L_{k}} e^{z_{l_{k}}}$, and $g' = g(1 - g)$.
   
 \subsection{Forward propagation}
 
@@ -126,7 +127,7 @@ $$
 
 \subsubsection{Algorithm}
 
-The Table~\ref{weights_distribution} guives the representation of the weights in a dense neural network. Those weights can be represented in one long array in the hardware memory Table~\ref{weights_in_mem}.
+The Table~\ref{weights_distribution} guives the representation of the weights in a dense neural network. Those weights can be represented in one long array in the hardware memory Table~\ref{weights_in_mem}. The first layer $l = l_{1}$, after the inputs, has $(L_{1}+1)\times(L_{0}+1)$ weights. The layer after has $(L_{2}+1)\times(L_{1}+1)$ weights, so forth till the last layer having $L_{k}\times(L_{k-1}+1)$.
 
 \begin{table}[]
 \centering
@@ -135,27 +136,27 @@ The Table~\ref{weights_distribution} guives the representation of the weights in
 \begin{tabular}{|c|c|c|c|c|c|}
 \hline
 $l_{0}$                   && 0                                   & 1                        & $\cdots$ & $L_{0}$ \\ \hline
-\multirow{4}{*}{$l_{1}$}  &0& $\omega_{l_{1}=0l_{0}=0}$              & $\omega_{l_{1}=0l_{0}=1}$    &        & $\omega_{l_{1}=0l_{0}=L_{0}}$ \\ \cline{2-5} 
-                         &1& $\omega_{l_{1}=1l_{0}=0}$              & $\omega_{l_{1}=1l_{0}=1}$    &        & $\omega_{l_{1}=0l_{0}=L_{0}}$ \\ \cline{2-5} 
-                         &&                                     &                          & \vdots & \\ \cline{2-5} 
+\multirow{4}{*}{$l_{1}$}  &0& $\omega_{l_{1}=0l_{0}=0}$              & $\omega_{l_{1}=0l_{0}=1}$    &        & $\omega_{l_{1}=0l_{0}=L_{0}}$ \\ \cline{2-6} 
+                         &1& $\omega_{l_{1}=1l_{0}=0}$              & $\omega_{l_{1}=1l_{0}=1}$    &        & $\omega_{l_{1}=0l_{0}=L_{0}}$ \\ \cline{2-6} 
+                         &&                                     &                          & \vdots & \\ \cline{2-6} 
                          &$L_{1}$& $\omega_{l_{1}=L_{1}l_{0}=0}$      & $\omega_{l_{1}=L_{1}l_{0}=1}$ &        & $\omega_{l_{1}=L_{1}l_{0}=L_{0}}$ \\ \hline
 $l_{1}$                   && 0                                   & 1                       &        & $L_{1}$ \\ \hline
-\multirow{4}{*}{$l_{2}$}  &0& $\omega_{l_{2}=0l_{1}=0}$              &  $\omega_{l_{2}=0l_{1}=1}$   &        &  $\omega_{l_{2}=0l_{1}=L_{1}}$ \\ \cline{2-5} 
-                         &1& $\omega_{l_{2}=1l_{1}=0}$              &  $\omega_{l_{2}=1l_{1}=1}$   &        &   $\omega_{l_{2}=0l_{1}=L_{1}}$ \\ \cline{2-5} 
-                         &&                                     &                          & \vdots & \\ \cline{2-5} 
+\multirow{4}{*}{$l_{2}$}  &0& $\omega_{l_{2}=0l_{1}=0}$              &  $\omega_{l_{2}=0l_{1}=1}$   &        &  $\omega_{l_{2}=0l_{1}=L_{1}}$ \\ \cline{2-6} 
+                         &1& $\omega_{l_{2}=1l_{1}=0}$              &  $\omega_{l_{2}=1l_{1}=1}$   &        &   $\omega_{l_{2}=0l_{1}=L_{1}}$ \\ \cline{2-6} 
+                         &&                                     &                          & \vdots & \\ \cline{2-6} 
                          &$L_{2}$&$\omega_{l_{2}=L_{2}l_{1}=0}$       & $\omega_{l_{2}=L_{2}l_{1}=1}$ &        & $\omega_{l_{2}=L_{2}l_{1}=L_{1}}$ \\ \hline
 \vdots                   &&                                     &                         &        & \\ \hline
 $l_{k-1}$                 && 0                                   &  1                      &        &  $L_{k-1}$ \\ \hline
-\multirow{4}{*}{$l_{k}$}  &1& $\omega_{l_{k}=1l_{k-1}=0}$            & $\omega_{l_{k}=1l_{k-1}=1}$  &        & $\omega_{l_{k}=1l_{k-1}=L_{k-1}}$ \\ \cline{2-5} 
-                         &2& $\omega_{l_{k}=2l_{k-1}=0}$            & $\omega_{l_{k}=2l_{k-1}=1}$  &        &  $\omega_{l_{k}=2l_{k-1}=L_{k-1}}$ \\ \cline{2-5} 
-                         &&                                    &                         & \vdots & \\ \cline{2-5} 
+\multirow{4}{*}{$l_{k}$}  &1& $\omega_{l_{k}=1l_{k-1}=0}$            & $\omega_{l_{k}=1l_{k-1}=1}$  &        & $\omega_{l_{k}=1l_{k-1}=L_{k-1}}$ \\ \cline{2-6} 
+                         &2& $\omega_{l_{k}=2l_{k-1}=0}$            & $\omega_{l_{k}=2l_{k-1}=1}$  &        &  $\omega_{l_{k}=2l_{k-1}=L_{k-1}}$ \\ \cline{2-6} 
+                         &&                                    &                         & \vdots & \\ \cline{2-6} 
                          &$L_{k}$& $\omega_{l_{k}=L_{k1}l_{k-1}=0}$   & $\omega_{l_{k}=L_{k}l_{k-1}=1}$ &        &  $\omega_{l_{k}=L_{k}l_{k-1}=L_{k-1}}$ \\ \hline
 \end{tabular}
 \end{table}
 
 \begin{table}[]
 \centering
-\caption{My caption}
+\caption{Representation in a one dimension array of the all the weights.}
 \label{weights_in_mem}
 \begin{tabular}{|c|c|c|c|c|c|c|c|}
 \hline
@@ -166,11 +167,30 @@ $\omega_{l_{1}=0l_{0}=0}$   &   $\omega_{01}$   & $\hdots$  &  $\omega_{L_{1}L_{
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{bal bal}
+\subsection{Backward propagation}
+
+To solve the problem of the backward propagation, we are going the gradient descent in its stochastic version: each iteration will use a new intput, instead of estimating the cost function with the entire input population.
+Taking the cross-enropy cost function, eq.~(\ref{cross_entropy}), in the case of classificaion. The gradiant descent can be evaluated in a classic way: taking all the participents for each iterations; or in a stochastic way: taking a new participent every iterations. 
+
+\begin{equation}
+  E = - \sum_{i = 1}^{n}\sum_{k = 1}^{L_{k}} t_{k} \ln z_{k} =  - \sum_{i = 1}^{n} E_{i}
+  \label{cross_entropy}
+\end{equation}
+
+$t_{k}$ represents the known label, $z_{k} = y_{k}$ represents the response of the system, $n$ is the number of participents. The gradient descent method used to find the minimum of the cost function is written:
+
+\begin{equation}
+  \bm{\omega}^{e+1} = \bm{\omega}^{e} - \eta \bm{\nabla} E
+  \label{gradient_descent}
+\end{equation}
+
+Where $\bm{\omega}$ represents the vector of weights, $e$ represents the {\it epoque}, and $\eta$ represents the learning rate. 
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{blablabla}
+\subsubsection{Algorithm}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
