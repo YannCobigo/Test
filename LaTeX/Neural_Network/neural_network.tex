@@ -95,7 +95,7 @@ Fijee \sep electrode \sep PEM \sep CEM
 \section{Densly connected neural network}
 \subsection{Description and notation}
 
-Dense neural networks are cracterized by a full connection of a neuron of one layer with all neurons from the previouse layer. Table~\ref{Layers_activations} presents the activation function for each layer. In this document, the convention is $l = l_{0}$ for the input layer: $z_{l_{0} = 1} = x_{1}$, $z_{l_{0} = 2} = x_{2}$, \dots The convention is to save the index 0 for the bias: $z_{l_{0} = 0} = x_{0} = b_{0}$ the bias on the input level. The last level is the output level: $l = l_{k}$, $z_{l_{k}} = y_{k}$. The output level does not have a bias node.
+Dense neural networks are cracterized by a full connection of a neuron of one layer with all neurons from the previouse layer. Table~\ref{Layers_activations} presents the activation function for each layer. In this document, the convention is $l = l_{0}$ for the input layer: $z_{l_{0} = 1} = x_{1}$, $z_{l_{0} = 2} = x_{2}$, \dots we will reserve the index 0 for the bias: $z_{l_{0} = 0} = x_{0} = b_{0}$ the bias on the input level. The last level is the output level: $l = l_{k}$, $z_{l_{k}} = y_{k}$. The output level does not have a bias node.
 
 \begin{table}[]
 \centering
@@ -106,17 +106,17 @@ Dense neural networks are cracterized by a full connection of a neuron of one la
 \end{tabular}
 \end{table}
 
-Each neuron is an activated function of a linear combinaison of the neurons from the previous layer.
+Each neuron is an activated function, $f$, of a linear combinaison of the neurons from the previous layer. Function $g$ is the activation function for the output layer.
 
 \begin{itemize}
     \item [$l = l_{0}$] we are at the level of the inputs
-    \item [$l = l_{1}$] $a_{l_{1}} = \sum_{l_{0} = 0}^{L_{0}} \omega_{l_{1}l_{0}} z_{l_{0}} = \omega_{l_{1}}^{T} z^{(0)}$. Activation: $z_{l_{1}} = f(a_{l_{1}})$
+    \item [$l = l_{1}$] $a_{l_{1}} = \sum_{l'_{0} = 0}^{L_{0}} \omega_{l_{1}l'_{0}} z_{l'_{0}} = \omega_{l_{1}}^{T} z^{(0)}$. $z_{l_{1}} = f(a_{l_{1}})$
     \item [$\vdots$]
-    \item [$l = l_{k-1}$] $a_{l_{k-1}} = \sum_{l_{k-2} = 0}^{L_{k-2}} \omega_{l_{k-1}l_{k-2}} z_{l_{k-2}} = \omega_{l_{k-1}}^{T} z^{(k-2)}$. Activation: $z_{l_{k-1}} = f(a_{l_{k-1}})$
-    \item [$l = l_{k}$] $a_{l_{k}} = \sum_{l_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l_{k-1}} z_{l_{k-1}} = \omega_{l_{k}}^{T} z^{(k-1)}$. Activation: $z_{l_{k}} = g(a_{l_{k}})$
+    \item [$l = l_{k-1}$] $a_{l_{k-1}} = \sum_{l'_{k-2} = 0}^{L_{k-2}} \omega_{l_{k-1}l'_{k-2}} z_{l'_{k-2}} = \omega_{l_{k-1}}^{T} z^{(k-2)}$. $z_{l_{k-1}} = f(a_{l_{k-1}})$
+    \item [$l = l_{k}$] $a_{l_{k}} = \sum_{l'_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l'_{k-1}} z_{l'_{k-1}} = \omega_{l_{k}}^{T} z^{(k-1)}$. $z_{l_{k}} = g(a_{l_{k}})$
 \end{itemize}
 
-In this enumeration $z^{(i)}$ is the vector of all neurons on the layer $i$. There are several choises for the activation function and we will try to provide the possibility of using several of them. However, the first developpments will be done with the hyperbolic tangent for the activation of the inside layers nerons: $f = \tanh$ and $f' = (1 - \tanh^{2})$. The last layer, the output layer, will be calculated with a soft maximum: $g(z_{l_{k}}) = e^{z_{l_{k}}} / \mathcal{Z}$, where the partition function $\mathcal{Z} = \sum_{l_{k} = 1}^{L_{k}} e^{z_{l_{k}}}$, and $g' = g(1 - g)$.
+In this enumeration $z^{(i)}$ is a vector of all neurons on the layer $(i)$. There are several choises for the activation function and we will try to provide the possibility of using several of them. However, the first developpments will be done with the hyperbolic tangent for the activation of the inside layers nerons: $f = \tanh$ and $f' = (1 - \tanh^{2})$. The last layer, the output layer, will be calculated with a soft maximum: $g(z_{l_{k}}) = e^{z_{l_{k}}} / \mathcal{Z}$, where the partition function $\mathcal{Z} = \sum_{l_{k} = 1}^{L_{k}} e^{z_{l_{k}}}$, and $g' = g(1 - g)$.
   
 \subsection{Forward propagation}
 
@@ -127,7 +127,7 @@ $$
 
 \subsubsection{Algorithm}
 
-The Table~\ref{weights_distribution} guives the representation of the weights in a dense neural network. Those weights can be represented in one long array in the hardware memory Table~\ref{weights_in_mem}. The first layer $l = l_{1}$, after the inputs, has $(L_{1}+1)\times(L_{0}+1)$ weights. The layer after has $(L_{2}+1)\times(L_{1}+1)$ weights, so forth till the last layer having $L_{k}\times(L_{k-1}+1)$.
+The Table~\ref{weights_distribution} guives the distribution of the weights in a dense neural network. Those weights can be represented in one long array in the hardware memory, Table~\ref{weights_in_mem}. The first layer $l = l_{1}$, after the inputs, has $(L_{1}+1)\times(L_{0}+1)$ weights. The layer after has $(L_{2}+1)\times(L_{1}+1)$ weights, so forth till the last layer having $L_{k}\times(L_{k-1}+1)$.
 
 \begin{table}[]
 \centering
@@ -169,15 +169,15 @@ $\omega_{l_{1}=0l_{0}=0}$   &   $\omega_{01}$   & $\hdots$  &  $\omega_{L_{1}L_{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Backward propagation}
 
-To solve the problem of the backward propagation, we are going the gradient descent in its stochastic version: each iteration will use a new intput, instead of estimating the cost function with the entire input population.
+To solve the problem of the backward propagation, we are using the gradient descent in its stochastic version: each iteration will use a new intput, instead of estimating the cost function with the entire input population.
 Taking the cross-enropy cost function, eq.~(\ref{cross_entropy}), in the case of classificaion. The gradiant descent can be evaluated in a classic way: taking all the participents for each iterations; or in a stochastic way: taking a new participent every iterations. 
 
 \begin{equation}
-  E = - \sum_{i = 1}^{n}\sum_{k = 1}^{L_{k}} t_{k} \ln z_{k} =  - \sum_{i = 1}^{n} E_{i}
+  E = - \sum_{i = 1}^{n}\sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \ln z_{l'_{k}} =  - \sum_{i = 1}^{n} E_{i}
   \label{cross_entropy}
 \end{equation}
 
-$t_{k}$ represents the known label, $z_{k} = y_{k}$ represents the response of the system, $n$ is the number of participents. The gradient descent method used to find the minimum of the cost function is written:
+$t_{k}$ represents the known label, $z_{l'_{k}} = y_{k}$ represents the response of the system, $n$ is the number of participents. The gradient descent method used to find the minimum of the cost function is written:
 
 \begin{equation}
   \bm{\omega}^{e+1} = \bm{\omega}^{e} - \eta \bm{\nabla} E
@@ -187,11 +187,50 @@ $t_{k}$ represents the known label, $z_{k} = y_{k}$ represents the response of t
 Where $\bm{\omega}$ represents the vector of weights, $e$ represents the {\it epoque}, and $\eta$ represents the learning rate. 
 
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Algorithm}
 
+The backward propagation for each layer, except the last layer, is a recursive function of the previouse layer.
 
+\paragraph{$\bm{l = l_{k}}$}{
+
+  \begin{equation}
+    \begin{split}
+      - \frac{\partial E_{i}}{\partial \omega_{l_{k}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial \omega_{l_{k}}}\\
+      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \delta_{l'_{k}l_{k}} \delta_{l'_{k-1}l_{k-1}} z_{l'_{k-1}}  \\
+      & = t_{l_{k}} \times \frac{1}{z_{l_{k}}} g'(a_{l_{k}})  z_{l_{k-1}}  \\
+    \end{split}
+\end{equation}
+
+}
+
+\paragraph{$\bm{l = l_{k-1}}$}{
+
+  \begin{equation}
+    \begin{split}
+      - \frac{\partial E_{i}}{\partial \omega_{l_{k-1}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial \omega_{l_{k-1}}}\\
+      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
+      & \times \sum_{l'_{k-2}} \delta_{l'_{k-1}l_{k-1}} \delta_{l'_{k-2}l_{k-2}} z_{l'_{k-2}}  \\
+      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}}) \omega_{l'_{k}l_{k-1}} f'(a_{l'_{k-1}}) z_{l_{k-2}}  \\
+    \end{split}
+\end{equation}
+
+}
+
+\paragraph{$\bm{l = l_{k-2}}$}{
+
+  \begin{equation}
+    \begin{split}
+      - \frac{\partial E_{i}}{\partial \omega_{l_{k-2}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial \omega_{l_{k-2}}}\\
+      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
+      & \times \sum_{l'_{k-2}} \omega_{l'_{k-1}l'_{k-2}} f'(a_{l'_{k-2}}) \\
+      & \times \sum_{l'_{k-3}} \delta_{l'_{k-2}l_{k-2}} \delta_{l'_{k-3}l_{k-3}} z_{l'_{k-3}}  \\
+      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
+      & \times \omega_{l'_{k-1}l_{k-2}} f'(a_{l_{k-2}})  z_{l_{k-3}}  \\
+    \end{split}
+\end{equation}
+
+}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
