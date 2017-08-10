@@ -92,6 +92,77 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Functions}
+
+A neuron is represented with an activation $a_{l_{i}} = \sum_{l_{j} = 0}^{L_{j}} \omega_{l_{i}l_{j}} z_{l_{j}}$, integrating pulses from from other neurons, and its activation function $z_{l_{i}} = f(a_{l_{i}})$, the firering process of the neuron. Usually, the activation function is taken non-linear.
+
+\subsection{Activation functions}
+
+\subsubsection{Soft maximum}
+\label{soft_max_sec}
+
+The soft maximum is often used in classfication problem involving multiple output classes. the output can be interpretated as probability following the distribution:
+
+\begin{equation}
+  g(a_{l_{k}}) = \frac{e^{a_{l_{k}}}}{\mathcal{Z}}
+  \label{soft_max}
+\end{equation}
+
+Where $\mathcal{Z}$ is the partition function normalizing the distribution. Derivating the soft maximum in function of the distrit parameter $a_{k}$ gives us:
+
+  \begin{equation*}
+    \begin{split}
+      \frac{\partial g(a_{k})}{\partial a_{k'}} = & \left \lbrack \delta_{kk'} e^{a_{k'}} \mathcal{Z} - e^{a_{k'}}\frac{\partial \mathcal{Z}}{\partial a_{k'}} \right \rbrack \times \frac{1}{\mathcal{Z}^{2}}\\
+      = & \left \lbrack \delta_{kk'} e^{a_{k'}} \mathcal{Z} - e^{a_{k'}} \sum_{k''} \delta_{kk''} e^{a_{k''}}  \right \rbrack \times \frac{1}{\mathcal{Z}^{2}}\\
+      = & \frac{\delta_{kk'} e^{a_{k'}}}{\mathcal{Z}} - z_{k}z_{k'}\\
+    \end{split}
+\end{equation*}
+
+
+\subsection{Cost functions}
+
+Training the neural network uses the gradient method. All functions representing the neural activity needs to be differentiable, including the cost fuction.
+
+\subsubsection{Least-squarre cost function}
+
+\begin{equation}
+  E = \frac{1}{2} \sum_{i = 1}^{n} \| \bm{z}(\bm{x}_{i}) - \bm{t}_{i} \|^{2}
+  \label{least_squarre}
+\end{equation}
+
+\subsubsection{Cross entropy cost function}
+
+In information theory, the cross entropy between two probability distributions $p$ and $q$ over the same underlying set of events measures the average number of bits needed to identify an event drawn from the set, if a coding scheme is used that is optimized for an "unnatural" probability distribution $q$, rather than the "true" distribution $p$. In classification, the cross entropy for the distributions $t$, labels, and $z$, reconstructed solution, over a given set is defined as follows:
+
+\begin{equation}
+  E = - \sum_{i = 1}^{n}\sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \ln z_{l'_{k}} =  - \sum_{i = 1}^{n} E_{i}
+  \label{cross_entropy}
+\end{equation}
+
+In this section, we are going to derivate the cross entropy~\ref{cross_entropy}. To simplify the equation, we are derivating the cost function only for one subject and omitte the subscript $i$. At the output layer, the activation is $a_{l_{k}} = \sum_{l_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l_{k-1}} z_{l_{k-1}}$. The derivative of the cost function in function of the activtion is called the {\it error} and is written:
+
+\begin{equation}
+  \delta_{k} = \frac{\partial E}{\partial a_{l_{k}}} = - \sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial a_{k}}
+  \label{cost_function_error}
+\end{equation}
+
+In the case of the last activation fuction for the output layer is a soft maximum, we can use the result of the soft maximum derivative from the paragraph~\ref{soft_max_sec}:
+
+\begin{equation*}
+  \begin{split}
+    \delta_{k} = & - \sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \left \lbrack  \frac{\delta_{kk'} e^{a_{l'_{k}}}}{\mathcal{Z}} - z_{l'_{k}}z_{l_{k}} \right \rbrack \\
+    = & - \sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\delta_{kk'} e^{a_{l'_{k}}}}{\mathcal{Z}} +  \sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} z_{l_{k}} \\
+    = & - t_{l_{k}} +  z_{k} \\
+  \end{split}
+\end{equation*}
+
+
+
+Which is exactly the same result as we would get in the cas of a least-square cost function.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Densly connected neural network}
 \subsection{Description and notation}
 
@@ -116,7 +187,7 @@ Each neuron is an activated function, $f$, of a linear combinaison of the neuron
     \item [$l = l_{k}$] $a_{l_{k}} = \sum_{l'_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l'_{k-1}} z_{l'_{k-1}} = \omega_{l_{k}}^{T} z^{(k-1)}$. $z_{l_{k}} = g(a_{l_{k}})$
 \end{itemize}
 
-In this enumeration $z^{(i)}$ is a vector of all neurons on the layer $(i)$. There are several choises for the activation function and we will try to provide the possibility of using several of them. However, the first developpments will be done with the hyperbolic tangent for the activation of the inside layers nerons: $f = \tanh$ and $f' = (1 - \tanh^{2})$. The last layer, the output layer, will be calculated with a soft maximum: $g(z_{l_{k}}) = e^{z_{l_{k}}} / \mathcal{Z}$, where the partition function $\mathcal{Z} = \sum_{l_{k} = 1}^{L_{k}} e^{z_{l_{k}}}$, and $g' = g(1 - g)$.
+In this enumeration $z^{(i)}$ is a vector of all neurons on the layer $(i)$. There are several choises for the activation function and we will try to provide the possibility of using several of them. However, the first developpments will be done with the hyperbolic tangent for the activation of the inside layers nerons: $f = \tanh$ and $f' = (1 - \tanh^{2})$. The last layer, the output layer, will be calculated with a soft maximum: $g(z_{l_{k}}) = e^{a_{l_{k}}} / \mathcal{Z}$, where the partition function $\mathcal{Z} = \sum_{l_{k} = 1}^{L_{k}} e^{z_{l_{k}}}$, and $g' = g(1 - g)$.
   
 \subsection{Forward propagation}
 
@@ -172,10 +243,6 @@ $\omega_{l_{1}=0l_{0}=0}$   &   $\omega_{01}$   & $\hdots$  &  $\omega_{L_{1}L_{
 To solve the problem of the backward propagation, we are using the gradient descent in its stochastic version: each iteration will use a new intput, instead of estimating the cost function with the entire input population.
 Taking the cross-enropy cost function, eq.~(\ref{cross_entropy}), in the case of classificaion. The gradiant descent can be evaluated in a classic way: taking all the participents for each iterations; or in a stochastic way: taking a new participent every iterations. 
 
-\begin{equation}
-  E = - \sum_{i = 1}^{n}\sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \ln z_{l'_{k}} =  - \sum_{i = 1}^{n} E_{i}
-  \label{cross_entropy}
-\end{equation}
 
 $t_{k}$ represents the known label, $z_{l'_{k}} = y_{k}$ represents the response of the system, $n$ is the number of participents. The gradient descent method used to find the minimum of the cost function is written:
 
@@ -194,32 +261,32 @@ The backward propagation for each layer, except the last layer, is a recursive f
 
 \paragraph{$\bm{l = l_{k}}$}{
 
-  \begin{equation}
+  \begin{equation*}
     \begin{split}
       - \frac{\partial E_{i}}{\partial \omega_{l_{k}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial \omega_{l_{k}}}\\
       & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \delta_{l'_{k}l_{k}} \delta_{l'_{k-1}l_{k-1}} z_{l'_{k-1}}  \\
       & = t_{l_{k}} \times \frac{1}{z_{l_{k}}} g'(a_{l_{k}})  z_{l_{k-1}}  \\
     \end{split}
-\end{equation}
+\end{equation*}
 
 }
 
 \paragraph{$\bm{l = l_{k-1}}$}{
 
-  \begin{equation}
+  \begin{equation*}
     \begin{split}
       - \frac{\partial E_{i}}{\partial \omega_{l_{k-1}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial \omega_{l_{k-1}}}\\
       & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
       & \times \sum_{l'_{k-2}} \delta_{l'_{k-1}l_{k-1}} \delta_{l'_{k-2}l_{k-2}} z_{l'_{k-2}}  \\
-      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}}) \omega_{l'_{k}l_{k-1}} f'(a_{l'_{k-1}}) z_{l_{k-2}}  \\
+      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}}) \omega_{l'_{k}l_{k-1}} f'(a_{l_{k-1}}) z_{l_{k-2}}  \\
     \end{split}
-\end{equation}
+\end{equation*}
 
 }
 
 \paragraph{$\bm{l = l_{k-2}}$}{
 
-  \begin{equation}
+  \begin{equation*}
     \begin{split}
       - \frac{\partial E_{i}}{\partial \omega_{l_{k-2}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial \omega_{l_{k-2}}}\\
       & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
@@ -228,7 +295,18 @@ The backward propagation for each layer, except the last layer, is a recursive f
       & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
       & \times \omega_{l'_{k-1}l_{k-2}} f'(a_{l_{k-2}})  z_{l_{k-3}}  \\
     \end{split}
-\end{equation}
+\end{equation*}
+
+}
+
+\paragraph{$\bm{l = l_{k-3}}$}{
+
+  \begin{equation*}
+    \begin{split}
+      - \frac{\partial E_{i}}{\partial \omega_{l_{k-2}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
+      & \times \sum_{l'_{k-2}} \omega_{l'_{k-1}l'_{k-2}} f'(a_{l'_{k-2}}) \times \omega_{l'_{k-2}l_{k-3}} f'(a_{l_{k-3}}) z_{l_{k-4}}  \\
+    \end{split}
+\end{equation*}
 
 }
 
