@@ -131,6 +131,7 @@ Training the neural network uses the gradient method. All functions representing
 \end{equation}
 
 \subsubsection{Cross entropy cost function}
+\label{Cross_entropy_cost_function_sec}
 
 In information theory, the cross entropy between two probability distributions $p$ and $q$ over the same underlying set of events measures the average number of bits needed to identify an event drawn from the set, if a coding scheme is used that is optimized for an "unnatural" probability distribution $q$, rather than the "true" distribution $p$. In classification, the cross entropy for the distributions $t$, labels, and $z$, reconstructed solution, over a given set is defined as follows:
 
@@ -138,6 +139,8 @@ In information theory, the cross entropy between two probability distributions $
   E = - \sum_{i = 1}^{n}\sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \ln z_{l'_{k}} =  - \sum_{i = 1}^{n} E_{i}
   \label{cross_entropy}
 \end{equation}
+
+$t_{k}$ represents the known label, $z_{l'_{k}} = y_{k}$ represents the response of the system, $n$ is the number of participents. 
 
 In this section, we are going to derivate the cross entropy~\ref{cross_entropy}. To simplify the equation, we are derivating the cost function only for one subject and omitte the subscript $i$. At the output layer, the activation is $a_{l_{k}} = \sum_{l_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l_{k-1}} z_{l_{k-1}}$. The derivative of the cost function in function of the activtion is called the {\it error} and is written:
 
@@ -181,10 +184,10 @@ Each neuron is an activated function, $f$, of a linear combinaison of the neuron
 
 \begin{itemize}
     \item [$l = l_{0}$] we are at the level of the inputs
-    \item [$l = l_{1}$] $a_{l_{1}} = \sum_{l'_{0} = 0}^{L_{0}} \omega_{l_{1}l'_{0}} z_{l'_{0}} = \omega_{l_{1}}^{T} z^{(0)}$. $z_{l_{1}} = f(a_{l_{1}})$
+    \item [$l = l_{1}$] $a_{l_{1}} = \sum_{l'_{0} = 0}^{L_{0}} \omega_{l_{1}l'_{0}} z_{l'_{0}} = \omega_{l_{1}}^{T} z^{(0)}$. And $z_{l_{1}} = f(a_{l_{1}})$
     \item [$\vdots$]
-    \item [$l = l_{k-1}$] $a_{l_{k-1}} = \sum_{l'_{k-2} = 0}^{L_{k-2}} \omega_{l_{k-1}l'_{k-2}} z_{l'_{k-2}} = \omega_{l_{k-1}}^{T} z^{(k-2)}$. $z_{l_{k-1}} = f(a_{l_{k-1}})$
-    \item [$l = l_{k}$] $a_{l_{k}} = \sum_{l'_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l'_{k-1}} z_{l'_{k-1}} = \omega_{l_{k}}^{T} z^{(k-1)}$. $z_{l_{k}} = g(a_{l_{k}})$
+    \item [$l = l_{k-1}$] $a_{l_{k-1}} = \sum_{l'_{k-2} = 0}^{L_{k-2}} \omega_{l_{k-1}l'_{k-2}} z_{l'_{k-2}} = \omega_{l_{k-1}}^{T} z^{(k-2)}$. And $z_{l_{k-1}} = f(a_{l_{k-1}})$
+    \item [$l = l_{k}$] $a_{l_{k}} = \sum_{l'_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l'_{k-1}} z_{l'_{k-1}} = \omega_{l_{k}}^{T} z^{(k-1)}$. And $z_{l_{k}} = g(a_{l_{k}})$
 \end{itemize}
 
 In this enumeration $z^{(i)}$ is a vector of all neurons on the layer $(i)$. There are several choises for the activation function and we will try to provide the possibility of using several of them. However, the first developpments will be done with the hyperbolic tangent for the activation of the inside layers nerons: $f = \tanh$ and $f' = (1 - \tanh^{2})$. The last layer, the output layer, will be calculated with a soft maximum: $g(z_{l_{k}}) = e^{a_{l_{k}}} / \mathcal{Z}$, where the partition function $\mathcal{Z} = \sum_{l_{k} = 1}^{L_{k}} e^{z_{l_{k}}}$, and $g' = g(1 - g)$.
@@ -240,11 +243,8 @@ $\omega_{l_{1}=0l_{0}=0}$   &   $\omega_{01}$   & $\hdots$  &  $\omega_{L_{1}L_{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Backward propagation}
 
-To solve the problem of the backward propagation, we are using the gradient descent in its stochastic version: each iteration will use a new intput, instead of estimating the cost function with the entire input population.
-Taking the cross-enropy cost function, eq.~(\ref{cross_entropy}), in the case of classificaion. The gradiant descent can be evaluated in a classic way: taking all the participents for each iterations; or in a stochastic way: taking a new participent every iterations. 
-
-
-$t_{k}$ represents the known label, $z_{l'_{k}} = y_{k}$ represents the response of the system, $n$ is the number of participents. The gradient descent method used to find the minimum of the cost function is written:
+To solve the problem of the backward propagation, we have three options. The first option is to estimate the error for the full training set, which is heavy for the algorithm. The second option is the gradient descent in its stochastic version: each iteration will use a new intput, instead of estimating the cost function with the entire input population. The third option is a mid point between the two first option: the error is estimated with a batches sub set of the full training set.
+Taking the cross-enropy cost function, eq.~(\ref{cross_entropy}), in the case of classificaion. The gradiant descent can be evaluated in a classic way: taking all the participents for each iterations; or in a stochastic way: taking a new participent every iterations. The gradient descent method used to find the minimum of the cost function is written:
 
 \begin{equation}
   \bm{\omega}^{e+1} = \bm{\omega}^{e} - \eta \bm{\nabla} E
@@ -257,58 +257,38 @@ Where $\bm{\omega}$ represents the vector of weights, $e$ represents the {\it ep
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Algorithm}
 
-The backward propagation for each layer, except the last layer, is a recursive function of the previouse layer.
+The backward propagation for each layer, except the last layer, is a recursive estimtion of the deeper layer. The gradient~(\ref{gradient_descent}) at a particular weight is
 
-\paragraph{$\bm{l = l_{k}}$}{
+\begin{equation*}
+  \frac{\partial E_{i}}{\partial \omega_{l_{u}l_{v}}} = \frac{\partial E_{i}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{v}}} = \delta_{l_{u}}\frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{v}}} 
+\end{equation*}
+
+
+\paragraph{$\bm{l = l_{k}}$}{ Using the results from the section~\ref{Cross_entropy_cost_function_sec}:
 
   \begin{equation*}
     \begin{split}
-      - \frac{\partial E_{i}}{\partial \omega_{l_{k}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial \omega_{l_{k}}}\\
-      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \delta_{l'_{k}l_{k}} \delta_{l'_{k-1}l_{k-1}} z_{l'_{k-1}}  \\
-      & = t_{l_{k}} \times \frac{1}{z_{l_{k}}} g'(a_{l_{k}})  z_{l_{k-1}}  \\
+      \frac{\partial E_{i}}{\partial \omega_{l_{k}l_{k-1}}} = &  \frac{\partial E_{i}}{\partial a_{l_{k}}} \frac{\partial a_{l_{k}}}{\partial \omega_{l_{k}l_{k-1}}}  \\
+              = &  (z_{l_{k}} - t_{l_{k}})z_{l_{k-1}} \\
+    \end{split}
+  \end{equation*}
+
+}
+
+\paragraph{$\bm{l = l_{u}}$}{Using the chain rules of partial derivative, we found:
+
+  \begin{equation*}
+    \begin{split}
+      \frac{\partial E_{i}}{\partial \omega_{l_{u}l_{u-1}}} = &  \frac{\partial E_{i}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{u-1}}} = \delta_{l_{u}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{u-1}}}  \\
+              = & \sum_{l'_{u+1}}\frac{\partial E_{i}}{\partial a_{l'_{u+1}}} \frac{\partial a_{l'_{u+1}}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{u-1}}}   \\
+              = & \sum_{l'_{u+1}} \delta_{l'_{u+1}} \frac{\partial a_{l'_{u+1}}}{\partial a_{l_{u}}} z_{l_{u-1}}   \\
+              = & \sum_{l'_{u+1}} \delta_{l'_{u+1}} \sum_{l'_{u}} \omega_{l'_{u+1}l'_{u}} f'(a_{l'_{u}}) \delta_{l'_{u}l_{u}} z_{l_{u-1}}   \\
+              = & \sum_{l'_{u+1}} \delta_{l'_{u+1}} \omega_{l'_{u+1}l_{u}} f'(a_{l_{u}}) z_{l_{u-1}}   \\
     \end{split}
 \end{equation*}
 
 }
 
-\paragraph{$\bm{l = l_{k-1}}$}{
-
-  \begin{equation*}
-    \begin{split}
-      - \frac{\partial E_{i}}{\partial \omega_{l_{k-1}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial \omega_{l_{k-1}}}\\
-      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
-      & \times \sum_{l'_{k-2}} \delta_{l'_{k-1}l_{k-1}} \delta_{l'_{k-2}l_{k-2}} z_{l'_{k-2}}  \\
-      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}}) \omega_{l'_{k}l_{k-1}} f'(a_{l_{k-1}}) z_{l_{k-2}}  \\
-    \end{split}
-\end{equation*}
-
-}
-
-\paragraph{$\bm{l = l_{k-2}}$}{
-
-  \begin{equation*}
-    \begin{split}
-      - \frac{\partial E_{i}}{\partial \omega_{l_{k-2}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial \omega_{l_{k-2}}}\\
-      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
-      & \times \sum_{l'_{k-2}} \omega_{l'_{k-1}l'_{k-2}} f'(a_{l'_{k-2}}) \\
-      & \times \sum_{l'_{k-3}} \delta_{l'_{k-2}l_{k-2}} \delta_{l'_{k-3}l_{k-3}} z_{l'_{k-3}}  \\
-      & = \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
-      & \times \omega_{l'_{k-1}l_{k-2}} f'(a_{l_{k-2}})  z_{l_{k-3}}  \\
-    \end{split}
-\end{equation*}
-
-}
-
-\paragraph{$\bm{l = l_{k-3}}$}{
-
-  \begin{equation*}
-    \begin{split}
-      - \frac{\partial E_{i}}{\partial \omega_{l_{k-2}}} = & \sum_{l'_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} g'(a_{l'_{k}})  \sum_{l'_{k-1}} \omega_{l'_{k}l'_{k-1}} f'(a_{l'_{k-1}}) \\
-      & \times \sum_{l'_{k-2}} \omega_{l'_{k-1}l'_{k-2}} f'(a_{l'_{k-2}}) \times \omega_{l'_{k-2}l_{k-3}} f'(a_{l_{k-3}}) z_{l_{k-4}}  \\
-    \end{split}
-\end{equation*}
-
-}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
