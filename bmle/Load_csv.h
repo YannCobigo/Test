@@ -49,7 +49,7 @@ namespace MAC_bmle
   {
   public:
     /** Constructor. */
-    explicit BmleLoadCSV( const std::string& );
+    explicit BmleLoadCSV( const std::string&, const std::string& );
     
     /** Destructor */
     virtual ~BmleLoadCSV() {};
@@ -81,8 +81,6 @@ namespace MAC_bmle
     // Thermodynamic free energy
     double F_( const Eigen::MatrixXd& , const Eigen::MatrixXd& ,
 	       const Eigen::MatrixXd& , const Eigen::MatrixXd& ) const;
-    // Thermodynamic free energy
-    void Lambda_init_( const Eigen::MatrixXd& ) const;
     // Cumulative centered normal cumulative distribution function
     // https://en.wikipedia.org/wiki/Error_function
     double Normal_CFD_( const double value ) const
@@ -95,6 +93,8 @@ namespace MAC_bmle
     //
     // CSV file
     std::ifstream csv_file_;
+    // output directory
+    std::string   output_dir_;
     //
     // Arrange pidns into groups
     std::set< int > groups_;
@@ -162,8 +162,9 @@ namespace MAC_bmle
   //
   //
   template< int D_r, int D_f >
-    BmleLoadCSV< D_r, D_f >::BmleLoadCSV( const std::string& CSV_file ):
-    csv_file_{ CSV_file.c_str() }
+    BmleLoadCSV< D_r, D_f >::BmleLoadCSV( const std::string& CSV_file,
+					  const std::string& Output_dir ):
+    csv_file_{ CSV_file.c_str() }, output_dir_{ Output_dir }
   {
     try
       {
@@ -215,7 +216,7 @@ namespace MAC_bmle
 	    if ( group_pind_[ group ].find( PIDN ) == group_pind_[ group ].end() )
 	      {
 		groups_.insert( group );
-		group_pind_[ group ][PIDN] = BmleSubject< D_r, D_f >( PIDN, group );
+		group_pind_[ group ][PIDN] = BmleSubject< D_r, D_f >( PIDN, group, Output_dir );
 		group_num_subjects_[ group ]++;
 		num_subjects_++;
 	      }
@@ -697,9 +698,14 @@ namespace MAC_bmle
 	  std::cout << "constrast_ \n" << constrast_  << std::endl;
 	//
 	// Contrast output
-	PPM_               = BmleMakeITKImage( constrast_.cols(), "PPM.nii.gz", Y_[0] );
-	post_T_maps_       = BmleMakeITKImage( constrast_.cols(), "Posterior_t_maps.nii.gz", Y_[0] );
-	post_groups_param_ = BmleMakeITKImage( constrast_.cols(), "Post_groups_param.nii.gz", Y_[0] );
+	std::string
+	  sPPM = output_dir_ + "/" + "PPM.nii.gz",
+	  sPtM = output_dir_ + "/" + "Posterior_t_maps.nii.gz",
+	  sPgP = output_dir_ + "/" + "Post_groups_param.nii.gz";
+	//
+	PPM_               = BmleMakeITKImage( constrast_.cols(), sPPM, Y_[0] );
+	post_T_maps_       = BmleMakeITKImage( constrast_.cols(), sPtM, Y_[0] );
+	post_groups_param_ = BmleMakeITKImage( constrast_.cols(), sPgP, Y_[0] );
 
       }
     catch( itk::ExceptionObject & err )
@@ -856,7 +862,7 @@ namespace MAC_bmle
 	    //Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 	    //Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 32. ) * grad;
 	    //Eigen::MatrixXd delta_lambda = MAC_bmle::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) ) * grad;
-	    Eigen::MatrixXd delta_lambda = 0.1 * grad;
+	    Eigen::MatrixXd delta_lambda = 0.02 * grad;
 	    //std::cout << delta_lambda << std::endl;
 	    //std::cout << MAC_bmle::inverse( H  - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32.)  << std::endl;
 	    lambda_k[0][0] += delta_lambda( 0, 0 );
@@ -894,7 +900,7 @@ namespace MAC_bmle
 	    // Free energy
 	    F = F_( Y, inv_Cov_eps, eta_theta_Y, cov_theta_Y );
 	    delta_F = F - F_old;
-	    if ( fabs( delta_F ) < 1.e-3 )
+	    if ( fabs( delta_F ) < 5.e-2 )
 	      n++;
 	    else
 	      n = 0;
@@ -984,6 +990,7 @@ namespace MAC_bmle
 	//
 	// residual
 	Eigen::MatrixXd r = Augmented_Y - X_ * Eta_theta_Y;
+	//std::cout << "residual = " << r.norm() << std::endl;
 
 	//
 	// Terms of free energy
@@ -996,9 +1003,7 @@ namespace MAC_bmle
 	for ( int linco = 0 ; linco < Inv_Cov_eps.rows() ; linco++ )
 	  F_1 += log( Inv_Cov_eps(linco,linco) );
 	//
-	//for ( int linco = 0 ; linco < Cov_theta_Y.rows() ; linco++ )
-	//  F_4 += log( Cov_theta_Y(linco,linco) );
-	F_4 =  log( Cov_theta_Y.determinant() );
+	//F_4 =  log( Cov_theta_Y.determinant() );
 	
 	double
 	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
@@ -1007,61 +1012,9 @@ namespace MAC_bmle
 	//std::cout << "Inv_Cov_eps = " << Inv_Cov_eps << std::endl;
 	//
 	//
-	return ( F_1 + F_2 + F_3 + F_4 ) * 0.5;
-      }
-    catch( itk::ExceptionObject & err )
-      {
-	std::cerr << err << std::endl;
-	exit( -1 );
-      }
-  }
-  //
-  //
-  //
-  template< int D_r, int D_f > void
-    BmleLoadCSV< D_r, D_f >::Lambda_init_( const Eigen::MatrixXd& Augmented_Y ) const
-  {
-    try
-      {
-//	//
-//	// residual
-//	Eigen::MatrixXd r = Augmented_Y/* - X_ * Eta_theta_Y*/;
-//
-//	int
-//	  C_theta_dim = groups_.size() * ( D_r * (num_covariates_+1) + D_f ) /*C_theta dimension*/,
-//	  Q_k_linco = num_3D_images_ /*C_eps_1_base*/
-//	  + num_subjects_ * D_r + groups_.size() * D_f /*C_eps_2_base*/
-//	  + C_theta_dim;
-//
-//
-//	std::vector< double > lambda_k( 1 /*C_eps_1*/+ D_r /*C_eps_2*/+ 1 /*fixed effect*/);
-//	for ( int k = 0 ; k < lambda_k.size() - 1 ; k++ )
-//	  {
-//	    Eigen::MatrixXd inv_Q_k = Eigen::MatrixXd::Zero( Q_k_linco, Q_k_linco );
-//	    for ( int q = 0 ; q < Q_k_linco ; q++ )
-//	      if( Q_k_[k](q,q) != 0. )
-//		inv_Q_k(q,q) = 1. / Q_k_[k](q,q);
-//	    //
-//	    // lambda numerator
-//	    double l_num = (r.transpose() * inv_Q_k * r)(0,0);
-//	    //
-//	    // lambda denominator
-//	    Eigen::MatrixXd R = Eigen::MatrixXd::Identity( X_.rows(), Q_k_linco );
-//	    R -= X_ * ( X_.transpose() * inv_Q_k * X_ ).inverse() * X_.transpose() * inv_Q_k;
-//	    //
-//	    double l_denom = R.trace();
-//
-//	    std::cout << l_num << std::endl;
-//	    std::cout << l_denom << std::endl;
-//	    std::cout << "lamba[" << k << "] = " << l_num / l_denom << std::endl;
-//	  }
-//	lambda_k[ 0 ]       = log( 1.e+9 ); 
-//	lambda_k[ D_r + 1 ] = 0.; // Always enforce this value to be 0
-//
-//
-//
-//
-//
+	//std::cout << "F = " << ( F_1 + F_2 + F_3 + F_4 ) * 0.5 << std::endl;
+	return ( F_1 + F_2 + F_3 /*+ F_4*/ ) * 0.5;
+	//return F_2 * 0.5;
       }
     catch( itk::ExceptionObject & err )
       {
