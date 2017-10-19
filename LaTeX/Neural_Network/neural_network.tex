@@ -94,7 +94,7 @@ Fijee \sep electrode \sep PEM \sep CEM
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Functions}
 
-A neuron is represented with an activation $a_{l_{i}} = \sum_{l_{j} = 0}^{L_{j}} \omega_{l_{i}l_{j}} z_{l_{j}}$, integrating pulses from from other neurons, and its activation function $z_{l_{i}} = f(a_{l_{i}})$, the firering process of the neuron. Usually, the activation function is taken non-linear.
+A neuron is represented with an activation $a_{l_{i}} = \sum_{l_{j} = 0}^{L_{j}} \omega_{l_{i}l_{j}} z_{l_{j}}$, integrating pulses from other neurons, and its activation function $z_{l_{i}} = f(a_{l_{i}})$, the firering process of the neuron. Usually, the activation function is taken non-linear. Following the litterature, we will mostly use $\tanh$ or logistic function.
 
 \subsection{Activation functions}
 
@@ -108,14 +108,14 @@ The soft maximum is often used in classfication problem involving multiple outpu
   \label{soft_max}
 \end{equation}
 
-Where $\mathcal{Z}$ is the partition function normalizing the distribution. Derivating the soft maximum in function of the distrit parameter $a_{k}$ gives us:
+Where $\mathcal{Z}$ is the partition function normalizing the distribution. Derivating the soft maximum in function of the parameter $a_{k}$ gives us:
 
-  \begin{equation*}
-    \begin{split}
-      \frac{\partial g(a_{k})}{\partial a_{k'}} = & \left \lbrack \delta_{kk'} e^{a_{k'}} \mathcal{Z} - e^{a_{k'}}\frac{\partial \mathcal{Z}}{\partial a_{k'}} \right \rbrack \times \frac{1}{\mathcal{Z}^{2}}\\
-      = & \left \lbrack \delta_{kk'} e^{a_{k'}} \mathcal{Z} - e^{a_{k'}} \sum_{k''} \delta_{kk''} e^{a_{k''}}  \right \rbrack \times \frac{1}{\mathcal{Z}^{2}}\\
-      = & \frac{\delta_{kk'} e^{a_{k'}}}{\mathcal{Z}} - z_{k}z_{k'}\\
-    \end{split}
+\begin{equation*}
+  \begin{split}
+    \frac{\partial g(a_{k})}{\partial a_{k'}} = & \left \lbrack \delta_{kk'} e^{a_{k'}} \mathcal{Z} - e^{a_{k'}}\frac{\partial \mathcal{Z}}{\partial a_{k'}} \right \rbrack \times \frac{1}{\mathcal{Z}^{2}}\\
+    = & \left \lbrack \delta_{kk'} e^{a_{k'}} \mathcal{Z} - e^{a_{k'}} \sum_{k''} \delta_{kk''} e^{a_{k''}}  \right \rbrack \times \frac{1}{\mathcal{Z}^{2}}\\
+    = & \frac{\delta_{kk'} e^{a_{k'}}}{\mathcal{Z}} - z_{k}z_{k'}\\
+  \end{split}
 \end{equation*}
 
 
@@ -140,9 +140,9 @@ In information theory, the cross entropy between two probability distributions $
   \label{cross_entropy}
 \end{equation}
 
-$t_{k}$ represents the known label, $z_{l'_{k}} = y_{k}$ represents the response of the system, $n$ is the number of participents. 
+$t_{l'_{k}}$ represents the known label, $z_{l'_{k}} = y_{k}$ represents the response of the system, $n$ is the number of participents. 
 
-In this section, we are going to derivate the cross entropy~\ref{cross_entropy}. To simplify the equation, we are derivating the cost function only for one subject and omitte the subscript $i$. At the output layer, the activation is $a_{l_{k}} = \sum_{l_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l_{k-1}} z_{l_{k-1}}$. The derivative of the cost function in function of the activtion is called the {\it error} and is written:
+In this section, we are going to derivate the cross entropy~(\ref{cross_entropy}). To simplify the equation, we are derivating the cost function only for one subject and omitte the subscript $i$. At the output layer, the activation is $a_{l_{k}} = \sum_{l_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l_{k-1}} z_{l_{k-1}}$. The derivative of the cost function in function of the activtion is called the {\it error} and is written:
 
 \begin{equation}
   \delta_{k} = \frac{\partial E}{\partial a_{l_{k}}} = - \sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial a_{k}}
@@ -166,10 +166,85 @@ Which is exactly the same result as we would get in the cas of a least-square co
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Densly connected neural network}
+\section{Convolutional neural network}
+
+Convolutional neural networks (CNNs) are a biologically-inspired variation of the multilayer perceptrons (MLPs). Neurons in CNNs share weights unlike in MLPs where each neuron has a separate weight vector. This sharing of weights ends up reducing the overall number of trainable weights hence introducing sparsity. The output image is downsampled to reduce the number of weights for the next neural network and prevent overfitting.
+
 \subsection{Description and notation}
 
-Dense neural networks are cracterized by a full connection of a neuron of one layer with all neurons from the previouse layer. Table~\ref{Layers_activations} presents the activation function for each layer. In this document, the convention is $l = l_{0}$ for the input layer: $z_{l_{0} = 1} = x_{1}$, $z_{l_{0} = 2} = x_{2}$, \dots we will reserve the index 0 for the bias: $z_{l_{0} = 0} = x_{0} = b_{0}$ the bias on the input level. The last level is the output level: $l = l_{k}$, $z_{l_{k}} = y_{k}$. The output level does not have a bias node.
+CNNs consists of convolutional layers which are characterized by an input map $Im$, a bank of filters $Ker$ and biases $b$ (\ToDo{What is the meaning of the bias?}). Utilizing the weights sharing strategy, each neuron in the feature map is the result of the convolution of a kernel with the input image Fig.~\ref{fig:Convolutional_layers}. The filtering being formed by the weights sharing. The same procedure with different kernels (in orange and blue) will result in separate complete feature maps Fig.~\ref{fig:fitures_maps} (\ToDo{Why do we need several feature maps? How to initial the weights?}). This is then followed by a pooling operation which as a form of non-linear down-sampling, progressively reduces the spatial size of the representation thus reducing the amount of computation and parameters in the network. Existing between the convolution and the pooling layer is an activation function such as the {\it ReLu} layer; a non-saturating activation is applied element-wise, {\it i.e.} $f(x) = \max(0,x)$ thresholding at zero. After several convolutional and pooling layers, the image size (feature map size) is reduced and more complex features are extracted. Eventually with a small enough feature map, the contents are squashed into a one dimension vector and fed into a fully-connected MLP for processing. The last layer of this fully-connected MLP seen as the output, is a loss layer which is used to specify how the network training penalizes the deviation between the predicted and true labels.
+
+
+\begin{figure}[htbp]
+   \begin{center}
+      \includegraphics[scale=0.2, angle=0]{images/Bishop_cnn_layer.jpg}
+   \end{center}
+   \caption{Convolutional layers.}
+  \label{fig:Convolutional_layers} 
+\end{figure}
+
+\begin{figure*}[htbp]
+   \begin{center}
+      \includegraphics[scale=1., angle=0]{images/1-s2_0-S0149763416305176-gr4.jpg}
+   \end{center}
+   \caption{Generic structure of a CNN. For illustrative purpose, this example only has one layer of each type; a real-world CNN, however, would have several convolutional and pooling layers (usually interpolated) and one fully-connected layer. (a) Input layer. In its simplest way, the data is inputted into the network in such a way that each pixel corresponds to one node in the input layer. (b) Convolutional layer. A $3 \times 3$ filter or kernel (in green) is used to multiply the spatially corresponding $3 \times 3$ nodes in the image. The resulting weighted sum is then passed through a nonlinear function to derive the output value of one node in the feature map. The repetition of this same operation across all possible receptive fields results in one complete feature map. The same procedure with different kernels (in orange and blue) will result in separate complete feature maps. (c) Pooling layer. The size of each feature map can be reduced by taking the maximum value (or average) from a receptive field in the previous layer. (For interpretation of the references to colour in this figure legend, the reader is referred to the web version of this article.)}
+  \label{fig:fitures_maps} 
+\end{figure*}
+
+\subsubsection{Convolution}
+
+Given a three dimentional input image $Im$ and a filter (kernel) $Ker$ of dimensions $I \times J \times Ker$, the convolution operation is given by:
+
+\begin{equation*}
+  \begin{split}
+    (Im*Ker)_{xyz} = & \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K}Im(x-i,y-j,z-k)Ker(i,j,k)\\
+    = & \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K}Im(x+i,y+j,z+k)Ker(-i,-j,-k)
+  \end{split}
+  \label{eq:convolution} 
+\end{equation*}
+
+From Eq.~(\ref{eq:convolution}) can is represented on the Fig~\ref{fig:Kernel}. In the case of neuroimages images, we could have $M$ modalities as inputs such that $Im \in \mathbb{R}^{X \times Y \times Z \times M}$. Subsequently for a bank of $D$ filters we have $Ker \in \mathbb{R}^{I \times J \times K \times M \times D}$ and biases $b \in \mathbb{R}^{D}$, one for each filter:
+
+\begin{equation*}
+    (Im*Ker)_{xyz} =  \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K}\sum_{m=1}^{M}Im_{x+i,y+j,z+k}Ker_{-i,-j,-k,-m} - b
+  \label{eq:convolution_tot} 
+\end{equation*}
+
+\ToDo{Does the all the modalities are accounted in the same convolution??? Doupt it!}
+
+\begin{equation*}
+    v_{x,y,z,m}^{l} =  \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K}\omega_{-i,-j,-k,-m}^{l}o_{x+i,y+j,z+k,m}^{l-1} - b^{l}
+  \label{eq:convolution_tot} 
+\end{equation*}
+
+where $v$ is the convolved voxel, $l$ is any layer between $l = 1$ and $l = L$, $\omega$ is the weight at the layer $l$ (Fig.~\ref{fig:Kernel}), $b$ is the bias at the level $l$, $o$ is the output at the level $l-1$ ($o_{x,y,z,m}^{l} = f(x_{x,y,z,m}^{l})$ where $f$ is an activation function)
+
+
+
+\begin{figure}[htbp]
+   \begin{center}
+      \includegraphics[scale=0.2, angle=0]{images/GvsBA.jpg}
+   \end{center}
+   \caption{Kernel. Two dimensions representation of the kernel action.}
+  \label{fig:Kernel} 
+\end{figure}
+
+
+
+\subsection{Foward Propagation}
+
+\subsection{Backpropagation}
+
+\subsection{Pooling Layer}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Densely connected neural network}
+\subsection{Description and notation}
+
+Dense neural networks are cracterized by a full connection of a neuron of one layer with all neurons from the previouse layer. Table~\ref{Layers_activations} presents the activation function for each layer. In this document, the convention is $l = l_{0}$ for the input layer: $z_{l_{0} = 1} = x_{1}$, $z_{l_{0} = 2} = x_{2}$, \dots We will reserve the index 0 for the bias: $z_{l_{0} = 0} = x_{0} = b_{0}$ the bias on the input level. The last level is the output level: $l = l_{k}$, $z_{l_{k}} = y_{k}$. The output level does not have a bias node.
 
 \begin{table}[]
 \centering
@@ -179,6 +254,17 @@ Dense neural networks are cracterized by a full connection of a neuron of one la
  $\{ z_{l_{0}}\}_{l_{0} = 0}^{L_{0}}$&  $\{ z_{l_{1}}\}_{l_{1} = 0}^{L_{1}}$ &  $\cdots$ & $\{ z_{l_{k-1}}\}_{l_{k-1} = 0}^{L_{k-1}}$ &  $\{ z_{l_{k}}\}_{l_{k} = 1}^{L_{k}}$ &  \\ 
 \end{tabular}
 \end{table}
+
+\begin{figure}[htbp]
+   \begin{center}
+      \includegraphics[scale=0.2, angle=0]{images/densely_connected_nn.png}
+   \end{center}
+   \caption{Densely connected neural network.}
+  \label{fig:Densely_connected_neural_network} 
+\end{figure}
+
+
+
 
 Each neuron is an activated function, $f$, of a linear combinaison of the neurons from the previous layer. Function $g$ is the activation function for the output layer.
 
@@ -190,7 +276,7 @@ Each neuron is an activated function, $f$, of a linear combinaison of the neuron
     \item [$l = l_{k}$] $a_{l_{k}} = \sum_{l'_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l'_{k-1}} z_{l'_{k-1}} = \omega_{l_{k}}^{T} z^{(k-1)}$. And $z_{l_{k}} = g(a_{l_{k}})$
 \end{itemize}
 
-In this enumeration $z^{(i)}$ is a vector of all neurons on the layer $(i)$. There are several choises for the activation function and we will try to provide the possibility of using several of them. However, the first developpments will be done with the hyperbolic tangent for the activation of the inside layers nerons: $f = \tanh$ and $f' = (1 - \tanh^{2})$. The last layer, the output layer, will be calculated with a soft maximum: $g(z_{l_{k}}) = e^{a_{l_{k}}} / \mathcal{Z}$, where the partition function $\mathcal{Z} = \sum_{l_{k} = 1}^{L_{k}} e^{z_{l_{k}}}$, and $g' = g(1 - g)$.
+In this enumeration $z^{(i)}$ is a vector of all neurons on the layer $(i)$. There are several choises for the activation function and we will try to provide the possibility of using several of them. However, the first developpments will be done with the hyperbolic tangent for the activation of the inside layers neurons: $f = \tanh$ and $f' = (1 - \tanh^{2})$. The last layer, the output layer, will be calculated with a soft maximum: $g(z_{l_{k}}) = e^{a_{l_{k}}} / \mathcal{Z}$, where the partition function $\mathcal{Z} = \sum_{l_{k} = 1}^{L_{k}} e^{z_{l_{k}}}$, and $g' = g(1 - g)$.
   
 \subsection{Forward propagation}
 
@@ -201,7 +287,7 @@ $$
 
 \subsubsection{Algorithm}
 
-The Table~\ref{weights_distribution} guives the distribution of the weights in a dense neural network. Those weights can be represented in one long array in the hardware memory, Table~\ref{weights_in_mem}. The first layer $l = l_{1}$, after the inputs, has $(L_{1}+1)\times(L_{0}+1)$ weights. The layer after has $(L_{2}+1)\times(L_{1}+1)$ weights, so forth till the last layer having $L_{k}\times(L_{k-1}+1)$.
+The Table~\ref{weights_distribution} gives the distribution of the weights in a dense neural network. These weights can be represented in one long array in the hardware memory, Table~\ref{weights_in_mem}. The first layer $l = l_{1}$, after the inputs, has $(L_{1}-1)\times(L_{0})$ weights. The layer after has $(L_{2}-1)\times(L_{1})$ weights, so forth till the last layer having $L_{k}\times(L_{k-1})$.
 
 \begin{table}[]
 \centering
@@ -244,7 +330,7 @@ $\omega_{l_{1}=0l_{0}=0}$   &   $\omega_{01}$   & $\hdots$  &  $\omega_{L_{1}L_{
 \subsection{Backward propagation}
 
 To solve the problem of the backward propagation, we have three options. The first option is to estimate the error for the full training set, which is heavy for the algorithm. The second option is the gradient descent in its stochastic version: each iteration will use a new intput, instead of estimating the cost function with the entire input population. The third option is a mid point between the two first option: the error is estimated with a batches sub set of the full training set.
-Taking the cross-enropy cost function, eq.~(\ref{cross_entropy}), in the case of classificaion. The gradiant descent can be evaluated in a classic way: taking all the participents for each iterations; or in a stochastic way: taking a new participent every iterations. The gradient descent method used to find the minimum of the cost function is written:
+Taking the cross-enropy cost function, eq.~(\ref{cross_entropy}), in the case of classificaion. The gradient descent method used to find the minimum of the cost function is written:
 
 \begin{equation}
   \bm{\omega}^{e+1} = \bm{\omega}^{e} - \eta \bm{\nabla} E
@@ -275,7 +361,7 @@ The backward propagation for each layer, except the last layer, is a recursive e
 
 }
 
-\paragraph{$\bm{l = l_{u}}$}{Using the chain rules of partial derivative, we found:
+\paragraph{$\bm{l = l_{u}}$}{We write the relation between the level $l_{u}$ and the layer immediatly after using the chain rules of partial derivative:
 
   \begin{equation*}
     \begin{split}
