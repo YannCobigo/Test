@@ -206,24 +206,24 @@ Given a three dimentional input image $Im$ and a filter (kernel) $Ker$ of dimens
 From Eq.~(\ref{eq:convolution}) can is represented on the Fig~\ref{fig:Kernel}. In the case of neuroimages images, we could have $M$ modalities as inputs such that $Im \in \mathbb{R}^{X \times Y \times Z \times M}$. Subsequently for a bank of $D$ filters we have $Ker \in \mathbb{R}^{I \times J \times K \times M \times D}$ and biases $b \in \mathbb{R}^{D}$, one for each filter:
 
 \begin{equation*}
-    (Im*Ker)_{xyz} =  \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K}\sum_{m=1}^{M}Im_{x+i,y+j,z+k}Ker_{-i,-j,-k,-m} - b
+    (Im*Ker)_{x,y,z} =  \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K}\sum_{m=1}^{M}Im_{x+i,y+j,z+k}Ker_{-i,-j,-k,-m} - b_{x,y,z,m}
   \label{eq:convolution_tot} 
 \end{equation*}
 
 \ToDo{Does the all the modalities are accounted in the same convolution??? Doupt it!}
 
-\begin{equation*}
-    v_{x,y,z,m}^{l} =  \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K}\omega_{-i,-j,-k,-m}^{l}o_{x+i,y+j,z+k,m}^{l-1} - b^{l}
-  \label{eq:convolution_tot} 
-\end{equation*}
+\begin{equation}
+    v_{x,y,z,m}^{l} =  \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K}\omega_{-i,-j,-k,-m}^{l}o_{x+i,y+j,z+k,m}^{l-1} - b_{x,y,z,m}^{l}
+  \label{eq:convolution_tot_vox} 
+\end{equation}
 
-where $v$ is the convolved voxel, $l$ is any layer between $l = 1$ and $l = L$, $\omega$ is the weight at the layer $l$ (Fig.~\ref{fig:Kernel}), $b$ is the bias at the level $l$, $o$ is the output at the level $l-1$ ($o_{x,y,z,m}^{l} = f(x_{x,y,z,m}^{l})$ where $f$ is an activation function)
+where $v$ is the convolved voxel, $l$ is any layer between $l = 1$ and $l = L$, $\omega$ is the weight at the layer $l$ (Fig.~\ref{fig:Kernel}), $b$ is the bias at the level $l$, $o$ is the output at the level $l-1$ ($o_{x,y,z,m}^{l} = f(v_{x,y,z,m}^{l})$ where $f$ is an activation function)
 
 
 
 \begin{figure}[htbp]
    \begin{center}
-      \includegraphics[scale=0.2, angle=0]{images/GvsBA.jpg}
+      \includegraphics[scale=0.3, angle=0]{images/GvsBA.jpg}
    \end{center}
    \caption{Kernel. Two dimensions representation of the kernel action.}
   \label{fig:Kernel} 
@@ -233,7 +233,29 @@ where $v$ is the convolved voxel, $l$ is any layer between $l = 1$ and $l = L$, 
 
 \subsection{Foward Propagation}
 
+To perform a convolution operation, the kernel is flipped $180^{\circ}$ and slid across the input feature map in equal and finite strides. At each location, the product between each element of the kernel and the input feature map element it overlaps is computed and the results summed up to obtain the output at that current location Fig.~\ref{fig:Kernel} modelized by Eq.~(\ref{eq:convolution_tot_vox}). This procedure is repeated using different kernels to form as many output feature maps as desired Fig.~\ref{fig:fitures_maps}. The concept of weight sharing is used as demonstrated in the diagram Fig.~\ref{fig:fCNN}.
+
+\begin{figure}[htbp]
+   \begin{center}
+      \includegraphics[scale=0.3, angle=0]{images/fCNN.png}
+   \end{center}
+   \caption{Units in convolutional layer illustrated above have receptive fields of size 4 in the input feature map and are thus only connected to 4 adjacent neurons in the input layer. This is the idea of sparse connectivity in CNNs where there exists local connectivity pattern between neurons in adjacent layers.}
+  \label{fig:fCNN} 
+\end{figure}
+
 \subsection{Backpropagation}
+
+For backpropagation there are two updates performed, for the weights and the deltas. Lets begin with the weight update. We are looking to compute $\partial E / \partial \omega_{uvw}^{l}$ which can be interpreted as the measurement of how the change in a single pixel $\omega_{uvw}^{l}$ in the weight kernel affects the loss function $E$. Convolution between the input feature map of dimension $X \times Y \times Z$  and the weight kernel of dimension $I \times J \times K$ produces an output feature map of size $X \times Y \times Z$. The gradient component for the individual weights can be obtained by applying the chain rule in the following way:
+
+\begin{equation*}
+  \begin{split}
+    \frac{\partial E}{\partial \omega_{uvwm}^{l}} =& \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K} \frac{\partial E}{\partial v_{x,y,z,m}^{l}}\frac{\partial v_{x,y,z,m}^{l}}{\partial \omega_{uvw}^{l}}  \\
+    =& \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K} \delta_{ijk}^{l} \frac{\partial v_{x,y,z,m}^{l}}{\partial \omega_{uvw}^{l}}  \\
+    =& \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K} \delta_{ijk}^{l} \frac{\partial }{\partial \omega_{uvw}^{l}}  \left( \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K}\omega_{-i,-j,-k,-m}^{l}o_{x+i,y+j,z+k,m}^{l-1} - b_{x,y,z,m}^{l} \right)
+  \end{split}
+  \label{eq:backward_weights} 
+\end{equation*}
+
 
 \subsection{Pooling Layer}
 
@@ -257,7 +279,7 @@ Dense neural networks are cracterized by a full connection of a neuron of one la
 
 \begin{figure}[htbp]
    \begin{center}
-      \includegraphics[scale=0.2, angle=0]{images/densely_connected_nn.png}
+      \includegraphics[scale=0.3, angle=0]{images/densely_connected_nn.png}
    \end{center}
    \caption{Densely connected neural network.}
   \label{fig:Densely_connected_neural_network} 
