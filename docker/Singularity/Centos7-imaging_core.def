@@ -31,6 +31,7 @@ IncludeCmd: yes
 	  $SINGULARITY_ROOTFS/mnt/Quarantine \
 	  $SINGULARITY_ROOTFS/mnt/SNC-PACS-GW1 \
 	  $SINGULARITY_ROOTFS/mnt/tempo \
+	  $SINGULARITY_ROOTFS/home/mac \
 	  $SINGULARITY_ROOTFS/netapp \
 	  $SINGULARITY_ROOTFS/netapp/home \
 	  $SINGULARITY_ROOTFS/etc/singularity/ 
@@ -38,7 +39,7 @@ IncludeCmd: yes
     cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
     # Customized applications 
     cp -r QAP  $SINGULARITY_ROOTFS/mnt/tempo/
-    cp -r atom.x86_64.rpm  $SINGULARITY_ROOTFS/mnt/tempo/
+    #cp -r atom.x86_64.rpm  $SINGULARITY_ROOTFS/mnt/tempo/
     #cp -r dipy $SINGULARITY_ROOTFS/mnt/tempo/
     
 
@@ -129,7 +130,7 @@ IncludeCmd: yes
 	#
 	echo "Modified PYTHON libraries"
 	cd /mnt/tempo/QAP && chmod u+x setup.py && python setup.py build && python setup.py install 
-	cd /mnt/tempo/ && yum install -y atom.x86_64.rpm
+	#cd /mnt/tempo/ && yum install -y atom.x86_64.rpm
 	#    && cd /mnt/tempo/dipy && chmod u+x setup.py && python setup.py build && python setup.py install
 	#
 	rm -rf /mnt/tempo/*
