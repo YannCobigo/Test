@@ -173,7 +173,8 @@ Convolutional neural networks (CNNs) are a biologically-inspired variation of th
 
 \subsection{Description and notation}
 
-CNNs consists of convolutional layers which are characterized by an input map $Im$, a bank of filters $Ker$ and biases $b$ per layer. Utilizing the weights sharing strategy, each neuron in the feature map is the result of the convolution of a kernel with a region in the input image, called the {\it local receptive field for the hidden neuron}, Fig.~\ref{fig:Convolutional_layers}. The local receptive field is a little window on the input pixels. Each connection learns a weight. And the hidden neuron learns an overall bias as well. You can think of that particular hidden neuron as learning to analyze its particular local receptive field. The filtering being formed by the weights sharing and a bias. This is then followed by a pooling operation which as a form of non-linear down-sampling, progressively reduces the spatial size of the representation thus reducing the amount of computation and parameters in the network. Existing between the convolution and the pooling layer is an activation function such as the {\it ReLu} layer; a non-saturating activation is applied element-wise, {\it i.e.} $f(x) = \max(0,x)$ thresholding at zero. After several convolutional and pooling layers, the image size (feature map size) is reduced and more complex features are extracted. Eventually with a small enough feature map, the contents are squashed into a one dimension vector and fed into a fully-connected MLP for processing. The last layer of this fully-connected MLP seen as the output, is a loss layer which is used to specify how the network training penalizes the deviation between the predicted and true labels.
+CNNs consists of convolutional layers which are characterized by an input map $Im$, a bank of filters $Ker$ and biases $b$ per layer. Utilizing the weights sharing strategy, each neuron in the feature map is the result of the convolution of a kernel with a region in the input image, called the {\it local receptive field for the hidden neuron}, Fig.~\ref{fig:Convolutional_layers}. The local receptive field is a little window on the input pixels. You can think of that particular hidden neuron as learning to analyze its particular local receptive field. This is then followed by a pooling operation which as a form of non-linear down-sampling, progressively reduces the spatial size of the representation thus reducing the amount of computation and parameters in the network. Existing between the convolution and the pooling layer is an activation function such as the Rectified Linear unit ({\it ReLu}) layer; a non-saturating activation is applied element-wise, {\it i.e.} $f(x) = \max(0,x)$ thresholding at zero. After several convolutional and pooling layers, the image size (feature map size) is reduced and more complex features are extracted. \\
+Eventually with a small enough feature map, the contents are squashed into a one dimension vector and fed into a fully-connected MLP for processing. The last layer of this fully-connected MLP seen as the output, is a loss layer which is used to specify how the network training penalizes the deviation between the predicted and true labels.
 
 
 \begin{figure}[htbp]
@@ -192,7 +193,7 @@ CNNs consists of convolutional layers which are characterized by an input map $I
   \label{fig:features_maps} 
 \end{figure*}
 
-\paragraph{Feature map}{The weights sharing strategy means that all the neurons in the first hidden layer detect exactly the same feature at different locations in the input image. A feature detected by a hidden neuron as the kind of input pattern that will cause the neuron to activate: it might be an edge in the image, for instance, or maybe some other type of shape. To see why this makes sense, suppose the weights and bias are such that the hidden neuron can pick out, a vertical edge in a particular local receptive field. That ability is also likely to be useful at other places in the image. And so it is useful to apply the same feature detector everywhere in the image. To put it in slightly more abstract terms, convolutional networks are well adapted to the translation invariance of images: move a picture of a cat a little ways, and it's still an image of a cat. To increase the feature coverage we create multiple kernel and use the same procedure with different kernels (in orange and blue) will result in separate complete feature maps Fig.~\ref{fig:features_maps} (\ToDo{How to initial the weights?})}
+\paragraph{Feature map}{The weights sharing strategy means that all the neurons in the first hidden layer detect exactly the same feature at different locations in the input image. A feature detected by a hidden neuron as the kind of input pattern that will cause the neuron to activate: it might be an edge in the image, for instance, or maybe some other type of shape. To see why this makes sense, suppose the weights and bias are such that the hidden neuron can pick out, a vertical edge in a particular local receptive field. That ability is also likely to be useful at other places in the image. And so it is useful to apply the same feature detector everywhere in the image. To put it in slightly more abstract terms, convolutional networks are well adapted to the translation invariance of images: move a picture of a cat a little ways, and it's still an image of a cat. To increase the feature coverage we create multiple kernel and use the same procedure with different kernels (in orange and blue) will result in separate complete feature maps Fig.~\ref{fig:features_maps} (\ToDo{How to initial the weights between two feature maps?})}
 
 \subsubsection{Convolution}
 
@@ -206,7 +207,7 @@ Given a three dimentional input image $Im$ and a filter (kernel) $Ker$ of dimens
   \label{eq:convolution} 
 \end{equation}
 
-Eq.~(\ref{eq:convolution}) is represented on the Fig~\ref{fig:Kernel}. In the case of neuroimages, we could have $M$ modalities as inputs such that $Im \in \mathbb{R}^{X \times Y \times Z}$. Subsequently, for one convolutional layer with a bank of $D$ filters we have $Ker \in \mathbb{R}^{I \times J \times K \times D}$ and biases $b \in \mathbb{R}^{D}$, one for each filter. The feature map is:
+Eq.~(\ref{eq:convolution}) is represented on the Fig~\ref{fig:Kernel}. In the case of neuroimages, we could have $M$ modalities as inputs such that $Im \in \mathbb{R}^{X \times Y \times Z}$. Subsequently, for one convolutional layer with a bank of $D$ filters we have $Ker \in \mathbb{R}^{I \times J \times K \times D}$ and biases $b \in \mathbb{R}^{D}$, one for each filter. The feature map is for a modality $m$:
 
 \begin{equation*}
     (Im*Ker)_{x,y,z,m} =  \sum_{i=1}^{I}\sum_{j=1}^{J}\sum_{k=1}^{K}Im_{x+i,y+j,z+k,m}Ker_{-i,-j,-k,-m} - b_{x,y,z,m}
@@ -216,11 +217,11 @@ Eq.~(\ref{eq:convolution}) is represented on the Fig~\ref{fig:Kernel}. In the ca
 For a layer's voxel:
 
 \begin{equation}
-    a_{xyz;l_{u}}^{(\theta)} =  \sum_{i=1,j=1,k=1}^{I \times J \times K}\omega_{ijk;l_{u}l_{u-1}}^{(\theta)}z_{x+i,y+j,z+k;l_{u-1}}^{(\theta)} - b_{l_{k}}^{(\theta)}
+    a_{xyz;l_{u}}^{(\theta)} =  \sum_{i=1,j=1,k=1}^{I \times J \times K}\omega_{ijk;l_{u}}^{(\theta)}z_{x+i,y+j,z+k;l_{u-1}}^{(\theta)} - b_{l_{k}}^{(\theta)}
   \label{eq:convolution_tot_vox} 
 \end{equation}
 
-where $a$ is the convolved activation voxel in the feature map, $l_{u}$ is any layer, $\omega$ is the weight at the layer $l_{u}$ (Fig.~\ref{fig:Kernel}), $b$ is the bias at the level $l_{u}$, $z$ is the output at the level $l_{u-1}$ ($z_{xyz;l_{u}}^{(\theta)} = f(a_{xyz;l_{u}}^{(\theta)})$ where $f$ is an activation function). $theta$ is the set of parameters describing the the modality and the set of kernels associated to the different feature maps.
+where $a$ is the convolved activation voxel in the feature map, $l_{u}$ is any layer, $\omega$ is the weight at the layer $l_{u}$ (Fig.~\ref{fig:Kernel}), $b$ is the bias at the level $l_{u}$, $z$ is the output at the level $l_{u-1}$ ($z_{xyz;l_{u}}^{(\theta)} = f(a_{xyz;l_{u}}^{(\theta)})$ where $f$ is an activation function). $\theta = \{m,d\}$ is the set of parameters describing the modality $m$ and the set of kernels $d$ associated to the different feature maps.
 
 
 
@@ -248,37 +249,41 @@ To perform a convolution operation, the kernel is flipped $180^{\circ}$ and slid
 
 \subsection{Backpropagation}
 
-For backpropagation there are two updates performed, for the weights and the deltas. Lets begin with the weight update. We are looking to compute $\partial E / \partial \omega_{uvw}^{l}$ which can be interpreted as the measurement of how the change in a single pixel $\omega_{uvw}^{l}$ in the weight kernel affects the loss function $E$. Convolution between the input feature map of dimension $X \times Y \times Z$  and the weight kernel of dimension $I \times J \times K$ produces an output feature map of size $X \times Y \times Z$. The gradient component for the individual weights can be obtained by applying the chain rule Eq.~(\ref{eq:conv_backward_weights}).\\
+For backpropagation there are two updates performed, for the weights and the deltas. Lets begin with the weight update. We are looking to compute $\partial E / \partial \omega_{uvw;l}^{(\theta)}$ which can be interpreted as the measurement of how the change in a single pixel $\omega_{uvw;l}^{(\theta)}$ in the weight kernel affects the loss function $E$. Convolution between the input feature map of dimension $X \times Y \times Z$  and the weight kernel of dimension $I \times J \times K$ produces an output feature map of size $X \times Y \times Z$. The gradient component for the individual weights can be obtained by applying the chain rule Eq.~(\ref{eq:conv_backward_weights}).\\
 
 %\lipsum[3-4]
 
 \begin{equation}
-    \frac{\partial E_{i}}{\partial \omega_{uvw;l_{u}l_{u-1}}^{(\theta)}} = \sum_{xyz}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(\theta)}}\frac{\partial a_{xyz;l_{u}}^{(\theta)}}{\partial \omega_{uvw;l_{u}l_{u-1}}^{(\theta)}}  \\
+  \begin{split}
+    \frac{\partial E_{i}}{\partial \omega_{uvw;l_{u}}^{(\theta)}} =& \sum_{xyz}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(\theta)}}\frac{\partial a_{xyz;l_{u}}^{(\theta)}}{\partial \omega_{uvw;l_{u}}^{(\theta)}}  \\
+    =& \sum_{xyz}^{X \times Y \times Z} \delta_{l_{u}}^{(\theta)}z_{x'+u,y'+v,z'+w;l_{u-1}}^{(\theta)} \\
+  \end{split}
   \label{eq:conv_backward_weights} 
 \end{equation}
 
 Using equation~(\ref{eq:convolution_tot_vox}) for all the activation of the layer $l_{u}$, we have:
 
 \begin{equation*}
-    \left( \frac{\partial a_{xyz;l_{u}}}{\partial \omega_{uvw;l_{u}l_{u-1}}} \right)^{(\theta)} = z_{x'+u,y'+v,z'+w;l_{u-1}}^{(\theta)}
+    \left( \frac{\partial a_{xyz;l_{u}}}{\partial \omega_{uvw;l_{u}}} \right)^{(\theta)} = z_{x'+u,y'+v,z'+w;l_{u-1}}^{(\theta)}
 \end{equation*}
 
-Where $(x',y',z')$ are in the receiptive field of $(x,y,z)$. The second part of the equation can be solved in the following way:
+Where $(x',y',z')$ are in the receiptive field of $(x,y,z)$. In our case, the input map and the feature map have exactly the the size, we should have a strict correspondance between $(x',y',z')_{l_{k}}$ and $(x,y,z)_{l_{k-1}}$. The second part of the equation can be solved in the following way:
 
 
 \begin{strip}
 \begin{equation}
   \begin{split}
-    \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(\theta)}} =&  \sum_{x''y''z''}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{x''y''z'';l_{u+1}}^{(\theta)}}\frac{\partial a_{x''y''z'';l_{u+1}}^{(\theta)}}{\partial a_{xyz;l_{u}}^{(\theta)}}\\
-    =&  \sum_{x''y''z''}^{X \times Y \times Z} \delta_{l_{u+1}}^{(\theta)}(x'',y'',z'') \times \frac{\partial a_{x''y''z'';l_{u+1}}^{(\theta)}}{\partial a_{xyz;l_{u}}^{(\theta)}}\\
-    =& \sum_{x''y''z''}^{X \times Y \times Z} \delta_{l_{u+1}}^{(\theta)}(x'',y'',z'') \times \frac{\partial }{\partial a_{xyz;l_{u}}^{(\theta)}} \sum_{abc}\omega_{abc;l_{u+1}l_{u}}^{(\theta)}f(a_{\tilde{x}+a,\tilde{y}+b,\tilde{z}+c;l_{u}}^{(\theta)})\\
-    =& \sum_{x''y''z''}^{X \times Y \times Z} \delta_{l_{u+1}}^{(\theta)}(x'',y'',z'') \times \sum_{abc}\omega_{abc;l_{u+1}l_{u}}^{(\theta)} \delta(x-(\tilde{x}+a),y-(\tilde{y}+b),z-(\tilde{z}+c)) f'(a_{\tilde{x}+a,\tilde{y}+b,\tilde{z}+c;l_{u}}^{(\theta)})\\
+    \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(\theta)}} =&  \sum_{x''y''z''}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{x''y''z'';l_{u+1}}^{(\theta'')}}\frac{\partial a_{x''y''z'';l_{u+1}}^{(\theta'')}}{\partial a_{xyz;l_{u}}^{(\theta)}}\\
+    =& \sum_{x''y''z''}^{X \times Y \times Z} \delta_{l_{u+1}}^{(\theta'')}(x'',y'',z'') \times \frac{\partial a_{x''y''z'';l_{u+1}}^{(\theta'')}}{\partial a_{xyz;l_{u}}^{(\theta)}}\\
+    =& \sum_{x''y''z''}^{X \times Y \times Z} \delta_{l_{u+1}}^{(\theta'')}(x'',y'',z'') \times \frac{\partial }{\partial a_{xyz;l_{u}}^{(\theta)}} \sum_{abc}\omega_{abc;l_{u+1}}^{(\theta)}f(a_{x''+a,y''+b,z''+c;l_{u}}^{(\theta)})\\
+    =& \sum_{x''y''z''}^{X \times Y \times Z} \delta_{l_{u+1}}^{(\theta'')}(x'',y'',z'') \times \sum_{abc}\omega_{abc;l_{u+1}}^{(\theta'')} \delta(x-(x''+a),y-(y''+b),z-(z''+c)) f'(a_{x''+a,y''+b,z''+c;l_{u}}^{(\theta)})\\
+    =& f'(a_{x,y,z;l_{u}}^{(\theta)}) \sum_{abc} \delta_{l_{u+1}}^{(\theta'')}(x-a,y-b,z-c) \times \omega_{abc;l_{u+1}}^{(\theta'')} \\
   \end{split}
   \label{} 
 \end{equation}
 \end{strip}
 
-Where $\{(x'',y'',z'')_{l_{k}}\}$ is a set of activation sites on the layer $l_{u+1}$ having $(x,y,z)_{l_{k}}$ in its receiving field. We keep the $\delta(x-(\tilde{x}+a),y-(\tilde{y}+b),z-(\tilde{z}+c))$ Dirac distribution in the sum, since we will select the $(a,b,c)$ to get an input output correspondance. In our case, we should have a strict correspondance between $(x',y',z')_{l_{k}}$ and $(x,y,z)_{l_{k-1}}$.
+Where $\{(x'',y'',z'')_{l_{k}}\}$ is a set of activation sites on the layer $l_{u+1}$ having $(x,y,z)_{l_{k}}$ in its receiving field. We keep the $\delta(x-(\tilde{x}+a),y-(\tilde{y}+b),z-(\tilde{z}+c))$ Dirac distribution in the sum, since we will select the $(a,b,c)$ to get an input output correspondance. 
 
 \subsection{Pooling Layer}
 
