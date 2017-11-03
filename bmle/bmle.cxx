@@ -171,51 +171,55 @@ main( const int argc, const char **argv )
 		    {
 		      MaskType::IndexType idx = imageIterator_mask.GetIndex();
 #ifdef DEBUG
-		      if ( idx[0] > 25 && idx[0] < 35 && 
-			   idx[1] > 65 && idx[1] < 75 &&
-			   idx[2] > 55 && idx[2] < 65 )
+		      if ( idx[0] > 59 && idx[0] < 140 && 
+			   idx[1] > 71 && idx[1] < 75 &&
+			   idx[2] > 59 && idx[2] < 110 )
 			{
 			  std::cout << imageIterator_mask.GetIndex() << std::endl;
 			  subject_mapping.Expectation_Maximization( idx );
 			}
 #else
 		      // Please do not remove the bracket!!
-		      // ALL
-		      if ( idx[0] > 0 && idx[0] < 63 && 
-			   idx[1] > 0 && idx[1] < 55 &&
-			   idx[2] > 0 && idx[2] < 16 )
+		      // vertex
+//		      if ( idx[0] >= 64  && idx[0] < 65 && 
+//			   idx[1] >= 92 && idx[1] < 93 &&
+//			   idx[2] >= 73  && idx[2] < 74 )
+//		      // ALL
+//		      if ( idx[0] > 5 && idx[0] < 115 && 
+//			   idx[1] > 5 && idx[1] < 140 &&
+//			   idx[2] > 2 && idx[2] < 110 )
 //		      // Octan 1
-//		      if ( idx[0] > 10 && idx[0] < 60  & 
-//			   idx[1] > 10 && idx[1] < 70  &&
-//			   idx[2] > 10 && idx[2] < 60  )
+//		      if ( idx[0] > 5 && idx[0] < 60  & 
+//			   idx[1] > 5 && idx[1] < 70  &&
+//			   idx[2] > 2 && idx[2] < 60  )
 //		      // Octan 2
-//		      if ( idx[0] > 60 && idx[0] < 110 && 
-//			   idx[1] > 10 && idx[1] < 70  &&
-//			   idx[2] > 10 && idx[2] < 60 )
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] > 5 && idx[1] < 70  &&
+//			   idx[2] > 2 && idx[2] < 60 )
 //		      // Octan 3
-//		      if ( idx[0] > 10 && idx[0] < 60  && 
-//			   idx[1] > 70 && idx[1] < 140 &&
-//			   idx[2] > 10 && idx[2] < 60 )
+//		      if ( idx[0] > 5 && idx[0] < 60  && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] > 2 && idx[2] < 60 )
 //		      // Octan 4
-//		      if ( idx[0] > 60 && idx[0] < 110 && 
-//			   idx[1] > 70 && idx[1] < 140 &&
-//			   idx[2] > 10 && idx[2] < 60 )
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] > 2 && idx[2] < 60 )
 //		      // Octan 5
-//		      if ( idx[0] > 10 && idx[0] < 60 && 
-//			   idx[1] > 10 && idx[1] < 70 &&
-//			   idx[2] > 60 && idx[2] < 110 )
+//		      if ( idx[0] > 5 && idx[0] < 60 && 
+//			   idx[1] > 5 && idx[1] < 70 &&
+//			   idx[2] >= 60 && idx[2] < 110 )
 //		      // Octan 6
-//		      if ( idx[0] > 60 && idx[0] < 110 && 
-//			   idx[1] > 10 && idx[1] < 70  &&
-//			   idx[2] > 60 && idx[2] < 110 )
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] > 5 && idx[1] < 70  &&
+//			   idx[2] >= 60 && idx[2] < 110 )
 //		      // Octan 7
-//		      if ( idx[0] > 10 && idx[0] < 60  && 
-//			   idx[1] > 70 && idx[1] < 140 &&
-//			   idx[2] > 60 && idx[2] < 110 )
-//		      // Octan 8
-//		      if ( idx[0] > 60 && idx[0] < 110 && 
-//			   idx[1] > 70 && idx[1] < 140 &&
-//			   idx[2] > 60 && idx[2] < 110 )
+//		      if ( idx[0] > 5 && idx[0] < 60  && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] >= 60 && idx[2] < 110 )
+		      // Octan 8
+		      if ( idx[0] >= 60 && idx[0] < 110 && 
+			   idx[1] >= 70 && idx[1] < 140 &&
+			   idx[2] >= 60 && idx[2] < 110 )
 			{
 			  pool.enqueue( std::ref(subject_mapping), idx );
 			}
