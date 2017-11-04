@@ -217,11 +217,11 @@ Eq.~(\ref{eq:convolution}) is represented on the Fig~\ref{fig:Kernel}. In the ca
 For a layer's voxel:
 
 \begin{equation}
-    a_{xyz;l_{u}}^{(\theta)} =  \sum_{i=1,j=1,k=1}^{I \times J \times K}\omega_{ijk;l_{u}}^{(\theta)}z_{x+i,y+j,z+k;l_{u-1}}^{(\theta)} - b_{l_{k}}^{(\theta)}
+    a_{xyz;l_{u}}^{(s)} =  \sum_{s'=1}^{S'}\sum_{i=1,j=1,k=1}^{I \times J \times K}\omega_{s'ijk;l_{u}}^{(s)}z_{x_{s'}+i,y_{s'}+j,z_{s'}+k;l_{u-1}}^{(s')} - b_{l_{k}}^{(s)}
   \label{eq:convolution_tot_vox} 
 \end{equation}
 
-where $a$ is the convolved activation voxel in the feature map, $l_{u}$ is any layer, $\omega$ is the weight at the layer $l_{u}$ (Fig.~\ref{fig:Kernel}), $b$ is the bias at the level $l_{u}$, $z$ is the output at the level $l_{u-1}$ ($z_{xyz;l_{u}}^{(\theta)} = f(a_{xyz;l_{u}}^{(\theta)})$ where $f$ is an activation function). $\theta = \{m,d\}$ is the set of parameters describing the modality $m$ and the set of kernels $d$ associated to the different feature maps.
+where $a$ is the convolved activation voxel in the feature map, $l_{u}$ is any layer, $\omega$ is the weight at the layer $l_{u}$ (Fig.~\ref{fig:Kernel}), $b$ is the bias at the level $l_{u}$, $z$ is the output at the level $l_{u-1}$ ($z_{xyz;l_{u}}^{(s)} = f(a_{xyz;l_{u}}^{(s)})$ where $f$ is an activation function). $s$ is the set layers built in the previous layer. If the current layer is the first layer, $s$ represents the set of input images. Otherwise, $s$ is the set of feature maps created by the previouse convolutional layer.
 
 
 
@@ -255,8 +255,8 @@ For backpropagation there are two updates performed, for the weights and the del
 
 \begin{equation}
   \begin{split}
-    \frac{\partial E_{i}}{\partial \omega_{uvw;l_{u}}^{(\theta)}} =& \sum_{xyz}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(\theta)}}\frac{\partial a_{xyz;l_{u}}^{(\theta)}}{\partial \omega_{uvw;l_{u}}^{(\theta)}}  \\
-    =& \sum_{xyz}^{X \times Y \times Z} \delta_{l_{u}}^{(\theta)}z_{x'+u,y'+v,z'+w;l_{u-1}}^{(\theta)} \\
+    \frac{\partial E_{i}}{\partial \omega_{s'ijk;l_{u}}^{(s)}} =& \sum_{xyz}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(s)}}\frac{\partial a_{xyz;l_{u}}^{(s)}}{\partial \omega_{s'ijk;l_{u}}^{(s)}}  \\
+    =& \sum_{xyz}^{X \times Y \times Z} \delta_{l_{u}}^{(s)}z_{x'+i,y'+j,z'+k;l_{u-1}}^{(s')} \\
   \end{split}
   \label{eq:conv_backward_weights} 
 \end{equation}
@@ -264,24 +264,46 @@ For backpropagation there are two updates performed, for the weights and the del
 Using equation~(\ref{eq:convolution_tot_vox}) for all the activation of the layer $l_{u}$, we have:
 
 \begin{equation*}
-    \left( \frac{\partial a_{xyz;l_{u}}}{\partial \omega_{uvw;l_{u}}} \right)^{(\theta)} = z_{x'+u,y'+v,z'+w;l_{u-1}}^{(\theta)}
+  \begin{split}
+    \left( \frac{\partial a_{xyz;l_{u}}}{\partial \omega_{s'ijk;l_{u}}} \right)^{(s)} =& \frac{\partial }{\partial \omega_{s'ijk;l_{u}}^{(s)}}\sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u}}^{(s)}z_{x'+\alpha,y'+\beta,z'+\gamma;l_{u-1}}^{(\sigma)}\\
+    =& \sum_{\sigma}\sum_{\alpha \beta \gamma} \delta_{s' \sigma} \delta_{i \alpha} \delta_{j \beta} \delta_{k \gamma} \, z_{x'+\alpha,y'+\beta,z'+\gamma;l_{u-1}}^{(\sigma)}\\
+    =& \, z_{x'+i,y'+j,z'+k;l_{u-1}}^{(s')}
+  \end{split}
 \end{equation*}
 
-Where $(x',y',z')$ are in the receiptive field of $(x,y,z)$. In our case, the input map and the feature map have exactly the the size, we should have a strict correspondance between $(x',y',z')_{l_{k}}$ and $(x,y,z)_{l_{k-1}}$. The second part of the equation can be solved in the following way:
+Where $(x',y',z')$ are in the receiptive field of $(x,y,z)$. In our case, the input map and the feature map have exactly the size, we should have a strict correspondance between $(x',y',z')_{l_{u-1}}$ and $(x,y,z)_{l_{u}}$. The second part of the equation can be solved in the following way:
 
 
 \begin{strip}
 \begin{equation}
   \begin{split}
-    \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(\theta)}} =&  \sum_{x''y''z''}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{x''y''z'';l_{u+1}}^{(\theta'')}}\frac{\partial a_{x''y''z'';l_{u+1}}^{(\theta'')}}{\partial a_{xyz;l_{u}}^{(\theta)}}\\
-    =& \sum_{x''y''z''}^{X \times Y \times Z} \delta_{l_{u+1}}^{(\theta'')}(x'',y'',z'') \times \frac{\partial a_{x''y''z'';l_{u+1}}^{(\theta'')}}{\partial a_{xyz;l_{u}}^{(\theta)}}\\
-    =& \sum_{x''y''z''}^{X \times Y \times Z} \delta_{l_{u+1}}^{(\theta'')}(x'',y'',z'') \times \frac{\partial }{\partial a_{xyz;l_{u}}^{(\theta)}} \sum_{abc}\omega_{abc;l_{u+1}}^{(\theta)}f(a_{x''+a,y''+b,z''+c;l_{u}}^{(\theta)})\\
-    =& \sum_{x''y''z''}^{X \times Y \times Z} \delta_{l_{u+1}}^{(\theta'')}(x'',y'',z'') \times \sum_{abc}\omega_{abc;l_{u+1}}^{(\theta'')} \delta(x-(x''+a),y-(y''+b),z-(z''+c)) f'(a_{x''+a,y''+b,z''+c;l_{u}}^{(\theta)})\\
-    =& f'(a_{x,y,z;l_{u}}^{(\theta)}) \sum_{abc} \delta_{l_{u+1}}^{(\theta'')}(x-a,y-b,z-c) \times \omega_{abc;l_{u+1}}^{(\theta'')} \\
+    \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(s)}} =& \sum_{s''}\sum_{x''y''z''}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{x''y''z'';l_{u+1}}^{(s'')}} \frac{\partial a_{x''y''z'';l_{u+1}}^{(s'')}}{\partial a_{xyz;l_{u+1}}^{(s)}} \\
+    =& \sum_{s''}\sum_{x''y''z''}^{X \times Y \times Z}  \delta_{l_{u+1}}^{(s'')}(x'',y'',z'') \frac{\partial a_{x''y''z'';l_{u+1}}^{(s'')}}{\partial a_{xyz;l_{u+1}}^{(s)}} \\
+    =& \sum_{s''}\sum_{x''y''z''}^{X \times Y \times Z}  \delta_{l_{u+1}}^{(s'')}(x'',y'',z'')  \frac{\partial }{\partial a_{xyz;l_{u}}^{(s)}} \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u+1}}^{(s'')}z_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)}\\
+    =& \sum_{s''}\sum_{x''y''z''}^{X \times Y \times Z}  \delta_{l_{u+1}}^{(s'')}(x'',y'',z'') \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u+1}}^{(s'')}  \frac{\partial }{\partial a_{xyz;l_{u}}^{(s)}} f(a_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)})\\
+    =& \sum_{s''}\sum_{x''y''z''}^{X \times Y \times Z}  \delta_{l_{u+1}}^{(s'')}(x'',y'',z'') \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u+1}}^{(s'')} \delta_{s \sigma} \delta(x-(x''+\alpha))  \delta(y-(y''+\beta))  \delta(z-(z''+\gamma))  f'(a_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)})\\
+    =& f'(a_{x,y,z;l_{u}}^{(s)}) \sum_{s''}\sum_{\alpha \beta \gamma} \delta_{l_{u+1}}^{(s'')}(x-\alpha, y-\beta, z-\gamma) \omega_{s \alpha \beta \gamma;l_{u+1}}^{(s'')} 
   \end{split}
   \label{} 
 \end{equation}
 \end{strip}
+
+
+
+%%\begin{strip}
+%%\begin{equation}
+%%  \begin{split}
+%%    \frac{\partial a_{x''y''z'';l_{u+1}}^{(s'')}}{\partial a_{xyz;l_{u}}^{(s)}} =& \frac{\partial }{\partial a_{xyz;l_{u}}^{(s)}} \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u+1}}^{(s'')}z_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)}\\
+%%    =& \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u+1}}^{(s'')}  \frac{\partial }{\partial a_{xyz;l_{u}}^{(s)}} f(a_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)})\\
+%%    =& \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u+1}}^{(s'')} \delta_{s \sigma} \delta(x-(x''+\alpha))  \delta(y-(y''+\beta))  \delta(z-(z''+\gamma))  f'(a_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)})\\
+%%    =& \cdots
+%%  \end{split}
+%%  \label{} 
+%%\end{equation}
+%%\end{strip}
+
+
+
 
 Where $\{(x'',y'',z'')_{l_{k}}\}$ is a set of activation sites on the layer $l_{u+1}$ having $(x,y,z)_{l_{k}}$ in its receiving field. We keep the $\delta(x-(\tilde{x}+a),y-(\tilde{y}+b),z-(\tilde{z}+c))$ Dirac distribution in the sum, since we will select the $(a,b,c)$ to get an input output correspondance. 
 
