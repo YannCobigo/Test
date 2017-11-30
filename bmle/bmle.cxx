@@ -181,9 +181,9 @@ main( const int argc, const char **argv )
 #else
 		      // Please do not remove the bracket!!
 		      // vertex
-//		      if ( idx[0] >= 64  && idx[0] < 65 && 
-//			   idx[1] >= 92 && idx[1] < 93 &&
-//			   idx[2] >= 73  && idx[2] < 74 )
+//		      if ( idx[0] >= 30  && idx[0] < 40 && 
+//			   idx[1] >= 90 && idx[1] < 100 &&
+//			   idx[2] >= 40  && idx[2] < 50 )
 //		      // ALL
 //		      if ( idx[0] > 5 && idx[0] < 115 && 
 //			   idx[1] > 5 && idx[1] < 140 &&
@@ -216,7 +216,7 @@ main( const int argc, const char **argv )
 //		      if ( idx[0] > 5 && idx[0] < 60  && 
 //			   idx[1] >= 70 && idx[1] < 140 &&
 //			   idx[2] >= 60 && idx[2] < 110 )
-		      // Octan 8
+//		      // Octan 8
 		      if ( idx[0] >= 60 && idx[0] < 110 && 
 			   idx[1] >= 70 && idx[1] < 140 &&
 			   idx[2] >= 60 && idx[2] < 110 )

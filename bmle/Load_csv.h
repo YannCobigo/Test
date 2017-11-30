@@ -823,11 +823,16 @@ namespace MAC_bmle
 	  delta_F  = 100.;
 	int
 	  n = 0, it = 0,
-	  N = 5,   // N regulate the EM loop to be sure converge smootly
-	  NN = 5000; // failed convergence criterias
+	  N = 10,   // N regulate the EM loop to be sure converge smootly
+	  NN = 1000; // failed convergence criterias
 	//
-	bool Fisher_H = true;
-	double learning_rate_ = 5.e-02;
+	bool Fisher_H = false;
+	double 
+	  learning_rate_  = 5.e-02,
+	  convergence_    = 1.e-03,
+	  new_convergence = 1.e-16,
+	  epsilon         = 1.e-16;
+	std::list< double > best_convergence;
 	
 	//
 	while( n < N && it++ < NN )
@@ -893,16 +898,12 @@ namespace MAC_bmle
 		// delta_lambda = H.inverse()  * grad;
 		//  delta_lambda = MAC_bmle::inverse( H ) * grad;
 		//delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
-		delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32 ) * grad;
-		//delta_lambda = -learning_rate_ * MAC_bmle::inverse( H - Eigen::MatrixXd::Identity( H.rows(), H.cols() ) / 32. ) * grad;
+		delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		// delta_lambda = -learning_rate_ * MAC_bmle::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) ) * grad;
 		//std::cout << MAC_bmle::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) )  << std::endl;
 	      }
 	    else
-	      {
-		//Eigen::MatrixXd delta_lambda = 0.02 * grad;
-		delta_lambda = learning_rate_ * grad;
-	      }
+	      delta_lambda = learning_rate_ * grad;
 	    //std::cout << delta_lambda << std::endl;
 	    //std::cout << std::endl;
 	    //std::cout << grad << std::endl;
@@ -948,7 +949,7 @@ namespace MAC_bmle
 	    for ( int r = 1 /*we don't want the first element 0 */ ; r < grad.rows() ; r++ )
 	      grad_level += grad( r, 0 );
 	    
-	    //std::cout << "mark,"
+	    //std::cout << "mark_out,"
 	    //	      << Idx[0] << "_"<< Idx[1] << "_"<< Idx[2] << ","
 	    //	      << n << ","
 	    //	      << F << ","
@@ -956,16 +957,36 @@ namespace MAC_bmle
 	    //	      << delta_F << "," 
 	    //	      << fabs( delta_F /F_old ) << "," 
 	    //	      <<  grad_level << std::endl;
-	    
-	    if ( fabs( delta_F /F_old ) < 5.e-03 /*5.e-02*/ )
+
+	    //
+	    //
+	    double abs_deltaF_F = fabs( delta_F /F_old );
+	    if ( abs_deltaF_F < 1. && abs_deltaF_F > convergence_)
+	      best_convergence.push_back( abs_deltaF_F );
+	    //
 	    //if ( fabs( grad_level ) < 5.e-03  )
 	    //if ( fabs( F ) < 5.e-30  )
-	      {
-		n++;
-	      }
+	    if ( abs_deltaF_F < convergence_ )
+	      n++;
 	    else
 	      n = 0;
-	    //std::cout << "n = " << n << " - F = " << F << " delta_F = " << fabs( delta_F ) << std::endl;
+	    // Algo must converge fast
+	    // If at 100 iteration we still did not converge, we create a new threshold
+	    // based on the bast values
+	    if ( it == 500 )
+	      {
+		best_convergence.sort();
+		auto fit = best_convergence.begin();
+		new_convergence  = *(++fit);
+		new_convergence += new_convergence/10.;
+		//std::cout << "mark_best,"
+		//	  << new_convergence << ","
+		//	  << *(++fit) << ","
+		//	  << *(++fit) << ",\n";
+	      }
+	    //
+	    if ( it > 500 && abs_deltaF_F < new_convergence )
+	      n = N;
 	  }
 
 	//
@@ -1095,7 +1116,7 @@ namespace MAC_bmle
 	double
 	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
 	  F_3 = - ( Cov_theta_Y * X_.transpose() * Inv_Cov_eps * X_ ).trace();
-	//std::cout << "F_1 = " << F_1 << " -- F_2 = " << F_2 << " -- F_3 = " << F_3 << " -- F_4 = " << F_4 << std::endl;
+	//std::cout << "mark_F1," << F_1 << "," << F_2 << "," << F_3 << "," << F_4 << std::endl;
 	//std::cout << "Inv_Cov_eps = " << Inv_Cov_eps << std::endl;
 	//
 	//
