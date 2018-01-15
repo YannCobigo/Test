@@ -87,7 +87,9 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 \section{Introduction}
 
-\lipsum[100-105]
+\lipsum[100-104]
+
+\paragraph{Perceptrons}{One of the key concept of the neural network is the perceptron algorithm. The perceptron was one of the first machine learning algorithm used with computers. It was introduce in neural netwaor as multi-lyer perceptron. The pricipal of classification using perceptron seat on fitting linear model $\omega^{T}\alpha > \theta$, where $\omega$ is a vector of $N$ weights, $\alpha$ is a vector of $N$ predictors and $\theta$ is a threshold. We can incorporate the threshold in the dot product, $f(\alpha) = \omega^{T}\alpha - \theta \times 1 = \sum_{i=0}^{N} \omega_{i}\alpha_{i} > 0$, $\omega = (\omega_{0}, \omega_{0}, \dots, \omega_{N-1}, \theta)^{T}$ and $\alpha = (\alpha_{0}, \alpha_{1}, \dots, \alpha_{N-1}, 1)^{T}$.}
 
 \paragraph{Inputs}{For the different type of neural networks we would like to accomplish, the input classes must be very differents. Most of the time we are going to work with medical images, implying using a dimensional correlation like the convolutional neural network (CNN). Unlike most of the machine learning algorithm taking vectors as input, CNN void the space decorrelation from the vectorization. However, providing different calsses for different inputs could offer some flexibility.}
 
@@ -308,11 +310,11 @@ The function of the pooling layer is to progressively reduce the spatial size of
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Densely connected neural network}
 
-\lipsum[5-5]
+Dense neural networks are caracterized by a full connection of a neurons of one layer with all neurons plus the bias from the previouse layer Fig.~\ref{fig:Densely_connected_neural_network}. Table~\ref{Layers_activations} presents the activation function for each layer. Each neuron, or activation, of a layer is the result of a perceptron, built from all the nerons of the previous layer and the bias, and filtered by an activation function. 
 
 \subsection{Description and notation}
 
-Dense neural networks are caracterized by a full connection of a neuron of one layer with all neurons from the previouse layer Fig.~\ref{fig:Densely_connected_neural_network}. Table~\ref{Layers_activations} presents the activation function for each layer. In this document, the convention is $l = l_{0}$ for the input layer: $z_{l_{0} = 1} = x_{1}$, $z_{l_{0} = 2} = x_{2}$, \dots We will reserve the index 0 for the bias: $z_{l_{0} = 0} = x_{0} = b_{0}$ the bias on the input level. The last level is the output level: $l = l_{k}$, $z_{l_{k}} = y_{k}$. The output level does not have a bias node.
+In this document, the convention is $l = l_{0}$ for the input layer: $z_{l_{0} = 1} = x_{1}$, $z_{l_{0} = 2} = x_{2}$, \dots We will reserve the index 0 for the bias: $z_{l_{0} = 0} = x_{0} = b_{0}$ the bias on the input level. The last level is the output level: $l = l_{k}$, $z_{l_{k}} = y_{k}$. The output level does not have a bias node.
 
 \begin{table}[]
 \centering
@@ -466,9 +468,15 @@ The backward propagation for each layer, except the last layer, is a recursive e
 \lipsum[20-20]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Vanishing gradient}
+
+The vanishing gradient problem affects many-layered feedforward networks that used backpropagation and also recurrent neural networks (RNNs). As errors propagate from layer to layer, they shrink exponentially with the number of layers, impeding the tuning of neuron weights that is based on those errors, particularly affecting deep networks. Hinton et al. (2006) proposed learning a high-level representation using successive layers of binary or real-valued latent variables with a restricted Boltzmann machine[21] to model each layer. Once sufficiently many layers have been learned, the deep architecture may be used as a generative model by reproducing the data when sampling down the model (an "ancestral pass") from the top level feature activations.\\
+\lipsum[19-19]
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Early stoping}
 \lipsum[21-21]
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Drop out}
 \lipsum[22-22]
