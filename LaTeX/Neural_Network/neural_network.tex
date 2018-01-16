@@ -89,7 +89,7 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 \lipsum[100-104]
 
-\paragraph{Perceptrons}{One of the key concept of the neural network is the perceptron algorithm. The perceptron was one of the first machine learning algorithm used with computers. It was introduce in neural netwaor as multi-lyer perceptron. The pricipal of classification using perceptron seat on fitting linear model $\omega^{T}\alpha > \theta$, where $\omega$ is a vector of $N$ weights, $\alpha$ is a vector of $N$ predictors and $\theta$ is a threshold. We can incorporate the threshold in the dot product, $f(\alpha) = \omega^{T}\alpha - \theta \times 1 = \sum_{i=0}^{N} \omega_{i}\alpha_{i} > 0$, $\omega = (\omega_{0}, \omega_{0}, \dots, \omega_{N-1}, \theta)^{T}$ and $\alpha = (\alpha_{0}, \alpha_{1}, \dots, \alpha_{N-1}, 1)^{T}$.}
+\paragraph{Perceptrons}{One of the key concept of the neural network is the perceptron algorithm. The perceptron was one of the first machine learning algorithm used with computers. It was introduce in neural network as multilyer perceptron (MLP). The pricipal of classification using perceptron seat on fitting linear model $\omega^{T}\alpha > \theta$, where $\omega$ is a vector of $N$ weights, $\alpha$ is a vector of $N$ predictors and $\theta$ is a threshold. We can incorporate the threshold in the dot product, $f(\alpha) = \omega^{T}\alpha - \theta \times 1 = \sum_{i=0}^{N} \omega_{i}\alpha_{i} > 0$, $\omega = (\omega_{0}, \omega_{0}, \dots, \omega_{N-1}, \theta)^{T}$ and $\alpha = (\alpha_{0}, \alpha_{1}, \dots, \alpha_{N-1}, 1)^{T}$.}
 
 \paragraph{Inputs}{For the different type of neural networks we would like to accomplish, the input classes must be very differents. Most of the time we are going to work with medical images, implying using a dimensional correlation like the convolutional neural network (CNN). Unlike most of the machine learning algorithm taking vectors as input, CNN void the space decorrelation from the vectorization. However, providing different calsses for different inputs could offer some flexibility.}
 
@@ -183,13 +183,11 @@ Which is exactly the same result as we would get in the case of a least-square c
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Convolutional neural network}
 
-Convolutional neural networks (CNNs) are a biologically-inspired variation of the multilayer perceptrons (MLPs). Neurons in CNNs share weights unlike in MLPs where each neuron has a separate weight vector. This sharing of weights ends up reducing the overall number of trainable weights hence introducing sparsity. The output image is downsampled to reduce the number of weights for the next neural network and prevent overfitting.
+Convolutional neural networks (CNNs) are a biologically-inspired variation of the MLPs. Neurons in CNNs share weights unlike in MLPs where each neuron has a separate weight vector. This sharing of weights ends up reducing the overall number of trainable weights hence introducing sparsity. The output image is downsampled to reduce the number of weights for the next neural network and prevent overfitting.
 
 \subsection{Description and notation}
 
 CNNs consists of convolutional layers which are characterized by an input map $Im$, a bank of filters $Ker$ with biases $b$ per layer. Utilizing the weights sharing strategy, each neuron in the feature map is the result of the convolution of a kernel with a region in the input image, called the {\it local receptive field for the hidden neuron}, Fig.~\ref{fig:Convolutional_layers}. The local receptive field is a three dimensions window on the input voxels. This is then followed by a pooling operation which is a form of down-sampling of the newly produced feature map. Existing between the convolution and the pooling layer is an activation function such as the Rectified Linear unit ({\it ReLu}) layer; a non-saturating activation is applied element-wise, {\it i.e.} $f(x) = \max(0,x)$ thresholding at zero. After several convolutional and pooling layers, the image size (feature map size) is reduced and more complex features are extracted. \\
-Eventually with a small enough feature map, the contents are squashed into a one dimension vector and fed into a fully-connected MLP for processing. The last layer of this fully-connected MLP seen as the output, is a loss layer which is used to specify how the network training penalizes the deviation between the predicted and true labels.
-
 
 \begin{figure}[htbp]
    \begin{center}
@@ -207,7 +205,7 @@ Eventually with a small enough feature map, the contents are squashed into a one
   \label{fig:features_maps} 
 \end{figure*}
 
-\paragraph{Feature map}{The weights sharing strategy means that all the neurons in the first hidden layer detect exactly the same feature at different locations in the input image. A feature detected by a hidden neuron as the kind of input pattern that will cause the neuron to activate: it might be an edge in the image, for instance, or maybe some other type of shape. To see why this makes sense, suppose the weights and bias are such that the hidden neuron can pick out, a vertical edge in a particular local receptive field. That ability is also likely to be useful at other places in the image. And so it is useful to apply the same feature detector everywhere in the image. To put it in slightly more abstract terms, convolutional networks are well adapted to the translation invariance of images: move a picture of a cat a little ways, and it's still an image of a cat. To increase the feature coverage we create multiple kernels and use the same procedure with different kernels (in orange and blue) will result in separate complete feature maps Fig.~\ref{fig:features_maps} (\ToDo{How to initial the weights between two feature maps?})}
+\paragraph{Feature map}{The weights sharing strategy means that all the neurons in the first hidden layer detect exactly the same feature at different locations in the input image. A feature detected by a hidden neuron as the input pattern that will cause the neuron to activate: it might be an edge in the image, for instance, or maybe some other type of shape. That ability is also likely to be useful at other places in the image. And so it is useful to apply the same feature detector everywhere in the image. To put it in slightly more abstract terms, convolutional networks are well adapted to the translation invariance of images: move a picture of a cat a little ways, and it's still an image of a cat. To increase the feature coverage we create multiple kernels and use the same procedure with different kernels (in orange and blue) will result in separate complete feature maps Fig.~\ref{fig:features_maps} (\ToDo{How to initial the weights between two feature maps?})}
 
 \subsubsection{Convolution}
 
@@ -231,11 +229,11 @@ Eq.~(\ref{eq:convolution}) is represented on the Fig~\ref{fig:Kernel}. In the ca
 For a voxel in layer $l_{u}$:
 
 \begin{equation}
-    a_{xyz;l_{u}}^{(s)} =  \sum_{s'=1}^{S'}\sum_{i=1,j=1,k=1}^{I \times J \times K}\omega_{s'ijk;l_{u}}^{(s)}z_{x_{s'}+i,y_{s'}+j,z_{s'}+k;l_{u-1}}^{(s')} + b_{l_{u}}^{(s)}
+    a_{xyz;l_{u}}^{(s)} =  \sum_{s'=1}^{S'}\sum_{i=1,j=1,k=1}^{I \times J \times K}\omega_{ijk;l_{u}}^{(s)}z_{x_{s'}+i,y_{s'}+j,z_{s'}+k;l_{u-1}}^{(s')} + b_{l_{u}}^{(s)}
   \label{eq:convolution_tot_vox} 
 \end{equation}
 
-where $a$ is the convolved activation voxel in the feature map, $l_{u}$ is any layer. $S$ is the set of kernels used in the layer $l_{u}$. $S'$ is the set of kernel used in the layer $l_{u-1}$. For the feature map $s$, $\{\omega^{(s)}, b^{(s)}\}$ represents the kernel $s$. And $s$ is one of the kernel at the level $l_{u}$. If the current layer is the first layer, $s$ represents the set of input images. Otherwise, $s$ is the set of feature maps created by the previouse convolutional layer. The position $(x',y',z')_{l_{u-1}}$ is the center of the receptive field window. In our developments the input map and the feature map have the same dimension: $(x',y',z')_{l_{u-1}} = (x,y,z)_{l_{u}}$. $z$ is the output at the level $l_{u-1}$ ($z_{xyz;l_{u}}^{(s)} = f(a_{xyz;l_{u}}^{(s)})$ where $f$ is an activation function). $s$ is the set layers built in the previous layer. 
+where $a_{xyz;l_{u}}^{(s)}$ is the convolved activation voxel in the feature map $(s)$ corresponding to the kernel $(s)$, in the layer $l_{u}$. $S$ is the set of kernels used in the layer $l_{u}$. $S'$ is the set of kernel used to build feature maps in the layer $l_{u-1}$. For the feature map $s$, $\{\omega^{(s)}, b^{(s)}\}$ represents the kernel $s$. And $s$ is one of the kernels used to build the feature maps at the level $l_{u}$. If the current layer is the first layer, $s$ represents the set of input images. Otherwise, $s$ is the set of feature maps created by the previouse convolutional layer. The position $(x',y',z')_{l_{u-1}}$ is the center of the receptive field window. In our developments the input map and the feature map have the same dimension: $(x',y',z')_{l_{u-1}} = (x,y,z)_{l_{u}}$. $z$ is the output at the level $l_{u-1}$ ($z_{xyz;l_{u}}^{(s)} = f(a_{xyz;l_{u}}^{(s)})$ where $f$ is an activation function). $s$ is the set layers built in the previous layer. All the feature maps of a previouse level $l_{u-1}$ are filtered by the weights of the current level to create the feature maps of the current leve $l_{u}$.
 
 
 
@@ -487,6 +485,9 @@ The vanishing gradient problem affects many-layered feedforward networks that us
 \section{Monte-Rosa}
 
 \lipsum[30-33]
+
+Eventually with a small enough feature map, the contents are squashed into a one dimension vector and fed into a fully-connected MLP for processing. The last layer of this fully-connected MLP seen as the output, is a loss layer which is used to specify how the network training penalizes the deviation between the predicted and true labels.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
