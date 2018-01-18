@@ -76,8 +76,6 @@ namespace MAC_bmle
     // Functions
     //
 
-    // This function will load all the patients images into a 4D image.
-    void image_concat();
     // Thermodynamic free energy
     double F_( const Eigen::MatrixXd& , const Eigen::MatrixXd& ,
 	       const Eigen::MatrixXd& , const Eigen::MatrixXd& ) const;
@@ -170,6 +168,10 @@ namespace MAC_bmle
     BmleMakeITKImage post_T_maps_l2_;
     // Posterior groups parameters
     BmleMakeITKImage post_groups_param_l2_;
+    // Posterior groups variance
+    BmleMakeITKImage post_groups_cov_l2_;
+    // R-square
+    BmleMakeITKImage R_sqr_l2_;
   };
   //
   //
@@ -259,14 +261,6 @@ namespace MAC_bmle
 	      for ( auto image : s.second.get_age_images() )
 		Y_[ sub_image++ ] = image.second;
 	    }
-
-	//
-	// Output images
-	//
-
-	//
-	// Create the 4D measurements image
-	//image_concat();
       }
     catch( itk::ExceptionObject & err )
       {
@@ -281,112 +275,6 @@ namespace MAC_bmle
       for ( auto g : groups_ )
 	for ( auto s : group_pind_[g] )
 	  s.second.print();
-  }
-  //
-  //
-  //
-  template< int D_r, int D_f > void
-    BmleLoadCSV< D_r, D_f >::image_concat()
-  {
-    try
-      {
-//	//
-//	// ITK image types
-//	using Image3DType = itk::Image< double, 3 >;
-//	using Reader3D    = itk::ImageFileReader< Image3DType >;
-//	// 
-//	using Iterator3D = itk::ImageRegionConstIterator< Image3DType >;
-//	using Iterator4D = itk::ImageRegionIterator< Image4DType >;
-//
-//	//
-//	// Create the 4D image of measures
-//	//
-//
-//	//
-//	// Set the measurment 4D image
-//	Y_ = Image4DType::New();
-//	//
-//	Image4DType::RegionType region;
-//	Image4DType::IndexType  start = { 0, 0, 0, 0 };
-//	//
-//	// Take the dimension of the first subject image:
-//	Reader3D::Pointer subject_image_reader_ptr =
-//	  group_pind_[ (*groups_.begin()) ].begin()->second.get_age_images().begin()->second;
-//	//
-//	Image3DType::Pointer  raw_subject_image_ptr = subject_image_reader_ptr->GetOutput();
-//	Image3DType::SizeType size = raw_subject_image_ptr->GetLargestPossibleRegion().GetSize();
-//	Image4DType::SizeType size_4D{ size[0], size[1], size[2], num_3D_images_ };
-//	//
-//	region.SetSize( size_4D );
-//	region.SetIndex( start );
-//	//
-//	Y_->SetRegions( region );
-//	Y_->Allocate();
-//	//
-//	// ITK orientation, most likely does not match our orientation
-//	// We have to reset the orientation
-//	using FilterType = itk::ChangeInformationImageFilter< Image4DType >;
-//	FilterType::Pointer filter = FilterType::New();
-//	// Origin
-//	Image3DType::PointType orig_3d = raw_subject_image_ptr->GetOrigin();
-//	Image4DType::PointType origin;
-//	origin[0] = orig_3d[0]; origin[1] = orig_3d[1]; origin[2] = orig_3d[2]; origin[3] = 0.;
-//	// Spacing 
-//	Image3DType::SpacingType spacing_3d = raw_subject_image_ptr->GetSpacing();
-//	Image4DType::SpacingType spacing;
-//	spacing[0] = spacing_3d[0]; spacing[1] = spacing_3d[1]; spacing[2] = spacing_3d[2]; spacing[3] = 1.;
-//	// Direction
-//	Image3DType::DirectionType direction_3d = raw_subject_image_ptr->GetDirection();
-//	Image4DType::DirectionType direction;
-//	direction[0][0] = direction_3d[0][0]; direction[0][1] = direction_3d[0][1]; direction[0][2] = direction_3d[0][2]; 
-//	direction[1][0] = direction_3d[1][0]; direction[1][1] = direction_3d[1][1]; direction[1][2] = direction_3d[1][2]; 
-//	direction[2][0] = direction_3d[2][0]; direction[2][1] = direction_3d[2][1]; direction[2][2] = direction_3d[2][2];
-//	direction[3][3] = 1.; // 
-//	//
-//	filter->SetOutputSpacing( spacing );
-//	filter->ChangeSpacingOn();
-//	filter->SetOutputOrigin( origin );
-//	filter->ChangeOriginOn();
-//	filter->SetOutputDirection( direction );
-//	filter->ChangeDirectionOn();
-//	//
-//	//
-//	Iterator4D it4( Y_, Y_->GetBufferedRegion() );
-//	it4.GoToBegin();
-//	//
-//	for ( auto group : groups_ )
-//	  for ( auto subject : group_pind_[group] )
-//	    for ( auto image : subject.second.get_age_images() )
-//	      {
-//		std::cout << image.second->GetFileName() << std::endl;
-//		Image3DType::RegionType region = image.second->GetOutput()->GetBufferedRegion();
-//		Iterator3D it3( image.second->GetOutput(), region );
-//		it3.GoToBegin();
-//		while( !it3.IsAtEnd() )
-//		  {
-//		    it4.Set( it3.Get() );
-//		    ++it3; ++it4;
-//		  }
-//	      }
-//
-//	//
-//	// Writer
-//	std::cout << "Writing the 4d measure image." << std::endl;
-//	//
-//	filter->SetInput( Y_ );
-//	itk::NiftiImageIO::Pointer nifti_io = itk::NiftiImageIO::New();
-//	//
-//	itk::ImageFileWriter< Image4DType >::Pointer writer = itk::ImageFileWriter< Image4DType >::New();
-//	writer->SetFileName( "measures_4D.nii.gz" );
-//	writer->SetInput( filter->GetOutput() );
-//	writer->SetImageIO( nifti_io );
-//	writer->Update();
-      }
-    catch( itk::ExceptionObject & err )
-      {
-	std::cerr << err << std::endl;
-	exit( -1 );
-      }
   }
   //
   //
@@ -723,7 +611,11 @@ namespace MAC_bmle
 	  // level 2
 	  sPPMl2 = output_dir_ + "/" + "PPM_l2.nii.gz",
 	  sPtMl2 = output_dir_ + "/" + "Posterior_t_maps_l2.nii.gz",
-	  sPgPl2 = output_dir_ + "/" + "Post_groups_param_l2.nii.gz";
+	  sPgPl2 = output_dir_ + "/" + "Post_groups_param_l2.nii.gz",
+	  sPgCl2 = output_dir_ + "/" + "Post_groups_cov_l2.nii.gz",
+	  // R^{2} level 2
+	  sR_2   = output_dir_ + "/" + "Post_R_square_l2.nii.gz";
+	
 	// level 1
 	PPM_               = BmleMakeITKImage( constrast_.cols(), sPPM, Y_[0] );
 	post_T_maps_       = BmleMakeITKImage( constrast_.cols(), sPtM, Y_[0] );
@@ -732,6 +624,10 @@ namespace MAC_bmle
 	PPM_l2_               = BmleMakeITKImage( constrast_l2_.cols(), sPPMl2, Y_[0] );
 	post_T_maps_l2_       = BmleMakeITKImage( constrast_l2_.cols(), sPtMl2, Y_[0] );
 	post_groups_param_l2_ = BmleMakeITKImage( constrast_l2_.cols(), sPgPl2, Y_[0] );
+	// we only save the variance for each parameter of each group
+	post_groups_cov_l2_   = BmleMakeITKImage( constrast_l2_.rows(), sPgCl2, Y_[0] );
+	// 
+	R_sqr_l2_             = BmleMakeITKImage( 2, sR_2, Y_[0] );
       }
     catch( itk::ExceptionObject & err )
       {
@@ -765,7 +661,7 @@ namespace MAC_bmle
 	  }
 	//
 	if ( false )
-	  std::cout << Y << std::endl;
+	  std::cout << "response: " << Y.rows() << "\n" << Y << std::endl;
 
 	//
 	// Covariance
@@ -816,6 +712,13 @@ namespace MAC_bmle
 	// Eigen::MatrixXd cov_theta_Y = MAC_bmle::inverse( X_.transpose() * inv_Cov_eps * X_ );
 	Eigen::MatrixXd cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
 	Eigen::MatrixXd eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
+	// R-square calculation
+	Eigen::MatrixXd M_eta_theta = Eigen::MatrixXd::Zero( X_.rows(), X_.rows() );
+	Eigen::MatrixXd Id_m        = Eigen::MatrixXd::Identity( M_eta_theta.rows(), M_eta_theta.cols() ); 
+	Eigen::MatrixXd L_m         = Eigen::MatrixXd::Ones(M_eta_theta.rows(), 1 ); 
+	//
+	Eigen::MatrixXd H_m         = Eigen::MatrixXd::Zero(M_eta_theta.rows(), M_eta_theta.cols() ); ; //= L * (L.transpose() * L).inverse() * L.transpose();
+	
 	
 	double
 	  F_old = 1.,
@@ -828,8 +731,8 @@ namespace MAC_bmle
 	//
 	bool Fisher_H = false;
 	double 
-	  learning_rate_  = 5.e-02,
-	  convergence_    = 1.e-03,
+	  learning_rate_  = 5.e-03,
+	  convergence_    = 1.e-06,
 	  new_convergence = 1.e-16,
 	  epsilon         = 1.e-16;
 	std::list< double > best_convergence;
@@ -950,6 +853,7 @@ namespace MAC_bmle
 	      grad_level += grad( r, 0 );
 	    
 	    //std::cout << "mark_out,"
+	    //	      << it << ","
 	    //	      << Idx[0] << "_"<< Idx[1] << "_"<< Idx[2] << ","
 	    //	      << n << ","
 	    //	      << F << ","
@@ -973,7 +877,7 @@ namespace MAC_bmle
 	    // Algo must converge fast
 	    // If at 100 iteration we still did not converge, we create a new threshold
 	    // based on the bast values
-	    if ( it == 500 )
+	    if ( it == 800 )
 	      {
 		best_convergence.sort();
 		auto fit = best_convergence.begin();
@@ -985,7 +889,7 @@ namespace MAC_bmle
 		//	  << *(++fit) << ",\n";
 	      }
 	    //
-	    if ( it > 500 && abs_deltaF_F < new_convergence )
+	    if ( it > 800 && abs_deltaF_F < new_convergence )
 	      n = N;
 	  }
 
@@ -1015,6 +919,17 @@ namespace MAC_bmle
 
 	//std::cout << "parameters" << "\n" << parameters << std::endl;
 	//std::cout << "param_cov"  << "\n" << param_cov  << std::endl;
+	//std::cout << "cov_theta_Y_l2"  << "\n" <<  cov_theta_Y_l2 << std::endl;
+
+	//
+	// R-squared
+	M_eta_theta = X_ * cov_theta_Y * X_.transpose() * inv_Cov_eps;
+	H_m         = L_m * (L_m.transpose() * L_m).inverse() * L_m.transpose();
+	//
+	double R_sqr = 1.;
+	R_sqr       -=  ((Y.transpose() * (Id_m - M_eta_theta) * Y))(0,0) / ((Y.transpose() * (Id_m - H_m) * Y))(0,0);
+	//std::cout << "R-sqr: " << R_sqr << std::endl;
+	R_sqr_l2_.set_val( 0, Idx, R_sqr );
 
 
 	//
@@ -1053,6 +968,9 @@ namespace MAC_bmle
 		post_T_maps_l2_.set_val( col, Idx, T );
 		PPM_l2_.set_val( col, Idx, Normal_CFD_(T) );
 	      }
+	    // Variance
+	    for ( int row = 0 ; row < constrast_l2_.rows() ; row++ )
+	      post_groups_cov_l2_.set_val( row, Idx, cov_theta_Y_l2(row,row) );
 	  }
 
 	  	
@@ -1176,6 +1094,10 @@ namespace MAC_bmle
 	post_T_maps_l2_.write();
 	// Posterior groups parameters
 	post_groups_param_l2_.write();
+	// Posterior groups variance
+	post_groups_cov_l2_.write();
+	// R-square
+	R_sqr_l2_.write();
 
 	//
 	std::cout << "Subjects solutions" << std::endl;
