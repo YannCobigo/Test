@@ -1,6 +1,9 @@
 BootStrap: docker
-From: nvidia/cuda:8.0-cudnn5-devel-centos7
+From: nvidia/cuda:8.0-cudnn6-devel-centos7
 IncludeCmd: yes
+
+MAINTAINER Yann Cobigo
+VERSION v1.0.0
 
 %setup
     echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
@@ -49,12 +52,16 @@ IncludeCmd: yes
 	    gsl.x86_64 gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 \
 	    gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 \
 	    gmp-devel.x86_64 gmp-static.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
-	    sudo.x86_64 net-tools initscripts nautilus.x86_64 tkinter
+	    glibc-static libstdc++-static \
+	    sudo.x86_64 net-tools initscripts nautilus.x86_64 tkinter \
+	    libwayland-client \
+	    hdf5.x86_64 hdf5-devel.x86_64 hdf5-mpich.x86_64 hdf5-mpich-devel.x86_64 hdf5-mpich-static.x86_64 \
+	    hdf5-openmpi.x86_64 hdf5-openmpi-devel.x86_64 hdf5-openmpi-static.x86_64 hdf5-static.x86_64
 
 	#
 	#
 	echo "GL installation"
-	yum install -y mesa-libGL-devel.x86_64 \
+	yum install -y mesa-libGL-devel.x86_64 mesa-libGL-static-devel.x86_64 \
 	    mesa-libGLU.x86_64 mesa-libGLU-devel.x86_64 mesa-libGLU.i686 mesa-libGLU-devel.i686 \
 	    mesa-libGLw.x86_64 mesa-libGLw-devel.x86_64 \
 	    mesa-libOSMesa.x86_64 mesa-libOSMesa-devel.x86_64 \
@@ -80,19 +87,12 @@ IncludeCmd: yes
 	     graphviz.x86_64 graphviz-devel.x86_64 graphviz-doc.x86_64 graphviz-gd.x86_64 graphviz-graphs.x86_64 \
 	     graphviz-guile.x86_64 graphviz-python.x86_64
 
-	#
-	#
-	echo "Sublime text 3 and PyCharm"
-	wget --directory-prefix=/mnt/tempo/  http://c758482.r82.cf2.rackcdn.com/sublime_text_3_build_3065_x64.tar.bz2 \
-	     && tar -vxjf /mnt/tempo/sublime_text_3_build_3065_x64.tar.bz2 -C /opt/ \
-	     && ln -s /opt/sublime_text_3/sublime_text /usr/bin/sublime3
 
 	#
 	#
 	echo "Python installation"
 	yum install -y  python-pip && pip install --upgrade pip setuptools && yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy python-nose  \
 	    libxml2-devel.x86_64 libxml2-python.x86_64 libxslt.x86_64 libxslt-devel.x86_64 libxslt-python.x86_64 \
-	    pip install gpustat
 
 	#
 	#
@@ -101,13 +101,9 @@ IncludeCmd: yes
 	    && pip install --upgrade lockfile future simplejson prov statsmodels psutil cython untangle jsonpath-rw \
 	    bctpy h5py networkx
 	pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype && pip install --upgrade pygraphviz Pillow python-igraph
+	# tensor flow
+	pip install --upgrade tensorflow-gpu && pip install --upgrade keras
 
-	#
-	#
-	#echo "Python louvain"
-	#wget --directory-prefix=/mnt/tempo/ https://pypi.python.org/packages/f1/5f/1cd2040382f56b21ef731f09fd7a818ad2bbcd5a8201fd2ebd4ec15297bb/python-louvain-0.3.tar.gz  \
-	#    && cd /mnt/tempo/ && tar -zxvf python-louvain-0.3.tar.gz && cd python-louvain-0.3/ \
-	#    && python setup.py install
 
 
 	#
