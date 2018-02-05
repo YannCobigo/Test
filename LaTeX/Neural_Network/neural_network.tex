@@ -160,7 +160,7 @@ $t_{l'_{k}}$ represents the known label, $z_{l'_{k}} = y_{k}$ represents the res
 In this section, we are going to derivate the cross entropy~(\ref{cross_entropy}). To simplify the equation, we are derivating the cost function only for one subject and omitte the subscript $i$. At the output layer, the activation is $a_{l_{k}} = \sum_{l_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l_{k-1}} z_{l_{k-1}}$. The derivative of the cost function in function of the activtion is called the {\it error} and is written:
 
 \begin{equation}
-  \delta_{k} = \frac{\partial E}{\partial a_{l_{k}}} = - \sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial a_{k}}
+  \delta_{k} = \frac{\partial E_{i}}{\partial a_{l_{k}}} = - \sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial a_{k}}
   \label{cost_function_error}
 \end{equation}
 
@@ -229,7 +229,7 @@ Eq.~(\ref{eq:convolution}) is represented on the Fig~\ref{fig:Kernel}. In the ca
 For a voxel in layer $l_{u}$:
 
 \begin{equation}
-    a_{xyz;l_{u}}^{(s)} =  \sum_{s'=1}^{S'}\sum_{i=1,j=1,k=1}^{I \times J \times K}\omega_{ijk;l_{u}}^{(s)}z_{x_{s'}+i,y_{s'}+j,z_{s'}+k;l_{u-1}}^{(s')} + b_{l_{u}}^{(s)}
+    a_{xyz;l_{u}}^{(s)} =  \sum_{s'=1}^{S'}\sum_{i=-I/2,j=-J/2,k=-K/2}^{I/2 \times J/2 \times K/2}\omega_{ijk;l_{u}}^{(s)}z_{x_{s'}+i,y_{s'}+j,z_{s'}+k;l_{u-1}}^{(s')} + b_{l_{u}}^{(s)}
   \label{eq:convolution_tot_vox} 
 \end{equation}
 
@@ -249,35 +249,35 @@ where $a_{xyz;l_{u}}^{(s)}$ is the convolved activation voxel in the feature map
 
 \subsection{Foward Propagation}
 
-To perform a convolution operation, the kernel is flipped $180^{\circ}$ and slid across the input feature map in equal and finite strides. At each location, the product between each element of the kernel and the input feature map element it overlaps is computed and the results summed up to obtain the output at that current location Eq.~(\ref{eq:convolution_tot_vox}). This procedure is repeated using different kernels to form as many output feature maps as desired Fig.~\ref{fig:features_maps}.
+To perform a convolution operation, the kernel is flipped $180^{\circ}$ and slid across the input feature maps in equal and finite strides. At each location, the product between each element of the kernel and the input feature map element it overlaps is computed and the results summed up to obtain the output at that current location Eq.~(\ref{eq:convolution_tot_vox}). This procedure is repeated using different kernels to form as many output feature maps as desired Fig.~\ref{fig:features_maps}.
 
 \subsection{Backpropagation}
 
-For backpropagation there are two updates performed, for the weights and the deltas. Lets begin with the weight update. We are looking to compute $\partial E_{i} / \partial \omega_{s'uvw;l}^{(s)}$ which can be interpreted as the measurement of how the change in a single pixel $\omega_{s'uvw;l}^{(s)}$ in the weight kernel affects the loss function $E_{i}$. Convolution between the input feature maps of dimension $S' \times X \times Y \times Z$  and the weight kernel of dimension $S' \times I \times J \times K$ produces an output feature map of size $X \times Y \times Z$. The gradient component for the individual weights can be obtained by applying the chain rule Eq.~(\ref{eq:conv_backward_weights}).\\
+For backpropagation there are two updates performed, for the weights and the deltas. Lets begin with the weight update. We are looking to compute $\partial E_{i} / \partial \omega_{uvw;l}^{(s)}$ which can be interpreted as the measurement of how the change in a single pixel $\omega_{uvw;l_{u}}^{(s)}$ in the weight kernel affects the loss function $E_{i}$. Convolution between the input feature maps of dimension $X \times Y \times Z$  and the weight kernel of dimension $I \times J \times K$ produces an output feature map of size $X \times Y \times Z$. The gradient component for the individual weights can be obtained by applying the chain rule Eq.~(\ref{eq:conv_backward_weights}).\\
 
 %\lipsum[3-4]
 
 \begin{equation}
   \begin{split}
-    \frac{\partial E_{i}}{\partial \omega_{s'ijk;l_{u}}^{(s)}} =& \sum_{xyz}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(s)}}\frac{\partial a_{xyz;l_{u}}^{(s)}}{\partial \omega_{s'ijk;l_{u}}^{(s)}}  \\
-    =& \sum_{xyz}^{X \times Y \times Z} \delta_{l_{u}}^{(s)}(x,y,z) \, z_{x'+i,y'+j,z'+k;l_{u-1}}^{(s')} \\
+    \frac{\partial E_{i}}{\partial \omega_{ijk;l_{u}}^{(s)}} =& \sum_{xyz}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(s)}}\frac{\partial a_{xyz;l_{u}}^{(s)}}{\partial \omega_{ijk;l_{u}}^{(s)}}  \\
+    =& \sum_{xyz}^{X \times Y \times Z} \delta_{l_{u}}^{(s)}(x,y,z) \, \sum_{s'}^{S'} z_{x'+i,y'+j,z'+k;l_{u-1}}^{(s')} \\
   \end{split}
   \label{eq:conv_backward_weights} 
 \end{equation}
 
-$\delta_{l_{u}}^{(s)}$ is the estimation of the error at the feature map $s$, at the position $(x,y,z)_{l_{u}}$. Using equation~(\ref{eq:convolution_tot_vox}) we can etimate the second part of the Eq.~(\ref{eq:conv_backward_weights}). For all activatios of the layer $l_{u}$, we have:
+$\delta_{l_{u}}^{(s)}$ is the estimation of the error at the feature map $s$, at the position $(x,y,z)_{l_{u}}$ on the layer $l_{u}$. Using equation~(\ref{eq:convolution_tot_vox}) we can etimate the second part of the Eq.~(\ref{eq:conv_backward_weights}). For all activatios of the layer $l_{u}$, we have:
 
 \begin{equation*}
   \begin{split}
-    \left( \frac{\partial a_{xyz;l_{u}}}{\partial \omega_{s'ijk;l_{u}}} \right)^{(s)} =& \frac{\partial }{\partial \omega_{s'ijk;l_{u}}^{(s)}}\sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u}}^{(s)}z_{x'+\alpha,y'+\beta,z'+\gamma;l_{u-1}}^{(\sigma)}\\
-    =& \sum_{\sigma}\sum_{\alpha \beta \gamma} \delta_{s' \sigma} \delta_{i \alpha} \delta_{j \beta} \delta_{k \gamma} \, z_{x'+\alpha,y'+\beta,z'+\gamma;l_{u-1}}^{(\sigma)}\\
-    =& \, z_{x'+i,y'+j,z'+k;l_{u-1}}^{(s')}
+    \left( \frac{\partial a_{xyz;l_{u}}}{\partial \omega_{ijk;l_{u}}} \right)^{(s)} =& \frac{\partial }{\partial \omega_{ijk;l_{u}}^{(s)}}\sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\alpha \beta \gamma;l_{u}}^{(s)}z_{x'+\alpha,y'+\beta,z'+\gamma;l_{u-1}}^{(\sigma)}\\
+    =& \sum_{\sigma}\sum_{\alpha \beta \gamma} \delta_{i \alpha} \delta_{j \beta} \delta_{k \gamma} \, z_{x'+\alpha,y'+\beta,z'+\gamma;l_{u-1}}^{(\sigma)}\\
+    =& \sum_{\sigma} z_{x'+i,y'+j,z'+k;l_{u-1}}^{(\sigma)}
   \end{split}
 \end{equation*}
 
-Where $(x',y',z')$ is the center of the receptive fielf associated to $(x,y,z)$. In our case, the input map and the feature map have exactly the size, we should have a strict correspondance between $(x',y',z')_{l_{u-1}}$ and $(x,y,z)_{l_{u}}$. The first part of the equation, the error at the level $l_{u}$ of the feature map $s$, can be solved in the following way:
+Where $(x',y',z')$ is the center of the receptive field associated to $(x,y,z)$. In our case, the input map and the feature map have exactly the size, we should have a strict correspondance between $(x',y',z')_{l_{u-1}}$ and $(x,y,z)_{l_{u}}$. The first part of the equation, the error at the level $l_{u}$ of the feature map $s$, can be solved in the following way:
 
-%\lipsum[20-22]
+\lipsum[20-20]
 
 \begin{strip}
 \begin{equation}
@@ -285,15 +285,19 @@ Where $(x',y',z')$ is the center of the receptive fielf associated to $(x,y,z)$.
     \frac{\partial E_{i}}{\partial a_{xyz;l_{u}}^{(s)}} =& \, \delta_{l_{u}}^{(s)}(x,y,z) \\ 
     =& \sum_{s''}^{S''}\sum_{x''y''z''}^{X \times Y \times Z} \frac{\partial E_{i}}{\partial a_{x''y''z'';l_{u+1}}^{(s'')}} \frac{\partial a_{x''y''z'';l_{u+1}}^{(s'')}}{\partial a_{xyz;l_{u}}^{(s)}} \\
     =& \sum_{s''}\sum_{x''y''z''} \delta_{l_{u+1}}^{(s'')}(x'',y'',z'') \frac{\partial a_{x''y''z'';l_{u+1}}^{(s'')}}{\partial a_{xyz;l_{u}}^{(s)}} \\
-    =& \sum_{s''}\sum_{x''y''z''} \delta_{l_{u+1}}^{(s'')}(x'',y'',z'')  \frac{\partial }{\partial a_{xyz;l_{u}}^{(s)}} \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u+1}}^{(s'')}z_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)} + b_{l_{u+1}}^{(s'')}\\
-    =& \sum_{s''}\sum_{x''y''z''} \delta_{l_{u+1}}^{(s'')}(x'',y'',z'') \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u+1}}^{(s'')}  \frac{\partial }{\partial a_{xyz;l_{u}}^{(s)}} f(a_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)})\\
-    =& \sum_{s''}\sum_{x''y''z''} \delta_{l_{u+1}}^{(s'')}(x'',y'',z'') \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\sigma \alpha \beta \gamma;l_{u+1}}^{(s'')} \delta_{s \sigma} \delta(x-(x''+\alpha))  \delta(y-(y''+\beta))  \delta(z-(z''+\gamma))  f'(a_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)})\\
-    =& f'(a_{x,y,z;l_{u}}^{(s)}) \sum_{s''}\sum_{\alpha \beta \gamma} \delta_{l_{u+1}}^{(s'')}(x-\alpha, y-\beta, z-\gamma) \, \omega_{s \alpha \beta \gamma;l_{u+1}}^{(s'')}
+    =& \sum_{s''}\sum_{x''y''z''} \delta_{l_{u+1}}^{(s'')}(x'',y'',z'')  \frac{\partial }{\partial a_{xyz;l_{u}}^{(s)}} \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{\alpha \beta \gamma;l_{u+1}}^{(s'')}z_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)} + b_{l_{u+1}}^{(s'')}\\
+    =& \sum_{s''}\sum_{x''y''z''} \delta_{l_{u+1}}^{(s'')}(x'',y'',z'') \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{ \alpha \beta \gamma;l_{u+1}}^{(s'')}  \frac{\partial }{\partial a_{xyz;l_{u}}^{(s)}} f(a_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)})\\
+    =& \sum_{s''}\sum_{x''y''z''} \delta_{l_{u+1}}^{(s'')}(x'',y'',z'') \sum_{\sigma}\sum_{\alpha \beta \gamma} \omega_{ \alpha \beta \gamma;l_{u+1}}^{(s'')} \delta_{s \sigma} \delta(x-(x''+\alpha))  \delta(y-(y''+\beta))  \delta(z-(z''+\gamma))  f'(a_{x''+\alpha,y''+\beta,z''+\gamma;l_{u}}^{(\sigma)})\\
+    =& f'(a_{x,y,z;l_{u}}^{(s)}) \sum_{s''}\sum_{\alpha \beta \gamma} \delta_{l_{u+1}}^{(s'')}(x-\alpha, y-\beta, z-\gamma) \, \omega_{\alpha \beta \gamma;l_{u+1}}^{(s'')}
   \end{split}
   \label{} 
 \end{equation}
 \end{strip}
 
+
+\subsection{Up sampling}
+
+\lipsum[21-21]
 
 \subsection{Pooling Layer}
 
@@ -303,6 +307,178 @@ The function of the pooling layer is to progressively reduce the spatial size of
     \item Max-pooling - the error is just assigned to where it comes from - the “winning unit” because other units in the previous layer’s pooling blocks did not contribute to it hence all the other assigned values of zero
     \item Average pooling - the error is multiplied by $1 / (N \times N)$ and assigned to the whole pooling block (all units get this same value).
 \end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Auto-encoder}
+
+%@inproceedings{Masci:2011:SCA:2029556.2029563,
+% author = {Masci, Jonathan and Meier, Ueli and Cire\c{s}an, Dan and Schmidhuber, J\"{u}rgen},
+% title = {Stacked Convolutional Auto-encoders for Hierarchical Feature Extraction},
+% booktitle = {Proceedings of the 21th International Conference on Artificial Neural Networks - Volume Part I},
+% series = {ICANN'11},
+% year = {2011},
+% isbn = {978-3-642-21734-0},
+% location = {Espoo, Finland},
+% pages = {52--59},
+% numpages = {8},
+% url = {http://dl.acm.org/citation.cfm?id=2029556.2029563},
+% acmid = {2029563},
+% publisher = {Springer-Verlag},
+% address = {Berlin, Heidelberg},
+% keywords = {auto-encoder, classification, convolutional neural network, unsupervised learning},
+%} 
+
+An auto-encoder takes an input $x \in \mathbb{R}^{d}$ and first maps it to the latent representation $\bm{h} \in \mathbb{R}^{d}$ using a deterministic function of the type $\bm{h} = f_{\theta} = \sigma(Wx + b)$ with parameters $\theta = \{W, b\}$. This "code" is then used to reconstruct the input by a reverse mapping of $\bm{y} = f_{\theta'} = \sigma( W'h + b')$ with $\theta' = \{W', b'\}$. The two parameter sets are usually constrained to be of the form $W' = W^{T}$, using the same weights for encoding the input and decoding the latent representation. The parameters are optimized, minimizing an appropriate cost function over the training set.\\
+The encoding process $\sigma(Wx + b)$: 
+
+\begin{eqnarray*}
+  \left(
+  \begin{array}{cccc}
+    \omega_{00} & \omega_{01} & \cdots & \omega_{0(n+1)} \\
+    \omega_{10} & \omega_{11} & \cdots & \omega_{1(n+1)} \\
+    \vdots \\
+    \omega_{m0} & \omega_{m1} & \cdots & \omega_{m(n+1)} \\
+  \end{array}
+  \right) \left(
+  \begin{array}{c}
+    x_{0} \\
+    x_{1} \\
+    \vdots \\
+    x_{n} \\
+    1 \\
+  \end{array}
+  \right) + b = \left(
+  \begin{array}{c}
+    a_{0} \\
+    a_{1} \\
+    \vdots \\
+    a_{m} 
+  \end{array}
+  \right)
+\end{eqnarray*}
+
+Then the decoding process $W^{T}h + b'$:
+
+\begin{eqnarray*}
+  \left(
+  \begin{array}{cccc}
+    \omega_{00} & \omega_{10} & \cdots & \omega_{m0} \\
+    \omega_{01} & \omega_{11} & \cdots & \omega_{m1} \\
+    \vdots \\
+    \omega_{0(n+1)} & \omega_{1(n+1)} & \cdots & \omega_{m(n+1)} \\
+  \end{array}
+  \right) \left(
+  \begin{array}{c}
+    z_{0} \\
+    z_{1} \\
+    \vdots \\
+    z_{m} 
+  \end{array}
+  \right) + b' = \left(
+  \begin{array}{c}
+    y_{0} \\
+    y_{1} \\
+    \vdots \\
+    y_{n} 
+  \end{array}
+  \right)
+\end{eqnarray*}
+
+And we apply the back propagation epoque after epoque until $x \sim y$.
+
+\subsection{Denoising Auto-encoder}
+
+Without any additional constraints, conventional auto-encoders learn the identity mapping. This problem can be circumvented by using a probabilistic RBM approach, or sparse coding, or denoising auto-encoders (DAs) trying to reconstruct noisy inputs. The latter performs as well as or even better than RBMs. Training involves the reconstruction of a clean input from a partially destroyed one. Input $x$ becomes corrupted input $x'$ by adding a variable amount $v$ of noise distributed according to the characteristics of the input image. Common choices include binomial noise (switching pixels on or off) for black and white images, or uncorrelated Gaussian noise for color images. The parameter $v$ represents the percentage of permissible corruption. The auto-encoder is trained to denoise the inputs by first finding the latent representation $\bm{h} = f_{\theta} = \sigma(Wx' + b)$ frome which to reconstruct the original input $\bm{y} = f_{\theta'} = \sigma( W'h + b')$.
+
+\subsection{Stacked Convolutional Auto-Encoders}
+
+The trend in vision and object recognition adopted by the most successful models is to discover localized features that repeat themselves all over the input. Convolutional autoencoder differs from conventional auto-encoders as their weights are shared among all locations in the input, preserving spatial locality. The reconstruction is hence due to a linear combination of basic image patches based on the latent code. The CAE architecture is intuitively similar to the one described in the previouse section, except that the weights are shared. For a mono-channel input $x$ the latent representation of the $k$-th feature map is given by
+
+\begin{equation*}
+h^{k} = \sigma(x*W^{k} + b^{k})
+\end{equation*}
+
+The reconstruction is obtained using
+
+\begin{equation*}
+y = \sigma \left(\sum_{k \in H} h^{k}*\tilde{W}^{k} + c \right)
+\end{equation*}
+
+where again there is one bias $c$ per input channel. $H$ identifies the group of latent feature maps; $\tilde{W}$ identifies the flip operation over both dimensions of the weights. The cost function to minimize is the mean squared error (MSE):
+
+\begin{equation*}
+E= \frac{1}{2n} \sum_{i=1}^{n} ( x_{i} - y_{i})^{2}
+\end{equation*}
+
+\subsubsection{Mathematical description of the backpropagation}
+
+In a kernel window of $\nu$ elements, activations $a_{x,l_{u}}^{\mu}$ at the position $x$ in the layer $l_{u}$ are calculated using the $k$ kernels on the $k'$ feature maps for the previous layer.
+
+\begin{eqnarray*}
+  \left(
+  \begin{array}{cccc}
+    \omega_{0}^{(1)} & \omega_{1}^{(1)} & \cdots & \omega_{(\nu)}^{(1)} \\
+    \omega_{0}^{(2)} & \omega_{1}^{(2)} & \cdots & \omega_{(\nu)}^{(2)} \\
+    \vdots \\
+    \omega_{0}^{(k)} & \omega_{1}^{(k)} & \cdots & \omega_{(\nu)}^{(k)} \\
+  \end{array}
+  \right) \left(
+  \begin{array}{c}
+    x_{0} \\
+    x_{1} \\
+    \vdots \\
+    x_{\nu-1} \\
+    1 \\
+  \end{array}
+  \right)^{(1,2,\cdots,k')} = \left(
+  \begin{array}{c}
+    a_{0} \\
+    a_{1} \\
+    \vdots \\
+    a_{k} 
+  \end{array}
+  \right)_{x,l_{u}}
+\end{eqnarray*}
+
+In a similar way, as the auto-encoder, we can use the same set of waeights for the convolutional auto-encoder, then we can write
+
+
+\begin{strip}
+  \begin{eqnarray*}
+      \left(
+      \begin{array}{cccc}
+        \omega_{0}^{(1)} & \omega_{0}^{(2)} & \cdots & \omega_{0}^{(k)} \\
+        \omega_{1}^{(1)} & \omega_{1}^{(2)} & \cdots & \omega_{1}^{(k)} \\
+        \vdots \\
+        \omega_{\nu-1}^{(0)} & \omega_{\nu-1}^{(1)} & \cdots & \omega_{\nu-1}^{(k)} \\
+      \end{array}
+      \right) \left(
+      \begin{array}{c}
+        z_{0}^{(1)} \\
+        z_{0}^{(2)} \\
+        \vdots \\
+        z_{0}^{(k)} \\
+      \end{array}
+      \right) \left. 
+      \begin{array}{c}
+        z_{1}^{(1)} \\
+        z_{1}^{(2)} \\
+        \vdots \\
+        z_{1}^{(k)} \\
+      \end{array}
+      \right) \cdots \left. 
+      \begin{array}{c}
+        z_{\nu-1}^{(1)} \\
+        z_{\nu-1}^{(2)} \\
+        \vdots \\
+        z_{\nu-1}^{(k)} \\
+      \end{array}
+      \right)_{x,l_{u}} + c;~and~\sigma\left(\sum_{k \in H} h^{k}*\tilde{W}^{k} + c \right) = \left( \sum_{i=1}^{k} y_{i} \right)_{x,l_{u}}
+  \end{eqnarray*}
+\end{strip}
+
+The vector of 1 represents the 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
