@@ -329,7 +329,7 @@ The function of the pooling layer is to progressively reduce the spatial size of
 % keywords = {auto-encoder, classification, convolutional neural network, unsupervised learning},
 %} 
 
-An auto-encoder takes an input $x \in \mathbb{R}^{d}$ and first maps it to the latent representation $\bm{h} \in \mathbb{R}^{d}$ using a deterministic function of the type $\bm{h} = f_{\theta} = \sigma(Wx + b)$ with parameters $\theta = \{W, b\}$. This "code" is then used to reconstruct the input by a reverse mapping of $\bm{y} = f_{\theta'} = \sigma( W'h + b')$ with $\theta' = \{W', b'\}$. The two parameter sets are usually constrained to be of the form $W' = W^{T}$, using the same weights for encoding the input and decoding the latent representation. The parameters are optimized, minimizing an appropriate cost function over the training set.\\
+An auto-encoder takes an input $z_{l_{u-1}}^{s} \in \mathbb{R}^{d}$ and first maps it to the latent representation $a_{l_{u}^{\sigma}} \in \mathbb{R}^{d}$ using a deterministic function of the type $z_{x,l_{u}}^{\sigma} = f_{\theta}(\sum_{s,\epsilon} \omega_{\epsilon,l_{u}}^{\sigma}z_{x+\epsilon,l_{u-1}}^{s}) + b_{l_{u}}^{\sigma}$ with parameters $\theta = \{\omega_{l_{u}}, b_{l_{u}}\}$. This "code" is then used to reconstruct the input by a reverse mapping of $z_{x,l_{u+1}}^{s} = f_{\theta'}(\sum_{\sigma,\epsilon} \omega_{\epsilon,l_{u}}^{\sigma}z_{x-\epsilon,l_{u}}^{\sigma}) + b_{l_{u+1}}^{s}$ with $\theta_{l_{u+1}} = \{W', b_{l_{u+1}}\}$. The two parameter sets are usually constrained to be of the form $W' = W_{l_{u}}^{T}$, using the same weights for encoding the input and decoding the latent representation. The parameters are optimized, minimizing an appropriate cost function over the training set.\\
 The encoding process $\sigma(Wx + b)$: 
 
 \begin{eqnarray*}
@@ -413,7 +413,8 @@ E= \frac{1}{2n} \sum_{i=1}^{n} ( x_{i} - y_{i})^{2}
 
 \subsubsection{Mathematical description of the backpropagation}
 
-In a kernel window of $\nu$ elements, activations $a_{x,l_{u}}^{\mu}$ at the position $x$ in the layer $l_{u}$ are calculated using the $k$ kernels on the $k'$ feature maps for the previous layer.
+An auto-encoder takes an input $z_{l_{u-1}}^{(s)} \in \mathbb{R}^{d}$ and first maps it to the latent representation $a_{l_{u}^{(\sigma)}} \in \mathbb{R}^{d}$ using a deterministic function of the type $z_{x,l_{u}}^{(\sigma)} = f_{\theta}(\sum_{s,\epsilon} \omega_{\epsilon,l_{u}}^{(\sigma)}z_{x+\epsilon,l_{u-1}}^{(s)} + b_{l_{u}}^{(\sigma)})$ with parameters $\theta = \{\omega_{l_{u}}, b_{l_{u}}^{(\sigma)}\}$. This "code" is then used to reconstruct the input by a reverse mapping of $z_{x,l_{u+1}}^{(s)} = f_{\theta'}(\sum_{\sigma,\epsilon} \omega_{\epsilon,l_{u}}^{(\sigma)}z_{x-\epsilon,l_{u}}^{(\sigma)} + b_{l_{u+1}}^{(s)})$ with $\theta_{l_{u+1}} = \{W', b_{l_{u+1}}^{(s)}\}$. The two parameter sets are usually constrained to be of the form $W' = W_{l_{u}}^{T}$, using the same weights for encoding the input and decoding the latent representation. The parameters are optimized, minimizing an appropriate cost function over the training set. In all the equations $(s)$ represents the number of inputs and $(\sigma)$ the number of feature maps created in the process. In the auto-encoder, the number of inputs and final outputs can match. In other uses, {\it e.g.} the segmentation, the number of input can be the different acquisition types and the number of outputs can different segmentations.\\
+The encoding level is similar to a convolutional layer: in a kernel window of $\epsilon$ elements, activations $a_{x,l_{u}}^{\mu}$ at the position $x$ in the layer $l_{u}$ 
 
 \begin{eqnarray*}
   \left(
@@ -421,64 +422,99 @@ In a kernel window of $\nu$ elements, activations $a_{x,l_{u}}^{\mu}$ at the pos
     \omega_{0}^{(1)} & \omega_{1}^{(1)} & \cdots & \omega_{(\nu)}^{(1)} \\
     \omega_{0}^{(2)} & \omega_{1}^{(2)} & \cdots & \omega_{(\nu)}^{(2)} \\
     \vdots \\
-    \omega_{0}^{(k)} & \omega_{1}^{(k)} & \cdots & \omega_{(\nu)}^{(k)} \\
+    \omega_{0}^{(\sigma)} & \omega_{1}^{(\sigma)} & \cdots & \omega_{(\nu)}^{(\sigma)} \\
   \end{array}
-  \right) \left(
+  \right)_{l_{u}} \left(
   \begin{array}{c}
-    x_{0} \\
-    x_{1} \\
+    z_{0} \\
+    z_{1} \\
     \vdots \\
-    x_{\nu-1} \\
+    z_{\nu-1} \\
     1 \\
   \end{array}
-  \right)^{(1,2,\cdots,k')} = \left(
+  \right)_{l_{u-1}}^{(1,2,\cdots,s)} + b_{l_{u}}^{(\sigma)}= \left(
   \begin{array}{c}
-    a_{0} \\
-    a_{1} \\
+    a^{(1)} \\
+    a^{(2)} \\
     \vdots \\
-    a_{k} 
+    a^{(\sigma)} 
   \end{array}
   \right)_{x,l_{u}}
 \end{eqnarray*}
 
-In a similar way, as the auto-encoder, we can use the same set of waeights for the convolutional auto-encoder, then we can write
+Wich can be written: $z_{x,l_{u}}^{(\sigma)} = f(a_{x,l_{u}}^{(\sigma)})$ where $a_{x,l_{u}}^{(\sigma)} = \sum_{\epsilon,s} \omega_{\epsilon,l_{u}}^{(\sigma)}z_{x+\epsilon,l_{u-1}}^{(s)} + b_{l_{u}}^{(\sigma)}$. In a similar way, as the auto-encoder, we can use the same set of weights for the convolutional auto-encoder, then we can write
 
 
 \begin{strip}
   \begin{eqnarray*}
       \left(
       \begin{array}{cccc}
-        \omega_{0}^{(1)} & \omega_{0}^{(2)} & \cdots & \omega_{0}^{(k)} \\
-        \omega_{1}^{(1)} & \omega_{1}^{(2)} & \cdots & \omega_{1}^{(k)} \\
+        \omega_{0}^{(1)} & \omega_{0}^{(2)} & \cdots & \omega_{0}^{(\sigma)} \\
+        \omega_{1}^{(1)} & \omega_{1}^{(2)} & \cdots & \omega_{1}^{(\sigma)} \\
         \vdots \\
-        \omega_{\nu-1}^{(0)} & \omega_{\nu-1}^{(1)} & \cdots & \omega_{\nu-1}^{(k)} \\
+        \omega_{\nu-1}^{(1)} & \omega_{\nu-1}^{(2)} & \cdots & \omega_{\nu-1}^{(\sigma)} \\
       \end{array}
       \right) \left(
       \begin{array}{c}
         z_{0}^{(1)} \\
         z_{0}^{(2)} \\
         \vdots \\
-        z_{0}^{(k)} \\
+        z_{0}^{(\sigma)} \\
       \end{array}
-      \right) \left. 
+      \right) + \left. 
       \begin{array}{c}
         z_{1}^{(1)} \\
         z_{1}^{(2)} \\
         \vdots \\
-        z_{1}^{(k)} \\
+        z_{1}^{(\sigma)} \\
       \end{array}
-      \right) \cdots \left. 
+      \right) + \cdots + \left. 
       \begin{array}{c}
         z_{\nu-1}^{(1)} \\
         z_{\nu-1}^{(2)} \\
         \vdots \\
-        z_{\nu-1}^{(k)} \\
+        z_{\nu-1}^{(\sigma)} \\
       \end{array}
-      \right)_{x,l_{u}} + c;~and~\sigma\left(\sum_{k \in H} h^{k}*\tilde{W}^{k} + c \right) = \left( \sum_{i=1}^{k} y_{i} \right)_{x,l_{u}}
+      \right)_{x,l_{u}} + b_{l_{u+1}}^{(s)};~and~f_{\theta}\left(\sum_{\sigma} z_{l_{u}}^{(\sigma)}*\tilde{W}^{(\sigma)} + b_{l_{u+1}}^{(s)} \right) = y_{x,l_{u+1}}^{(s)}
   \end{eqnarray*}
 \end{strip}
 
-The vector of 1 represents the 
+This can be written in a more compact way, $z_{x,l_{u+1}}^{(\nu)} = f(a_{x,l_{u+1}}^{(\nu)})$ where $(\nu)$ can be equal to $(s)$ in the auto-encoder algorithm. And $a_{x,l_{u+1}}^{(\nu)} = \sum_{\epsilon,\sigma} \omega_{\epsilon,l_{u}}^{(\sigma)}z_{x+\epsilon,l_{u}}^{(\sigma)} + b_{l_{u+1}}^{(\nu)}$. \\
+We have two levels of the auto-encoder sharing the same weights. We can use the backpropagation through the two levels. In this example, the loss function is the sum of squares $E_{i} = \sum_{s} (z_{l_{u-1}}^{(s)} - z_{l_{u+1}}^{(s)})^{2}$. As usual, we start with:
+
+\begin{eqnarray}
+  \frac{\partial E_{i}}{\partial \omega_{\epsilon',l_{u}}^{(\sigma')}} & = & \sum_{\nu,x} \frac{\partial E_{i}}{\partial a_{x,l_{u+1}}^{(\nu)}} \frac{a_{x,l_{u+1}}^{(\nu)}}{\partial \omega_{\epsilon',l_{u}}^{(\sigma')}} + \sum_{\sigma,x} \frac{\partial E_{i}}{\partial a_{x,l_{u}}^{(\sigma)}} \frac{a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\epsilon',l_{u}}^{(\sigma')}} \\
+ & = & \sum_{\nu,x} \delta_{l_{u+1}}^{(\nu)}(x) \frac{a_{x,l_{u+1}}^{(\nu)}}{\partial \omega_{\epsilon',l_{u}}^{(\sigma')}} + \sum_{\sigma,x} \delta_{l_{u}}^{(\sigma)}(x) \frac{a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\epsilon',l_{u}}^{(\sigma')}} \\
+ & = & \sum_{\nu} \delta_{l_{u+1}}^{(\nu)} \underset{\epsilon'}{*} z_{l_{u}}^{(\sigma')}  + \sum_{s} \delta_{l_{u}}^{(\sigma')} \underset{\epsilon'}{*} z_{l_{u-1}}^{(s)}  \\
+\end{eqnarray}
+\label{equa:AE_1}
+
+Where $\underset{\epsilon'}{*}$ represents the center $\epsilon'$ of the window convolved across the entire image. The last equation can be found using the following evaluation:
+
+\begin{eqnarray*}
+  \left \lbrace
+  \begin{array}{rcl}
+    \frac{a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\epsilon',l_{u}}^{(\sigma')}} & = & \sum_{s,\epsilon} \delta_{\epsilon' \epsilon} \delta_{\sigma' \sigma} z_{x+\epsilon,l_{u-1}}^{(s)} = \sum_{s} \delta_{\sigma' \sigma} z_{x+\epsilon',l_{u-1}}^{(s)}\\
+    \delta_{l_{u}}^{(\sigma)}(x) & = & \sum_{\nu,x'} \frac{\partial E_{i}}{\partial a_{x',l_{u+1}}^{(\nu)}}\frac{\partial a_{x',l_{u+1}}^{(\nu)}}{\partial a_{x,l_{u}}^{(\sigma)}} = \sum_{\nu,x'} \delta_{l_{u+1}}^{(\nu)}(x')\frac{\partial a_{x',l_{u+1}}^{(\nu)}}{\partial a_{x,l_{u}}^{(\sigma)}} \\
+    & = & \sum_{\nu,x'} \delta_{l_{u+1}}^{(\nu)}(x') \sum_{\sigma'',\epsilon} \omega_{\epsilon,l_{u}}^{(\sigma'')} (f')_{x'+\epsilon,l_{u}}^{(\sigma'')} \\
+    & \times & \delta_{\sigma'' \sigma} \delta(x - (x'-\epsilon)) \\
+    & = & \sum_{\nu,\epsilon} \delta_{l_{u+1}}^{(\nu)}(x-\epsilon) \omega_{\epsilon,l_{u}}^{(\sigma)} (f')_{x,l_{u}}^{(\sigma)}
+  \end{array}
+  \right .
+\end{eqnarray*}
+
+The second level can be evaluated:
+
+\begin{eqnarray*}
+  \left \lbrace
+  \begin{array}{rcl}
+    \frac{a_{x,l_{u+1}}^{(\nu)}}{\partial \omega_{\epsilon',l_{u}}^{(\sigma')}} & = & \sum_{\sigma,\epsilon} \delta_{\epsilon' \epsilon} \delta_{\sigma' \sigma} z_{x+\epsilon,l_{u}}^{(\sigma)} = z_{x+\epsilon',l_{u}}^{(\sigma')} \\
+    \delta_{l_{u+1}}^{(\nu)}(x) & = & \left( z_{l_{u-1}}^{(\nu)} - z_{l_{u+1}}^{(\nu)} \right) f'(a_{x,l_{u+1}}^{(\nu)})
+  \end{array}
+  \right .
+\end{eqnarray*}
+  
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
