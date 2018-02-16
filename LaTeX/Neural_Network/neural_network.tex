@@ -329,8 +329,7 @@ The function of the pooling layer is to progressively reduce the spatial size of
 % keywords = {auto-encoder, classification, convolutional neural network, unsupervised learning},
 %} 
 
-An auto-encoder takes an input $z_{l_{u-1}}^{s} \in \mathbb{R}^{d}$ and first maps it to the latent representation $a_{l_{u}^{\sigma}} \in \mathbb{R}^{d}$ using a deterministic function of the type $z_{x,l_{u}}^{\sigma} = f_{\theta}(\sum_{s,\epsilon} \omega_{\epsilon,l_{u}}^{\sigma}z_{x+\epsilon,l_{u-1}}^{s}) + b_{l_{u}}^{\sigma}$ with parameters $\theta = \{\omega_{l_{u}}, b_{l_{u}}\}$. This "code" is then used to reconstruct the input by a reverse mapping of $z_{x,l_{u+1}}^{s} = f_{\theta'}(\sum_{\sigma,\epsilon} \omega_{\epsilon,l_{u}}^{\sigma}z_{x-\epsilon,l_{u}}^{\sigma}) + b_{l_{u+1}}^{s}$ with $\theta_{l_{u+1}} = \{W', b_{l_{u+1}}\}$. The two parameter sets are usually constrained to be of the form $W' = W_{l_{u}}^{T}$, using the same weights for encoding the input and decoding the latent representation. The parameters are optimized, minimizing an appropriate cost function over the training set.\\
-The encoding process $\sigma(Wx + b)$: 
+An auto-encoder takes an input $x \in \mathbb{R}^{d}$ and first maps it to the latent representation $\bm{h} \in \mathbb{R}^{d}$ using a deterministic function of the type $\bm{h} = f_{\theta} = \sigma(Wx + b)$ with parameters $\theta = \{W, b\}$. This "code" is then used to reconstruct the input by a reverse mapping of $\bm{y} = f_{\theta'} = \sigma( W'h + b')$ with $\theta' = \{W', b'\}$. The two parameter sets are usually constrained to be of the form $W' = W^{T}$, using the same weights for encoding the input and decoding the latent representation. The parameters are optimized, minimizing an appropriate cost function over the training set.\\
 
 \begin{eqnarray*}
   \left(
