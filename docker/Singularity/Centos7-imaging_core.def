@@ -116,7 +116,7 @@ IncludeCmd: yes
 	echo "Python pip installation"
 	pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz scipy sklearn progressbar requests matplotlib ipython pandas sympy nose \
 	    && pip install --upgrade lockfile future simplejson prov statsmodels psutil cython untangle jsonpath-rw \
-	    bctpy h5py networkx
+	    bctpy h5py networkx sortedcontainers
 	pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype && pip install --upgrade pygraphviz Pillow python-igraph
 
 	#
