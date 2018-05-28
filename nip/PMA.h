@@ -38,8 +38,8 @@ namespace MAC_nip
     //
     //
     virtual double single_factor( const Eigen::MatrixXd&, const Eigen::MatrixXd&,
-				  Eigen::MatrixXd, const Penality, 
-				  Eigen::MatrixXd, const Penality,
+				  Eigen::MatrixXd&, const Penality, 
+				  Eigen::MatrixXd&, const Penality,
 				  const int ) = 0;
     //
     virtual void K_factors( const Eigen::MatrixXd&,
