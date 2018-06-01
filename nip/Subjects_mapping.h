@@ -59,7 +59,8 @@ namespace MAC_nip
     std::set< std::string > PIDNs_;
     std::set< int > groups_;
     std::map< int /*group*/, std::vector< NipSubject > > group_pind_;
-    
+    // first matrix is the group image matrix and the second is the group explenatory variables
+    std::map< int /*group*/, std::tuple< Eigen::MatrixXd, Eigen::MatrixXd> > group_matrices_;
   };
 }
 #endif

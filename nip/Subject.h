@@ -67,7 +67,10 @@ namespace MAC_nip
 
     //
     // Accessors
-    inline const std::string get_PIDN() const { return PIDN_ ;}
+    inline const std::string get_PIDN()      const { return PIDN_ ;}
+    const Eigen::MatrixXd get_image_matrix() const { return image_matrix_ ;}
+    const Eigen::MatrixXd get_ev_matrix()    const { return ev_matrix_ ;}
+
 
     // Print
     void print() const;

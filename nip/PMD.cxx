@@ -30,8 +30,8 @@ MAC_nip::NipPMD::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 	xl = X.rows(), xc = X.cols();
       // ToDo: crossvalidations for c1 and c2
       double
-	c1 = 1., //sqrt( static_cast< double >(xl) ),
-	c2 = 1., //sqrt( static_cast< double >(xc) ),
+	c1 = sqrt( static_cast< double >(xl) ),
+	c2 = sqrt( static_cast< double >(xc) ),
 	Ul1Norm = U.lpNorm< 1 >(),
 	Vl1Norm = V.lpNorm< 1 >(),
 	delta_1 = 0., delta_2 = 0.;

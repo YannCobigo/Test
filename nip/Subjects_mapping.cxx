@@ -4,7 +4,7 @@
 //
 MAC_nip::NipSubject_Mapping::NipSubject_Mapping( const std::string& CSV_file,
 						 const std::string& Mask ):
-  csv_file_{ CSV_file.c_str()}, mask_{Mask}
+  csv_file_{CSV_file.c_str()}, mask_{Mask}
 {
   try
     {
@@ -51,6 +51,28 @@ MAC_nip::NipSubject_Mapping::NipSubject_Mapping( const std::string& CSV_file,
 	      throw NipException( __FILE__, __LINE__,
 				  mess.c_str(),
 				  ITK_LOCATION );
+	    }
+	}
+
+      //
+      // Build the group matrices
+      for ( auto g : groups_ )
+	{
+	  //
+	  // 
+	  int
+	    n = group_pind_[g].size(),
+	    p = group_pind_[g][0].get_image_matrix().rows(),
+	    q = group_pind_[g][0].get_ev_matrix().rows();
+	  //
+	  group_matrices_[g] = std::make_tuple( Eigen::MatrixXd::Zero(n,p),
+						Eigen::MatrixXd::Zero(n,q) );
+	  //
+	  for ( int s = 0 ; s < n ; s++ )
+	    {
+	      std::get< 0 /*image*/ >( group_matrices_[g] ).row(s) = group_pind_[g][s].get_image_matrix().col(0);
+	      if ( q > 0 )
+		std::get< 1 /*ev*/    >( group_matrices_[g] ).row(s) = group_pind_[g][s].get_ev_matrix().col(0);
 	    }
 	}
     }

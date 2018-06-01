@@ -18,6 +18,8 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 //#include "Thread_dispatching.h"
 #include "NipException.h"
 #include "Subjects_mapping.h"
+#include "PMD_cross_validation.h"
+#include "SPC_cross_validation.h"
 //
 //
 //
