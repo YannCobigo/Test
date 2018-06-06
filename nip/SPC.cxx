@@ -31,9 +31,12 @@ MAC_nip::NipSPC::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
       // initialization
       int
 	xl = X.rows(), xc = X.cols();
+      if ( c1_ == 0 || c2_ == 0 )
+	{
+	  c1_ = sqrt( static_cast< double >(xl) );
+	  c2_ = sqrt( static_cast< double >(xc) );
+	}
       double
-	c1 = sqrt( static_cast< double >(xl) ),
-	c2 = sqrt( static_cast< double >(xc) ),
 	Vl1Norm = V.lpNorm< 1 >(),
 	delta_1 = 0., delta_2 = 0.;
       Eigen::MatrixXd
@@ -73,8 +76,8 @@ MAC_nip::NipSPC::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 		// Update u
 		XTu     = X.transpose() * U;
 		Vl1Norm = V.lpNorm< 1 >();
-		if ( Vl1Norm > c2 )
-		  delta_2 = NipPMA_tools::dichotomy_search( XTu, Vl1Norm, c2 );
+		if ( Vl1Norm > c2_)
+		  delta_2 = NipPMA_tools::dichotomy_search( XTu, Vl1Norm, c2_ );
 		else
 		  delta_2 = 0.;
 		std::cout << "delta_2 " << delta_2 << std::endl;

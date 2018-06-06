@@ -28,10 +28,13 @@ MAC_nip::NipPMD::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
       // initialization
       int
 	xl = X.rows(), xc = X.cols();
-      // ToDo: crossvalidations for c1 and c2
+      //
+      if ( c1_ ==0 || c2_ == 0 )
+	{
+	  c1_ = sqrt( static_cast< double >(xl) );
+	  c2_ = sqrt( static_cast< double >(xc) );
+	}
       double
-	c1 = sqrt( static_cast< double >(xl) ),
-	c2 = sqrt( static_cast< double >(xc) ),
 	Ul1Norm = U.lpNorm< 1 >(),
 	Vl1Norm = V.lpNorm< 1 >(),
 	delta_1 = 0., delta_2 = 0.;
@@ -57,11 +60,11 @@ MAC_nip::NipPMD::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 		Xv      = X * V;
 		Ul1Norm = U.lpNorm< 1 >();
 		//
-		if ( Ul1Norm > c1 )
-		  delta_1 = NipPMA_tools::dichotomy_search( Xv, Ul1Norm, c1 );
+		if ( Ul1Norm > c1_ )
+		  delta_1 = NipPMA_tools::dichotomy_search( Xv, Ul1Norm, c1_ );
 		else
 		  delta_1 = 0.;
-		std::cout << "delta_1 " << delta_1 << std::endl;
+		//std::cout << "delta_1 " << delta_1 << std::endl;
 		//
 		for ( int l = 0 ; l < xl ; l++ )
 		  U(l,0) = NipPMA_tools::soft_threshold( Xv(l,0), delta_1 );
@@ -71,17 +74,17 @@ MAC_nip::NipPMD::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 		XTu     = X.transpose() * U;
 		Vl1Norm = V.lpNorm< 1 >();
 		//
-		if ( Vl1Norm > c2 )
-		  delta_2 = NipPMA_tools::dichotomy_search( XTu, Vl1Norm, c2 );
+		if ( Vl1Norm > c2_ )
+		  delta_2 = NipPMA_tools::dichotomy_search( XTu, Vl1Norm, c2_ );
 		else
 		  delta_2 = 0.;
-		std::cout << "delta_2 " << delta_2 << std::endl;
+		//std::cout << "delta_2 " << delta_2 << std::endl;
 		//
 		for ( int c = 0 ; c < xc ; c++ )
 		  V(c,0) = NipPMA_tools::soft_threshold( XTu(c,0), delta_2 );
 		V /= V.lpNorm< 2 >();
 		//  std::cout << "v_old \n" << v_old << std::endl;
-		//  std::cout << "V \n" << V << std::endl;
+		// std::cout << "V \n" << V <<  " " << V.lpNorm< 2 >() << std::endl;
 		//  std::cout << "V-vold " << ( V - v_old ).lpNorm< 1 >()  << std::endl;
 	      }
 	    //

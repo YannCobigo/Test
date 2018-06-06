@@ -44,6 +44,8 @@ namespace MAC_nip
     //
     virtual void K_factors( const Eigen::MatrixXd&,
 				Spectra&, Penality, Penality ) = 0;
+    //
+    virtual void set_cs( double, double ) = 0;
   };
 }
 #endif

@@ -9,7 +9,8 @@
 #include <math.h>  
 #include <map>
 #include <list>
-//
+#include <memory>
+#//
 #include "PMA.h"
 #include "PMA_tools.h"
 //

@@ -33,7 +33,7 @@ int main(int argc, char const *argv[]){
   // Initialization
   int
     N = 34, // number of samples
-    p = 40,  // Dimention Xa
+    p = 10,  // Dimention Xa
     q = 3;  // Dimention Xb
   // Random information
   std::default_random_engine generator;
@@ -80,14 +80,15 @@ int main(int argc, char const *argv[]){
 
   //
   // CCA through PMD
-  MAC_nip::NipPMD pmd_cca;
-  pmd_cca.K_factors( MAC_nip::NipPMA_tools::normalize( Z, MAC_nip::STANDARDIZE ),
-		     matrix_spetrum_cca, L1, L1 );
+//  MAC_nip::NipPMD pmd_cca;
+//  pmd_cca.K_factors( MAC_nip::NipPMA_tools::normalize( Z, MAC_nip::STANDARDIZE ),
+//		     matrix_spetrum_cca, L1, L1 );
 
   //
   // Cross validation
   std::cout  << std::endl;
-  MAC_nip::Nip_PMD_cross_validation< /*K = */ 3 > pmd_cv( Xa, Xb );
+  MAC_nip::Nip_PMD_cross_validation< /*K = */ 3 > pmd_cv( std::make_shared< const Eigen::MatrixXd >( Xa ),
+							  std::make_shared< const Eigen::MatrixXd >( Xb ) );
   pmd_cv.validation();
 
   
