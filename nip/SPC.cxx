@@ -118,7 +118,8 @@ MAC_nip::NipSPC::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 void
 MAC_nip::NipSPC::K_factors( const Eigen::MatrixXd& X,
 			    Spectra& Matrix_spetrum,
-			    Penality Pu, Penality Pv )
+			    Penality Pu, Penality Pv,
+			    bool Verbose = false )
 {
   try
     {
@@ -180,16 +181,17 @@ MAC_nip::NipSPC::K_factors( const Eigen::MatrixXd& X,
       std::cout << "P:\n" << P << std::endl;
       std::cout << "Sol:\n: " << P * D * P.inverse() << std::endl;
       //
-      for ( int k = 0 ; k < K ; k++ )
-	{
-	  std::cout << "dk[" << k << "] = " << std::get< coeff_k >( Matrix_spetrum[k] ) << std::endl;
-	  std::cout << "uk[" << k << "] = \n" << std::get< Uk >(Matrix_spetrum[k]) << std::endl;
-	  std::cout << "vk[" << k << "] = \n" << std::get< Vk >(Matrix_spetrum[k]) << std::endl;
-	  Sol += std::get< coeff_k >( Matrix_spetrum[k] )
-	    * std::get< Uk >(Matrix_spetrum[k])
-	    * std::get< Vk >(Matrix_spetrum[k]).transpose();
-	  std::cout << "Sol: \n" << Sol << std::endl;
-	}
+      if ( Verbose )
+	for ( int k = 0 ; k < K ; k++ )
+	  {
+	    std::cout << "dk[" << k << "] = " << std::get< coeff_k >( Matrix_spetrum[k] ) << std::endl;
+	    std::cout << "uk[" << k << "] = \n" << std::get< Uk >(Matrix_spetrum[k]) << std::endl;
+	    std::cout << "vk[" << k << "] = \n" << std::get< Vk >(Matrix_spetrum[k]) << std::endl;
+	    Sol += std::get< coeff_k >( Matrix_spetrum[k] )
+	      * std::get< Uk >(Matrix_spetrum[k])
+	      * std::get< Vk >(Matrix_spetrum[k]).transpose();
+	    std::cout << "Sol: \n" << Sol << std::endl;
+	  }
     }
   catch( itk::ExceptionObject & err )
     {

@@ -71,7 +71,7 @@ int main(int argc, char const *argv[]){
   //
   //
   MAC_nip::NipPMD pmd;
-  pmd.K_factors( AAA, matrix_spetrum, L1, L1 );
+  pmd.K_factors( AAA, matrix_spetrum, L1, L1, true );
 
 
   //
@@ -131,7 +131,7 @@ int main(int argc, char const *argv[]){
   // CCA through PMD
   MAC_nip::NipPMD pmd_cca;
   pmd_cca.K_factors( MAC_nip::NipPMA_tools::normalize( Z, MAC_nip::STANDARDIZE ),
-		     matrix_spetrum_cca, L1, L1 );
+		     matrix_spetrum_cca, L1, L1, true );
 
   
   

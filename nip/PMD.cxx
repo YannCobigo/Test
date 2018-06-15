@@ -120,7 +120,8 @@ MAC_nip::NipPMD::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 void
 MAC_nip::NipPMD::K_factors( const Eigen::MatrixXd& X,
 			    Spectra& Matrix_spetrum,
-			    Penality Pu, Penality Pv )
+			    Penality Pu, Penality Pv,
+			    bool Verbose = false )
 {
   try
     {
@@ -147,66 +148,17 @@ MAC_nip::NipPMD::K_factors( const Eigen::MatrixXd& X,
 	}
       //
       Eigen::MatrixXd Sol = Eigen::MatrixXd::Zero(X.rows(),X.cols());
-      for ( int k = 0 ; k < K ; k++ )
-	{
-	  std::cout << "dk[" << k << "] = " << std::get< coeff_k >( Matrix_spetrum[k] ) << std::endl;
-	  std::cout << "uk[" << k << "] = \n" << std::get< Uk >(Matrix_spetrum[k]) << std::endl;
-	  std::cout << "vk[" << k << "] = \n" << std::get< Vk >(Matrix_spetrum[k]) << std::endl;
-	  Sol += std::get< coeff_k >( Matrix_spetrum[k] )
-	    * std::get< Uk >(Matrix_spetrum[k])
-	    * std::get< Vk >(Matrix_spetrum[k]).transpose();
-	  std::cout << "Sol: \n" << Sol << std::endl;
-	}
-    }
-  catch( itk::ExceptionObject & err )
-    {
-      std::cerr << err << std::endl;
-      exit( -1 );
-    }
-}
-
-//
-// From Algorithm 2: Test of the spectrum
-void
-MAC_nip::NipPMD::K_factors_trained( const Eigen::MatrixXd& X,
-				    const Spectra& Matrix_spetrum,
-				    Penality Pu, Penality Pv )
-{
-  try
-    {
-      //
-      //
-//      std::size_t K = std::get< Uk >(Matrix_spetrum[k]).cols();
-// 
-//      //
-//      // algorithm
-//      Eigen::MatrixXd XX = X;
-//      for ( int k = 0 ; k < K ; k++ )
-//	{
-//	  std::get< coeff_k >( Matrix_spetrum[k] ) =
-//	    single_factor( XX, Eigen::MatrixXd::Zero(0,0),
-//			   std::get< Uk >(Matrix_spetrum[k]), Pu,
-//			   std::get< Vk >(Matrix_spetrum[k]), Pv );
-//
-//	  //
-//	  // Update the rest of the matrix
-//	  XX -= std::get< coeff_k >( Matrix_spetrum[k] )
-//	    * std::get< Uk >(Matrix_spetrum[k])
-//	    * std::get< Vk >(Matrix_spetrum[k]).transpose();
-//	  //std:: cout << XX << std::endl;
-//	}
-//      //
-//      Eigen::MatrixXd Sol = Eigen::MatrixXd::Zero(X.rows(),X.cols());
-//      for ( int k = 0 ; k < K ; k++ )
-//	{
-//	  std::cout << "dk[" << k << "] = " << std::get< coeff_k >( Matrix_spetrum[k] ) << std::endl;
-//	  std::cout << "uk[" << k << "] = \n" << std::get< Uk >(Matrix_spetrum[k]) << std::endl;
-//	  std::cout << "vk[" << k << "] = \n" << std::get< Vk >(Matrix_spetrum[k]) << std::endl;
-//	  Sol += std::get< coeff_k >( Matrix_spetrum[k] )
-//	    * std::get< Uk >(Matrix_spetrum[k])
-//	    * std::get< Vk >(Matrix_spetrum[k]).transpose();
-//	  std::cout << "Sol: \n" << Sol << std::endl;
-//	}
+      if ( Verbose )
+	for ( int k = 0 ; k < K ; k++ )
+	  {
+	    std::cout << "dk[" << k << "] = " << std::get< coeff_k >( Matrix_spetrum[k] ) << std::endl;
+	    std::cout << "uk[" << k << "] = \n" << std::get< Uk >(Matrix_spetrum[k]) << std::endl;
+	    std::cout << "vk[" << k << "] = \n" << std::get< Vk >(Matrix_spetrum[k]) << std::endl;
+	    Sol += std::get< coeff_k >( Matrix_spetrum[k] )
+	      * std::get< Uk >(Matrix_spetrum[k])
+	      * std::get< Vk >(Matrix_spetrum[k]).transpose();
+	    std::cout << "Sol: \n" << Sol << std::endl;
+	  }
     }
   catch( itk::ExceptionObject & err )
     {
