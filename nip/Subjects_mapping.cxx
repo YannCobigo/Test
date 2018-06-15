@@ -64,16 +64,53 @@ MAC_nip::NipSubject_Mapping::NipSubject_Mapping( const std::string& CSV_file,
 	    n = group_pind_[g].size(),
 	    p = group_pind_[g][0].get_image_matrix().rows(),
 	    q = group_pind_[g][0].get_ev_matrix().rows();
+
 	  //
-	  group_matrices_[g] = std::make_tuple( Eigen::MatrixXd::Zero(n,p),
-						Eigen::MatrixXd::Zero(n,q) );
-	  //
+	  // Build matrics
+	  Eigen::MatrixXd Image_matrix = Eigen::MatrixXd::Zero(n,p);
+	  Eigen::MatrixXd EV_matrix    = Eigen::MatrixXd::Zero(n,q);
 	  for ( int s = 0 ; s < n ; s++ )
 	    {
-	      std::get< 0 /*image*/ >( group_matrices_[g] ).row(s) = group_pind_[g][s].get_image_matrix().col(0);
+	      Image_matrix.row(s) = group_pind_[g][s].get_image_matrix().col(0);
 	      if ( q > 0 )
-		std::get< 1 /*ev*/    >( group_matrices_[g] ).row(s) = group_pind_[g][s].get_ev_matrix().col(0);
+		EV_matrix.row(s) = group_pind_[g][s].get_ev_matrix().col(0);
 	    }
+
+	  //
+	  // Build spectrum
+	  std::size_t K_spectrum = 0;
+	  if ( q > 0 )
+	    K_spectrum = (p > q ? q : p);
+	  else
+	    throw NipException( __FILE__, __LINE__,
+				"ERROR: need to build the case for PCA (SPC).",
+				ITK_LOCATION );
+	  //
+	  Spectra matrix_spetrum( K_spectrum );
+	  for ( int k = 0 ; k < K_spectrum ; k++ )
+	    {
+	      if ( q > 0 )
+		{
+		  // Coefficient
+		  std::get< coeff_k >( matrix_spetrum[k] ) = 0.;
+		  // vectors
+		  std::get< Uk >( matrix_spetrum[k] ) = Eigen::MatrixXd::Random( p, 1 );
+		  std::get< Vk >( matrix_spetrum[k] ) = Eigen::MatrixXd::Random( q, 1 );
+		  // normalization
+		  std::get< Uk >( matrix_spetrum[k] ) /= std::get< Uk >( matrix_spetrum[k] ).lpNorm< 2 >();
+		  std::get< Vk >( matrix_spetrum[k] ) /= std::get< Vk >( matrix_spetrum[k] ).lpNorm< 2 >();
+		}
+	      else
+		throw NipException( __FILE__, __LINE__,
+				    "ERROR: need to build the case for PCA (SPC).",
+				    ITK_LOCATION );
+	    }
+
+	  //
+	  // Create the tuple
+	  group_matrices_[g] = std::make_tuple( std::make_shared< const Eigen::MatrixXd >(Image_matrix),
+						std::make_shared< const Eigen::MatrixXd >(EV_matrix),
+						std::make_shared< Spectra >(matrix_spetrum) );
 	}
     }
   catch( itk::ExceptionObject & err )

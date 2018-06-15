@@ -25,6 +25,11 @@
 //
 #include "NipException.h"
 #include "Subject.h"
+#include "PMA.h"
+//
+using PMA_type = std::tuple< std::shared_ptr< const Eigen::MatrixXd >,
+                             std::shared_ptr< const Eigen::MatrixXd >,
+                             std::shared_ptr< Spectra > >;
 //
 //
 //
@@ -44,6 +49,8 @@ namespace MAC_nip
     /** Destructor */
     virtual ~NipSubject_Mapping() {};
 
+    /** Access the PMA type **/
+    std::map< int /*group*/, PMA_type >& get_PMA(){ return group_matrices_;};
 
   private:
     //
@@ -60,7 +67,7 @@ namespace MAC_nip
     std::set< int > groups_;
     std::map< int /*group*/, std::vector< NipSubject > > group_pind_;
     // first matrix is the group image matrix and the second is the group explenatory variables
-    std::map< int /*group*/, std::tuple< Eigen::MatrixXd, Eigen::MatrixXd> > group_matrices_;
+    std::map< int /*group*/, PMA_type > group_matrices_;
   };
 }
 #endif

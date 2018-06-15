@@ -18,6 +18,11 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 //#include "Thread_dispatching.h"
 #include "NipException.h"
 #include "Subjects_mapping.h"
+#include "PMA.h"
+#include "PMA_tools.h"
+#include "PMD.h"
+#include "SPC.h"
+#include "PMA_cross_validation.h"
 #include "PMD_cross_validation.h"
 #include "SPC_cross_validation.h"
 //
@@ -103,6 +108,12 @@ main( const int argc, const char **argv )
 	      using  ms         = std::chrono::milliseconds;
 	      using get_time    = std::chrono::steady_clock ;
 	      auto start_timing = get_time::now();
+
+	      //
+	      // Optimize spectrum
+	      MAC_nip::Nip_PMD_cross_validation< /* K-folds = */ 3, /* CPU */ 8 > pmd_cv( std::get< 0 /*image*/ >(mapping.get_PMA()[1]),
+											  std::get< 1 /*EV*/ >(mapping.get_PMA()[1]));
+	      pmd_cv.validation( std::get< 2 /*spectrum*/ >(mapping.get_PMA()[1]) );
 
 
 	      

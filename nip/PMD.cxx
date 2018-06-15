@@ -132,32 +132,51 @@ MAC_nip::NipPMD::K_factors( const Eigen::MatrixXd& X,
       //
       // algorithm
       Eigen::MatrixXd XX = X;
+      bool coefficient_too_small = false;
       for ( int k = 0 ; k < K ; k++ )
-	{
-	  std::get< coeff_k >( Matrix_spetrum[k] ) =
-	    single_factor( XX, Eigen::MatrixXd::Zero(0,0),
-			   std::get< Uk >(Matrix_spetrum[k]), Pu,
-			   std::get< Vk >(Matrix_spetrum[k]), Pv );
-
-	  //
-	  // Update the rest of the matrix
-	  XX -= std::get< coeff_k >( Matrix_spetrum[k] )
-	    * std::get< Uk >(Matrix_spetrum[k])
-	    * std::get< Vk >(Matrix_spetrum[k]).transpose();
-	  //std:: cout << XX << std::endl;
+	{//std::get< coeff_k >( Matrix_spetrum[k] ) 
+	  if ( !coefficient_too_small )
+	    {
+	      double coefficient_to_rank =
+		single_factor( XX, Eigen::MatrixXd::Zero(0,0),
+			       std::get< Uk >(Matrix_spetrum[k]), Pu,
+			       std::get< Vk >(Matrix_spetrum[k]), Pv );
+	      //
+	      if ( isnan(coefficient_to_rank) )
+		{
+		  coefficient_too_small = true;
+		  std::get< coeff_k >( Matrix_spetrum[k] ) = 0.;
+		}
+	      else
+		{
+		  //
+		  std::get< coeff_k >( Matrix_spetrum[k] ) = coefficient_to_rank;
+		  // Update the rest of the matrix
+		  XX -= std::get< coeff_k >( Matrix_spetrum[k] )
+		    * std::get< Uk >(Matrix_spetrum[k])
+		    * std::get< Vk >(Matrix_spetrum[k]).transpose();
+		  //std:: cout << XX << std::endl;
+		}
+	    }
+	  else
+	    std::get< coeff_k >( Matrix_spetrum[k] ) = 0.;
 	}
       //
-      Eigen::MatrixXd Sol = Eigen::MatrixXd::Zero(X.rows(),X.cols());
       if ( Verbose )
 	for ( int k = 0 ; k < K ; k++ )
 	  {
-	    std::cout << "dk[" << k << "] = " << std::get< coeff_k >( Matrix_spetrum[k] ) << std::endl;
-	    std::cout << "uk[" << k << "] = \n" << std::get< Uk >(Matrix_spetrum[k]) << std::endl;
-	    std::cout << "vk[" << k << "] = \n" << std::get< Vk >(Matrix_spetrum[k]) << std::endl;
-	    Sol += std::get< coeff_k >( Matrix_spetrum[k] )
-	      * std::get< Uk >(Matrix_spetrum[k])
-	      * std::get< Vk >(Matrix_spetrum[k]).transpose();
-	    std::cout << "Sol: \n" << Sol << std::endl;
+	    Eigen::MatrixXd Sol = Eigen::MatrixXd::Zero(X.rows(),X.cols());
+	    double coefficient_to_rank = std::get< coeff_k >( Matrix_spetrum[k] );
+	    std::cout << "dk[" << k << "] = " << coefficient_to_rank << std::endl;
+	    if ( coefficient_to_rank != 0 )
+	      {
+		std::cout << "uk[" << k << "] = \n" << std::get< Uk >(Matrix_spetrum[k]) << std::endl;
+		std::cout << "vk[" << k << "] = \n" << std::get< Vk >(Matrix_spetrum[k]) << std::endl;
+		Sol += std::get< coeff_k >( Matrix_spetrum[k] )
+		  * std::get< Uk >(Matrix_spetrum[k])
+		  * std::get< Vk >(Matrix_spetrum[k]).transpose();
+		std::cout << "Sol: \n" << Sol << std::endl;
+	      }
 	  }
     }
   catch( itk::ExceptionObject & err )

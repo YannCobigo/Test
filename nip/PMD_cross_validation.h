@@ -80,7 +80,7 @@ namespace MAC_nip
     std::vector< Eigen::MatrixXd > fold_full_ev_matrix_{K};
     //
     // permutation matrices to build the p-values
-    std::size_t max_permutations_{2000}; //200
+    std::size_t max_permutations_{1000}; //200
     std::vector<  std::vector< Eigen::MatrixXd > > permutations_images_matrix_{K};
     //
     // Results
@@ -103,7 +103,6 @@ namespace MAC_nip
       {
 	//
 	//  ToDo: Check same number of rows!!
-	
 
 	//
 	// Initialization
@@ -189,18 +188,18 @@ namespace MAC_nip
 	// explenatory variable matrix
 	for ( int k = 0 ; k < K  ; k++ )
 	  {
-	    std::size_t permutation = factorial( folds_images_matrices_[k].size() );
-	    if ( permutation > max_permutations_ )
-	      {
-		std::cout << "The number of permutation requiered is " << permutation
-			  << ". The maximum number of permutation is reached.\n"
-			  << max_permutations_ << " permutation will be done."<< std::endl;
-		permutation = max_permutations_;
-	      }
+//MakeItBetter	    std::size_t permutation = factorial( folds_images_matrices_[k].size() );
+//MakeItBetter	    if ( permutation > max_permutations_ )
+//MakeItBetter	      {
+//MakeItBetter		std::cout << "The number of permutation requiered is " << permutation
+//MakeItBetter			  << ". The maximum number of permutation is reached.\n"
+//MakeItBetter			  << max_permutations_ << " permutation will be done."<< std::endl;
+//MakeItBetter		permutation = max_permutations_;
+//MakeItBetter	      }
 	    //
-	    permutations_images_matrix_[k].resize( permutation );
+	    permutations_images_matrix_[k].resize( max_permutations_ );
 	    //
-	    for ( int p = 0 ; p < permutation ; p++ )
+	    for ( int p = 0 ; p < max_permutations_ ; p++ )
 	      {
 		permutations_images_matrix_[k][p] = Eigen::MatrixXd::Zero( folds_images_matrices_[k].size(),
 									   image_c );
@@ -300,6 +299,7 @@ namespace MAC_nip
 
 	  //
 	  //
+
 	  for ( int k = 0 ; k < K ; k++ )
 	    {
 	      //
@@ -382,50 +382,61 @@ namespace MAC_nip
 	      //
 	      pmd_cca.K_factors( images_training_norm.transpose() * ev_training_norm,
 				 matrix_spetrum_cca, L1, L1, false );
+	      
 	      // Compute correlation
 	      for ( int k_factor = 0 ; k_factor < K_cca ; k_factor++ )
 		{
-		  Eigen::MatrixXd
-		    za = images_training_norm * std::get< Uk >( matrix_spetrum_cca[k_factor] ),
-		    zb = ev_training_norm * std::get< Vk >( matrix_spetrum_cca[k_factor] ),
-		    za_test = images_testing_norm * std::get< Uk >( matrix_spetrum_cca[k_factor] ),
-		    zb_test = ev_testing_norm * std::get< Vk >( matrix_spetrum_cca[k_factor] );
-		  double
-		    training_correlation = (za.transpose() * zb / (za.lpNorm< 2 >() * zb.lpNorm< 2 >()))(0,0),
-		    trained_correlation  = (za_test.transpose() * zb_test / (za_test.lpNorm< 2 >() * zb_test.lpNorm< 2 >()))(0,0);
+		  double coefficient_to_rank = std::get< coeff_k >( matrix_spetrum_cca[k_factor] );
+		  //
+		  if ( coefficient_to_rank != 0. )
+		    {
+		      Eigen::MatrixXd
+			za = images_training_norm * std::get< Uk >( matrix_spetrum_cca[k_factor] ),
+			zb = ev_training_norm * std::get< Vk >( matrix_spetrum_cca[k_factor] ),
+			za_test = images_testing_norm * std::get< Uk >( matrix_spetrum_cca[k_factor] ),
+			zb_test = ev_testing_norm * std::get< Vk >( matrix_spetrum_cca[k_factor] );
+		      double
+			training_correlation = (za.transpose() * zb / (za.lpNorm< 2 >() * zb.lpNorm< 2 >()))(0,0),
+			trained_correlation  = (za_test.transpose() * zb_test / (za_test.lpNorm< 2 >() * zb_test.lpNorm< 2 >()))(0,0);
 		      
-		  //std::cout
-		  //  << "Correlation factor from training " << k_factor << ": "
-		  //  << training_correlation
-		  //  << " from testing " 
-		  //  << trained_correlation
-		  //  << std::endl;
-		  //
-		  // Compute the p-value
-		  int p_increment = 0;
-		  for ( int perm = 0 ; perm < max_permutations_ ; perm++ )
-		    {
-		      Eigen::MatrixXd z_perm = MAC_nip::NipPMA_tools::normalize( permutations_images_matrix_[k][perm],
-										 MAC_nip::STANDARDIZE ) * std::get< Uk >( matrix_spetrum_cca[k_factor] );
-		      if ( trained_correlation < (z_perm.transpose() * zb_test / (z_perm.lpNorm< 2 >() * zb_test.lpNorm< 2 >()))(0,0) )
-			p_increment++;
-		      //
 		      //std::cout
-		      //	<< "permutation " << perm << ": "
-		      //	<< trained_correlation << " "
-		      //	<< z_perm.transpose() * zb_test / (z_perm.lpNorm< 2 >() * zb_test.lpNorm< 2 >())
-		      //	<< std::endl;
+		      //  << "Correlation factor from training " << k_factor << ": "
+		      //  << training_correlation
+		      //  << " from testing " 
+		      //  << trained_correlation
+		      //  << std::endl;
+		      //
+		      // Compute the p-value
+		      int p_increment = 0;
+		      for ( int perm = 0 ; perm < max_permutations_ ; perm++ )
+			{
+			  Eigen::MatrixXd z_perm = MAC_nip::NipPMA_tools::normalize( permutations_images_matrix_[k][perm],
+										     MAC_nip::STANDARDIZE ) * std::get< Uk >( matrix_spetrum_cca[k_factor] );
+			  if ( trained_correlation < (z_perm.transpose() * zb_test / (z_perm.lpNorm< 2 >() * zb_test.lpNorm< 2 >()))(0,0) )
+			    p_increment++;
+			  //
+			  //std::cout
+			  //	<< "permutation " << perm << ": "
+			  //	<< trained_correlation << " "
+			  //	<< z_perm.transpose() * zb_test / (z_perm.lpNorm< 2 >() * zb_test.lpNorm< 2 >())
+			  //	<< std::endl;
+			}
+		      //
+		      double p = static_cast<double>(p_increment) / static_cast<double>(max_permutations_);
+		      //std::cout << "p-value " << p << std::endl;
+		      //
+		      if ( k_factor == 0 )
+			{
+			  correlation[k] = trained_correlation;
+			  p_value[k] = p;
+			}
 		    }
-		  //
-		  double p = static_cast<double>(p_increment) / static_cast<double>(max_permutations_);
-		  //std::cout << "p-value " << p << std::endl;
-		  //
-		  if ( k_factor == 0 )
+		  else
 		    {
-		      correlation[k] = trained_correlation;
-		      p_value[k] = p;
+		      correlation[k] = 0.;
+		      p_value[k] = 1.;
 		    }
-		}
+		} //for
 	    }
 
 	  //
