@@ -33,7 +33,12 @@ namespace MAC_nip
 				  const int );
     //
     virtual void K_factors( const Eigen::MatrixXd&,
-			    Spectra&, Penality, Penality );
+			    Spectra&,
+			    Penality, Penality );
+    //
+    virtual void K_factors_trained( const Eigen::MatrixXd&,
+				    const Spectra&,
+				    Penality, Penality );
     //
     virtual void set_cs( double C1, double C2 )
     {c1_ = C1; c2_ = C2;};

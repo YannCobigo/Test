@@ -87,8 +87,9 @@ int main(int argc, char const *argv[]){
   //
   // Cross validation
   std::cout  << std::endl;
-  MAC_nip::Nip_PMD_cross_validation< /*K = */ 3 > pmd_cv( std::make_shared< const Eigen::MatrixXd >( Xa ),
-							  std::make_shared< const Eigen::MatrixXd >( Xb ) );
+  MAC_nip::Nip_PMD_cross_validation< /* K = */ 3 > pmd_cv( std::make_shared< const Eigen::MatrixXd >( Xa ),
+							   std::make_shared< const Eigen::MatrixXd >( Xb ),
+							   std::make_shared< Spectra >( matrix_spetrum_cca ) );
   pmd_cv.validation();
 
   
