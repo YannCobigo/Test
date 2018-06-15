@@ -87,11 +87,11 @@ int main(int argc, char const *argv[]){
   //
   // Cross validation
   std::cout  << std::endl;
+  //
+  std::shared_ptr< Spectra > spetrum = std::make_shared< Spectra >( matrix_spetrum_cca );
   MAC_nip::Nip_PMD_cross_validation< /* K-folds = */ 3, /* CPU */ 8 > pmd_cv( std::make_shared< const Eigen::MatrixXd >( Xa ),
-									      std::make_shared< const Eigen::MatrixXd >( Xb ),
-									      std::make_shared< Spectra >( matrix_spetrum_cca ) );
-  pmd_cv.validation();
-
+									      std::make_shared< const Eigen::MatrixXd >( Xb ) );
+  pmd_cv.validation( spetrum );
   
   
   //

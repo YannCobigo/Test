@@ -35,7 +35,7 @@ namespace MAC_nip
   public:
     //
     //
-    virtual void validation() = 0;
+    virtual void validation( std::shared_ptr< Spectra > ) = 0;
   };
 }
 #endif
