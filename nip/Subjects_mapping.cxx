@@ -197,7 +197,7 @@ MAC_nip::NipSubject_Mapping::dump()
 		    if (  static_cast<int>( imageIterator_mask.Value() ) != 0 )
 		      {
 			MaskType::IndexType idx = imageIterator_mask.GetIndex();
-			double val_U = std::get<Uk>((*std::get<2>(group_matrices_[g]))[kk])(pos,0);
+			double val_U = std::get<Uk>((*std::get<2>(group_matrices_[g]))[kk])(pos++,0);
 			group_spectrum_Uk.set_val( kk, idx, val_U );
 		      }
 		    //

@@ -71,8 +71,8 @@ namespace MAC_nip
     // Vector of values for c1 and c2
     std::vector< std::vector< double > > T2_{2};
     // grid size
-    int grid_size_im_{2}; //1000
-    int grid_size_ev_{2}; //100
+    int grid_size_im_{50}; //1000
+    int grid_size_ev_{50}; //100
     //
     // Matrices and spectrum for the training and testing
     // Matrices
@@ -80,7 +80,7 @@ namespace MAC_nip
     std::vector< Eigen::MatrixXd > fold_full_ev_matrix_{K};
     //
     // permutation matrices to build the p-values
-    std::size_t max_permutations_{10}; //200
+    std::size_t max_permutations_{50}; //200
     std::vector<  std::vector< Eigen::MatrixXd > > permutations_images_matrix_{K};
     //
     // Results
