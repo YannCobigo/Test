@@ -49,6 +49,9 @@ namespace MAC_nip
     /** Destructor */
     virtual ~NipSubject_Mapping() {};
 
+    /** Display the spectrum **/
+    void dump() ;
+
     /** Access the PMA type **/
     std::map< int /*group*/, PMA_type >& get_PMA(){ return group_matrices_;};
 

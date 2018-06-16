@@ -67,9 +67,11 @@ namespace MAC_nip
 
     //
     // Accessors
-    inline const std::string get_PIDN()      const { return PIDN_ ;}
-    const Eigen::MatrixXd get_image_matrix() const { return image_matrix_ ;}
-    const Eigen::MatrixXd get_ev_matrix()    const { return ev_matrix_ ;}
+    inline const std::string get_PIDN()         const { return PIDN_ ;}
+    const Eigen::MatrixXd get_image_matrix()    const { return image_matrix_ ;}
+    const Eigen::MatrixXd get_ev_matrix()       const { return ev_matrix_ ;}
+    const ImageReaderType::Pointer get_image_reader() const { return reader_image_ ;}
+    const MaskReaderType::Pointer  get_mask_reader()  const { return reader_mask_ ;}
 
 
     // Print
@@ -95,6 +97,10 @@ namespace MAC_nip
     Eigen::MatrixXd image_matrix_;
     // matrix holding the explanatory variables
     Eigen::MatrixXd ev_matrix_;
+    // Image reader
+    ImageReaderType::Pointer reader_image_;
+    // Image reader
+    MaskReaderType::Pointer  reader_mask_;
   };
 }
 #endif

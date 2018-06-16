@@ -1,4 +1,19 @@
 #include "Subjects_mapping.h"
+#include "NipMakeITKImage.h"
+//
+// ITK
+//
+#include <itkImage.h>
+#include <itkImageFileReader.h>
+#include <itkImageFileWriter.h>
+#include <itkImageRegionIterator.h>
+#include <itkNiftiImageIO.h>
+#include <itkOrientImageFilter.h>
+#include <itkSpatialOrientation.h>
+using ImageType       = itk::Image< double, 3 >;
+using ImageReaderType = itk::ImageFileReader< ImageType >;
+using MaskType        = itk::Image< unsigned char, 3 >;
+using MaskReaderType  = itk::ImageFileReader< MaskType >;
 //
 //
 //
@@ -117,5 +132,85 @@ MAC_nip::NipSubject_Mapping::NipSubject_Mapping( const std::string& CSV_file,
     {
       std::cerr << err << std::endl;
       exit( -1 );
+    }
+}
+//
+//
+//
+void
+MAC_nip::NipSubject_Mapping::dump() 
+{
+  try
+    {
+      //
+      // For each group
+      for ( auto g : groups_ )
+	{
+	  //
+	  // 
+	  int
+	    n = group_pind_[g].size(),
+	    p = group_pind_[g][0].get_image_matrix().rows(),
+	    q = group_pind_[g][0].get_ev_matrix().rows();
+	  
+	  //
+	  // Build spectrum image
+	  //
+
+	  //
+	  //
+	  std::size_t K_spectrum = 0;
+	  if ( q > 0 )
+	    K_spectrum = (p > q ? q : p);
+	  else
+	    throw NipException( __FILE__, __LINE__,
+				"ERROR: need to build the case for PCA (SPC).",
+				ITK_LOCATION );
+	  
+	  //
+	  // For each spectrum write the image
+	  int K_spectrum_left = 0;
+	  for ( int kk = 0 ; kk < K_spectrum ; kk++ )
+	    if ( std::get<coeff_k>((*std::get<2>(group_matrices_[g]))[kk]) != 0. )
+	      K_spectrum_left++;
+	  // Buid the 4D output image
+	  std::string group_spectrum_Uk_image_name = "spectrum_U_gr" + std::to_string(g) + ".nii.gz";
+	  NipMakeITKImage group_spectrum_Uk( K_spectrum_left, group_spectrum_Uk_image_name,
+					     group_pind_[g][0].get_image_reader() );
+	  // loop over spectrum left
+	  for ( int kk = 0 ; kk < K_spectrum ; kk++ )
+	    if ( std::get<coeff_k>((*std::get<2>(group_matrices_[g]))[kk]) != 0. )
+	      {
+		// Region to explore
+		ImageType::RegionType region;
+		ImageType::Pointer    image_in = group_pind_[g][0].get_image_reader()->GetOutput();
+		ImageType::SizeType   img_size = image_in->GetLargestPossibleRegion().GetSize();
+		ImageType::IndexType  start    = {0, 0, 0};
+		region.SetSize( img_size );
+		region.SetIndex( start );
+		//
+		itk::ImageRegionIterator< MaskType > imageIterator_mask( group_pind_[g][0].get_mask_reader()->GetOutput(), region );
+		//
+		int pos = 0;
+		while( !imageIterator_mask.IsAtEnd() )
+		  {
+		    if (  static_cast<int>( imageIterator_mask.Value() ) != 0 )
+		      {
+			MaskType::IndexType idx = imageIterator_mask.GetIndex();
+			double val_U = std::get<Uk>((*std::get<2>(group_matrices_[g]))[kk])(pos,0);
+			group_spectrum_Uk.set_val( kk, idx, val_U );
+		      }
+		    //
+		    ++imageIterator_mask;
+		  }
+		//
+		group_spectrum_Uk.write();
+	      }
+	}
+    }
+  catch( itk::ExceptionObject & err )
+    {
+      std::cerr << err << std::endl;
+      exit(-1);
     }
 }

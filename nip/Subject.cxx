@@ -14,21 +14,21 @@ MAC_nip::NipSubject::NipSubject( const int Group,
   
   //
   // Image
-  ImageReaderType::Pointer reader_image = ImageReaderType::New();
-  reader_image->SetFileName( image_ );
-  reader_image->Update();
-  MaskReaderType::Pointer reader_mask = MaskReaderType::New();
-  reader_mask->SetFileName( mask_ );
-  reader_mask->Update();
+  reader_image_ = ImageReaderType::New();
+  reader_image_->SetFileName( image_ );
+  reader_image_->Update();
+  reader_mask_ = MaskReaderType::New();
+  reader_mask_->SetFileName( mask_ );
+  reader_mask_->Update();
   // Region to explore
   ImageType::RegionType region;
-  ImageType::Pointer   image_in = reader_image->GetOutput();
+  ImageType::Pointer   image_in = reader_image_->GetOutput();
   ImageType::SizeType  img_size = image_in->GetLargestPossibleRegion().GetSize();
   ImageType::IndexType start    = {0, 0, 0};
   region.SetSize( img_size );
   region.SetIndex( start );
   //
-  itk::ImageRegionIterator< MaskType >  imageIterator_mask( reader_mask->GetOutput(), region );
+  itk::ImageRegionIterator< MaskType >  imageIterator_mask( reader_mask_->GetOutput(), region );
   //
   std::list< double > in_mask_value;
   while( !imageIterator_mask.IsAtEnd() )
@@ -36,7 +36,7 @@ MAC_nip::NipSubject::NipSubject( const int Group,
       if (  static_cast<int>( imageIterator_mask.Value() ) != 0 )
 	{
 	  MaskType::IndexType idx = imageIterator_mask.GetIndex();
-	  in_mask_value.push_back( reader_image->GetOutput()->GetPixel(idx) );
+	  in_mask_value.push_back( reader_image_->GetOutput()->GetPixel(idx) );
 	}
       //
       ++imageIterator_mask;
