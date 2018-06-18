@@ -80,7 +80,7 @@ namespace MAC_nip
     std::vector< Eigen::MatrixXd > fold_full_ev_matrix_{K};
     //
     // permutation matrices to build the p-values
-    std::size_t max_permutations_{50}; //200
+    std::size_t max_permutations_{200}; //200
     std::vector<  std::vector< Eigen::MatrixXd > > permutations_images_matrix_{K};
     //
     // Results
