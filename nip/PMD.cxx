@@ -51,7 +51,7 @@ MAC_nip::NipPMD::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 	    // Algorithm 3: computtion of a single factor PMD(L1,L1) model
 	    // ToDo: make sure v is L2-norm 1.
 	    int count = 0;
-	    while ( ( V - v_old ).lpNorm< 1 >() > 1.e-06 && ++count < Niter )
+	    while ( ( V - v_old ).lpNorm< 1 >() > 1.e-10 && ++count < Niter )
 	      {
 		//
 		v_old = V;
@@ -64,11 +64,11 @@ MAC_nip::NipPMD::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 		  delta_1 = NipPMA_tools::dichotomy_search( Xv, Ul1Norm, c1_ );
 		else
 		  delta_1 = 0.;
-		//std::cout << "delta_1 " << delta_1 << std::endl;
 		//
 		for ( int l = 0 ; l < xl ; l++ )
 		  U(l,0) = NipPMA_tools::soft_threshold( Xv(l,0), delta_1 );
-		U /= U.lpNorm< 2 >();
+		if ( U.lpNorm< 2 >() > 0. )
+		  U /= U.lpNorm< 2 >();
 		//
 		// Update u
 		XTu     = X.transpose() * U;
@@ -82,7 +82,8 @@ MAC_nip::NipPMD::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 		//
 		for ( int c = 0 ; c < xc ; c++ )
 		  V(c,0) = NipPMA_tools::soft_threshold( XTu(c,0), delta_2 );
-		V /= V.lpNorm< 2 >();
+		if ( V.lpNorm< 2 >() > 0. )
+		  V /= V.lpNorm< 2 >();
 		//  std::cout << "v_old \n" << v_old << std::endl;
 		// std::cout << "V \n" << V <<  " " << V.lpNorm< 2 >() << std::endl;
 		//  std::cout << "V-vold " << ( V - v_old ).lpNorm< 1 >()  << std::endl;

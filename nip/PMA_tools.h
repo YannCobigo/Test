@@ -35,6 +35,16 @@ namespace MAC_nip
   public:
     NipPMA_tools(){};
     //
+    // Is finite checks on the nan in the input vector
+    static void is_finite( Eigen::MatrixXd& Xu )
+    {
+      if ( ((Xu - Xu).array() != (Xu - Xu).array()).all() )
+	{
+	  std::cout << "YOYOOYOYOYOYOOYOYOYAYAYAYAY\n" << Xu << std::endl;
+	}
+    }
+    
+    //
     // Soft thresholding
     static double soft_threshold( const double A, const double C )
     {
@@ -44,7 +54,6 @@ namespace MAC_nip
       
       // 
       double abs_a = ( A > 0 ? A : -A );
-      
       //
       //
       return ( A > 0 ? 1.:-1 ) * ( abs_a > C ? abs_a - C : 0. );
@@ -57,33 +66,39 @@ namespace MAC_nip
     {
       //
       // Tests
-      
-      //
-      //
-      double
-	delta_1 = 0,
-	delta_2 = C;
-      Eigen::MatrixXd soft_u = Eigen::MatrixXd::Zero( Xu.rows(), Xu.cols() );
-      
-      //
-      //
-      int count = 0;
-      while( delta_2 - delta_1 > 1.e-06 /*&& ++count < Niter*/ )
+      if ( Xu.lpNorm< 2 >() < 1.e-16 )
 	{
-	  for ( int i = 0 ; i < soft_u.rows() ; i++ )
-	    soft_u(i,0) = soft_threshold( Xu(i,0), (delta_1 + delta_2) / 2. );
-	  //
-	  soft_u /= soft_u.lpNorm< 2 >();
-	  if ( soft_u.lpNorm< 1 >() < L1norm_u )
-	    delta_2 = (delta_1 + delta_2) / 2.;
-	  else
-	    delta_1 = (delta_1 + delta_2) / 2.;
+	  return 0.;
 	}
-      
-      //
-      //
-      //std::cout << "delta delta " << delta_2 - delta_1 << std::endl;
-      return (delta_1 + delta_2) / 2.;
+      else
+	{
+	  //
+	  //
+	  double
+	    delta_1 = 0,
+	    delta_2 = C;
+	  Eigen::MatrixXd soft_u = Eigen::MatrixXd::Zero( Xu.rows(), Xu.cols() );
+	  
+	  //
+	  //
+	  int count = 0;
+	  while( delta_2 - delta_1 > 1.e-6 /*&& ++count < Niter*/ )
+	    {
+	      for ( int i = 0 ; i < soft_u.rows() ; i++ )
+		soft_u(i,0) = soft_threshold( Xu(i,0), (delta_1 + delta_2) / 2. );
+	      //
+	      soft_u /= soft_u.lpNorm< 2 >();
+	      if ( soft_u.lpNorm< 1 >() < L1norm_u )
+		delta_2 = (delta_1 + delta_2) / 2.;
+	      else
+		delta_1 = (delta_1 + delta_2) / 2.;
+	    }
+	  
+	  //
+	  //
+	  //std::cout << "delta delta " << delta_1  << " " <<  delta_2 << std::endl;
+	  return (delta_1 + delta_2) / 2.;
+	}
     }
     
     //
