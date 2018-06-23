@@ -17,6 +17,7 @@
 #include "../PMA_tools.h"
 #include "../PMD.h"
 #include "../SPC.h"
+#include "../PMA_cross_validation.h"
 //
 //
 int main(int argc, char const *argv[]){
@@ -134,6 +135,76 @@ int main(int argc, char const *argv[]){
 		     matrix_spetrum_cca, L1, L1, true );
 
   
+
+  //
+  // Test on SPC with small matrices
+  //
+
+  std::cout << "###### PCA #########" << std::endl;
+  
+  //
+  //
+  Eigen::MatrixXd B = Eigen::MatrixXd(7,6);
+  B <<
+    1, 10, 1, -2, 21, 102,
+    2, 11, 3, -3, 23, 98,
+    0.5, 9, 2, -4, 20, 120,
+    4, 13, 3, -1, 18, 112,
+    7,  2, 3, -4, 7, -105,
+    15,  2, 1, -1, 4, -100,
+    12, 1, 3, -2, 5, -88;
+  std::cout << B << std::endl;
+  //
+  //Spectrum
+  std::size_t Kb = B.cols();
+  Spectra matrix_spetrum_spc( Kb );
+  // initialize the spectra
+  // ToDo: the first vector should be the SVD highest eigen vector
+  for ( int k = 0 ; k < Kb ; k++ )
+    {
+      // Coefficient
+      std::get< coeff_k >( matrix_spetrum_spc[k] ) = 0.;
+      // vectors
+      std::get< Uk >( matrix_spetrum_spc[k] ) = Eigen::MatrixXd::Random( Kb, 1 );
+      std::get< Vk >( matrix_spetrum_spc[k] ) = Eigen::MatrixXd::Random( Kb, 1 );
+      // normalization
+      std::get< Uk >( matrix_spetrum_spc[k] ) /= std::get< Uk >( matrix_spetrum_spc[k] ).lpNorm< 2 >();
+      std::get< Vk >( matrix_spetrum_spc[k] ) /= std::get< Vk >( matrix_spetrum_spc[k] ).lpNorm< 2 >();
+    }
+  //
+  //
+  MAC_nip::NipSPC spc;
+  std::cout << MAC_nip::NipPMA_tools::normalize( B.transpose() * B,
+						   MAC_nip::STANDARDIZE )
+	    << std::endl;
+  // SPC PCA
+  spc.set_cs(1.,1.);
+  spc.K_factors( MAC_nip::NipPMA_tools::normalize( B.transpose() * B,
+						   MAC_nip::STANDARDIZE ),
+		 matrix_spetrum_spc, L1, L1, true );
+
+  //
+  //
+  std::cout << "Projection on the first sparse principal component: \n"
+	    << MAC_nip::NipPMA_tools::normalize( B.transpose() * B,
+						 MAC_nip::STANDARDIZE ) * std::get< Vk >( matrix_spetrum_spc[0] )
+	    << std::endl;
+  std::cout << "Projection on the first sparse principal component: \n"
+	    << std::get< Vk >( matrix_spetrum_spc[0] ).transpose() * MAC_nip::NipPMA_tools::normalize( B.transpose() * B,
+												       MAC_nip::STANDARDIZE )
+	    << std::endl;
+  // SVD
+  Eigen::JacobiSVD< Eigen::MatrixXd >
+    svd_V( MAC_nip::NipPMA_tools::normalize( B.transpose() * B,
+					     MAC_nip::STANDARDIZE ),
+	   Eigen::ComputeThinV);
+  //
+  std::cout << "Projection on the first SVD principal component: \n"
+	    << MAC_nip::NipPMA_tools::normalize( B.transpose() * B,
+						 MAC_nip::STANDARDIZE ) * svd_V.matrixV().col( 0 )
+	    << std::endl;
+  
+
   
   //
   //

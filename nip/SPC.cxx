@@ -25,12 +25,11 @@ MAC_nip::NipSPC::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 				     "Check the dimentions of the matrices. U must have the same number of rows as X and V the same number of columns.",
 				     ITK_LOCATION );
 
-      std::cout << "Size Uprev: " << Uprev.cols()  << std::endl;
-  
       //
       // initialization
       int
 	xl = X.rows(), xc = X.cols();
+      //
       if ( c1_ == 0 || c2_ == 0 )
 	{
 	  c1_ = sqrt( static_cast< double >(xl) );
@@ -65,26 +64,30 @@ MAC_nip::NipSPC::single_factor( const Eigen::MatrixXd& X, const Eigen::MatrixXd&
 		    //		U /= X.lpNorm< 2 >();
 		    Eigen::MatrixXd I = Eigen::MatrixXd::Identity(Uprev.rows(), Uprev.rows());
 		    U  = ( I - Uprev * Uprev.transpose() ) * Xv;
-		    U /= U.lpNorm< 2 >();
+		    if ( U.lpNorm< 2 >() != 0. )
+		      U /= U.lpNorm< 2 >();
 		  }
 		else
 		  {
 		    U  = Xv;
-		    U /= Xv.lpNorm< 2 >();
+		    if ( Xv.lpNorm< 2 >() != 0. )
+		      U /= Xv.lpNorm< 2 >();
 		  }
 		//
 		// Update u
 		XTu     = X.transpose() * U;
 		Vl1Norm = V.lpNorm< 1 >();
-		if ( Vl1Norm > c2_)
+		//
+		if ( Vl1Norm > c2_ )
 		  delta_2 = NipPMA_tools::dichotomy_search( XTu, Vl1Norm, c2_ );
 		else
 		  delta_2 = 0.;
-		std::cout << "delta_2 " << delta_2 << std::endl;
+		//std::cout << "delta_2 " << delta_2 << std::endl;
 		//
 		for ( int c = 0 ; c < xc ; c++ )
 		  V(c,0) = NipPMA_tools::soft_threshold( XTu(c,0), delta_2 );
-		V /= V.lpNorm< 2 >();
+		if ( V.lpNorm< 2 >() != 0 )
+		  V /= V.lpNorm< 2 >();
 	      }
 	    //
 	    break;
@@ -130,32 +133,46 @@ MAC_nip::NipSPC::K_factors( const Eigen::MatrixXd& X,
       //
       // algorithm
       Eigen::MatrixXd XX = X;
+      bool coefficient_too_small = false;
       for ( int k = 0 ; k < K ; k++ )
 	{
-	  //
-	  // Build the orthogonal spectrum Uprev
-	  Eigen::MatrixXd Uprev;
-	  if ( k > 0 )
+	  if( !coefficient_too_small )
 	    {
-	      Uprev = Eigen::MatrixXd::Zero( std::get< Uk >( Matrix_spetrum[0] ).rows(), k );
-	      for ( int i = 0 ; i < k ; i++ )
-		Uprev.col(i) = std::get< Uk >( Matrix_spetrum[i] );
-	      std::cout << "Uprev\n" << Uprev << std::endl;
+	      //
+	      // Build the orthogonal spectrum Uprev
+	      Eigen::MatrixXd Uprev;
+	      if ( k > 0 )
+		{
+		  Uprev = Eigen::MatrixXd::Zero( std::get< Uk >( Matrix_spetrum[0] ).rows(), k );
+		  for ( int i = 0 ; i < k ; i++ )
+		    Uprev.col(i) = std::get< Uk >( Matrix_spetrum[i] );
+		}
+	      
+	      //
+	      // Sparse Principal Componant
+	      double coefficient_to_rank =
+		single_factor( XX, Uprev,
+			       std::get< Uk >(Matrix_spetrum[k]), Pu,
+			       std::get< Vk >(Matrix_spetrum[k]), Pv );
+	      
+	      //
+	      //
+	      if ( isnan(coefficient_to_rank) )
+		{
+		  coefficient_too_small = true;
+		  std::get< coeff_k >( Matrix_spetrum[k] ) = 0.;
+		}
+	      else
+		{
+		  // Update the rest of the matrix
+		  std::get< coeff_k >( Matrix_spetrum[k] ) = coefficient_to_rank;
+		  XX -= std::get< coeff_k >( Matrix_spetrum[k] )
+		    * std::get< Uk >(Matrix_spetrum[k])
+		    * std::get< Vk >(Matrix_spetrum[k]).transpose();
+		}
 	    }
-
-	  //
-	  // Sparse Principal Componant
-	  std::get< coeff_k >( Matrix_spetrum[k] ) =
-	    single_factor( XX, Uprev,
-			   std::get< Uk >(Matrix_spetrum[k]), Pu,
-			   std::get< Vk >(Matrix_spetrum[k]), Pv );
-
-	  //
-	  // Update the rest of the matrix
-	  XX -= std::get< coeff_k >( Matrix_spetrum[k] )
-	    * std::get< Uk >(Matrix_spetrum[k])
-	    * std::get< Vk >(Matrix_spetrum[k]).transpose();
-	  //std:: cout << XX << std::endl;
+	  else
+	    std::get< coeff_k >( Matrix_spetrum[k] ) = 0.;
 	}
       //
       Eigen::MatrixXd Sol = Eigen::MatrixXd::Zero(X.rows(),X.cols());
@@ -172,9 +189,14 @@ MAC_nip::NipSPC::K_factors( const Eigen::MatrixXd& X,
 	  P.col(k)    = std::get< Uk >(Matrix_spetrum[k]);
 	  diagonal(k) = std::get< coeff_k >( Matrix_spetrum[k] );
 	  if ( k > 0 )
-	    std::cout << "uk[" << 0 << "] . uk[" << k << "] = "
-		      << std::get< Uk >(Matrix_spetrum[0]).transpose() * std::get< Uk >(Matrix_spetrum[k])
-		      << std::endl;
+	    {
+	      std::cout << "uk[" << 0 << "] . uk[" << k << "] = "
+			<< std::get< Uk >(Matrix_spetrum[0]).transpose() * std::get< Uk >(Matrix_spetrum[k])
+			<< std::endl;
+	      std::cout << "vk[" << 0 << "] . vk[" << k << "] = "
+			<< std::get< Vk >(Matrix_spetrum[0]).transpose() * std::get< Vk >(Matrix_spetrum[k])
+			<< std::endl;
+	    }
 	}
       D = diagonal.asDiagonal();
       std::cout << "D:\n" << D << std::endl;

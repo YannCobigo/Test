@@ -271,8 +271,31 @@ namespace MAC_nip
 	    ev_norm = MAC_nip::NipPMA_tools::normalize( *ev_matrix_.get(),
 							MAC_nip::STANDARDIZE );
 	  //
-	  pmd_cca.K_factors( images_norm.transpose() * ev_norm,
-			     *Matrices_spetrum.get(), L1, L1, true );
+	  // SVD
+	  if (false)
+	    {
+	      //
+	      // X nxp
+	      // X = UDV^T with U^TU = In and V^TV = Ip
+	      Eigen::JacobiSVD< Eigen::MatrixXd >
+		svd_V(images_norm.transpose() * ev_norm, Eigen::ComputeThinV),
+		svd_U(images_norm.transpose() * ev_norm, Eigen::ComputeThinU),
+		svd_img(images_norm, Eigen::ComputeThinV),
+		svd_ev(ev_norm, Eigen::ComputeThinV);
+	      //
+	      for ( int k_factor = 0 ; k_factor < K_cca ; k_factor++ )
+		{
+		  // Coefficient
+		  std::get< coeff_k >( (*Matrices_spetrum.get())[k_factor] ) = 0.;
+		  // vectors
+		  std::get< Uk >( (*Matrices_spetrum.get())[k_factor] ) = svd_U.matrixU().col( k_factor );
+		  std::get< Vk >( (*Matrices_spetrum.get())[k_factor] ) = svd_V.matrixV().col( k_factor );
+		}
+	    }
+	  //
+	  // Full matrices optimization
+	pmd_cca.K_factors( images_norm.transpose() * ev_norm,
+			   *Matrices_spetrum.get(), L1, L1, true );
 	}
       catch( itk::ExceptionObject & err )
 	{
@@ -346,28 +369,7 @@ namespace MAC_nip
 	      //
 
 	      //
-	      // Create the spectrum
-	      std::size_t K_cca = (image_features_ > ev_features_ ? ev_features_ : image_features_);
-	      Spectra matrix_spetrum_cca( K_cca );
-	      // initialize the spectra
-	      // ToDo: the first vector should be the SVD highest eigen vector
-	      for ( int k_factor = 0 ; k_factor < K_cca ; k_factor++ )
-		{
-		  // Coefficient
-		  std::get< coeff_k >( matrix_spetrum_cca[k_factor] ) = 0.;
-		  // vectors
-		  std::get< Uk >( matrix_spetrum_cca[k_factor] ) = Eigen::MatrixXd::Random( image_features_, 1 );
-		  std::get< Vk >( matrix_spetrum_cca[k_factor] ) = Eigen::MatrixXd::Random( ev_features_, 1 );
-		  // normalization
-		  std::get< Uk >( matrix_spetrum_cca[k_factor] ) /= std::get< Uk >( matrix_spetrum_cca[k_factor] ).lpNorm< 2 >();
-		  std::get< Vk >( matrix_spetrum_cca[k_factor] ) /= std::get< Vk >( matrix_spetrum_cca[k_factor] ).lpNorm< 2 >();
-		}
-	      //
-	      pmd_cca.set_cs(c1,c2);
-	      //		  std::cout
-	      //		    << "images_training\n" << images_training
-	      //		    << "\n ev_training\n " << ev_training
-	      //		    << std::endl;
+	      // Create the matrices
 	      Eigen::MatrixXd
 		// training matrices
 		images_training_norm = MAC_nip::NipPMA_tools::normalize( images_training,
@@ -380,9 +382,58 @@ namespace MAC_nip
 		ev_testing_norm = MAC_nip::NipPMA_tools::normalize( fold_full_ev_matrix_[k],
 								    MAC_nip::STANDARDIZE );
 	      //
+	      // Create the spectrum
+	      std::size_t K_cca = (image_features_ > ev_features_ ? ev_features_ : image_features_);
+	      Spectra matrix_spetrum_cca( K_cca );
+	      // initialize the spectra
+	      if (false)
+		{
+		  //
+		  // SVD on X nxp
+		  // X = UDV^T with U^TU = In and V^TV = Ip
+		  Eigen::JacobiSVD< Eigen::MatrixXd >
+		    svd_V(images_training_norm.transpose() * ev_training_norm, Eigen::ComputeThinV),
+		    svd_U(images_training_norm.transpose() * ev_training_norm, Eigen::ComputeThinU),
+		    svd_img(images_training_norm, Eigen::ComputeThinV),
+		    svd_ev(ev_training_norm, Eigen::ComputeThinV);
+		  Eigen::MatrixXd
+		    img_reduced = svd_img.matrixV().leftCols( K_cca ),
+		    ev_reduced = svd_ev.matrixV().leftCols( K_cca );
+		  //std::cout << "YO U\n" << svd_U.matrixU().rows() << "x" << svd_U.matrixU().cols() << std::endl;
+		  //std::cout << "YO V\n" << svd_V.matrixV().rows() << "x" << svd_V.matrixV().cols() << std::endl;
+		  //std::cout << "YA U\n" << image_features_ << "x1" << std::endl;
+		  //std::cout << "YA V\n" << ev_features_ << "x1" << std::endl;
+		  //
+		  for ( int k_factor = 0 ; k_factor < K_cca ; k_factor++ )
+		    {
+		      // Coefficient
+		      std::get< coeff_k >( matrix_spetrum_cca[k_factor] ) = 0.;
+		      // vectors
+		      std::get< Uk >( matrix_spetrum_cca[k_factor] ) = svd_U.matrixU().col( k_factor );
+		      std::get< Vk >( matrix_spetrum_cca[k_factor] ) = svd_V.matrixV().col( k_factor );
+		    }
+		}
+	      else
+		{
+		  for ( int k_factor = 0 ; k_factor < K_cca ; k_factor++ )
+		    {
+		      // Coefficient
+		      std::get< coeff_k >( matrix_spetrum_cca[k_factor] ) = 0.;
+		      // vectors
+		      std::get< Uk >( matrix_spetrum_cca[k_factor] ) = Eigen::MatrixXd::Random( image_features_, 1 );
+		      std::get< Vk >( matrix_spetrum_cca[k_factor] ) = Eigen::MatrixXd::Random( ev_features_, 1 );
+		      // normalization
+		      std::get< Uk >( matrix_spetrum_cca[k_factor] ) /= std::get< Uk >( matrix_spetrum_cca[k_factor] ).lpNorm< 2 >();
+		      std::get< Vk >( matrix_spetrum_cca[k_factor] ) /= std::get< Vk >( matrix_spetrum_cca[k_factor] ).lpNorm< 2 >();
+		    }
+		}
+	      //
+	      // Optimize the spectrum
+	      pmd_cca.set_cs(c1,c2);
 	      pmd_cca.K_factors( images_training_norm.transpose() * ev_training_norm,
 				 matrix_spetrum_cca, L1, L1, false );
-	      
+
+	      //
 	      // Compute correlation
 	      for ( int k_factor = 0 ; k_factor < K_cca ; k_factor++ )
 		{
@@ -472,7 +523,7 @@ namespace MAC_nip
 	    // lock the population
 	    std::lock_guard< std::mutex > lock_critical_zone ( CRITICAL_ZONE );
 	    //
-	    if ( mean_corr > correlation_ /*|| (mean_corr == correlation_ && correlation_sd_ > sd_corr)*/ )
+	    if ( fabs(mean_corr) > fabs(correlation_) /*|| (mean_corr == correlation_ && correlation_sd_ > sd_corr)*/ )
 	      {
 		// save the best c1 and c2
 		c1_ = c1;

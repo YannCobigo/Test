@@ -135,7 +135,7 @@ MAC_nip::NipPMD::K_factors( const Eigen::MatrixXd& X,
       Eigen::MatrixXd XX = X;
       bool coefficient_too_small = false;
       for ( int k = 0 ; k < K ; k++ )
-	{//std::get< coeff_k >( Matrix_spetrum[k] ) 
+	{
 	  if ( !coefficient_too_small )
 	    {
 	      double coefficient_to_rank =

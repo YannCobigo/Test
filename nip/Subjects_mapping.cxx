@@ -203,9 +203,9 @@ MAC_nip::NipSubject_Mapping::dump()
 		    //
 		    ++imageIterator_mask;
 		  }
-		//
-		group_spectrum_Uk.write();
 	      }
+	  //
+	  group_spectrum_Uk.write();
 	}
     }
   catch( itk::ExceptionObject & err )
