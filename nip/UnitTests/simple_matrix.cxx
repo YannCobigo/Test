@@ -204,7 +204,21 @@ int main(int argc, char const *argv[]){
 						 MAC_nip::STANDARDIZE ) * svd_V.matrixV().col( 0 )
 	    << std::endl;
   
-
+  //
+  // Variance explained
+  Eigen::MatrixXd
+    C( 6, 2 ),
+    XB = MAC_nip::NipPMA_tools::normalize( B.transpose() * B,
+					   MAC_nip::STANDARDIZE );
+  C.block( 0, 0,
+	   6, 1 ) = svd_V.matrixV().col( 0 );
+  C.block( 0, 1,
+	   6, 1 ) = svd_V.matrixV().col( 1 );
+  
+  std::cout << "Variance explained: tr(BTB) = " << XB.trace()
+	    << "\n tr(XTX) = " << (XB * C * (C.transpose() * C).inverse() * C.transpose()).trace()
+	    << "\n explained: " << (XB * C * (C.transpose() * C).inverse() * C.transpose()).trace() / XB.trace()
+	    << std::endl;
   
   //
   //
