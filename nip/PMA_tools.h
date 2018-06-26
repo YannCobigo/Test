@@ -40,7 +40,7 @@ namespace MAC_nip
     {
       if ( ((Xu - Xu).array() != (Xu - Xu).array()).all() )
 	{
-	  std::cout << "YOYOOYOYOYOYOOYOYOYAYAYAYAY\n" << Xu << std::endl;
+	  std::cout << "is_finite\n" << Xu << std::endl;
 	}
     }
     
@@ -116,10 +116,11 @@ namespace MAC_nip
 	switch( N )
 	  {
 	  case STANDARDIZE:
-	    {
+	    {std::cout << "Inside: " << X.trace() << std::endl;
 	      Eigen::MatrixXd demeaned = normalize(X,DEMEAN);
 	      Eigen::VectorXd std = (demeaned.colwise().norm() / sqrt( static_cast< double >(X.rows() - 1)));
 	      X_normalized = demeaned.array().rowwise() / std.transpose().array();
+	      std::cout << "Inside: " << X_normalized.trace() << std::endl;
 	      break;
 	    }
 	  case DEMEAN:

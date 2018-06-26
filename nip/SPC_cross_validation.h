@@ -10,6 +10,7 @@ std::mutex CRITICAL_ZONE_SPC;
 #include "Thread_dispatching.h"
 #include "NipException.h"
 #include "PMA_cross_validation.h"
+#include "SPC.h"
 //
 //
 //
@@ -19,20 +20,21 @@ namespace MAC_nip
     {
       return (n == 1 || n == 0) ? 1 : factorial_spc(n - 1) * n;
     }
-  /** \class Nip_spc_cross_validation
+  /** \class Nip_SPC_cross_validation
    *
    * \brief PMD: Penalized Matrices Decomposition
    * "A penalized matrix decomposition, with applications to sparse principal components and canonical correlation analysis" (PMID:19377034)
    * 
    */
   template< int K, int CPU >
-    class Nip_spc_cross_validation : public Nip_PMA_cross_validation
+    class Nip_SPC_cross_validation : public Nip_PMA_cross_validation
   {
   public:
     /*Constructor*/
-    Nip_spc_cross_validation( std::shared_ptr< const Eigen::MatrixXd > );
+    Nip_SPC_cross_validation( std::shared_ptr< const Eigen::MatrixXd >,
+			      const int );
     /*Destructor*/
-    virtual ~Nip_spc_cross_validation(){};
+    virtual ~Nip_SPC_cross_validation(){};
       
     //
     //
@@ -40,10 +42,11 @@ namespace MAC_nip
       
     //
     //
-    void k_folds( const std::vector< double > );
+    virtual void k_folds( const std::vector< double > );
 
     //
-    void operator ()( const std::vector< double > Paramters )
+    //
+    virtual void operator ()( const std::vector< double > Paramters )
     {
       std::cout
 	<< "treatment for parameters c1: " << Paramters[0]
@@ -52,6 +55,7 @@ namespace MAC_nip
       //
       k_folds( Paramters );
     };
+    
     //
     //
   private:
@@ -65,8 +69,7 @@ namespace MAC_nip
     // Vector of values for c1 and c2
     std::vector< std::vector< double > > T2_{2};
     // grid size
-    int grid_size_im_{50}; //1000
-    int grid_size_ev_{50}; //100
+    int grid_size_im_{5}; //1000
     //
     // Matrices and spectrum for the training and testing
     std::vector< Eigen::MatrixXd > fold_full_images_matrix_{K};
@@ -82,13 +85,16 @@ namespace MAC_nip
     double p_value_sd_{100.};
     double c1_{0.};
     double c2_{0.};
+    // reduced space
+    int reduced_space_;
   };
   
   //
   //
   template< int K, int CPU >
-    Nip_spc_cross_validation<K,CPU>::Nip_spc_cross_validation( std::shared_ptr< const Eigen::MatrixXd > Images_matrix ):
-    images_matrix_{Images_matrix}, image_features_{Images_matrix->cols()}
+    Nip_SPC_cross_validation<K,CPU>::Nip_SPC_cross_validation( std::shared_ptr< const Eigen::MatrixXd > Images_matrix,
+							       const int Reduced_space ):
+    images_matrix_{Images_matrix}, image_features_{Images_matrix->cols()}, reduced_space_{Reduced_space}
   {
     try
       {
@@ -113,17 +119,12 @@ namespace MAC_nip
 	  c2_current = 1.;
 	//
 	T2_[0].resize(grid_size_im_);
-	T2_[1].resize(grid_size_ev_);
+	T2_[1].resize(grid_size_im_);
 	//
 	for ( int step = 0 ; step < grid_size_im_ ; step++ )
 	  {
-	    T2_[0][step] = c1_current;
+	    T2_[0][step] = T2_[1][step] = c1_current;
 	    c1_current  += c1_step;
-	  }
-	for ( int step = 0 ; step < grid_size_ev_ ; step++ )
-	  {
-	    T2_[1][step] = c2_current;
-	    c2_current  += c2_step;
 	  }
 
 	//
@@ -167,14 +168,14 @@ namespace MAC_nip
 	// explenatory variable matrix
 	for ( int k = 0 ; k < K  ; k++ )
 	  {
-//MakeItBetter	    std::size_t permutation = factorial_spc( folds_images_matrices_[k].size() );
-//MakeItBetter	    if ( permutation > max_permutations_ )
-//MakeItBetter	      {
-//MakeItBetter		std::cout << "The number of permutation requiered is " << permutation
-//MakeItBetter			  << ". The maximum number of permutation is reached.\n"
-//MakeItBetter			  << max_permutations_ << " permutation will be done."<< std::endl;
-//MakeItBetter		permutation = max_permutations_;
-//MakeItBetter	      }
+	    //MakeItBetter	    std::size_t permutation = factorial_spc( folds_images_matrices_[k].size() );
+	    //MakeItBetter	    if ( permutation > max_permutations_ )
+	    //MakeItBetter	      {
+	    //MakeItBetter		std::cout << "The number of permutation requiered is " << permutation
+	    //MakeItBetter			  << ". The maximum number of permutation is reached.\n"
+	    //MakeItBetter			  << max_permutations_ << " permutation will be done."<< std::endl;
+	    //MakeItBetter		permutation = max_permutations_;
+	    //MakeItBetter	      }
 	    //
 	    permutations_images_matrix_[k].resize( max_permutations_ );
 	    //
@@ -199,7 +200,7 @@ namespace MAC_nip
   //
   //
   template< int K, int CPU > void
-    Nip_spc_cross_validation<K,CPU>::validation( std::shared_ptr< Spectra > Matrices_spetrum )
+    Nip_SPC_cross_validation<K,CPU>::validation( std::shared_ptr< Spectra > Matrices_spetrum )
     {
       try
 	{
@@ -281,11 +282,13 @@ namespace MAC_nip
   //
   //
   template< int K, int CPU > void
-    Nip_spc_cross_validation<K,CPU>::k_folds( const std::vector< double > Paramters )
+    Nip_SPC_cross_validation<K,CPU>::k_folds( const std::vector< double > Paramters )
     {
       try
 	{
-	  MAC_nip::NipSPC pmd_spc;
+	  //
+	  // principal componant
+	  MAC_nip::NipSPC pmd_spc_k;
 	  double
 	    c1 = Paramters[0],
 	    c2 = Paramters[1];
@@ -297,7 +300,6 @@ namespace MAC_nip
 
 	  //
 	  //
-
 	  for ( int k = 0 ; k < K ; k++ )
 	    {
 	      //
@@ -335,19 +337,49 @@ namespace MAC_nip
 	      //
 	      // Train on the grid of (c1,c2) the (k-1)-samples
 	      //
+	      std::cout << images_training.rows() << " " << images_training.cols() << std::endl;
+	      Eigen::MatrixXd D = images_training.transpose() * images_training;
+	      std::cout << (D).rows() << std::endl;
 
+
+
+	      Eigen::MatrixXd B = Eigen::MatrixXd(7,6);
+	      B <<
+		1, 10, 1, -2, 21, 102,
+		2, 11, 3, -3, 23, 98,
+		0.5, 9, 2, -4, 20, 120,
+		4, 13, 3, -1, 18, 112,
+		7,  2, 3, -4, 7, -105,
+		15,  2, 1, -1, 4, -100,
+		12, 1, 3, -2, 5, -88;
+	      std::cout << B << std::endl;
+	      
+	      Eigen::MatrixXd C = MAC_nip::NipPMA_tools::normalize( B,
+								    MAC_nip::STANDARDIZE );
+
+	      std::cout << C
+			<< std::endl;
+
+	      
+	      std::cout << "D\n" << D.trace()
+			<< std::endl;
+ 
+	      
 	      //
 	      // Create the matrices
+	      // training matrices
 	      Eigen::MatrixXd
-		// training matrices
-		images_training_norm = MAC_nip::NipPMA_tools::normalize( images_training,
-									 MAC_nip::STANDARDIZE ),
-		// testing matrices
-		images_testing_norm = MAC_nip::NipPMA_tools::normalize( fold_full_images_matrix_[k],
+		images_training_norm = MAC_nip::NipPMA_tools::normalize( images_training.transpose() * images_training,
+									 MAC_nip::STANDARDIZE );
+	      std::cout <<  "Yep here: " /*<< images_training_norm.trace() */<< std::endl;
+	      // testing matrices
+	      Eigen::MatrixXd
+		images_testing_norm = MAC_nip::NipPMA_tools::normalize( fold_full_images_matrix_[k].transpose()*fold_full_images_matrix_[k],
 									MAC_nip::STANDARDIZE );
+	      std::cout <<  "Yep here: " << images_testing_norm.trace() << std::endl;
 	      //
 	      // Create the spectrum
-	      std::size_t K_spc = image_features_;
+	      std::size_t K_spc = reduced_space_;
 	      Spectra matrix_spetrum_spc( K_spc );
 	      // initialize the spectra
 	      // SVD
@@ -357,8 +389,8 @@ namespace MAC_nip
 		  // SVD on X nxp
 		  // X = UDV^T with U^TU = In and V^TV = Ip
 		  Eigen::JacobiSVD< Eigen::MatrixXd >
-		    svd_V(images_training_norm.transpose() * images_training_norm, Eigen::ComputeThinV),
-		    svd_U(images_training_norm.transpose() * images_training_norm, Eigen::ComputeThinU);
+		    svd_V(images_training_norm, Eigen::ComputeThinV),
+		    svd_U(images_training_norm, Eigen::ComputeThinU);
 		  //
 		  for ( int k_factor = 0 ; k_factor < K_spc ; k_factor++ )
 		    {
@@ -385,60 +417,24 @@ namespace MAC_nip
 		}
 	      //
 	      // Optimize the spectrum
-	      pmd_spc.set_cs(c1,c2);
-	      pmd_spc.K_factors( images_training_norm.transpose() * images_training_norm,
-				 matrix_spetrum_spc, L1, L1, false );
+	      pmd_spc_k.set_cs(c1,c2);
+	      std::cout << "je passe i " <<  k << std::endl;
+	      pmd_spc_k.K_factors( images_training_norm,
+				   matrix_spetrum_spc, L1, L1, false );
+	      std::cout << "je passe o " << k << std::endl;
 
 	      //
 	      // Compute correlation
-	      for ( int k_factor = 0 ; k_factor < K_spc ; k_factor++ )
-		{
-		  double coefficient_to_rank = std::get< coeff_k >( matrix_spetrum_spc[k_factor] );
-		  //
-		  if ( coefficient_to_rank != 0. )
-		    {
-//		      Eigen::MatrixXd
-//			za = images_training_norm * std::get< Uk >( matrix_spetrum_spc[k_factor] ),
-//			zb = ev_training_norm * std::get< Vk >( matrix_spetrum_spc[k_factor] ),
-//			za_test = images_testing_norm * std::get< Uk >( matrix_spetrum_spc[k_factor] ),
-//			zb_test = ev_testing_norm * std::get< Vk >( matrix_spetrum_spc[k_factor] );
-//		      double
-//			training_correlation = (za.transpose() * zb / (za.lpNorm< 2 >() * zb.lpNorm< 2 >()))(0,0),
-//			trained_correlation  = (za_test.transpose() * zb_test / (za_test.lpNorm< 2 >() * zb_test.lpNorm< 2 >()))(0,0);
-//		      
-//		      //
-//		      // Compute the p-value
-//		      int p_increment = 0;
-//		      for ( int perm = 0 ; perm < max_permutations_ ; perm++ )
-//			{
-//			  Eigen::MatrixXd z_perm = MAC_nip::NipPMA_tools::normalize( permutations_images_matrix_[k][perm],
-//										     MAC_nip::STANDARDIZE ) * std::get< Uk >( matrix_spetrum_spc[k_factor] );
-//			  if ( trained_correlation < (z_perm.transpose() * zb_test / (z_perm.lpNorm< 2 >() * zb_test.lpNorm< 2 >()))(0,0) )
-//			    p_increment++;
-//			  //
-//			  //std::cout
-//			  //	<< "permutation " << perm << ": "
-//			  //	<< trained_correlation << " "
-//			  //	<< z_perm.transpose() * zb_test / (z_perm.lpNorm< 2 >() * zb_test.lpNorm< 2 >())
-//			  //	<< std::endl;
-//			}
-//		      //
-//		      double p = static_cast<double>(p_increment) / static_cast<double>(max_permutations_);
-//		      //std::cout << "p-value " << p << std::endl;
-//		      //
-//		      if ( k_factor == 0 )
-//			{
-//			  correlation[k] = trained_correlation;
-//			  p_value[k] = p;
-//			}
-		    }
-		  else
-		    {
-		      correlation[k] = 0.;
-		      p_value[k] = 1.;
-		    }
-		} //for
-	    }
+	      // In sparse principal coefficient we use the correlation feature as the find out the highest
+	      // rank coefficient for the first principal componant.
+	      double
+		rank_coeff =
+		(std::get< Uk >( matrix_spetrum_spc[0] ).transpose() *
+		 images_testing_norm *
+		 std::get< Vk >( matrix_spetrum_spc[0] ))(0,0);
+	      correlation[k] = rank_coeff;
+	      p_value[k] = 1.;
+	    } // for every fold
 
 	  //
 	  // Compute the mean values of results
@@ -472,8 +468,13 @@ namespace MAC_nip
 	  {
 	    // lock the population
 	    std::lock_guard< std::mutex > lock_critical_zone ( CRITICAL_ZONE_SPC );
+	    std::cout
+	      << "CSV;" << c1_ << "," << c2_ << ","
+	      << correlation_ << "," << correlation_sd_ << ","
+	      << p_value_ << "," << p_value_sd_
+	      << std::endl;
 	    //
-	    if ( fabs(mean_corr) > fabs(correlation_) /*|| (mean_corr == correlation_ && correlation_sd_ > sd_corr)*/ )
+	    if ( mean_corr > correlation_  )
 	      {
 		// save the best c1 and c2
 		c1_ = c1;

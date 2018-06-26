@@ -18,7 +18,8 @@ using MaskReaderType  = itk::ImageFileReader< MaskType >;
 //
 //
 MAC_nip::NipSubject_Mapping::NipSubject_Mapping( const std::string& CSV_file,
-						 const std::string& Mask ):
+						 const std::string& Mask,
+						 const int Reduced_space ):
   csv_file_{CSV_file.c_str()}, mask_{Mask}
 {
   try
@@ -87,18 +88,23 @@ MAC_nip::NipSubject_Mapping::NipSubject_Mapping( const std::string& CSV_file,
 	  for ( int s = 0 ; s < n ; s++ )
 	    {
 	      Image_matrix.row(s) = group_pind_[g][s].get_image_matrix().col(0);
-	      if ( q > 0 )
+	      // CCA
+	      if ( q > 0 && Reduced_space == 0 )
 		EV_matrix.row(s) = group_pind_[g][s].get_ev_matrix().col(0);
 	    }
 
 	  //
 	  // Build spectrum
 	  std::size_t K_spectrum = 0;
-	  if ( q > 0 )
+	  // CCA
+	  if ( q > 0 && Reduced_space == 0 )
 	    K_spectrum = (p > q ? q : p);
+	  // SPC
+	  else if ( Reduced_space > 0 )
+	    K_spectrum = Reduced_space;
 	  else
 	    throw NipException( __FILE__, __LINE__,
-				"ERROR: need to build the case for PCA (SPC).",
+				"ERROR: case unknown (chose CCA or SPC).",
 				ITK_LOCATION );
 	  //
 	  Spectra matrix_spetrum( K_spectrum );

@@ -123,13 +123,14 @@ MAC_nip::NipSPC::K_factors( const Eigen::MatrixXd& X,
 			    Spectra& Matrix_spetrum,
 			    Penality Pu, Penality Pv,
 			    bool Verbose = false )
-{
+{std::cout << "YOYOYOYOYOYOOYOYOYOYOYOYOYOYOYYYYYYYYYYYYYYYYYYY\n" ;
   try
     {
+      
       //
       //
       std::size_t K = Matrix_spetrum.size();
-
+std::cout << "je passe SPC " << std::endl;
       //
       // algorithm
       Eigen::MatrixXd XX = X;

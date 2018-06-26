@@ -10,7 +10,7 @@
 #include <map>
 #include <list>
 #include <memory>
-#//
+//
 #include "PMA.h"
 #include "PMA_tools.h"
 //
@@ -36,6 +36,12 @@ namespace MAC_nip
     //
     //
     virtual void validation( std::shared_ptr< Spectra > ) = 0;
+    //
+    //
+    virtual void k_folds( const std::vector< double > ) = 0;
+    //
+    //
+    virtual void operator ()( const std::vector< double > Paramters ) = 0;
   };
 }
 #endif

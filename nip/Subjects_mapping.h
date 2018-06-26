@@ -45,7 +45,8 @@ namespace MAC_nip
   public:
     /** Constructor. */
     explicit NipSubject_Mapping( const std::string&,
-				 const std::string& );
+				 const std::string&,
+				 const int );
     /** Destructor */
     virtual ~NipSubject_Mapping() {};
 
@@ -69,7 +70,8 @@ namespace MAC_nip
     std::set< std::string > PIDNs_;
     std::set< int > groups_;
     std::map< int /*group*/, std::vector< NipSubject > > group_pind_;
-    // first matrix is the group image matrix and the second is the group explenatory variables
+    // first matrix is the group image matrix and the second is the
+    // group explenatory variables
     std::map< int /*group*/, PMA_type > group_matrices_;
   };
 }

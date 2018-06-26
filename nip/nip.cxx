@@ -101,7 +101,10 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Subject mapping
-	      MAC_nip::NipSubject_Mapping mapping( filename, mask );
+	      // WARNING: For CCA set reduced space to 0
+	      int reduced_space = 4;
+	      MAC_nip::NipSubject_Mapping mapping( filename, mask,
+						   /*PCA reduced space*/ reduced_space );
 	      
 	      //
 	      // Task progress: elapse time
@@ -109,13 +112,28 @@ main( const int argc, const char **argv )
 	      using get_time    = std::chrono::steady_clock ;
 	      auto start_timing = get_time::now();
 
-	      //
-	      // Optimize spectrum
-	      MAC_nip::Nip_PMD_cross_validation< /* K-folds = */ 3, /* CPU */ 1 > pmd_cv( std::get< 0 /*image*/ >(mapping.get_PMA()[1]),
-											  std::get< 1 /*EV*/ >(mapping.get_PMA()[1]));
-	      pmd_cv.validation( std::get< 2 /*spectrum*/ >(mapping.get_PMA()[1]) );
-	      //
-	      mapping.dump();
+	      if ( false )
+		// CCA
+		{
+		  //
+		  // Optimize spectrum
+		  MAC_nip::Nip_PMD_cross_validation< /* K-folds = */ 3, /* CPU */ 8 > pmd_cv( std::get< 0 /*image*/ >(mapping.get_PMA()[1]),
+											      std::get< 1 /*EV*/ >(mapping.get_PMA()[1]));
+		  pmd_cv.validation( std::get< 2 /*spectrum*/ >(mapping.get_PMA()[/*group*/1]) );
+		  //
+		  mapping.dump();
+		}
+	      else
+		// SPC
+		{
+		  //
+		  // Optimize spectrum
+		  MAC_nip::Nip_SPC_cross_validation< /* K-folds = */ 3, /* CPU */ 1 > spc_cv( std::get< 0 /*image*/ >(mapping.get_PMA()[1]),
+											      reduced_space );
+		  spc_cv.validation( std::get< 2 /*spectrum*/ >(mapping.get_PMA()[/*group*/1]) );
+		  //
+		  mapping.dump();
+		}
 
 	      
 	      //

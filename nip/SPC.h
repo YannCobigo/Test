@@ -6,6 +6,7 @@
 #include "NipException.h"
 #include "PMA.h"
 #include "PMA_tools.h"
+#include "SPC.h"
 //
 //
 //

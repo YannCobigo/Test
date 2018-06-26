@@ -10,6 +10,7 @@ std::mutex CRITICAL_ZONE;
 #include "Thread_dispatching.h"
 #include "NipException.h"
 #include "PMA_cross_validation.h"
+#include "PMD.h"
 //
 //
 //
@@ -41,10 +42,11 @@ namespace MAC_nip
       
     //
     //
-    void k_folds( const std::vector< double > );
+    virtual void k_folds( const std::vector< double > );
 
     //
-    void operator ()( const std::vector< double > Paramters )
+    //
+    virtual void operator ()( const std::vector< double > Paramters )
     {
       std::cout
 	<< "treatment for parameters c1: " << Paramters[0]
@@ -322,7 +324,6 @@ namespace MAC_nip
 
 	  //
 	  //
-
 	  for ( int k = 0 ; k < K ; k++ )
 	    {
 	      //
@@ -386,6 +387,7 @@ namespace MAC_nip
 	      std::size_t K_cca = (image_features_ > ev_features_ ? ev_features_ : image_features_);
 	      Spectra matrix_spetrum_cca( K_cca );
 	      // initialize the spectra
+	      // SVD
 	      if (false)
 		{
 		  //
