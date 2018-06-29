@@ -303,9 +303,6 @@ namespace MAC_nip
 	  for ( int k = 0 ; k < K ; k++ )
 	    {
 	      //
-	      // k is a testing set
-	      //std::cout << "fold: " << k << ", and c1: " << c1 << ",c2: "  << c2 << std::endl;
-	      //
 	      // Concaten the training matrices together
 	      int
 		training_size = 0,
@@ -337,32 +334,6 @@ namespace MAC_nip
 	      //
 	      // Train on the grid of (c1,c2) the (k-1)-samples
 	      //
-	      std::cout << images_training.rows() << " " << images_training.cols() << std::endl;
-	      Eigen::MatrixXd D = images_training.transpose() * images_training;
-	      std::cout << (D).rows() << std::endl;
-
-
-
-	      Eigen::MatrixXd B = Eigen::MatrixXd(7,6);
-	      B <<
-		1, 10, 1, -2, 21, 102,
-		2, 11, 3, -3, 23, 98,
-		0.5, 9, 2, -4, 20, 120,
-		4, 13, 3, -1, 18, 112,
-		7,  2, 3, -4, 7, -105,
-		15,  2, 1, -1, 4, -100,
-		12, 1, 3, -2, 5, -88;
-	      std::cout << B << std::endl;
-	      
-	      Eigen::MatrixXd C = MAC_nip::NipPMA_tools::normalize( B,
-								    MAC_nip::STANDARDIZE );
-
-	      std::cout << C
-			<< std::endl;
-
-	      
-	      std::cout << "D\n" << D.trace()
-			<< std::endl;
  
 	      
 	      //
@@ -370,13 +341,10 @@ namespace MAC_nip
 	      // training matrices
 	      Eigen::MatrixXd
 		images_training_norm = MAC_nip::NipPMA_tools::normalize( images_training.transpose() * images_training,
-									 MAC_nip::STANDARDIZE );
-	      std::cout <<  "Yep here: " /*<< images_training_norm.trace() */<< std::endl;
-	      // testing matrices
-	      Eigen::MatrixXd
+									 MAC_nip::STANDARDIZE ),
 		images_testing_norm = MAC_nip::NipPMA_tools::normalize( fold_full_images_matrix_[k].transpose()*fold_full_images_matrix_[k],
 									MAC_nip::STANDARDIZE );
-	      std::cout <<  "Yep here: " << images_testing_norm.trace() << std::endl;
+
 	      //
 	      // Create the spectrum
 	      std::size_t K_spc = reduced_space_;
@@ -418,10 +386,8 @@ namespace MAC_nip
 	      //
 	      // Optimize the spectrum
 	      pmd_spc_k.set_cs(c1,c2);
-	      std::cout << "je passe i " <<  k << std::endl;
 	      pmd_spc_k.K_factors( images_training_norm,
 				   matrix_spetrum_spc, L1, L1, false );
-	      std::cout << "je passe o " << k << std::endl;
 
 	      //
 	      // Compute correlation

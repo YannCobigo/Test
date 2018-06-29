@@ -128,7 +128,7 @@ main( const int argc, const char **argv )
 		{
 		  //
 		  // Optimize spectrum
-		  MAC_nip::Nip_SPC_cross_validation< /* K-folds = */ 3, /* CPU */ 1 > spc_cv( std::get< 0 /*image*/ >(mapping.get_PMA()[1]),
+		  MAC_nip::Nip_SPC_cross_validation< /* K-folds = */ 3, /* CPU */ 8 > spc_cv( std::get< 0 /*image*/ >(mapping.get_PMA()[1]),
 											      reduced_space );
 		  spc_cv.validation( std::get< 2 /*spectrum*/ >(mapping.get_PMA()[/*group*/1]) );
 		  //

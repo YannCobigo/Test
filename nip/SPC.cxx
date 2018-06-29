@@ -123,14 +123,13 @@ MAC_nip::NipSPC::K_factors( const Eigen::MatrixXd& X,
 			    Spectra& Matrix_spetrum,
 			    Penality Pu, Penality Pv,
 			    bool Verbose = false )
-{std::cout << "YOYOYOYOYOYOOYOYOYOYOYOYOYOYOYYYYYYYYYYYYYYYYYYY\n" ;
+{
   try
     {
       
       //
       //
       std::size_t K = Matrix_spetrum.size();
-std::cout << "je passe SPC " << std::endl;
       //
       // algorithm
       Eigen::MatrixXd XX = X;
@@ -199,10 +198,10 @@ std::cout << "je passe SPC " << std::endl;
 			<< std::endl;
 	    }
 	}
-      D = diagonal.asDiagonal();
-      std::cout << "D:\n" << D << std::endl;
-      std::cout << "P:\n" << P << std::endl;
-      std::cout << "Sol:\n: " << P * D * P.inverse() << std::endl;
+      //D = diagonal.asDiagonal();
+      //std::cout << "D:\n" << D << std::endl;
+      //std::cout << "P:\n" << P << std::endl;
+      //std::cout << "Sol:\n: " << P * D * P.inverse() << std::endl;
       //
       if ( Verbose )
 	for ( int k = 0 ; k < K ; k++ )

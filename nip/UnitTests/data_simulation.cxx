@@ -103,7 +103,7 @@ int main(int argc, char const *argv[])
   //
   // Explanatory variables
   int
-    n  = 30,   // number of subjects
+    n  = 10,   // number of subjects
     q  = 4;   // neuropsy metrics
   // CSV output
   std::ofstream X_out("../../data/data_test.csv");
