@@ -101,6 +101,18 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 A neuron is represented with an activation $a_{l_{i}} = \sum_{l_{j} = 0}^{L_{j}} \omega_{l_{i}l_{j}} z_{l_{j}}$, integrating pulses from other neurons, and its activation function $z_{l_{i}} = f(a_{l_{i}})$, the firering process of the neuron. Usually, the activation function is taken non-linear. Following the litterature, we will mostly use $\tanh$ or logistic function.
 
+\subsection{Backpropabagion principal}
+
+% Learning representations by back-propagating errors (Rumelhart D Hinton G Williams R)
+We can build the total differential form the a cost function $E$ as the sum of the differential of its functionals $a_{x,l_{i}}^{(\sigma)}$. For example if we have a neural network with twoactivation levels, $i$ and $o$, the total differential form the a cost function $E$ is:
+
+\begin{equation}
+  dE = \sum_{o,x} \frac{\partial E}{\partial a_{x,l_{2}}^{(o)}} da_{x,l_{2}}^{(o)} + \sum_{i,x} \frac{\partial E}{\partial a_{x,l_{1}}^{(i)}} da_{x,l_{1}}^{(i)}
+  \label{eq:total_diff}
+\end{equation}
+
+The sum runs over all voxels, $x$, of the images. The differential form of the activation functions can be written explicitly. In the next sections, we will adapt the definitions of the activation adequate to the problem we want to solve.
+
 \subsection{Activation functions}
 
 Activation functions used for layers of neurons are the hyperbolic tangent, the logistic or the rectified linear unit (ReLU). Expcept for special layers like the last layer of a fully connected network. The derivetive of these funetion are:
@@ -513,8 +525,36 @@ The second level can be evaluated:
   \right .
 \end{eqnarray*}
   
+\subsubsection{Mathematical description}
 
+The activation functions of the encoding and deconding at the position $x$ can be written as, 1) encoding: $a_{x,l_{u}}^{(\sigma)} = \sum_{i,\epsilon'} \omega_{\epsilon'}^{(\sigma)} z_{x+\epsilon',l_{u-1}}^{(i)} + b^{(\sigma)}$ for the layer $l_{u}$ taking the activation function $z_{x+\epsilon',l_{u-1}}$ of the previouse layer as input and using the set of parameters $\theta^{(\sigma)} = \lbrace \omega_{\epsilon'}^{(\sigma)}, b^{(\sigma}\rbrace$, the activation function is $z_{x+\epsilon',l_{u}}^{(\sigma)} = f(a_{x+\epsilon',l_{u}}^{(\sigma)})$; 2) decoding: $a_{x,l_{u+1}}^{(o)} = \sum_{\sigma,\epsilon'} \omega_{\epsilon'}^{(\sigma)} z_{x+\epsilon',l_{u}}^{(\sigma)} + b^{(o)}$ for the layer $l_{u+1}$ taking the activation function $z_{x+\epsilon',l_{u}}$ of the previouse layer as input and using the same set of parameters $\theta^{(\sigma)} = \lbrace \omega_{\epsilon'}^{(\sigma)}, b^{(\sigma}\rbrace$ as the previous layer. The decoding cativation can be written as a dot product: $a_{x,l_{u+1}}^{(o)} = \sum_{\sigma,\epsilon'} \omega_{\epsilon'}^{(\sigma)} z_{x+\epsilon',l_{u}}^{(\sigma)} + b^{(o)} = w^{T}*z_{x,l_{u}}$. Using the following total differential forms of the activations:
 
+\begin{itemize}
+  \item $da_{x,l_{u}}^{(\sigma)} = \sum_{\nu,\eta} \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\eta}^{(\nu)}} d\omega_{\eta}^{(\nu)}$
+  \item $da_{x,l_{u+1}}^{(o)} = \sum_{\nu,\eta} \frac{\partial a_{x,l_{u+1}}^{(o)}}{\partial \omega_{\eta}^{(\nu)}} d\omega_{\eta}^{(\nu)}$
+\end{itemize}
+
+Implementing the total differential form of activations in the eq.~(\ref{eq:total_diff}), we can write:
+
+\begin{equation*}  
+\begin{split}
+  dE = & \sum_{o,x} \frac{\partial E}{\partial a_{x,l_{u+1}}^{(o)}} \sum_{\nu,\eta} \frac{\partial a_{x,l_{u+1}}^{(o)}}{\partial \omega_{\eta}^{(\nu)}} d\omega_{\eta}^{(\nu)} + \sum_{\sigma,x} \frac{\partial E}{\partial a_{x,l_{l_{u}}}^{(\sigma)}} \sum_{\nu,\eta} \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\eta}^{(\nu)}} d\omega_{\eta}^{(\nu)} \\
+   = & \nabla E \cdot dl
+\end{split}
+\end{equation*}
+
+To reach any partial derivative of the cost function at the element $\omega_{\epsilon}^{(\sigma')}$ of the gradient, for any $\epsilon$ and $\sigma'$, we solve:
+
+\begin{equation*}  
+\begin{split}
+  \frac{\partial E}{\partial \omega_{\epsilon}^{(\sigma')}} = & \sum_{o,x} \delta_{l_{u+1}}^{(o)}(x)\sum_{\nu,\eta} \frac{\partial a_{x,l_{u+1}}^{(o)}}{\partial \omega_{\eta}^{(\nu)}} \delta_{\eta \epsilon'}\delta_{\nu \sigma'} + \sum_{\sigma,x}  \delta_{l_{u}}^{(i)}(x) \sum_{\nu,\eta} \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\eta}^{(\nu)}} \delta_{\eta \epsilon'}\delta_{\nu \sigma'} \\
+  = & \sum_{o,x} \delta_{l_{u+1}}^{(o)}(x) \frac{\partial a_{x,l_{u+1}}^{(o)}}{\partial \omega_{\epsilon}^{(\sigma')}}  + \sum_{\sigma,x} \delta_{l_{u}}^{(i)}(x) \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\epsilon}^{(\sigma')}}
+\end{split}
+\end{equation*}
+
+Where $\frac{\partial E}{\partial a_{x,l_{u+1}}^{(o)}} = \delta_{l_{u+1}}^{(o)}(x)$ and $\frac{\partial E}{\partial a_{x,l_{l_{u}}}^{(\sigma)}} = \delta_{l_{u}}^{(i)}(x)$. Taking the definition of the activation at the level $l_{u+1}$, the partial derivative over the weight $\partial a_{x,l_{u+1}}^{(o)}/\partial \omega_{\epsilon}^{(\sigma')} = \sum_{\sigma, \epsilon'} \delta_{\sigma \sigma'}\delta_{\epsilon \epsilon'} \left( z_{x+\epsilon', l_{u}}^{(\sigma)} + \omega_{\epsilon'}^{(\sigma)} \, \partial z_{x+\epsilon',l_{u}}^{(\sigma)} / \partial \omega_{\epsilon}^{(\sigma')}\right)$ and $\partial a_{x,l_{u}}^{(\sigma)}/\partial \omega_{\epsilon}^{(\sigma')} = \delta_{\sigma \sigma'} \sum_{i, \epsilon'} \delta_{\epsilon \epsilon'} z_{x+\epsilon', l_{u-1}}^{(\sigma)}$.
+
+ 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Densely connected neural network}
