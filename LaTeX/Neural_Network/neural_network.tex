@@ -152,10 +152,23 @@ Training the neural network uses the gradient method. All functions representing
 
 \subsubsection{Least-squarre cost function}
 
+the least-squarre cost function is a widly used cost function in machine learning. large part of our algorithm use this cost function to minimize in the gradient descent. We have $n$ participents and $O$ type of outputs. The cost function represent the difference from the expected output $t_{i}$ and the calculated output $z_{i}$.
+
 \begin{equation}
-  E = \frac{1}{2} \sum_{i = 1}^{n} \| \bm{z}(\bm{x}_{i}) - \bm{t}_{i} \|^{2}
+  E = \frac{1}{2n} \sum_{i = 1}^{n} \sum_{o' = 1}^{(O)} \| z^{(o')} - t^{(o')} \|^{2}
   \label{least_squarre}
 \end{equation}
+
+The minimization of the cost function, using the local error, gives us:
+
+\begin{equation}
+  \begin{split}
+    \frac{\partial E}{\partial a_{x,lu+1}^{(o)}} = & \frac{1}{n} \sum_{i = 1}^{n} \frac{\partial z_{x,lu+1}^{(o')}}{\partial a_{x,lu+1}^{(o)}} (z^{(o')} - t^{(o')}) \delta_{oo'} \\
+    = & \frac{1}{n} \sum_{i = 1}^{n}  f'(a_{x,lu+1}^{(o)}) (z^{(o)} - t^{(o)}) = \frac{1}{n} \sum_{i = 1}^{n}  E_{i}
+  \end{split}
+\end{equation}
+
+If the function transforming the activation into an activation function is a linear, the local error is: $\delta^{(o)} = (z^{(o)} - t^{(o)})$.
 
 \subsubsection{Cross entropy cost function}
 \label{Cross_entropy_cost_function_sec}
@@ -188,7 +201,7 @@ In the case of the last activation fuction for the output layer is a soft maximu
 
 
 
-Which is exactly the same result as we would get in the case of a least-square cost function. \lipsum[4-4]
+Which is exactly the same result as we would get in the case of a least-square cost function, if the activation function is a linear function. 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -340,7 +353,7 @@ The function of the pooling layer is to progressively reduce the spatial size of
 % address = {Berlin, Heidelberg},
 % keywords = {auto-encoder, classification, convolutional neural network, unsupervised learning},
 %} 
-
+In this section we are reviewing the auto-encoder. The auto-encoder algorithm is well suited for segmentation, denoising and training convolutional layers of a more complex system. The later allows the extration of features and compet with acceleration algorithm in classification algorithms. This feature extration has been frequently used in computer vision and recognation. This section is inpired by~\cite{Masci:2011:SCA:2029556.2029563}.
 An auto-encoder takes an input $x \in \mathbb{R}^{d}$ and first maps it to the latent representation $\bm{h} \in \mathbb{R}^{d}$ using a deterministic function of the type $\bm{h} = f_{\theta} = \sigma(Wx + b)$ with parameters $\theta = \{W, b\}$. This "code" is then used to reconstruct the input by a reverse mapping of $\bm{y} = f_{\theta'} = \sigma( W'h + b')$ with $\theta' = \{W', b'\}$. The two parameter sets are usually constrained to be of the form $W' = W^{T}$, using the same weights for encoding the input and decoding the latent representation. The parameters are optimized, minimizing an appropriate cost function over the training set.\\
 
 \begin{eqnarray*}
@@ -402,25 +415,25 @@ And we apply the back propagation epoque after epoque until $x \sim y$.
 
 Without any additional constraints, conventional auto-encoders learn the identity mapping. This problem can be circumvented by using a probabilistic RBM approach, or sparse coding, or denoising auto-encoders (DAs) trying to reconstruct noisy inputs. The latter performs as well as or even better than RBMs. Training involves the reconstruction of a clean input from a partially destroyed one. Input $x$ becomes corrupted input $x'$ by adding a variable amount $v$ of noise distributed according to the characteristics of the input image. Common choices include binomial noise (switching pixels on or off) for black and white images, or uncorrelated Gaussian noise for color images. The parameter $v$ represents the percentage of permissible corruption. The auto-encoder is trained to denoise the inputs by first finding the latent representation $\bm{h} = f_{\theta} = \sigma(Wx' + b)$ frome which to reconstruct the original input $\bm{y} = f_{\theta'} = \sigma( W'h + b')$.
 
-\subsection{Stacked Convolutional Auto-Encoders}
+\subsection{Stacked Convolutional Auto-Encoders (CAE)}
 
-The trend in vision and object recognition adopted by the most successful models is to discover localized features that repeat themselves all over the input. Convolutional autoencoder differs from conventional auto-encoders as their weights are shared among all locations in the input, preserving spatial locality. The reconstruction is hence due to a linear combination of basic image patches based on the latent code. The CAE architecture is intuitively similar to the one described in the previouse section, except that the weights are shared. For a mono-channel input $x$ the latent representation of the $k$-th feature map is given by
+Convolutional auto-encoder differs from conventional auto-encoders as their weights are shared among all locations in the input, preserving spatial locality. The reconstruction is hence due to a linear combination of basic image patches based on the latent code. The CAE architecture is intuitively similar to the one described in the previouse section, except that the weights are shared. 
 
-\begin{equation*}
-h^{k} = \sigma(x*W^{k} + b^{k})
-\end{equation*}
-
-The reconstruction is obtained using
-
-\begin{equation*}
-y = \sigma \left(\sum_{k \in H} h^{k}*\tilde{W}^{k} + c \right)
-\end{equation*}
-
-where again there is one bias $c$ per input channel. $H$ identifies the group of latent feature maps; $\tilde{W}$ identifies the flip operation over both dimensions of the weights. The cost function to minimize is the mean squared error (MSE):
-
-\begin{equation*}
-E= \frac{1}{2n} \sum_{i=1}^{n} ( x_{i} - y_{i})^{2}
-\end{equation*}
+%%%\begin{equation*}
+%%%h^{k} = \sigma(x*W^{k} + b^{k})
+%%%\end{equation*}
+%%%
+%%%The reconstruction is obtained using
+%%%
+%%%\begin{equation*}
+%%%y = \sigma \left(\sum_{k \in H} h^{k}*\tilde{W}^{k} + c \right)
+%%%\end{equation*}
+%%%
+%%%where again there is one bias $c$ per input channel. $H$ identifies the group of latent feature maps; $\tilde{W}$ identifies the flip operation over both dimensions of the weights. The cost function to minimize is the mean squared error (MSE):
+%%%
+%%%\begin{equation*}
+%%%E= \frac{1}{2n} \sum_{i=1}^{n} ( x_{i} - y_{i})^{2}
+%%%\end{equation*}
 
 \subsubsection{Mathematical description of the backpropagation}
 
@@ -527,7 +540,7 @@ The second level can be evaluated:
   
 \subsubsection{Mathematical description}
 
-The activation functions of the encoding and deconding at the position $x$ can be written as, 1) encoding: $a_{x,l_{u}}^{(\sigma)} = \sum_{i,\epsilon'} \omega_{\epsilon'}^{(\sigma)} z_{x+\epsilon',l_{u-1}}^{(i)} + b^{(\sigma)}$ for the layer $l_{u}$ taking the activation function $z_{x+\epsilon',l_{u-1}}$ of the previouse layer as input and using the set of parameters $\theta^{(\sigma)} = \lbrace \omega_{\epsilon'}^{(\sigma)}, b^{(\sigma}\rbrace$, the activation function is $z_{x+\epsilon',l_{u}}^{(\sigma)} = f(a_{x+\epsilon',l_{u}}^{(\sigma)})$; 2) decoding: $a_{x,l_{u+1}}^{(o)} = \sum_{\sigma,\epsilon'} \omega_{\epsilon'}^{(\sigma)} z_{x+\epsilon',l_{u}}^{(\sigma)} + b^{(o)}$ for the layer $l_{u+1}$ taking the activation function $z_{x+\epsilon',l_{u}}$ of the previouse layer as input and using the same set of parameters $\theta^{(\sigma)} = \lbrace \omega_{\epsilon'}^{(\sigma)}, b^{(\sigma}\rbrace$ as the previous layer. The decoding cativation can be written as a dot product: $a_{x,l_{u+1}}^{(o)} = \sum_{\sigma,\epsilon'} \omega_{\epsilon'}^{(\sigma)} z_{x+\epsilon',l_{u}}^{(\sigma)} + b^{(o)} = w^{T}*z_{x,l_{u}}$. Using the following total differential forms of the activations:
+The activation of the encoding and deconding at the position $x$ can be written as, 1) encoding: $a_{x,l_{u}}^{(\sigma)} = \sum_{i,\epsilon'} \omega_{\epsilon'}^{(\sigma)} z_{x+\epsilon',l_{u-1}}^{(i)} + b^{(\sigma)} = \sum_{i} w^{(\sigma)} * z_{x,l_{u-1}}^{(i)}$ for the layer $l_{u}$ taking the activation functions $z_{x+\epsilon',l_{u-1}}$ of the previouse layer as inputs and using the set of parameters $w^{(\sigma)} = \lbrace \omega_{\epsilon'}^{(\sigma)}, b^{(\sigma}\rbrace$. The resulting activation function is $z_{x+\epsilon',l_{u}}^{(\sigma)} = f(a_{x+\epsilon',l_{u}}^{(\sigma)})$ ; 2) decoding: $a_{x,l_{u+1}}^{(o)} = \sum_{\sigma,\epsilon'} \omega_{\epsilon'}^{(\sigma)} z_{x+\epsilon',l_{u}}^{(\sigma)} + b^{(o)}$ for the layer $l_{u+1}$ taking the activation functions $z_{x+\epsilon',l_{u}}$ of the previouse layer as inputs and using the same weights parameters $w^{(o)} = \lbrace \omega_{\epsilon'}^{(\sigma)}, b^{(o)}\rbrace$ as the previous layer $l_{u}$. Only the bias $b^{(o)}$ dissociate the newly built activations from the others. The decoding activation can be written as a dot product of the convolutions: $a_{x,l_{u+1}}^{(o)} = \sum_{\sigma,\epsilon'} \omega_{\epsilon'}^{(\sigma)} z_{x+\epsilon',l_{u}}^{(\sigma)} + b^{(o)} = w^{T}*z_{x,l_{u}}$. Using the following total differential forms of the activations:
 
 \begin{itemize}
   \item $da_{x,l_{u}}^{(\sigma)} = \sum_{\nu,\eta} \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\eta}^{(\nu)}} d\omega_{\eta}^{(\nu)}$
@@ -538,8 +551,9 @@ Implementing the total differential form of activations in the eq.~(\ref{eq:tota
 
 \begin{equation*}  
 \begin{split}
-  dE = & \sum_{o,x} \frac{\partial E}{\partial a_{x,l_{u+1}}^{(o)}} \sum_{\nu,\eta} \frac{\partial a_{x,l_{u+1}}^{(o)}}{\partial \omega_{\eta}^{(\nu)}} d\omega_{\eta}^{(\nu)} + \sum_{\sigma,x} \frac{\partial E}{\partial a_{x,l_{l_{u}}}^{(\sigma)}} \sum_{\nu,\eta} \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\eta}^{(\nu)}} d\omega_{\eta}^{(\nu)} \\
-   = & \nabla E \cdot dl
+  dE = & \sum_{o,x} \frac{\partial E}{\partial a_{x,l_{u+1}}^{(o)}} \sum_{\nu,\eta} \frac{\partial a_{x,l_{u+1}}^{(o)}}{\partial \omega_{\eta}^{(\nu)}} d\omega_{\eta}^{(\nu)} \\
+     + & \sum_{\sigma,x} \frac{\partial E}{\partial a_{x,l_{l_{u}}}^{(\sigma)}} \sum_{\nu,\eta} \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\eta}^{(\nu)}} d\omega_{\eta}^{(\nu)} \\
+     = & \vec{\nabla }E \cdot \vec{dl}
 \end{split}
 \end{equation*}
 
@@ -547,12 +561,44 @@ To reach any partial derivative of the cost function at the element $\omega_{\ep
 
 \begin{equation*}  
 \begin{split}
-  \frac{\partial E}{\partial \omega_{\epsilon}^{(\sigma')}} = & \sum_{o,x} \delta_{l_{u+1}}^{(o)}(x)\sum_{\nu,\eta} \frac{\partial a_{x,l_{u+1}}^{(o)}}{\partial \omega_{\eta}^{(\nu)}} \delta_{\eta \epsilon'}\delta_{\nu \sigma'} + \sum_{\sigma,x}  \delta_{l_{u}}^{(i)}(x) \sum_{\nu,\eta} \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\eta}^{(\nu)}} \delta_{\eta \epsilon'}\delta_{\nu \sigma'} \\
-  = & \sum_{o,x} \delta_{l_{u+1}}^{(o)}(x) \frac{\partial a_{x,l_{u+1}}^{(o)}}{\partial \omega_{\epsilon}^{(\sigma')}}  + \sum_{\sigma,x} \delta_{l_{u}}^{(i)}(x) \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\epsilon}^{(\sigma')}}
+  \frac{\partial E}{\partial \omega_{\epsilon}^{(\sigma')}} = & \sum_{o,x} \delta_{l_{u+1}}^{(o)}(x)\sum_{\nu,\eta} \frac{\partial a_{x,l_{u+1}}^{(o)}}{\partial \omega_{\eta}^{(\nu)}} \delta_{\eta \epsilon'}\delta_{\nu \sigma'} \\
+  + & \sum_{\sigma,x}  \delta_{l_{u}}^{(\sigma)}(x) \sum_{\nu,\eta} \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\eta}^{(\nu)}} \delta_{\eta \epsilon'}\delta_{\nu \sigma'} \\
+  = & \sum_{o,x} \delta_{l_{u+1}}^{(o)}(x) \frac{\partial a_{x,l_{u+1}}^{(o)}}{\partial \omega_{\epsilon}^{(\sigma')}}  + \sum_{\sigma,x} \delta_{l_{u}}^{(\sigma)}(x) \frac{\partial a_{x,l_{u}}^{(\sigma)}}{\partial \omega_{\epsilon}^{(\sigma')}}
 \end{split}
 \end{equation*}
 
-Where $\frac{\partial E}{\partial a_{x,l_{u+1}}^{(o)}} = \delta_{l_{u+1}}^{(o)}(x)$ and $\frac{\partial E}{\partial a_{x,l_{l_{u}}}^{(\sigma)}} = \delta_{l_{u}}^{(i)}(x)$. Taking the definition of the activation at the level $l_{u+1}$, the partial derivative over the weight $\partial a_{x,l_{u+1}}^{(o)}/\partial \omega_{\epsilon}^{(\sigma')} = \sum_{\sigma, \epsilon'} \delta_{\sigma \sigma'}\delta_{\epsilon \epsilon'} \left( z_{x+\epsilon', l_{u}}^{(\sigma)} + \omega_{\epsilon'}^{(\sigma)} \, \partial z_{x+\epsilon',l_{u}}^{(\sigma)} / \partial \omega_{\epsilon}^{(\sigma')}\right)$ and $\partial a_{x,l_{u}}^{(\sigma)}/\partial \omega_{\epsilon}^{(\sigma')} = \delta_{\sigma \sigma'} \sum_{i, \epsilon'} \delta_{\epsilon \epsilon'} z_{x+\epsilon', l_{u-1}}^{(\sigma)}$.
+Where the local errors for the layers $l_{u+1}$ and $l_{u}$ are $\frac{\partial E}{\partial a_{x,l_{u+1}}^{(o)}} = \delta_{l_{u+1}}^{(o)}(x)$ and $\frac{\partial E}{\partial a_{x,l_{l_{u}}}^{(\sigma)}} = \delta_{l_{u}}^{(\sigma)}(x)$. Taking the definition of the activation at the level $l_{u+1}$, the partial derivative over the weight $\partial a_{x,l_{u+1}}^{(o)}/\partial \omega_{\epsilon}^{(\sigma')} = \sum_{\sigma, \epsilon'} \delta_{\sigma \sigma'}\delta_{\epsilon \epsilon'} \left( z_{x+\epsilon', l_{u}}^{(\sigma)} + \omega_{\epsilon'}^{(\sigma)} \, \partial z_{x+\epsilon',l_{u}}^{(\sigma)} / \partial \omega_{\epsilon}^{(\sigma')}\right) = \sum_{\sigma, \epsilon'} \delta_{\sigma \sigma'}\delta_{\epsilon \epsilon'} \tilde{z}_{\epsilon'}^{\sigma}$. The same operation is made at the level $l_{u}$: $\partial a_{x,l_{u}}^{(\sigma)}/\partial \omega_{\epsilon}^{(\sigma')} = \delta_{\sigma \sigma'} \sum_{i, \epsilon'} \delta_{\epsilon \epsilon'} z_{x+\epsilon', l_{u-1}}^{(i)}$. the partial differential of the lost function, $E$, at the local weight $\omega_{\epsilon}^{(\sigma')}$ become: 
+
+\begin{equation*}  
+\begin{split}
+  \frac{\partial E}{\partial \omega_{\epsilon}^{(\sigma')}} = & \sum_{o,x} \delta_{l_{u+1}}^{(o)}(x)  \left( z_{x+\epsilon, l_{u}}^{(\sigma')} + \omega_{\epsilon}^{(\sigma')} \, \frac{\partial z_{x+\epsilon,l_{u}}^{(\sigma')}}{\partial \omega_{\epsilon}^{(\sigma')} } \right) \\
+  + & \sum_{x} \left( \delta_{l_{u}}^{(\sigma')}(x)  \sum_{i}  z_{x+\epsilon, l_{u-1}}^{(i)} \right) \\
+  = & \sum_{o} \delta^{(o)} \underset{x}{*} \tilde{z}_{\epsilon}^{(\sigma')} + \delta^{\sigma'} \underset{x}{*} \sum_{i} z_{\epsilon}^{(i)}
+\end{split}
+\end{equation*}
+
+Need some word how to treat $\tilde{z}$. \lipsum[16-16] 
+We can evaluate the value of the loss error at the level $l_{u}$:
+
+\begin{equation*}  
+\begin{split}
+  \delta_{l_{u}}^{(\sigma')}(x) = & \frac{\partial E}{\partial a_{x,l_{u}}^{(\sigma')}} = \sum_{o,X} \frac{\partial E}{\partial a_{X,l_{u+1}}^{(o)}} \frac{\partial a_{X,l_{u+1}}^{(o)}}{\partial a_{x,l_{u}}^{(\sigma')}} \\
+  = & \sum_{o,X} \delta_{l_{u+1}}^{(o)}(X) \sum_{\sigma,\epsilon'} \omega_{\epsilon'}^{(\sigma)} \frac{\partial z_{X + \epsilon', l_{u}}^{(\sigma)}}{\partial a_{x,l_{u}}^{(\sigma')}} \delta_{\sigma \sigma'}\delta[x-(X+\epsilon')] \\
+  = & \sum_{o,X} \delta_{l_{u+1}}^{(o)}(X) \sum_{\epsilon'} \omega_{\epsilon'}^{(\sigma')} \frac{\partial z_{X + \epsilon', l_{u}}^{(\sigma')}}{\partial a_{x,l_{u}}^{(\sigma')}} \delta[x-(X+\epsilon')] \\
+  = & f'(a_{x,l_{u}}^{(\sigma')}) \sum_{o,\epsilon'} \delta_{l_{u+1}}^{(o)}(x-\epsilon') \, \omega_{\epsilon'}^{(\sigma')}  \\
+\end{split}
+\end{equation*}
+
+the loss function become:
+
+\begin{eqnarray*}  
+\begin{array}{rl}
+  \frac{\partial E}{\partial \omega_{\epsilon}^{(\sigma')}} = \sum_{o,x} & \left\{ \delta_{l_{u+1}}^{(o)}(x) \tilde{z}_{x+\epsilon, l_{u}}^{(\sigma')} \right. \\
+  & +  \left. f'(a_{x,l_{u}}^{(\sigma')}) \sum_{\epsilon'} \delta_{l_{u+1}}^{(o)}(x-\epsilon') \, \omega_{\epsilon'}^{(\sigma')} \sum_{i}  z_{x+\epsilon, l_{u-1}}^{(i)} \right\}
+\end{array}
+\end{eqnarray*}
+
+
 
  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
