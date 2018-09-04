@@ -3,7 +3,7 @@ From: nvidia/cuda:8.0-cudnn6-devel-centos7
 IncludeCmd: yes
 
 MAINTAINER Yann Cobigo
-VERSION v1.0.0
+VERSION v1.3.0
 
 %setup
     echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
