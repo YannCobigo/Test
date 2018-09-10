@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#include <memory>
 //
 // JSON interface
 //
@@ -23,6 +24,9 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 #include "Thread_dispatching.h"
 #include "MACException.h"
 #include "MACLoadDataSet.h"
+#include "Classification.h"
+#include "Classification_linear_regression.h"
+#include "Classification_logistic_regression.h"
 //
 //
 //
@@ -78,7 +82,7 @@ main( const int argc, const char **argv )
 	  //
 	  // takes the csv file ans the mask
 	  const std::string& filename = input.getCmdOption("-c");
-	  const std::string& mask = input.getCmdOption("-m");
+	  //const std::string& mask     = input.getCmdOption("-m");
 	  //
 	  if ( !filename.empty() )
 	    {
@@ -89,7 +93,6 @@ main( const int argc, const char **argv )
 	      MAC::Singleton::instance()->print_data_set();
 	      // load the mask
 	      std::string mask = MAC::Singleton::instance()->get_data()["inputs"]["mask"].get< std::string >();
-	      std::cout << MAC::Singleton::instance()->get_status() << std::endl;
 	      
 
 	      if ( mask.empty() )
@@ -101,108 +104,112 @@ main( const int argc, const char **argv )
 					   ITK_LOCATION );
 		}
 
-///	      ////////////////////////////
-///	      ///////              ///////
-///	      ///////  PROCESSING  ///////
-///	      ///////              ///////
-///	      ////////////////////////////
-///
-///	      //
-///	      // Number of THREADS in case of multi-threading
-///	      // this program hadles the multi-threading it self
-///	      // in no-debug mode
-///	      const int THREAD_NUM = 8;
-///
-///	      //
-///	      // Load the CSV file
-///	      MAC::MACLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename );
-///	      // create the 4D iamge with all the images
-///	      subject_mapping.build_groups_design_matrices();
-///
-///	      //
-///	      // Expecttion Maximization
-///	      //
-///
-///	      //
-///	      // Mask
-///	      MaskReaderType::Pointer reader_mask_{ MaskReaderType::New() };
-///	      reader_mask_->SetFileName( mask );
-///	      reader_mask_->Update();
-///	      // Visiting region (Mask)
-///	      MaskType::RegionType region;
-///	      //
-///	      MaskType::SizeType  img_size =
-///		reader_mask_->GetOutput()->GetLargestPossibleRegion().GetSize();
-///	      MaskType::IndexType start    = {0, 0, 0};
-///	      //
-///	      region.SetSize( img_size );
-///	      region.SetIndex( start );
-///	      //
-///	      itk::ImageRegionIterator< MaskType >
-///		imageIterator_mask( reader_mask_->GetOutput(), region ),
-///		imageIterator_progress( reader_mask_->GetOutput(), region );
-///
-///	      //
-///	      // Task progress: elapse time
-///	      using  ms         = std::chrono::milliseconds;
-///	      using get_time    = std::chrono::steady_clock ;
-///	      auto start_timing = get_time::now();
-///	      
-///	      //
-///	      // loop over Mask area for every images
-///#ifndef DEBUG
-///	      std::cout << "Multi-threading" << std::endl;
-///	      // Start the pool of threads
-///	      {
-///		MAC::Thread_dispatching pool( THREAD_NUM );
-///#endif
-///		while( !imageIterator_mask.IsAtEnd() )
-///		  {
-///		    if( static_cast<int>( imageIterator_mask.Value() ) != 0 )
-///		      {
-///			MaskType::IndexType idx = imageIterator_mask.GetIndex();
-///#ifdef DEBUG
-///			if ( idx[0] > 25 && idx[0] < 35 && 
-///			     idx[1] > 65 && idx[1] < 75 &&
-///			     idx[2] > 55 && idx[2] < 65 )
-///			  {
-///			    std::cout << imageIterator_mask.GetIndex() << std::endl;
-///			    subject_mapping.Expectation_Maximization( idx );
-///			  }
-///#else
-///			// Please do not remove the bracket!!
-///			if ( idx[0] > 20 && idx[0] < 40 && 
-///			     idx[1] > 60 && idx[1] < 80 &&
-///			     idx[2] > 50 && idx[2] < 70 )
-///			  //		      if ( idx[0] > 0 && idx[0] < 60 && 
-///			  //			   idx[1] > 0 && idx[1] < 140 &&
-///			  //			   idx[2] > 50 && idx[2] < 70 )
-///			  {
-///			    pool.enqueue( std::ref(subject_mapping), idx );
-///			  }
-///#endif
-///		      }
-///		    //
-///		    ++imageIterator_mask;
-///#ifndef DEBUG
-///		    // Keep the brack to end the pool of threads
-///		  }
-///#endif
-///	      }
-///
-///	      //
-///	      // Task progress
-///	      // End the elaps time
-///	      auto end_timing  = get_time::now();
-///	      auto diff        = end_timing - start_timing;
-///	      std::cout << "Process Elapsed time is :  " << std::chrono::duration_cast< ms >(diff).count()
-///			<< " ms "<< std::endl;
-///
-///	      //
-///	      //
-///	      std::cout << "All the mask has been covered" << std::endl;
-///	      subject_mapping.write_subjects_solutions();
-///	      std::cout << "All output have been written." << std::endl;
+	      ////////////////////////////
+	      ///////              ///////
+	      ///////  PROCESSING  ///////
+	      ///////              ///////
+	      ////////////////////////////
+
+	      //
+	      // Number of THREADS in case of multi-threading
+	      // this program hadles the multi-threading it self
+	      // in no-debug mode
+	      const int THREAD_NUM = 1;
+
+	      //
+	      // Create the feature mapping for each voxel
+	      MAC::Classification_linear_regression< /*Dim = */ 2 > features_mapping;
+	      //MAC::Classification_logistic_regression< /*Dim = */ 2 > features_mapping;
+	      features_mapping.load_parameters_images();
+
+
+	      //
+	      // Expecttion Maximization
+	      //
+
+	      //
+	      // Mask
+	      MaskReaderType::Pointer reader_mask_{ MaskReaderType::New() };
+	      reader_mask_->SetFileName( mask );
+	      reader_mask_->Update();
+	      // Visiting region (Mask)
+	      MaskType::RegionType region;
+	      //
+	      MaskType::SizeType  img_size =
+		reader_mask_->GetOutput()->GetLargestPossibleRegion().GetSize();
+	      MaskType::IndexType start    = {0, 0, 0};
+	      //
+	      region.SetSize( img_size );
+	      region.SetIndex( start );
+	      //
+	      itk::ImageRegionIterator< MaskType >
+		imageIterator_mask( reader_mask_->GetOutput(), region ),
+		imageIterator_progress( reader_mask_->GetOutput(), region );
+
+	      //
+	      // Task progress: elapse time
+	      using ms           = std::chrono::milliseconds;
+	      using get_time     = std::chrono::steady_clock ;
+	      auto  start_timing = get_time::now();
+	      
+	      //
+	      // loop over Mask area for every images
+#ifndef DEBUG
+	      std::cout << "Multi-threading" << std::endl;
+	      // Start the pool of threads
+	      {
+		MAC::Thread_dispatching pool( THREAD_NUM );
+#endif
+		while( !imageIterator_mask.IsAtEnd() )
+		  {
+		    if( static_cast<int>( imageIterator_mask.Value() ) != 0 )
+		      {
+			MaskType::IndexType idx = imageIterator_mask.GetIndex();
+#ifdef DEBUG
+			if ( idx[0] > 25 && idx[0] < 35 && 
+			     idx[1] > 65 && idx[1] < 75 &&
+			     idx[2] > 55 && idx[2] < 65 )
+			  {
+			    std::cout << imageIterator_mask.GetIndex() << std::endl;
+			    features_mapping.optimize( idx );
+			  }
+#else
+			// Please do not remove the bracket!!
+//			if ( idx[0] > 60 && idx[0] < 62 && 
+//			     idx[1] > 90 && idx[1] < 92 &&
+//			     idx[2] > 100 && idx[2] < 102 )
+			if ( idx[0] > 0 && idx[0] < 180 && 
+			     idx[1] > 0 && idx[1] < 210 &&
+			     idx[2] > 0 && idx[2] < 182 )
+			  {
+			    pool.enqueue( std::ref(features_mapping), idx );
+			  }
+#endif
+		      }
+		    //
+		    ++imageIterator_mask;
+#ifndef DEBUG
+		    // Keep the brack to end the pool of threads
+		  }
+#endif
+	      }
+
+	      //
+	      // Task progress
+	      // End the elaps time
+	      auto end_timing  = get_time::now();
+	      auto diff        = end_timing - start_timing;
+	      std::cout << "Process Elapsed time is :  " << std::chrono::duration_cast< ms >(diff).count()
+			<< " ms "<< std::endl;
+
+	      //
+	      //
+	      std::cout << "All the mask has been covered" << std::endl;
+	      if ( MAC::Singleton::instance()->get_status() )
+		features_mapping.write_parameters_images();
+	      else
+		features_mapping.write_subjects_map();
+	      std::cout << "All output have been written." << std::endl;
 	    }
 	  else
 	    throw MAC::MACException( __FILE__, __LINE__,
