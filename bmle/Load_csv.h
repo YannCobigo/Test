@@ -49,7 +49,7 @@ namespace MAC_bmle
   {
   public:
     /** Constructor. */
-    explicit BmleLoadCSV( const std::string&, const std::string& );
+    explicit BmleLoadCSV( const std::string&, const std::string&, const bool );
     
     /** Destructor */
     virtual ~BmleLoadCSV() {};
@@ -178,7 +178,8 @@ namespace MAC_bmle
   //
   template< int D_r, int D_f >
     BmleLoadCSV< D_r, D_f >::BmleLoadCSV( const std::string& CSV_file,
-					  const std::string& Output_dir ):
+					  const std::string& Output_dir,
+					  const bool Demeaning ):
     csv_file_{ CSV_file.c_str() }, output_dir_{ Output_dir }
   {
     try
@@ -249,14 +250,17 @@ namespace MAC_bmle
 	//
 	// mean age
 	mean_age /= static_cast< double >( num_3D_images_ );
-	std::cout << "mean age: " << mean_age << std::endl;
+	if ( Demeaning )
+	  std::cout << "mean age: " << mean_age << std::endl;
+	else
+	  std::cout << "No demeaning " << std::endl;
 	//
 	Y_.resize( num_3D_images_ );
 	int sub_image{0};
 	for ( auto g : groups_ )
 	  for ( auto& s : group_pind_[g] )
 	    {
-	      s.second.build_design_matrices( mean_age );
+	      s.second.build_design_matrices( (Demeaning ? mean_age : 0) );
 	      // Create the vector of 3D measurements image
 	      for ( auto image : s.second.get_age_images() )
 		Y_[ sub_image++ ] = image.second;
@@ -650,7 +654,8 @@ namespace MAC_bmle
 	
 	//
 	// Augmented measured data Y
-	Eigen::MatrixXd Y = Eigen::MatrixXd::Zero( X_.rows(), 1 );
+	Eigen::MatrixXd Y   = Eigen::MatrixXd::Zero( X_.rows(), 1 );
+	Eigen::MatrixXd _Y_ = Eigen::MatrixXd::Zero( num_3D_images_, 1 );
 	// First lines are set to the measure
 	// other lines are set to 0. 
 	for ( int img = 0 ; img < num_3D_images_ ; img++ )
@@ -658,6 +663,8 @@ namespace MAC_bmle
 	    // std::cout << Idx << " " << Y_[ img ]->GetOutput()->GetPixel( Idx )
 	    //           << std::endl;
 	    Y( img, 0 ) = Y_[ img ]->GetOutput()->GetPixel( Idx );
+	    // pure raw measure vector
+	    _Y_( img, 0 ) = Y_[ img ]->GetOutput()->GetPixel( Idx );
 	  }
 	//
 	if ( false )
@@ -714,10 +721,11 @@ namespace MAC_bmle
 	Eigen::MatrixXd eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
 	// R-square calculation
 	Eigen::MatrixXd M_eta_theta = Eigen::MatrixXd::Zero( X_.rows(), X_.rows() );
-	Eigen::MatrixXd Id_m        = Eigen::MatrixXd::Identity( M_eta_theta.rows(), M_eta_theta.cols() ); 
-	Eigen::MatrixXd L_m         = Eigen::MatrixXd::Ones(M_eta_theta.rows(), 1 ); 
+	//Eigen::MatrixXd Id_m        = Eigen::MatrixXd::Identity( M_eta_theta.rows(), M_eta_theta.cols() ); 
+	Eigen::MatrixXd Id_m        = Eigen::MatrixXd::Identity( num_3D_images_, num_3D_images_ ); 
+	Eigen::MatrixXd L_m         = Eigen::MatrixXd::Ones(num_3D_images_, 1 ); 
 	//
-	Eigen::MatrixXd H_m         = Eigen::MatrixXd::Zero(M_eta_theta.rows(), M_eta_theta.cols() ); ; //= L * (L.transpose() * L).inverse() * L.transpose();
+	Eigen::MatrixXd H_m         = Eigen::MatrixXd::Zero(num_3D_images_, num_3D_images_ ); ; //= L * (L.transpose() * L).inverse() * L.transpose();
 	
 	
 	double
@@ -923,12 +931,34 @@ namespace MAC_bmle
 
 	//
 	// R-squared
-	M_eta_theta = X_ * cov_theta_Y * X_.transpose() * inv_Cov_eps;
-	H_m         = L_m * (L_m.transpose() * L_m).inverse() * L_m.transpose();
-	//
-	double R_sqr = 1.;
-	R_sqr       -=  ((Y.transpose() * (Id_m - M_eta_theta) * Y))(0,0) / ((Y.transpose() * (Id_m - H_m) * Y))(0,0);
+	//old M_eta_theta = X_ * cov_theta_Y * X_.transpose() * inv_Cov_eps;
+	//old H_m         = L_m * (L_m.transpose() * L_m).inverse() * L_m.transpose();
+	//old //
+	//old double R_sqr = 1.;
+	//old R_sqr       -=  ((Y.transpose() * (Id_m - M_eta_theta) * Y))(0,0) / ((Y.transpose() * (Id_m - H_m) * Y))(0,0);
+	//old //std::cout << "R-sqr: " << R_sqr << std::endl;
+	//old R_sqr_l2_.set_val( 0, Idx, R_sqr );
+
+	// test 2
+	//M_eta_theta = inv_Cov_eps * X_ * cov_theta_Y * X_.transpose() * inv_Cov_eps;
+	//H_m         = L_m * (L_m.transpose() * L_m).inverse() * L_m.transpose();
+	////
+	////double R_sqr = (( X_ * eta_theta_Y ).transpose() * (Id_m - H_m) * X_ * eta_theta_Y )(0,0) / (Y.transpose() * (Id_m - H_m) * Y)(0,0);
+	//Eigen::MatrixXd X_x_eta_theta_Y  = X_ * eta_theta_Y;
+	//double R_sqr = (X_x_eta_theta_Y.transpose() * (Id_m - H_m) * X_x_eta_theta_Y )(0,0) / (Y.transpose() * (Id_m - H_m) * Y)(0,0);
 	//std::cout << "R-sqr: " << R_sqr << std::endl;
+	//R_sqr_l2_.set_val( 0, Idx, R_sqr );
+
+	// test 3
+	//
+	Eigen::MatrixXd _X_  = Eigen::MatrixXd::Zero( X1_.rows(),  X1_.cols() + X2_.cols() );
+	_X_.block( 0, 0, X1_.rows(),  X1_.cols() ) = X1_;
+	_X_.block( 0, X1_.cols(), X1_.rows(),  X2_.cols() ) = X1_ * X2_;
+	//
+	H_m  = L_m * (L_m.transpose() * L_m).inverse() * L_m.transpose();
+	//
+	Eigen::MatrixXd X_x_eta_theta_Y  = _X_ * eta_theta_Y;
+	double R_sqr = (X_x_eta_theta_Y.transpose() * (Id_m - H_m) * X_x_eta_theta_Y )(0,0) / (_Y_.transpose() * (Id_m - H_m) * _Y_)(0,0);
 	R_sqr_l2_.set_val( 0, Idx, R_sqr );
 
 

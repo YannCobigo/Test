@@ -166,6 +166,7 @@ namespace MAC_bmle
   {
     try
       {
+	std::cout << "DEMEAN AGE: " << Age_mean << std::endl;
 	//
 	// Design matrix level 1
 	//
