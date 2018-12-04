@@ -57,7 +57,7 @@ namespace MAC_bmle
     BmleSubject():
       PIDN_{0}, group_{0}, D_{0} {};
       //
-      explicit BmleSubject( const int, const int );
+      explicit BmleSubject( const int, const int, const std::string& );
     
       /** Destructor */
       virtual ~BmleSubject(){};
@@ -96,6 +96,10 @@ namespace MAC_bmle
       //
       // Add time point
       void create_theta_images();
+
+      //
+      // output directory
+      std::string output_dir_;
 
 
       //
@@ -146,8 +150,9 @@ namespace MAC_bmle
   //
   template < int D_r, int D_f >
   MAC_bmle::BmleSubject< D_r, D_f >::BmleSubject( const int Pidn,
-						  const int Group):
-  PIDN_{Pidn}, group_{Group}, D_{2}
+						  const int Group,
+						  const std::string& Output_dir ):
+    PIDN_{Pidn}, group_{Group}, D_{2}, output_dir_{Output_dir}
   {
     /* 
        g(t, \theta_{i}^{(1)}) = \sum_{d=1}^{D+1} \theta_{i,d}^{(1)} t^{d-1}
@@ -161,6 +166,7 @@ namespace MAC_bmle
   {
     try
       {
+	std::cout << "DEMEAN AGE: " << Age_mean << std::endl;
 	//
 	// Design matrix level 1
 	//
@@ -313,7 +319,7 @@ namespace MAC_bmle
     {
       //std::cout << "We create output only one time" << std::endl;
       // Model output
-      std::string output_model = "model_" 
+      std::string output_model = output_dir_ + "/" + "model_" 
 	+ std::to_string( PIDN_ ) + "_" + std::to_string( group_ )
 	+ "_" + std::to_string( time_points_ ) + "_" + std::to_string( D_ ) 
 	+ ".nii.gz";
@@ -326,7 +332,7 @@ namespace MAC_bmle
       // | 1 2 3 |
       // | . 4 5 |
       // | . . 6 |
-      std::string output_var = "var_" 
+      std::string output_var = output_dir_ + "/" + "var_" 
 	+ std::to_string( PIDN_ ) + "_" + std::to_string( group_ )
 	+ "_" + std::to_string( time_points_ ) + "_" + std::to_string( D_ ) 
 	+ ".nii.gz";

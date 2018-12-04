@@ -12,7 +12,7 @@ endif()
 if(CMAKE_COMPILER_IS_GNUCXX)
   add_definitions(-std=c++11)
   set(CMAKE_CXX_FLAGS "-O3")
-  set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG")
+#  set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG")
 #  if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
 #    set(CMAKE_CXX_FLAGS "-O3")
 #  else()
@@ -21,8 +21,8 @@ endif()
 
 #
 # Eigen
-#set( EIGEN /mnt/neuroimaging/Eigen-3/install/include/eigen3/ /mnt/neuroimaging/Eigen-3/install/include/eigen3/unsupported/ )
-set( EIGEN /home/cobigo/devel/CPP/Eigen/install/include/eigen3/  /home/cobigo/devel/CPP/Eigen/install/include/eigen3/unsupported/)
+set( EIGEN /mnt/neuroimaging/Eigen-3/install/include/eigen3/ /mnt/neuroimaging/Eigen-3/install/include/eigen3/unsupported/ )
+#set( EIGEN /home/cobigo/devel/CPP/Eigen/install/include/eigen3/  /home/cobigo/devel/CPP/Eigen/install/include/eigen3/unsupported/)
 #
 include_directories( ${EIGEN}/ ${ITK_INC})
 list( APPEND SOURCES ${DLIB_ALL_SOURCES} )

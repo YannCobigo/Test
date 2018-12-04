@@ -1,9 +1,11 @@
 #include<iostream>
+#include <stdio.h>
 #include <cstdlib>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <chrono>
+#include <sys/stat.h>
 //
 // ITK
 //
@@ -18,6 +20,18 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 #include "Thread_dispatching.h"
 #include "BmleException.h"
 #include "Load_csv.h"
+//
+//
+// Check the output directory exists
+inline bool directory_exists( const std::string& Dir )
+{
+  struct stat sb;
+  //
+  if ( stat(Dir.c_str(), &sb ) == 0 && S_ISDIR( sb.st_mode ) )
+    return true;
+  else
+    return false;
+}
 //
 //
 //
@@ -66,21 +80,41 @@ main( const int argc, const char **argv )
 	{
 	  InputParser input( argc, argv );
 	  if( input.cmdOptionExists("-h") )
+	    //
+	    // It is the responsability of the user to create the 
+	    // normalized/standardized hierarchical covariate
+	    //
+	    // -h:  help
+	    // -c input.csv: input file
+	    // -m mask.nii.gz: mask
+	    // -d: demeaning of age -> boolean
+	    //
 	    throw MAC_bmle::BmleException( __FILE__, __LINE__,
-					   "./bmle -c file.csv -m mask.nii.gz >",
+					   "./bmle -c file.csv -m mask.nii.gz -o output_dir <-d (demeaning age)>",
 					   ITK_LOCATION );
 
 	  //
 	  // takes the csv file ans the mask
-	  const std::string& filename = input.getCmdOption("-c");
-	  const std::string& mask     = input.getCmdOption("-m");
+	  const std::string& filename   = input.getCmdOption("-c");
+	  const std::string& mask       = input.getCmdOption("-m");
+	  const std::string& output_dir = input.getCmdOption("-o");
+	  const std::string& demeaning  = input.getCmdOption("-d");
 	  //
 	  if ( !filename.empty() )
 	    {
-	      if ( mask.empty() )
+	      if ( mask.empty() && output_dir.empty() )
 		{
 		  std::string mess = "No mask loaded. A mask must be loaded.\n";
-		  mess += "./bmle -c file.csv -m mask.nii.gz";
+		  mess += "./bmle -c file.csv -m mask.nii.gz -o output_dir";
+		  throw MAC_bmle::BmleException( __FILE__, __LINE__,
+						 mess.c_str(),
+						 ITK_LOCATION );
+		}
+	      // output directory exists?
+	      if ( !directory_exists( output_dir ) )
+		{
+		  std::string mess = "The output directory is not correct.\n";
+		  mess += "./bmle -c file.csv -m mask.nii.gz -o output_dir";
 		  throw MAC_bmle::BmleException( __FILE__, __LINE__,
 						 mess.c_str(),
 						 ITK_LOCATION );
@@ -96,11 +130,12 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 8;
+	      const int THREAD_NUM = 24;
 
 	      //
 	      // Load the CSV file
-	      MAC_bmle::BmleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename );
+	      MAC_bmle::BmleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
+									   input.cmdOptionExists("-d") );
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();
 
@@ -147,21 +182,55 @@ main( const int argc, const char **argv )
 		    {
 		      MaskType::IndexType idx = imageIterator_mask.GetIndex();
 #ifdef DEBUG
-		      if ( idx[0] > 25 && idx[0] < 35 && 
-			   idx[1] > 65 && idx[1] < 75 &&
-			   idx[2] > 55 && idx[2] < 65 )
+		      if ( idx[0] > 33 && idx[0] < 35 && 
+			   idx[1] > 30 && idx[1] < 32 &&
+			   idx[2] > 61 && idx[2] < 63 )
 			{
 			  std::cout << imageIterator_mask.GetIndex() << std::endl;
 			  subject_mapping.Expectation_Maximization( idx );
 			}
 #else
-			// Please do not remove the bracket!!
-		      if ( idx[0] > 20 && idx[0] < 40 && 
-			   idx[1] > 60 && idx[1] < 80 &&
-			   idx[2] > 50 && idx[2] < 70 )
-//		      if ( idx[0] > 0 && idx[0] < 60 && 
-//			   idx[1] > 0 && idx[1] < 140 &&
-//			   idx[2] > 50 && idx[2] < 70 )
+		      // Please do not remove the bracket!!
+//		      // vertex
+//		      if ( idx[0] > 33 && idx[0] < 35 && 
+//			   idx[1] > 30 && idx[1] < 32 &&
+//			   idx[2] > 61 && idx[2] < 63 )
+//		      // ALL
+//		      if ( idx[0] > 1 && idx[0] < 64 && 
+//			   idx[1] > 1 && idx[1] < 55 &&
+//			   idx[2] > 0 && idx[2] < 16 )
+//		      // Octan 1
+		      if ( idx[0] > 5 && idx[0] < 60  & 
+			   idx[1] > 5 && idx[1] < 70  &&
+			   idx[2] > 2 && idx[2] < 60  )
+		      // Octan 2
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] > 5 && idx[1] < 70  &&
+//			   idx[2] > 2 && idx[2] < 60 )
+//		      // Octan 3
+//		      if ( idx[0] > 5 && idx[0] < 60  && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] > 2 && idx[2] < 60 )
+//		      // Octan 4
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] > 2 && idx[2] < 60 )
+//		      // Octan 5
+//		      if ( idx[0] > 5 && idx[0] < 60 && 
+//			   idx[1] > 5 && idx[1] < 70 &&
+//			   idx[2] >= 60 && idx[2] < 110 )
+//		      // Octan 6
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] > 5 && idx[1] < 70  &&
+//			   idx[2] >= 60 && idx[2] < 110 )
+//		      // Octan 7
+//		      if ( idx[0] > 5 && idx[0] < 60  && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] >= 60 && idx[2] < 110 )
+//		      // Octan 8
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] >= 60 && idx[2] < 110 )
 			{
 			  pool.enqueue( std::ref(subject_mapping), idx );
 			}
