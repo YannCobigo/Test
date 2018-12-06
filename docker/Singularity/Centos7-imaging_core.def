@@ -1,16 +1,31 @@
 # Bootstrap definition example for Centos-7 with the latest Open MPI from GitHub master
-# sudo singularity create --size 32768 /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
-# sudo singularity create --size 1024 /mnt/coredata/Singularity/test.img
+# sudo singularity image.create --size 32768 /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
+# sudo singularity image.create --size 1024 /mnt/coredata/Singularity/test.img
 # in to Docker/docker/Singularity/
-# sudo singularity bootstrap /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img Centos7-imaging_core.def
-# sudo singularity bootstrap /mnt/coredata/Singularity/test.img simple.def
+# sudo singularity build --writable /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img Centos7-imaging_core.def
+# sudo singularity build --writable /mnt/coredata/Singularity/test.img simple.def
 #
 # As a user
 # singularity shell --shell /bin/bash -B /mnt/coredata/neuroimaging_CentOS7/:/mnt/neuroimaging  -B /etc/machine-id:/etc/machine-id -B /usr/local/MATLAB:/usr/local/MATLAB /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
 #
 # to avoid writing a new image:
 # sudo singularity shell --writable  /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
-
+#
+#####################
+# Setting Anaconda2 #
+#####################
+# The software has to be set up manually:
+# singularity shell --writable  -B /rosen/hpc-scratch/ycobigo/Docker/neuroimaging_CentOS7:/mnt/neuroimaging /rosen/hpc-scratch/ycobigo/Docker/Centos7-imaging_core_1.3beta.img
+# 
+# Run provided script:
+# ./Anaconda2-5.2.0-Linux-x86_64.sh
+#   - /mnt/neuroimaging/Anaconda2/5.2.0/
+#   - to PATH in your /root/.bashrc [no]  -> export PATH=$PATH:/mnt/neuroimaging/Anaconda2/5.2.0/bin && export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/neuroimaging/Anaconda2/5.2.0/lib
+#   - Do you wish the installer to prepend the Anaconda2 install location [no]
+#   - Do you wish to proceed with the installation of Microsoft VSCode?
+#   
+#   Lastly, change the group from the Anaconda directory 
+#
 
 BootStrap: docker
 From: centos:7
@@ -34,6 +49,7 @@ IncludeCmd: yes
 	  $SINGULARITY_ROOTFS/home/mac \
 	  $SINGULARITY_ROOTFS/netapp \
 	  $SINGULARITY_ROOTFS/netapp/home \
+	  $SINGULARITY_ROOTFS//wynopt \
 	  $SINGULARITY_ROOTFS/etc/singularity/ \
 	  $SINGULARITY_ROOTFS/usr/local/lib64/R 
 	  
@@ -69,17 +85,18 @@ IncludeCmd: yes
 	    gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 \
 	    gmp-devel.x86_64 gmp-static.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
 	    sudo.x86_64 net-tools initscripts nautilus.x86_64 tkinter curl.x86_64 curl-devel \
-	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin 
-
+	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
+	    firefox.x86_64 firefox-pkcs11-loader.x86_64
 
 	#
 	#
 	echo "GL installation"
 	yum install -y mesa-libGL-devel.x86_64 \
-	    mesa-libGLU.x86_64 mesa-libGLU-devel.x86_64 mesa-libGLU.i686 mesa-libGLU-devel.i686 \
+	    mesa-libGLU*.i686 mesa-libGLU*.x86_64 \
 	    mesa-libGLw.x86_64 mesa-libGLw-devel.x86_64 \
 	    mesa-libOSMesa.x86_64 mesa-libOSMesa-devel.x86_64 \
 	    mesa-libgbm-devel.x86_64
+
 
 	#
 	#
@@ -120,7 +137,8 @@ IncludeCmd: yes
 	#
 	echo "Python pip installation"
 	pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz scipy sklearn progressbar requests matplotlib ipython pandas sympy nose \
-	    && pip install --upgrade lockfile future simplejson prov statsmodels psutil cython untangle jsonpath-rw bctpy h5py networkx sortedcontainers XlsxWriter pydicom seaborn
+	    && pip install --upgrade lockfile future simplejson prov statsmodels psutil cython untangle jsonpath-rw bctpy h5py networkx sortedcontainers \
+	       XlsxWriter pydicom seaborn pyyaml hmmlearn
 	pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype && pip install --upgrade pygraphviz Pillow python-igraph
 
 	#
@@ -163,10 +181,17 @@ IncludeCmd: yes
        yum install -y rstudio-1.1.456-x86_64.rpm
 
 
+#       #
+#       # Anaconda
+#       wget https://repo.anaconda.com/archive/Anaconda2-5.2.0-Linux-x86_64.sh
+#       bash Anaconda2-5.2.0-Linux-x86_64.sh -b -p /opt/anaconda2/5.2.0
+#       #/opt/anaconda3/bin/conda install -c r r-essentials
 
-	#
-	#
-	exit 0
+
+
+       #
+       #
+       exit 0
 
 %runscript
 	echo "Arguments received: $*"
