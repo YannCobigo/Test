@@ -28,6 +28,10 @@
 //
 //
 //
+#define inv_two_pi_squared 0.3989422804014327L
+//
+//
+//
 namespace MAC_bmle
 {
   inline bool file_exists ( const std::string& name )
@@ -55,16 +59,16 @@ namespace MAC_bmle
     public:
       /** Constructor. */
     BmleSubject():
-      PIDN_{0}, group_{0}, D_{0} {};
+      PIDN_{""}, group_{0} {};
       //
-      explicit BmleSubject( const int, const int, const std::string& );
+      explicit BmleSubject( const std::string, const int, const std::string& );
     
       /** Destructor */
       virtual ~BmleSubject(){};
 
       //
       // Accessors
-      inline const int get_PIDN() const { return PIDN_ ;}
+      inline const std::string get_PIDN() const { return PIDN_ ;}
       //
       inline const std::map< int, Reader3D::Pointer >&
 	get_age_images() const { return age_ITK_images_ ;}
@@ -88,6 +92,15 @@ namespace MAC_bmle
       // Print
       void print() const;
 
+      //
+      // Prediction
+      // load the model posterior parameters and covariance
+      void load_model_matrices();
+      // Process the prediction
+      void prediction( const MaskType::IndexType, 
+		       const double );
+      
+
     private:
       //
       // private member function
@@ -107,7 +120,7 @@ namespace MAC_bmle
       //
     
       // Identification number
-      int PIDN_;
+      std::string PIDN_;
       // Group for multi-group comparison (controls, MCI, FTD, ...)
       // It can only take 1, 2, ... value
       int group_;
@@ -117,7 +130,7 @@ namespace MAC_bmle
       //
       // Age image maps
       // age-image name
-      std::map< int, std::string > age_images_; 
+      std::map< int, std::string >       age_images_; 
       // age-ITK image
       std::map< int, Reader3D::Pointer > age_ITK_images_; 
       //
@@ -125,11 +138,13 @@ namespace MAC_bmle
       int time_points_{0};
 
       //
+      // Prediction
+      bool prediction_{false};
+
+      //
       // Model parameters
       //
 
-      // Model dimension
-      int D_;
       //
       // Level 1
       // Random matrix
@@ -139,20 +154,31 @@ namespace MAC_bmle
       // Second level design matrix, Matrix of covariates
       Eigen::MatrixXd X_2_;
       //
+      // Prediction
+      // Posterior parameters
+      Eigen::Matrix< double, D_r, 1 >    theta_y_;
+      // Posterior covariance
+      Eigen::Matrix< double, D_r, D_r >  cov_theta_y_;
+      //
       // Random effect results
       BmleMakeITKImage Random_effect_ITK_model_;
       // Random effect results
       BmleMakeITKImage Random_effect_ITK_variance_;
+      //
+      // Prediction
+      BmleMakeITKImage Probability_prediction_map_;
+      // error function
+      BmleMakeITKImage Error_prediction_map_;
     };
 
   //
   //
   //
   template < int D_r, int D_f >
-  MAC_bmle::BmleSubject< D_r, D_f >::BmleSubject( const int Pidn,
-						  const int Group,
-						  const std::string& Output_dir ):
-    PIDN_{Pidn}, group_{Group}, D_{2}, output_dir_{Output_dir}
+    MAC_bmle::BmleSubject< D_r, D_f >::BmleSubject( const std::string Pidn,
+						    const int Group,
+						    const std::string& Output_dir ):
+    PIDN_{Pidn}, group_{Group}, output_dir_{Output_dir}
   {
     /* 
        g(t, \theta_{i}^{(1)}) = \sum_{d=1}^{D+1} \theta_{i,d}^{(1)} t^{d-1}
@@ -220,6 +246,15 @@ namespace MAC_bmle
 	  X_2_.block< D_r, D_r >( 0, ++col * D_r ) = cov * Eigen::MatrixXd::Identity( D_r, D_r );
       
 	std::cout << X_2_ << std::endl;
+
+	//
+	// Prediction
+	//
+	
+	// Posterior parameters
+	theta_y_ = Eigen::Matrix< double, D_r, 1 >::Zero( D_r );
+	// Posterior covariance
+	cov_theta_y_ = Eigen::Matrix< double, D_r, D_r >::Zero( D_r, D_r );
       }
     catch( itk::ExceptionObject & err )
       {
@@ -272,7 +307,7 @@ namespace MAC_bmle
 	else
 	  {
 	    std::string mess = "Age " + std::to_string(Age) + " is already entered for the patient ";
-	    mess += std::to_string(PIDN_) + ".";
+	    mess += PIDN_ + ".";
 	    //
 	    throw MAC_bmle::BmleException( __FILE__, __LINE__,
 					   mess.c_str(),
@@ -320,12 +355,11 @@ namespace MAC_bmle
       //std::cout << "We create output only one time" << std::endl;
       // Model output
       std::string output_model = output_dir_ + "/" + "model_" 
-	+ std::to_string( PIDN_ ) + "_" + std::to_string( group_ )
-	+ "_" + std::to_string( time_points_ ) + "_" + std::to_string( D_ ) 
+	+ PIDN_ + "_" + std::to_string( group_ )
 	+ ".nii.gz";
       Random_effect_ITK_model_ = BmleMakeITKImage( D_r,
 						   output_model,
-						   age_ITK_images_.begin()->second );
+						   age_ITK_images_.begin()->second);
       // Variance output
       // We only record the diagonal sup elements
       //
@@ -333,8 +367,7 @@ namespace MAC_bmle
       // | . 4 5 |
       // | . . 6 |
       std::string output_var = output_dir_ + "/" + "var_" 
-	+ std::to_string( PIDN_ ) + "_" + std::to_string( group_ )
-	+ "_" + std::to_string( time_points_ ) + "_" + std::to_string( D_ ) 
+	+ PIDN_ + "_" + std::to_string( group_ )
 	+ ".nii.gz";
       Random_effect_ITK_variance_ = BmleMakeITKImage( D_r * (D_r + 1) / 2 /*we make sure it is a int*/,
 						      output_var,
@@ -344,10 +377,18 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::write_solution( )
+    MAC_bmle::BmleSubject< D_r, D_f >::write_solution()
     {
-      Random_effect_ITK_model_.write();
-      Random_effect_ITK_variance_.write();
+      if ( prediction_ )
+	{
+	  Probability_prediction_map_.write();
+	  Error_prediction_map_.write();
+	}
+      else
+	{
+	  Random_effect_ITK_model_.write();
+	  Random_effect_ITK_variance_.write();
+	}
     }
   //
   //
@@ -378,6 +419,169 @@ namespace MAC_bmle
 		    << age_img.second << std::endl;
       else
 	std::cout << "No age and images recorded." << std::endl;
+    }
+  //
+  //
+  //
+  template < int D_r, int D_f > void
+    MAC_bmle::BmleSubject< D_r, D_f >::load_model_matrices() 
+    {
+      try
+	{
+	  //
+	  // posterior maps are loaded if the predictions is called
+	  prediction_ = true;
+	  std::cout << "Loading model matrices for: " << PIDN_ 
+		    << ", Group: " << group_ 
+		    << ". Number of new time points: " << time_points_ << std::endl;
+
+	  //
+	  // Creating Output prediction image
+	  std::string prediction = output_dir_ + "/" + "prediction_" 
+	    + PIDN_ + "_" + std::to_string( group_ )
+	    + ".nii.gz";
+	  std::string error_prediction = output_dir_ + "/" + "erf_prediction_" 
+	    + PIDN_ + "_" + std::to_string( group_ )
+	    + ".nii.gz";
+	  //
+	  Probability_prediction_map_ = BmleMakeITKImage( time_points_,
+							  prediction,
+							  age_ITK_images_.begin()->second );
+	  Error_prediction_map_ = BmleMakeITKImage( time_points_,
+						    error_prediction,
+						    age_ITK_images_.begin()->second );
+
+	  //
+	  // Load the matrices
+	  //
+
+	  //
+	  // Model output
+	  std::string output_model = output_dir_ + "/" + "model_" 
+	    + PIDN_ + "_" + std::to_string( group_ )
+	    + ".nii.gz";
+	  if ( access( output_model.c_str(), F_OK ) != -1 )
+	    Random_effect_ITK_model_ = BmleMakeITKImage( D_r, output_model );
+	  else
+	    {
+	      std::string mess = "The posterior parameters have not been generated for ";
+	      mess += PIDN_ + ".\n";
+	      mess += "Looking for: " + output_model;
+	      //
+	      throw MAC_bmle::BmleException( __FILE__, __LINE__,
+					     mess.c_str(),
+					     ITK_LOCATION );
+	    }
+      
+	  //
+	  // Variance output
+	  // We only record the diagonal sup elements
+	  //
+	  // | 1 2 3 |
+	  // | . 4 5 |
+	  // | . . 6 |
+	  std::string output_var = output_dir_ + "/" + "var_" 
+	    + PIDN_ + "_" + std::to_string( group_ )
+	    + ".nii.gz";
+	  if ( access( output_var.c_str(), F_OK ) != -1 )
+	    Random_effect_ITK_variance_ = BmleMakeITKImage( D_r * (D_r + 1) / 2, output_var );
+	  else
+	    {
+	      std::string mess = "The posterior parameters have not been generated for ";
+	      mess += PIDN_ + ".";
+	      mess += "Looking for: " + output_model;
+	      //
+	      throw MAC_bmle::BmleException( __FILE__, __LINE__,
+					     mess.c_str(),
+					     ITK_LOCATION );
+	    }
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  return exit( -1 );
+	}
+    }
+  //
+  //
+  //
+  template < int D_r, int D_f > void
+    MAC_bmle::BmleSubject< D_r, D_f >::prediction( const MaskType::IndexType Idx, 
+						   const double Inv_C_eps )
+    {
+      try
+	{
+	//std::cout << "In subject: " << Idx << " val inv: " << Inv_C_eps << std::endl;
+	//std::cout << PIDN_ 
+	//	    << ", Group: " << group_ 
+	//	    << ". Number of new time points: " << time_points_ << std::endl;
+
+
+	  //
+	  // Load the posterior maps
+	  int current_mat_coeff = 0;
+	  for ( int d ; d < D_r ; d++ )
+	    {
+	      // Parameters
+	      theta_y_(d,0) = Random_effect_ITK_model_.get_val( d, Idx );
+	      // Covariance
+	      for ( int c = d ; c < D_r ; c++)
+		cov_theta_y_(d,c) = cov_theta_y_(c,d) = 
+		  Random_effect_ITK_variance_.get_val( current_mat_coeff++, Idx );
+	    }
+      
+	  //
+	  // Process the prediction
+	  std::map< int, Reader3D::Pointer >::const_iterator age_img = age_ITK_images_.begin();
+	  for ( int tp = 0 ; tp < time_points_ ; tp++ )
+	    {
+	      //
+	      // Design
+	      Eigen::Matrix< double, D_r, 1 > x = X_1_rand_.row(tp).transpose();
+	      if ( age_img->first != x(1,0) )
+		{
+		  std::string mess = "Order of ages is not correct. Expected age: ";
+		  mess += std::to_string( age_img->first ) + " and received age: ";
+		  mess += std::to_string( x(1,0) );
+		  //
+		  throw MAC_bmle::BmleException( __FILE__, __LINE__,
+					   mess.c_str(),
+					   ITK_LOCATION );
+		}
+	      // response
+	      double y = static_cast<double>( (age_img++)->second->GetOutput()->GetPixel( Idx ) );
+	      
+	      // variance
+	      double variance  = 1. / Inv_C_eps + (x.transpose() * cov_theta_y_ * x)(0,0);
+	      // Mean value
+	      double mu = (x.transpose() * theta_y_)(0,0);
+	      // argument of the Gaussian
+	      double arg = - 0.5 * (y-mu) * (y-mu) / variance;
+	      //
+	      // record the value
+	      Probability_prediction_map_.set_val( tp, Idx,
+						   exp(arg) * inv_two_pi_squared / sqrt(variance) );
+	      Error_prediction_map_.set_val( tp, Idx,
+					     erf(sqrt(-arg)) );
+ 
+//	      std::cout 
+//				<< "theta_y_\n" << theta_y_
+//		//		<< "\n C_eps_ = " <<  1. / Inv_C_eps
+//		//		<< "\n variance_ = " <<  variance
+//				<< "\n cov_ = \n" <<  cov_theta_y_
+//		<< "\ny  = " <<  y
+//		<< "\nmu  = " <<  mu
+//		<< std::endl;
+	    }
+
+	  //
+	  // Write in the output image
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  return exit( -1 );
+	}
     }
 }
 #endif

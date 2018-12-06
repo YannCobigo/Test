@@ -19,7 +19,7 @@ MAC_bmle::BmleMakeITKImage::BmleMakeITKImage( const long unsigned int Dimension,
     //
     // Create the 3D image of measures
     //
-
+    
     //
     //
     Image3DType::RegionType region;
@@ -42,12 +42,39 @@ MAC_bmle::BmleMakeITKImage::BmleMakeITKImage( const long unsigned int Dimension,
 //
 //
 //
+MAC_bmle::BmleMakeITKImage::BmleMakeITKImage( const long unsigned int Dimension,
+					      const std::string&      Image_name ):
+  D_{ Dimension }, image_name_{ Image_name }
+  {
+    //
+    //
+    images_.resize( Dimension );
+    //
+    // Take the dimension of the first subject image:
+    image_4D_reader_ = Reader4D::New();
+    image_4D_reader_->SetFileName( Image_name );
+    image_4D_reader_->Update();
+  }
+//
+//
+//
 void
 MAC_bmle::BmleMakeITKImage::set_val( const std::size_t Image_number, 
 				     const MaskType::IndexType Idx, 
 				     const double Val )
 {
   images_[ Image_number ]->SetPixel( Idx, Val );
+}
+//
+//
+//
+double
+MAC_bmle::BmleMakeITKImage::get_val( const std::size_t Image_number, 
+				     const MaskType::IndexType Idx )
+{
+  Image4DType::IndexType idx_4d = { Idx[0], Idx[1] , Idx[2],
+				    static_cast< long int >(Image_number) };
+  return image_4D_reader_->GetOutput()->GetPixel( idx_4d );
 }
 //
 //

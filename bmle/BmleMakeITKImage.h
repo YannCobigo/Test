@@ -56,24 +56,31 @@ namespace MAC_bmle
       explicit BmleMakeITKImage( const long unsigned int ,
 				 const std::string&,
 				 const Reader3D::Pointer );
+      //
+      explicit BmleMakeITKImage( const long unsigned int ,
+				 const std::string& );
     
       /**  */
       virtual ~BmleMakeITKImage(){};
 
       //
       // Record results
-      void set_val( const std::size_t, const MaskType::IndexType, const double );
+      void   set_val( const std::size_t, const MaskType::IndexType, const double );
+      // get results
+      double get_val( const std::size_t, const MaskType::IndexType );
       // Write value in the image pointer
-      void write();
+      void   write();
 
     private:
       //
       // Dimension of the case: random or fixed
       long unsigned int D_;
       // Image name
-      std::string image_name_;
+      std::string                         image_name_;
       // Take the dimension of the first subject image:
-      Reader3D::Pointer image_reader_;
+      Reader3D::Pointer                   image_reader_;
+      // Loaded 4D images
+      Reader4D::Pointer                   image_4D_reader_;
       // Measures grouped in vector of 3D image
       std::vector< Image3DType::Pointer > images_;
     };

@@ -26,7 +26,8 @@
 #include <itkImageFileReader.h>
 #include <itkSpatialOrientationAdapter.h>
 #include "itkChangeInformationImageFilter.h"
-using MaskType = itk::Image< unsigned char, 3 >;
+using MaskType   = itk::Image< unsigned char, 3 >;
+using MaskType4D = itk::Image< unsigned char, 4 >;
 //
 //
 //
@@ -49,7 +50,11 @@ namespace MAC_bmle
   {
   public:
     /** Constructor. */
-    explicit BmleLoadCSV( const std::string&, const std::string&, const bool );
+    explicit BmleLoadCSV( const std::string&, const std::string&, 
+			  // Age demeaning
+			  const bool,
+			  // Prediction
+			  const std::string& );
     
     /** Destructor */
     virtual ~BmleLoadCSV() {};
@@ -60,14 +65,25 @@ namespace MAC_bmle
     void build_groups_design_matrices();
     // Expectation maximization algorithm
     void Expectation_Maximization( MaskType::IndexType );
-    // Expectation maximization algorithm
+    // Prediction algorithm
+    void Prediction( MaskType::IndexType );
+    // Write the output
     void write_subjects_solutions( );
     // multi-threading
     void operator ()( const MaskType::IndexType idx )
     {
-      std::cout << "treatment for parameters: " 
-		<< idx;
-      Expectation_Maximization( idx );
+      if ( prediction_ )
+	{
+	  std::cout << "Prediction treatment for parameters: " 
+		    << idx;
+	  Prediction( idx );
+	}
+      else
+	{
+	  std::cout << "treatment for parameters: " 
+		    << idx;
+	  Expectation_Maximization( idx );
+	}
     };
 
 
@@ -91,6 +107,10 @@ namespace MAC_bmle
     //
     
     //
+    // Prediction calculation
+    bool prediction_{false};
+
+    //
     // CSV file
     std::ifstream csv_file_;
     // output directory
@@ -98,11 +118,13 @@ namespace MAC_bmle
     //
     // Arrange pidns into groups
     std::set< int > groups_;
-    std::vector< std::map< int /*pidn*/, BmleSubject< D_r, D_f > > > group_pind_{10};
+    std::vector< std::map< std::string /*pidn*/, BmleSubject< D_r, D_f > > > group_pind_{10};
     // Number of subjects per group
     std::vector< int > group_num_subjects_{0,0,0,0,0,0,0,0,0,0};
     //
     // Measures grouped in vector of 3D image
+    using Image4DType  = itk::Image< double, 4 >;
+    using Reader4DType = itk::ImageFileReader< Image4DType >;
     using Image3DType  = itk::Image< double, 3 >;
     using Reader3DType = itk::ImageFileReader< Image3DType >;
     std::vector< Reader3DType::Pointer > Y_;
@@ -143,6 +165,11 @@ namespace MAC_bmle
     Eigen::MatrixXd constrast_;
     Eigen::MatrixXd constrast_l2_;
 
+    //
+    // Prediction matrices
+    // Inverse covariance error
+    // C_{epsilon}^{-1}
+    Reader4DType::Pointer Prediction_inverse_error_;
     
     //
     // Records
@@ -170,8 +197,13 @@ namespace MAC_bmle
     BmleMakeITKImage post_groups_param_l2_;
     // Posterior groups variance
     BmleMakeITKImage post_groups_cov_l2_;
+    // 
     // R-square
     BmleMakeITKImage R_sqr_l2_;
+    //
+    // Output for prediction
+    // model output for Inverse covariance error
+    BmleMakeITKImage Prediction_inverse_error_l2_;
   };
   //
   //
@@ -179,7 +211,8 @@ namespace MAC_bmle
   template< int D_r, int D_f >
     BmleLoadCSV< D_r, D_f >::BmleLoadCSV( const std::string& CSV_file,
 					  const std::string& Output_dir,
-					  const bool Demeaning ):
+					  const bool Demeaning,
+					  const std::string& Inv_cov_error):
     csv_file_{ CSV_file.c_str() }, output_dir_{ Output_dir }
   {
     try
@@ -201,11 +234,13 @@ namespace MAC_bmle
 	    //
 	    // Get the PIDN
 	    std::getline(lineStream, cell, ',');
-	    const int PIDN = std::stoi( cell );
+	    const std::string PIDN = cell;
 	    // Get the group
 	    std::getline(lineStream, cell, ',');
 	    const int group = std::stoi( cell );
 	    if ( group == 0 )
+	      //
+	      // The groups must be labeled 1, 2, 3, ...
 	      throw BmleException( __FILE__, __LINE__,
 				   "Select another group name than 0 (e.g. 1, 2, ...). 0 is reserved.",
 				   ITK_LOCATION );
@@ -265,6 +300,36 @@ namespace MAC_bmle
 	      for ( auto image : s.second.get_age_images() )
 		Y_[ sub_image++ ] = image.second;
 	    }
+
+	//
+	// Prediction
+	if ( access( Inv_cov_error.c_str(), F_OK ) != -1 )
+	  {
+	    //
+	    // switch into prediction mode
+	    prediction_ = true;
+	    std::cout << "Prediction map calculation using:" << std::endl;
+	    std::cout << "\t - " << Inv_cov_error  << std::endl;
+
+	    //
+	    // Posterior 
+	    //auto image_ptr = itk::ImageIOFactory::CreateImageIO( Post_theta.c_str(),
+	    //						       itk::ImageIOFactory::ReadMode );
+	    //image_ptr->SetFileName( Post_theta );
+	    //image_ptr->ReadImageInformation();
+	    //
+	    Prediction_inverse_error_ = Reader4DType::New();
+	    Prediction_inverse_error_->SetFileName( Inv_cov_error );
+	    Prediction_inverse_error_->Update();
+	    
+	    //
+	    // load the posterior maps already processed
+	    for ( auto g : groups_ )
+	      for ( auto& s : group_pind_[g] )
+		s.second.load_model_matrices();
+	  }
+	else
+	  std::cout << "Posterior map calculation" << std::endl;
       }
     catch( itk::ExceptionObject & err )
       {
@@ -466,6 +531,7 @@ namespace MAC_bmle
 	  Q_k_linco = num_3D_images_ /*C_eps_1_base*/
 	  + num_subjects_ * D_r + groups_.size() * D_f /*C_eps_2_base*/
 	  + C_theta_dim;
+	int C_eps_num_block_diag = 2 + groups_.size() * (D_r+D_f);
 	int linco = 0;
 	//
 	// C_eps_1_base
@@ -618,7 +684,10 @@ namespace MAC_bmle
 	  sPgPl2 = output_dir_ + "/" + "Post_groups_param_l2.nii.gz",
 	  sPgCl2 = output_dir_ + "/" + "Post_groups_cov_l2.nii.gz",
 	  // R^{2} level 2
-	  sR_2   = output_dir_ + "/" + "Post_R_square_l2.nii.gz";
+	  sR_2   = output_dir_ + "/" + "Post_R_square_l2.nii.gz",
+	  // Output for prediction
+	  piel2  = output_dir_ + "/" + "Prediction_inverse_error_l2.nii.gz";
+	
 	
 	// level 1
 	PPM_               = BmleMakeITKImage( constrast_.cols(), sPPM, Y_[0] );
@@ -630,8 +699,10 @@ namespace MAC_bmle
 	post_groups_param_l2_ = BmleMakeITKImage( constrast_l2_.cols(), sPgPl2, Y_[0] );
 	// we only save the variance for each parameter of each group
 	post_groups_cov_l2_   = BmleMakeITKImage( constrast_l2_.rows(), sPgCl2, Y_[0] );
-	// 
+	// r-squared
 	R_sqr_l2_             = BmleMakeITKImage( 2, sR_2, Y_[0] );
+	// output for predictive model
+	Prediction_inverse_error_l2_  = BmleMakeITKImage( C_eps_num_block_diag, piel2, Y_[0] );
       }
     catch( itk::ExceptionObject & err )
       {
@@ -654,7 +725,7 @@ namespace MAC_bmle
 	
 	//
 	// Augmented measured data Y
-	Eigen::MatrixXd Y   = Eigen::MatrixXd::Zero( X_.rows(), 1 );
+	Eigen::MatrixXd  Y  = Eigen::MatrixXd::Zero( X_.rows(), 1 );
 	Eigen::MatrixXd _Y_ = Eigen::MatrixXd::Zero( num_3D_images_, 1 );
 	// First lines are set to the measure
 	// other lines are set to 0. 
@@ -739,7 +810,7 @@ namespace MAC_bmle
 	//
 	bool Fisher_H = false;
 	double 
-	  learning_rate_  = 5.e-03,
+	  learning_rate_  = 1.e-02,
 	  convergence_    = 1.e-06,
 	  new_convergence = 1.e-16,
 	  epsilon         = 1.e-16;
@@ -748,7 +819,8 @@ namespace MAC_bmle
 	//
 	while( n < N && it++ < NN )
 	  {
-	    F_old = F;
+	    if( !isnan(F) )
+	      F_old = F;
 
 	    //
 	    // Expectaction step
@@ -809,6 +881,7 @@ namespace MAC_bmle
 		// delta_lambda = H.inverse()  * grad;
 		//  delta_lambda = MAC_bmle::inverse( H ) * grad;
 		//delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
+		////////delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		delta_lambda = MAC_bmle::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		// delta_lambda = -learning_rate_ * MAC_bmle::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) ) * grad;
 		//std::cout << MAC_bmle::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) )  << std::endl;
@@ -854,7 +927,9 @@ namespace MAC_bmle
 	    //
 	    // Free energy
 	    F = F_( Y, inv_Cov_eps, eta_theta_Y, cov_theta_Y );
-	    delta_F = F - F_old;
+	    //
+	    if( !isnan(F) )
+	      delta_F = F - F_old;
 	    
 	    double grad_level = 0.;
 	    for ( int r = 1 /*we don't want the first element 0 */ ; r < grad.rows() ; r++ )
@@ -884,7 +959,7 @@ namespace MAC_bmle
 	      n = 0;
 	    // Algo must converge fast
 	    // If at 100 iteration we still did not converge, we create a new threshold
-	    // based on the bast values
+	    // based on the bast values. Best value for the regular gradiant descent (800)
 	    if ( it == 800 )
 	      {
 		best_convergence.sort();
@@ -927,7 +1002,9 @@ namespace MAC_bmle
 
 	//std::cout << "parameters" << "\n" << parameters << std::endl;
 	//std::cout << "param_cov"  << "\n" << param_cov  << std::endl;
-	//std::cout << "cov_theta_Y_l2"  << "\n" <<  cov_theta_Y_l2 << std::endl;
+	//std::cout << "cov_theta_Y"  << "\n" <<  cov_theta_Y << std::endl;
+
+	//std::cout << "inv_Cov_eps"  << "\n" <<  inv_Cov_eps << std::endl;
 
 	//
 	// R-squared
@@ -1024,6 +1101,67 @@ namespace MAC_bmle
 	//std::cout << X2_ * eta_theta_Y_2_theta_Y + eta_theta_Y_2_eps_Y << std::endl;
 	//std::cout  << std::endl;
 	//std::cout << cov_theta_Y << std::endl;
+
+	//
+	// Prediction output
+	// Inverse covariance error
+	int 
+	  index_pred_inv_error = 0,
+	  pos_pred_inv_error   = 0;
+	// C_eps_1_base: all images have the same error
+	// we only save the first one
+	Prediction_inverse_error_l2_.set_val( pos_pred_inv_error++, Idx, 
+					      inv_Cov_eps(index_pred_inv_error,
+							  index_pred_inv_error) );
+	index_pred_inv_error += num_3D_images_;
+	// C_eps_2: just the first subject covariates for each groups
+	// Others subjects have the same covariance
+	for ( auto g : groups_ )
+	  {
+	    // Dr
+	    // We save only he D_r first parameters
+	    // Others are the same
+	    for ( int dr = 0 ; dr < D_r ; dr++ )
+	      Prediction_inverse_error_l2_.set_val( pos_pred_inv_error++, Idx, 
+						    inv_Cov_eps(index_pred_inv_error+dr,
+								index_pred_inv_error+dr) );
+	    // Df
+	    if ( D_f > 0 )
+	      for ( int df = 0 ; df < D_f ; df++ )
+		Prediction_inverse_error_l2_.set_val( pos_pred_inv_error++, Idx, 
+						      inv_Cov_eps(index_pred_inv_error+D_r+df,
+								  index_pred_inv_error+D_r+df) );
+	    //
+	    index_pred_inv_error += group_num_subjects_[g]*D_r + D_f;
+	  }
+	// C_theta_2
+	// all must be 1.e+16
+	Prediction_inverse_error_l2_.set_val( pos_pred_inv_error, Idx, 
+					      inv_Cov_eps(index_pred_inv_error,
+							  index_pred_inv_error) );
+      }
+    catch( itk::ExceptionObject & err )
+      {
+	std::cerr << err << std::endl;
+	exit( -1 );
+      }
+  }
+  //
+  //
+  //
+  template< int D_r, int D_f > void
+    BmleLoadCSV< D_r, D_f >::Prediction( MaskType::IndexType Idx )
+  {
+    try
+      {
+	//
+	// Inverse covariance value:
+	MaskType4D::IndexType Idx_inv_cov = { Idx[0], Idx[1], Idx[2], 0 };
+
+	for ( auto g : groups_ )
+	  for ( auto s : group_pind_[g] )
+	    s.second.prediction( Idx,
+				 Prediction_inverse_error_->GetOutput()->GetPixel(Idx_inv_cov) );
       }
     catch( itk::ExceptionObject & err )
       {
@@ -1057,19 +1195,27 @@ namespace MAC_bmle
 	//
 	for ( int linco = 0 ; linco < Inv_Cov_eps.rows() ; linco++ )
 	  F_1 += log( Inv_Cov_eps(linco,linco) );
-	//F_1 = log( Inv_Cov_eps.determinant() );
+	// 
+	// using cholesky decomposition
+	// ln |A| = 2 * sum_i ln(L_ii); where A=LL^{T}
+	// compute the Cholesky decomposition of A
+	Eigen::LLT< Eigen::MatrixXd > lltOf( Cov_theta_Y ); 
+	// retrieve factor L in the decomposition
+	Eigen::MatrixXd Lchol = lltOf.matrixL();
+	for ( int linco = 0 ; linco < Cov_theta_Y.rows() ; linco++ )
+	  F_4 += log( Lchol(linco,linco) );
 	//
-	//F_4 =  log( Cov_theta_Y.determinant() );
+	F_4 *= 2.;
 	
 	double
 	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
 	  F_3 = - ( Cov_theta_Y * X_.transpose() * Inv_Cov_eps * X_ ).trace();
-	//std::cout << "mark_F1," << F_1 << "," << F_2 << "," << F_3 << "," << F_4 << std::endl;
+	//std::cout << "mark_F1," << F_1 << "," << F_2 << "," << F_3 << "," << F_4  << "," << F_1 + F_2 + F_3 + F_4 << std::endl;
 	//std::cout << "Inv_Cov_eps = " << Inv_Cov_eps << std::endl;
 	//
 	//
 	//std::cout << "F = " << ( F_1 + F_2 + F_3 + F_4 ) * 0.5 << std::endl;
-	return ( F_1 + F_2 + F_3 /*+ F_4*/ ) * 0.5;
+	return ( F_1 + F_2 + F_3 + F_4 ) * 0.5;
 	//return F_2 * 0.5;
       }
     catch( itk::ExceptionObject & err )
@@ -1110,25 +1256,30 @@ namespace MAC_bmle
   {
     try
       {
+	if ( !prediction_ )
+	  {
+	    //
+	    std::cout << "Global solutions" << std::endl;
+	    // level 1
+	    PPM_.write();
+	    // Posterior t-maps
+	    post_T_maps_.write();
+	    // Posterior groups parameters
+	    post_groups_param_.write();
+	    // level 2
+	    PPM_l2_.write();
+	    // Posterior t-maps
+	    post_T_maps_l2_.write();
+	    // Posterior groups parameters
+	    post_groups_param_l2_.write();
+	    // Posterior groups variance
+	    post_groups_cov_l2_.write();
+	    // R-square
+	    R_sqr_l2_.write();
+	    // Output for prediction
+	    Prediction_inverse_error_l2_.write();
+	  }
 	//
-	std::cout << "Global solutions" << std::endl;
-	// level 1
-	PPM_.write();
-	// Posterior t-maps
-	post_T_maps_.write();
-	// Posterior groups parameters
-	post_groups_param_.write();
-	// level 2
-	PPM_l2_.write();
-	// Posterior t-maps
-	post_T_maps_l2_.write();
-	// Posterior groups parameters
-	post_groups_param_l2_.write();
-	// Posterior groups variance
-	post_groups_cov_l2_.write();
-	// R-square
-	R_sqr_l2_.write();
-
 	//
 	std::cout << "Subjects solutions" << std::endl;
 	for ( auto g : groups_ )
