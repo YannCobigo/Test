@@ -23,6 +23,9 @@
 #include <itkSpatialOrientation.h>
 //
 //
+#define inv_sqrt_2 0.70710678118654746
+//
+//
 //
 #include "BmleException.h"
 //
@@ -562,7 +565,7 @@ namespace MAC_bmle
 	      Probability_prediction_map_.set_val( tp, Idx,
 						   exp(arg) * inv_two_pi_squared / sqrt(variance) );
 	      Error_prediction_map_.set_val( tp, Idx,
-					     erf(sqrt(-arg)) );
+					     erf( inv_sqrt_2 * (y-mu) / sqrt(variance) ) );
  
 //	      std::cout 
 //				<< "theta_y_\n" << theta_y_
