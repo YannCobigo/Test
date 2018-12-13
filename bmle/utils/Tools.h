@@ -1,5 +1,5 @@
-#ifndef BMLETOOLS_H
-#define BMLETOOLS_H
+#ifndef TOOLS_H
+#define TOOLS_H
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
@@ -7,7 +7,7 @@
 //
 //
 //
-namespace MAC_bmle
+namespace NeuroBayes
 {
 //  //
 //  //

@@ -18,7 +18,7 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 // 
 //
 #include "Thread_dispatching.h"
-#include "BmleException.h"
+#include "Exception.h"
 #include "Load_csv.h"
 //
 //
@@ -90,9 +90,9 @@ main( const int argc, const char **argv )
 	    // -m   mask.nii.gz            : mask
 	    // -d                          : demeaning of age -> boolean
 	    //
-	    throw MAC_bmle::BmleException( __FILE__, __LINE__,
-					   "./bmle -c file.csv -m mask.nii.gz -o output_dir < -d (demeaning age) >",
-					   ITK_LOCATION );
+	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						   "./bmle -c file.csv -m mask.nii.gz -o output_dir < -d (demeaning age) >",
+						   ITK_LOCATION );
 
 	  //
 	  // takes the csv file ans the mask
@@ -110,18 +110,18 @@ main( const int argc, const char **argv )
 		{
 		  std::string mess = "No mask loaded. A mask must be loaded.\n";
 		  mess += "./bmle -c file.csv -m mask.nii.gz -o output_dir";
-		  throw MAC_bmle::BmleException( __FILE__, __LINE__,
-						 mess.c_str(),
-						 ITK_LOCATION );
+		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							 mess.c_str(),
+							 ITK_LOCATION );
 		}
 	      // output directory exists?
 	      if ( !directory_exists( output_dir ) )
 		{
 		  std::string mess = "The output directory is not correct.\n";
 		  mess += "./bmle -c file.csv -m mask.nii.gz -o output_dir";
-		  throw MAC_bmle::BmleException( __FILE__, __LINE__,
-						 mess.c_str(),
-						 ITK_LOCATION );
+		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							 mess.c_str(),
+							 ITK_LOCATION );
 		}
 
 	      ////////////////////////////
@@ -134,7 +134,7 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 16;
+	      const int THREAD_NUM = 24;
 
 	      //
 	      // Load the CSV file
@@ -179,7 +179,7 @@ main( const int argc, const char **argv )
 	      std::cout << "Multi-threading" << std::endl;
 	      // Start the pool of threads
 	      {
-		MAC_bmle::Thread_dispatching pool( THREAD_NUM );
+		NeuroBayes::Thread_dispatching pool( THREAD_NUM );
 #endif
 	      while( !imageIterator_mask.IsAtEnd() )
 		{
@@ -264,14 +264,14 @@ main( const int argc, const char **argv )
 	      std::cout << "All output have been written." << std::endl;
 	    }
 	  else
-	    throw MAC_bmle::BmleException( __FILE__, __LINE__,
-					   "./bmle -c file.csv -m mask.nii.gz >",
-					   ITK_LOCATION );
+	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						   "./bmle -c file.csv -m mask.nii.gz >",
+						   ITK_LOCATION );
 	}
       else
-	throw MAC_bmle::BmleException( __FILE__, __LINE__,
-				       "./bmle -c file.csv -m mask.nii.gz >",
-				       ITK_LOCATION );
+	throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+					       "./bmle -c file.csv -m mask.nii.gz >",
+					       ITK_LOCATION );
     }
   catch( itk::ExceptionObject & err )
     {
