@@ -76,8 +76,10 @@ int main(int argc, char const *argv[])
 //  VBGaussianMixture < /*Dim*/ 3, /*K_gaussians*/ K_clus > VBGaussianMixture;
 //  //VBGaussianMixture.ExpectationMaximization( X_pos );
 
-
-  VBFactorAnalyserMixture < /*Dim*/ 2 > VBFAm_intensity( X_intensity );
+  //
+  // Size of the sequence can be different for each entry (subject).
+  std::vector< std::list< Eigen::Matrix< double, /*Dim*/ 2, 1 > > > HMM_intensity;
+  VBHMM < /*Dim*/ 2, /*number_of_states*/ 2 > VBHMM_intensity( HMM_intensity );
 
   //
   //

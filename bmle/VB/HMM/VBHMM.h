@@ -1,5 +1,5 @@
-#ifndef VBFACTORANALYSERMIXTURE_H
-#define VBFACTORANALYSERMIXTURE_H
+#ifndef VBHiddenMarkovModel_H
+#define VBHiddenMarkovModel_H
 //
 //
 //
@@ -25,33 +25,34 @@
 #include <itkOrientImageFilter.h>
 #include <itkSpatialOrientation.h>
 //
-//#include "EM.h"
 #include "VBPosterior.h"
 //
 //
 //
-/** \class VBFactorAnalyserMixture
+/** \class VBHMM
  *
  * \brief  Expaectation-Maximization algorithm
  * 
  * Dim is the number of dimensions
  * input:
+ *   Dim: dimension of the measure
+ *   S: number of state accessible to the Markov Chain
+ *   n: number of cases (subjects)
  *   Y [p x n]: entry data. the matrix is supposed to be normalized.
  *              p = Dim, 
  *              n is the size of the dataset
- *              k < Dim dimension reduction
  * 
  */
-template< int Dim  >
-class VBFactorAnalyserMixture
+template< int Dim, int S >
+class VBHMM
 {
  
  public:
   /** Constructor. */
-  explicit VBFactorAnalyserMixture( const std::list< Eigen::Matrix< double, Dim, 1 > >& );
+  explicit VBHMM( const std::vector< std::list< Eigen::Matrix< double, Dim, 1 > > >& );
     
   /** Destructor */
-  virtual ~VBFactorAnalyserMixture(){};
+  virtual ~VBHMM(){};
 
   //
   // Accessors
@@ -65,8 +66,8 @@ class VBFactorAnalyserMixture
 
   //
   // Accessors
-  using Var_post = std::tuple< VP_hyper<Dim>, VP_qlambs<Dim>, VP_qxisi<Dim>, VP_qnu<Dim>, VP_qsi<Dim>  >;
-  enum Vpost {HYPER, QLAMBS, QXISI, QNU, QSI};
+  using Var_post = std::tuple< VP_qsi<Dim,S>, VP_qdch<Dim,S>, VP_qgau<Dim,S>  >;
+  enum Vpost {QSI,QDCH,QGAU};
 
  private:
   //
@@ -77,7 +78,7 @@ class VBFactorAnalyserMixture
   // Data set size
   std::size_t n_{0};
   // Data set
-  std::vector< Eigen::Matrix< double, Dim, 1 > >  Y_; 
+  std::vector< std::list< Eigen::Matrix< double, Dim, 1 > > >  Y_; 
 
   //
   // variational posteriors and hyper parameters
@@ -92,34 +93,28 @@ class VBFactorAnalyserMixture
 //
 //
 //
-template < int Dim  >
-VBFactorAnalyserMixture< Dim >::VBFactorAnalyserMixture( const std::list< Eigen::Matrix< double, Dim, 1 > >& Y ):
-n_{Y.size()}
+template < int Dim, int S >
+  VBHMM< Dim, S >::VBHMM( const std::vector< std::list< Eigen::Matrix< double, Dim, 1 > > >& Y ):
+Y_{Y}, n_{Y.size()}
 {
   //
   //
-  Y_ = std::vector< Eigen::Matrix< double, Dim, 1 > >( std::begin(Y), std::end(Y) );
-  
-  //
-  //
-  variational_posteriors_ = std::make_tuple( VP_hyper <Dim>( Y_ ),
-					     VP_qlambs<Dim>( Y_ ),
-					     VP_qxisi <Dim>( Y_ ),
-					     VP_qnu   <Dim>( Y_ ),
-					     VP_qsi   <Dim>( Y_ ) );
+  variational_posteriors_ = std::make_tuple( VP_qsi <Dim,S>( Y_ ),
+					     VP_qdch<Dim,S>( Y_ ),
+					     VP_qgau<Dim,S>( Y_ ) );
   //
   // Initialization
-  std::get< QXISI >(variational_posteriors_).Expectation( variational_posteriors_ );
-  std::get< QSI   >(variational_posteriors_).Expectation( variational_posteriors_ );
-  std::get< QNU   >(variational_posteriors_).Expectation( variational_posteriors_ );
+  std::get< QSI  >(variational_posteriors_).Expectation( variational_posteriors_ );
+  std::get< QDCH >(variational_posteriors_).Expectation( variational_posteriors_ );
+  std::get< QGAU >(variational_posteriors_).Expectation( variational_posteriors_ );
   // Lower bound history
   F_history_.push_back( F_ );
 }
 //
 //
 //
-template < int Dim  > void
-VBFactorAnalyserMixture< Dim >::ExpectationMaximization()
+template < int Dim, int S > void
+VBHMM< Dim, S >::ExpectationMaximization()
 {
   double
     dF    =  1.e06,
@@ -127,21 +122,24 @@ VBFactorAnalyserMixture< Dim >::ExpectationMaximization()
   while ( fabs(dF) > 1.e-3  )
     {
       //
+      // M step
+      std::get< QSI  >(variational_posteriors_).Maximization( variational_posteriors_ );
+      std::get< QDCH >(variational_posteriors_).Maximization( variational_posteriors_ );
+      std::get< QGAU >(variational_posteriors_).Maximization( variational_posteriors_ );
+      //
       // E step
-      std::get< QXISI  >(variational_posteriors_).Expectation( variational_posteriors_ );
-      std::get< QLAMBS >(variational_posteriors_).Expectation( variational_posteriors_ );
-      std::get< QSI    >(variational_posteriors_).Expectation( variational_posteriors_ );
-      std::get< QNU    >(variational_posteriors_).Expectation( variational_posteriors_ );
-      std::get< HYPER  >(variational_posteriors_).Expectation( variational_posteriors_ );
+      std::get< QSI  >(variational_posteriors_).Expectation( variational_posteriors_ );
+      std::get< QDCH >(variational_posteriors_).Expectation( variational_posteriors_ );
+      std::get< QGAU >(variational_posteriors_).Expectation( variational_posteriors_ );
 
       //
       //
       F_old = F_;
       // Formaula (4.29)
       F_    = 0.;
-      F_   += std::get< HYPER  >(variational_posteriors_).get_F();
-      F_   += std::get< QNU    >(variational_posteriors_).get_F();
-      F_   += std::get< QXISI  >(variational_posteriors_).get_F();
+      F_   += std::get< QSI  >(variational_posteriors_).get_F();
+      F_   += std::get< QDCH >(variational_posteriors_).get_F();
+      F_   += std::get< QGAU >(variational_posteriors_).get_F();
       //
       dF    = F_ - F_old;
       F_history_.push_back( F_ );
