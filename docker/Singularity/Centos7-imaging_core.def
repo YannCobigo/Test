@@ -85,6 +85,7 @@ IncludeCmd: yes
 	    gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 \
 	    gmp-devel.x86_64 gmp-static.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
 	    sudo.x86_64 net-tools initscripts nautilus.x86_64 tkinter curl.x86_64 curl-devel \
+	    octave.x86_64 octave-*.x86_64 \
 	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
 	    firefox.x86_64 firefox-pkcs11-loader.x86_64
 
@@ -95,8 +96,8 @@ IncludeCmd: yes
 	    mesa-libGLU*.i686 mesa-libGLU*.x86_64 \
 	    mesa-libGLw.x86_64 mesa-libGLw-devel.x86_64 \
 	    mesa-libOSMesa.x86_64 mesa-libOSMesa-devel.x86_64 \
-	    mesa-libgbm-devel.x86_64
-
+	    mesa-libgbm-devel.x86_64 \
+	    glew.x86_64 glew-devel.x86_64
 
 	#
 	#
@@ -138,7 +139,7 @@ IncludeCmd: yes
 	echo "Python pip installation"
 	pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz scipy sklearn progressbar requests matplotlib ipython pandas sympy nose \
 	    && pip install --upgrade lockfile future simplejson prov statsmodels psutil cython untangle jsonpath-rw bctpy h5py networkx sortedcontainers \
-	       XlsxWriter pydicom seaborn pyyaml hmmlearn
+	       XlsxWriter pydicom seaborn pyyaml hmmlearn xlrd 
 	pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype && pip install --upgrade pygraphviz Pillow python-igraph
 
 	#
