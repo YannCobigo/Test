@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(bmle)
+project(NeuroBayes)
 
 #
 # Compilation
@@ -35,21 +35,55 @@ find_package(ITK REQUIRED)
 include(${ITK_USE_FILE})
 
 #
-# project
-include_directories( ${bmle_SOURCE_DIR}  )
+# Utils
+file( GLOB HEADERS_       utils/*.h )
+file( GLOB UTILS_SOURCES_ utils/*.cxx  )
 #
-set( bmle_H ${bmle_SOURCE_DIR}/bmle.h )
-install( FILES ${bmle_H} DESTINATION ${CMAKE_INSTALL_PREFIX}/include )
+list( APPEND HEADERS ${HEADERS_}  )
+list( APPEND SOURCES ${UTILS_SOURCES_} )
+#
+include_directories(
+  ${NeuroBayes_SOURCE_DIR}/utils
+   )
+# Libraries
+add_library( _NeuroBayes_utils SHARED ${UTILS_SOURCES_} )
+
 
 #
-file( GLOB HEADERS_ bmle_*.h )
-install( FILES ${HEADERS_}  DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ )
+# project BMLE
+include_directories( ${NeuroBayes_SOURCE_DIR}/BMLE )
 #
-file( GLOB SOURCES_ *.cxx )
-list( APPEND SOURCES ${SOURCES_} )
+file( GLOB BMLE_HEADERS_ BMLE/*.h )
+file( GLOB BMLE_SOURCES_ BMLE/*.cxx )
+#
+list( APPEND HEADERS ${BMLE_HEADERS_} )
+list( APPEND SOURCES ${BMLE_SOURCES_} )
 #message(STATUS ${SOURCES})
-
-
-add_executable( bmle MACOSX_BUNDLE bmle.cxx ${SOURCES} )
+#
+add_executable( bmle MACOSX_BUNDLE BMLE/bmle.cpp  ${HEADERS_} ${BMLE_SOURCES_}  )
 # cmake 3.1 target_compile_features(bmle PRIVATE cxx_range_for)
-target_link_libraries( bmle -lX11 ${ITK_LIBRARIES} ${HEADER_FILES} )
+target_link_libraries( bmle -lX11 ${ITK_LIBRARIES} _NeuroBayes_utils )
+
+
+#
+# project Variational Bayes HMM
+include_directories( ${NeuroBayes_SOURCE_DIR}/VB/HMM )
+#
+file( GLOB VBHMM_HEADERS_ VB/HMM/*.h )
+file( GLOB VBHMM_SOURCES_ VB/HMM/*.cxx )
+#
+list( APPEND HEADERS ${VBHMM_HEADERS_} )
+list( APPEND SOURCES ${VBHMM_SOURCES_} )
+#message(STATUS ${SOURCES})
+#
+add_executable( vbhmm     MACOSX_BUNDLE VB/HMM/vbhmm.cpp       ${HEADERS_} ${VBHMM_SOURCES_}  )
+add_executable( vbhmmtest MACOSX_BUNDLE VB/HMM/vbhmm_test.cpp  ${HEADERS_} ${VBHMM_SOURCES_}  )
+# cmake 3.1 target_compile_features(bmle PRIVATE cxx_range_for)
+target_link_libraries( vbhmm     -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+target_link_libraries( vbhmmtest -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+
+
+#
+# Install
+install( FILES ${HEADERS_} ${BMLE_HEADERS_} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/ )
+install( FILES ${UTILS_SOURCES_} ${BMLE_SOURCES_} DESTINATION ${CMAKE_INSTALL_PREFIX}/src/ )

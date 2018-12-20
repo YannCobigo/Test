@@ -1,59 +1,86 @@
-#include "BmleMakeITKImage.h"
+#include "MakeITKImage.h"
 
 //
 //
 //
-MAC_bmle::BmleMakeITKImage::BmleMakeITKImage( const long unsigned int Dimension,
-					      const std::string&      Image_name,
-					      const Reader3D::Pointer Dim_template_image ):
+NeuroBayes::NeuroBayesMakeITKImage::NeuroBayesMakeITKImage( const long unsigned int Dimension,
+							    const std::string&      Image_name,
+							    const Reader3D::Pointer Dim_template_image ):
   D_{ Dimension }, image_name_{ Image_name }
-  {
-    //
-    //
-    images_.resize( Dimension );
-    //
-    // Take the dimension of the first subject image:
-    //Reader3D::Pointer image_reader_ = Dim_template_image;
-    image_reader_ = Dim_template_image;
+{
+  //
+  //
+  images_.resize( Dimension );
+  //
+  // Take the dimension of the first subject image:
+  //Reader3D::Pointer image_reader_ = Dim_template_image;
+  image_reader_ = Dim_template_image;
 
-    //
-    // Create the 3D image of measures
-    //
-
-    //
-    //
-    Image3DType::RegionType region;
-    Image3DType::IndexType  start = { 0, 0, 0 };
-    //
-    Image3DType::Pointer  raw_subject_image_ptr = image_reader_->GetOutput();
-    Image3DType::SizeType size = raw_subject_image_ptr->GetLargestPossibleRegion().GetSize();
-    //
-    region.SetSize( size );
-    region.SetIndex( start );
-    //
-    for ( auto& image : images_ )
-      {
-	image = Image3DType::New();
-	image->SetRegions( region );
-	image->Allocate();
-	image->FillBuffer( 0.0 );
-      }
-  }
+  //
+  // Create the 3D image of measures
+  //
+    
+  //
+  //
+  Image3DType::RegionType region;
+  Image3DType::IndexType  start = { 0, 0, 0 };
+  //
+  Image3DType::Pointer  raw_subject_image_ptr = image_reader_->GetOutput();
+  Image3DType::SizeType size = raw_subject_image_ptr->GetLargestPossibleRegion().GetSize();
+  //
+  region.SetSize( size );
+  region.SetIndex( start );
+  //
+  for ( auto& image : images_ )
+    {
+      image = Image3DType::New();
+      image->SetRegions( region );
+      image->Allocate();
+      image->FillBuffer( 0.0 );
+    }
+}
+//
+//
+//
+NeuroBayes::NeuroBayesMakeITKImage::NeuroBayesMakeITKImage( const long unsigned int Dimension,
+							    const std::string&      Image_name ):
+  D_{ Dimension }, image_name_{ Image_name }
+{
+  //
+  //
+  images_.resize( Dimension );
+  //
+  // Take the dimension of the first subject image:
+  image_4D_reader_ = Reader4D::New();
+  image_4D_reader_->SetFileName( Image_name );
+  image_4D_reader_->Update();
+}
 //
 //
 //
 void
-MAC_bmle::BmleMakeITKImage::set_val( const std::size_t Image_number, 
-				     const MaskType::IndexType Idx, 
-				     const double Val )
+NeuroBayes::NeuroBayesMakeITKImage::set_val( const std::size_t Image_number, 
+					     const MaskType::IndexType Idx, 
+					     const double Val )
 {
   images_[ Image_number ]->SetPixel( Idx, Val );
 }
 //
 //
 //
+double
+NeuroBayes::NeuroBayesMakeITKImage::get_val( const std::size_t Image_number, 
+					     const MaskType::IndexType Idx )
+{
+  Image4DType::IndexType idx_4d = { Idx[0], Idx[1] , Idx[2],
+				    static_cast< long int >(Image_number) };
+  return image_4D_reader_->GetOutput()->GetPixel( idx_4d );
+}
+//
+//
+//
 void
-MAC_bmle::BmleMakeITKImage::write() 
+NeuroBayes::NeuroBayesMakeITKImage::write() 
 {
   //
   // 
