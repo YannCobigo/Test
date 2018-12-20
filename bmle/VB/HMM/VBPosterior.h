@@ -12,7 +12,12 @@
 // GSL - GNU Scientific Library
 #include <gsl/gsl_sf_psi.h>
 #include <gsl/gsl_sf_gamma.h>
-//#include <cmath.h>
+//
+#define ln_2    0.69314718055994529L
+#define ln_2_pi 1.8378770664093453L
+#define ln_pi   1.1447298858494002L
+//
+//
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
@@ -301,7 +306,8 @@ template< int Dim, int S > void
  * \brief Gaussian posterior probabilities
  * 
  * The Gaussian posterior probabilities represent the 
- * probbility density of the emission probability
+ * probbility density of the emission probability. 
+ * The prior probability is Gaussin-Wishart density.
  *
  * Parameters:
  * - 
@@ -346,6 +352,30 @@ template< int Dim, int S >
   std::size_t n_{0};
 
   //
+  //
+  // Gaussian-Wishart
+  //
+  // Gaussian
+  // scalars
+  double beta_0_{1.};
+  std::vector< double > beta_{S};
+  // vectors
+  std::vector< Eigen::Matrix< double, Dim, 1 > > mu_0_{S};
+  std::vector< Eigen::Matrix< double, Dim, 1 > > mu_mean_{S};
+  //
+  // Wishart
+  // scalars
+  double nu_0_{50.};
+  std::vector< double > nu_{S};
+  // vectors/matrices
+  Eigen::Matrix< double, Dim, Dim >                S_0_inv_{Eigen::Matrix< double, Dim, Dim >::Zero()};
+  std::vector< Eigen::Matrix< double, Dim, Dim > > S_mean_inv_{S};
+  std::vector< Eigen::Matrix< double, Dim, 1 > >   mu_0_mean_{S};
+ 
+
+  //
+  // Mean N over the posterior proba
+  std::vector< std::vector< std::list< Eigen::Matrix < double, Dim , 1 > > > > posteriror_N_{S};
   // log marginal likelihood lower bound: \qsi component
   double F_qgau_{-1.e06};
 };
@@ -356,17 +386,113 @@ template< int Dim, int S >
   VP_qgau<Dim,S>::VP_qgau(  const std::vector< std::list< Eigen::Matrix < double, Dim , 1 > > >& Y ):
 Y_{Y}, n_{Y.size()}
 {
+  //
+  for ( int s = 0 ; s < S ; s++ )
+    {
+      // Gaussian part
+      mu_0_[s]       = Eigen::Matrix< double, Dim, 1 >::Zero();
+      mu_mean_[s]    = Eigen::Matrix< double, Dim, 1 >::Zero();
+      beta_[s]       = beta_0_;
+      // Wishart part
+      S_mean_inv_[s] = S_0_inv_;
+      mu_0_mean_[s]  = Eigen::Matrix< double, Dim, 1 >::Zero();
+    }
 }
 //
 //
 template< int Dim, int S > void
   VP_qgau<Dim,S>::Expectation( const Var_post& VP )
 {
+  //
+  //
+  std::vector< double >                            Delta(S,0);
+  std::vector< Eigen::Matrix< double, Dim, 1 > >   y_mean( S, Eigen::Matrix< double, Dim, 1 >::Zero() );
+  std::vector< Eigen::Matrix< double, Dim, Dim > > W_mean_inv( S, Eigen::Matrix< double, Dim, Dim >::Zero() );
+  //
+  for ( int s = 0 ; s < S ; s++ )
+    {
+      //
+      // Re-initialise
+      // Gaussian part
+      mu_mean_[s]    = Eigen::Matrix< double, Dim, 1 >::Zero();
+      beta_[s]       = beta_0_;
+      // Wishart part
+      S_mean_inv_[s] = S_0_inv_;
+      mu_0_mean_[s]  = Eigen::Matrix< double, Dim, 1 >::Zero();
+      
+      //
+      // Build the means over the measures
+      for ( int i = 0 ; i < n_ ; i++ )
+	{
+	  typename std::list< Eigen::Matrix < double, Dim , 1 > >::const_iterator t;
+	  for ( t = Y_[i].begin() ; t != Y_[i].end() ; t++ )
+	    {
+	      y_mean[s] += /*<delta>*/ 1. * (*t); //!!!
+	      Delta[s]  += /*<delta>*/ 1.; //!!!
+	    }
+	}
+      //
+      for ( int i = 0 ; i < n_ ; i++ )
+	{
+	  typename std::list< Eigen::Matrix < double, Dim , 1 > >::const_iterator t;
+	  for ( t = Y_[i].begin() ; t != Y_[i].end() ; t++ )
+	    {
+	      Eigen::Matrix< double, Dim, 1 > diff_vect = (*t) -  y_mean[s] / (beta_0_ * (beta_[s] - beta_0_));
+	      W_mean_inv[s] += /*<delta>*/ 1. * diff_vect * diff_vect.transpose(); // !!!
+	    }
+	}
+
+      //
+      //
+      beta_[s] += Delta[s];
+      nu_[s]   += Delta[s];
+      //
+      mu_mean_[s]     = ( beta_0_ * mu_0_[s] + y_mean[s] ) / beta_[s];
+      mu_0_mean_[s]   = y_mean[s] / ( beta_[s] - beta_0_ );
+      //
+      Eigen::Matrix< double, Dim, 1 > diff_mus = mu_0_[s] - mu_0_mean_[s];
+      S_mean_inv_[s] += beta_0_ * ( beta_[s] - beta_0_ ) * diff_mus * diff_mus.transpose() / beta_[s];
+      S_mean_inv_[s] += W_mean_inv[s];
+    }
 }
 //
 //
 template< int Dim, int S > void
   VP_qgau<Dim,S>::Maximization( const Var_post& VP )
 {
+  //posteriror_N_
+  std::vector< std::vector< std::list< Eigen::Matrix < double, Dim , 1 > > > > log_posteriror_N_{S};
+  double c1 = - 0.5 * Dim * ln_2_pi;
+  for ( int s = 0 ; s < S ; s++ )
+    {
+      double cs = Dim * ln_2;
+      //
+      // ln|S| = 2 * sum_i ln(Lii)
+      // where S = LL^T
+      double lnSigmadet = 0;
+      Eigen::LLT< Eigen::MatrixXd > lltOf( S_mean_inv_[s].inverse() );
+      Eigen::MatrixXd L = lltOf.matrixL(); 
+      //
+      for ( int u = 0 ; u < Dim ; u++ )
+	{
+	  cs += gsl_sf_psi( 0.5*(nu_[s] + 1 - u) );
+	  lnSigmadet += log( L(u,u) );
+	}
+      //
+      cs += 2. * lnSigmadet;
+      //
+      cs *= 0.5;
+
+      //
+      //
+      for ( int i = 0 ; i < n_ ; i++ )
+	{
+	  typename std::list< Eigen::Matrix < double, Dim , 1 > >::const_iterator t;
+	  for ( t = Y_[i].begin() ; t != Y_[i].end() ; t++ )
+	    {
+	      //!!!
+	    }
+	}
+    }
 }
 #endif
