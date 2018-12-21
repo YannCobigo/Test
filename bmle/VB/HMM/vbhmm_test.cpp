@@ -80,7 +80,7 @@ int main(int argc, char const *argv[])
   //
   // Size of the sequence can be different for each entry (subject).
   std::vector< std::list< Eigen::Matrix< double, /*Dim*/ 2, 1 > > > HMM_intensity;
-  VBHMM < /*Dim*/ 2, /*number_of_states*/ 2 > VBHMM_intensity( HMM_intensity );
+  VB::HMM::Hidden_Markov_Model < /*Dim*/ 2, /*number_of_states*/ 2 > VBHMM_intensity( HMM_intensity );
 
   //
   //

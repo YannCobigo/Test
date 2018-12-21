@@ -1,88 +1,277 @@
-//#include "QuickView.h"
-#include <iostream>
+#include<iostream>
+#include <stdio.h>
 #include <cstdlib>
+#include <algorithm>
 #include <string>
-#include <sstream>
-#include <fstream>
-#include <random>
-// Eigen
-#include <Eigen/Core>
-#include <Eigen/Eigen>
+#include <vector>
+#include <chrono>
+#include <sys/stat.h>
 //
-#include <itkImage.h>
+// ITK
+//
 #include <itkImageFileReader.h>
-#include <itkImageFileWriter.h>
-#include <itkImageRegionIterator.h>
-#include <itkNiftiImageIO.h>
-#include <itkOrientImageFilter.h>
-#include <itkSpatialOrientation.h>
-
-//#include "EM.h"
-//#include "VBGaussianMixture.h"
-#include "VBHMM.h"
-#include "MakeITKImage.h"
-
-int main(int argc, char const *argv[])
+#include <itkSpatialOrientationAdapter.h>
+#include "itkChangeInformationImageFilter.h"
+using MaskType       = itk::Image< unsigned char, 3 >;
+using MaskReaderType = itk::ImageFileReader< MaskType >;
+//
+// 
+//
+#include "Thread_dispatching.h"
+#include "Exception.h"
+#include "VBHMM_Subject_mapping.h"
+//
+//
+// Check the output directory exists
+inline bool directory_exists( const std::string& Dir )
 {
+  struct stat sb;
   //
+  if ( stat(Dir.c_str(), &sb ) == 0 && S_ISDIR( sb.st_mode ) )
+    return true;
+  else
+    return false;
+}
+//
+//
+//
+class InputParser{
+public:
+  explicit InputParser ( const int &argc, const char **argv )
+  {
+    for( int i = 1; i < argc; ++i )
+      tokens.push_back( std::string(argv[i]) );
+  }
   //
-  std::default_random_engine generator;
-  std::normal_distribution< double > gauss_11(5.0,1.0);
-  std::normal_distribution< double > gauss_12(5.0,1.0);
-  std::normal_distribution< double > gauss_21(12.0,1.0);
-  std::normal_distribution< double > gauss_22(12.0,1.0);
-  std::uniform_real_distribution< double > uniform(0.0,1.0);
+  const std::string getCmdOption( const std::string& option ) const
+  {
+    //
+    //
+    std::vector< std::string >::const_iterator itr = std::find( tokens.begin(),
+								tokens.end(),
+								option );
+    if ( itr != tokens.end() && ++itr != tokens.end() )
+      return *itr;
 
+    //
+    //
+    return "";
+  }
   //
-  //
-  std::list< Eigen::Matrix< double, 2, 1 > > X_intensity;
-  std::list< Eigen::Matrix< double, 3, 1 > > X_pos;
-  //
-  for ( int i = 0 ; i < 1000 ; i++ )
+  bool cmdOptionExists( const std::string& option ) const
+  {
+    return std::find( tokens.begin(), tokens.end(), option) != tokens.end();
+  }
+private:
+  std::vector < std::string > tokens;
+};
+//
+//
+//
+int
+main( const int argc, const char **argv )
+{
+  try
     {
-      double mixture = uniform( generator );
-      Eigen::Matrix< double, 2, 1 > mixture_gauss = Eigen::Matrix< double, 2, 1 >::Zero();
-      if ( mixture < 0.7 )
+      //
+      // Parse the arguments
+      //
+      if( argc > 1 )
 	{
-	  mixture_gauss(0,0) = gauss_11( generator );
-	  mixture_gauss(1,0) = gauss_12( generator );
+	  InputParser input( argc, argv );
+	  if( input.cmdOptionExists("-h") )
+	    //
+	    // It is the responsability of the user to create the 
+	    // normalized/standardized hierarchical covariate
+	    //
+	    // -h                          : help
+	    // -X  inv_cov_error.nii.gz    : (prediction) inverse of error cov on parameters
+	    // -c   input.csv              : input file
+	    // -m   mask.nii.gz            : mask
+	    //
+	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						   "./vbhmm -c file.csv -m mask.nii.gz -o output_dir ",
+						   ITK_LOCATION );
+
+	  //
+	  // takes the csv file ans the mask
+	  const std::string& filename       = input.getCmdOption("-c");
+	  const std::string& mask           = input.getCmdOption("-m");
+	  const std::string& output_dir     = input.getCmdOption("-o");
+	  //
+	  if ( !filename.empty() )
+	    {
+	      if ( mask.empty() && output_dir.empty() )
+		{
+		  std::string mess = "No mask loaded. A mask must be loaded.\n";
+		  mess += "./vbhmm -c file.csv -m mask.nii.gz -o output_dir";
+		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							 mess.c_str(),
+							 ITK_LOCATION );
+		}
+	      // output directory exists?
+	      if ( !directory_exists( output_dir ) )
+		{
+		  std::string mess = "The output directory is not correct.\n";
+		  mess += "./vbhmm -c file.csv -m mask.nii.gz -o output_dir";
+		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							 mess.c_str(),
+							 ITK_LOCATION );
+		}
+
+	      ////////////////////////////
+	      ///////              ///////
+	      ///////  PROCESSING  ///////
+	      ///////              ///////
+	      ////////////////////////////
+
+	      //
+	      // Number of THREADS in case of multi-threading
+	      // this program hadles the multi-threading it self
+	      // in no-debug mode
+	      const int THREAD_NUM = 24;
+
+	      //
+	      // Load the CSV file
+	      VB::HMM::SubjectMapping< /*Dim*/ 2, /*number_of_states*/ 2 > subject_mapping( filename, output_dir );
+
+	      //
+	      // Expecttion Maximization
+	      //
+
+	      //
+	      // Mask
+	      MaskReaderType::Pointer reader_mask_{ MaskReaderType::New() };
+	      reader_mask_->SetFileName( mask );
+	      reader_mask_->Update();
+	      // Visiting region (Mask)
+	      MaskType::RegionType region;
+	      //
+	      MaskType::SizeType  img_size =
+		reader_mask_->GetOutput()->GetLargestPossibleRegion().GetSize();
+	      MaskType::IndexType start    = {0, 0, 0};
+	      //
+	      region.SetSize( img_size );
+	      region.SetIndex( start );
+	      //
+	      itk::ImageRegionIterator< MaskType >
+		imageIterator_mask( reader_mask_->GetOutput(), region ),
+		imageIterator_progress( reader_mask_->GetOutput(), region );
+
+	      //
+	      // Task progress: elapse time
+	      using  ms         = std::chrono::milliseconds;
+	      using get_time    = std::chrono::steady_clock ;
+	      auto start_timing = get_time::now();
+	      
+	      //
+	      // loop over Mask area for every images
+#ifndef DEBUG
+	      std::cout << "Multi-threading" << std::endl;
+	      // Start the pool of threads
+	      {
+		NeuroBayes::Thread_dispatching pool( THREAD_NUM );
+#endif
+	      while( !imageIterator_mask.IsAtEnd() )
+		{
+		  if( static_cast<int>( imageIterator_mask.Value() ) != 0 )
+		    {
+		      MaskType::IndexType idx = imageIterator_mask.GetIndex();
+#ifdef DEBUG
+		      if ( idx[0] > 33 && idx[0] < 35 && 
+			   idx[1] > 30 && idx[1] < 32 &&
+			   idx[2] > 61 && idx[2] < 63 )
+			{
+			  std::cout << imageIterator_mask.GetIndex() << std::endl;
+			  subject_mapping.Expectation_Maximization( idx );
+			}
+#else
+		      // Please do not remove the bracket!!
+		      // vertex
+//		      if ( idx[0] > 92 - 2  && idx[0] < 92 + 2 && 
+//			   idx[1] > 94 - 2  && idx[1] < 94 + 2 &&
+//			   idx[2] > 63 - 2  && idx[2] < 63 + 2 )
+		      // ALL
+		      if ( idx[0] > 5 && idx[0] < 110 && 
+			   idx[1] > 5 && idx[1] < 140 &&
+			   idx[2] > 5 && idx[2] < 110 )
+//		      // Octan 1
+//		      if ( idx[0] > 5 && idx[0] < 60  & 
+//			   idx[1] > 5 && idx[1] < 70  &&
+//			   idx[2] > 2 && idx[2] < 60  )
+//		      // Octan 2
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] > 5 && idx[1] < 70  &&
+//			   idx[2] > 2 && idx[2] < 60 )
+//		      // Octan 3
+//		      if ( idx[0] > 5 && idx[0] < 60  && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] > 2 && idx[2] < 60 )
+//		      // Octan 4
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] > 2 && idx[2] < 60 )
+//		      // Octan 5
+//		      if ( idx[0] > 5 && idx[0] < 60 && 
+//			   idx[1] > 5 && idx[1] < 70 &&
+//			   idx[2] >= 60 && idx[2] < 110 )
+//		      // Octan 6
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] > 5 && idx[1] < 70  &&
+//			   idx[2] >= 60 && idx[2] < 110 )
+//		      // Octan 7
+//		      if ( idx[0] > 5 && idx[0] < 60  && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] >= 60 && idx[2] < 110 )
+//		      // Octan 8
+//		      if ( idx[0] >= 60 && idx[0] < 110 && 
+//			   idx[1] >= 70 && idx[1] < 140 &&
+//			   idx[2] >= 60 && idx[2] < 110 )
+			{
+			  pool.enqueue( std::ref(subject_mapping), idx );
+			}
+#endif
+		    }
+		  //
+		  ++imageIterator_mask;
+#ifndef DEBUG
+		  // Keep the brack to end the pool of threads
+		}
+#endif
+	      }
+
+	      //
+	      // Task progress
+	      // End the elaps time
+	      auto end_timing  = get_time::now();
+	      auto diff        = end_timing - start_timing;
+	      std::cout << "Process Elapsed time is :  " << std::chrono::duration_cast< ms >(diff).count()
+			<< " ms "<< std::endl;
+
+	      //
+	      //
+	      std::cout << "All the mask has been covered" << std::endl;
+	      subject_mapping.write_subjects_solutions();
+	      std::cout << "All output have been written." << std::endl;
+	    }
+	  else
+	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						   "./vbhmm -c file.csv -m mask.nii.gz >",
+						   ITK_LOCATION );
 	}
       else
-	{
-	  mixture_gauss(0,0) = gauss_21( generator );
-	  mixture_gauss(1,0) = gauss_22( generator );
-	}
-      //
-      X_intensity.push_back( mixture_gauss );
-      //std::cout << mixture_gauss(0,0) << "," << mixture_gauss(1,0) << std::endl;
+	throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+					       "./vbhmm -c file.csv -m mask.nii.gz >",
+					       ITK_LOCATION );
     }
-  
-
-
-  //
-  //
-  const int K = 6;
-  const int K_clus = 10;
-//  EM< /*Dim*/ 1, K > GaussianMixture_intensity;
-//  GaussianMixture_intensity.ExpectationMaximization( X_intensity );
-//  EM< /*Dim*/ 3, /*K_gaussians*/ K_clus > GaussianMixture;
-//  //
-//  MAC::MakeITKImage output;
-//  output = MAC::MakeITKImage( K_clus, "Clusters_probabilities.nii.gz", reader_CM[0] );
-//
-//  VBGaussianMixture < /*Dim*/ 2, /*K_gaussians*/ K > VBGaussianMixture_intensity( X_intensity );
-//  VBGaussianMixture_intensity.ExpectationMaximization();
-//  //
-//  VBGaussianMixture < /*Dim*/ 3, /*K_gaussians*/ K_clus > VBGaussianMixture;
-//  //VBGaussianMixture.ExpectationMaximization( X_pos );
+  catch( itk::ExceptionObject & err )
+    {
+      std::cerr << err << std::endl;
+      return EXIT_FAILURE;
+    }
 
   //
-  // Size of the sequence can be different for each entry (subject).
-  std::vector< std::list< Eigen::Matrix< double, /*Dim*/ 2, 1 > > > HMM_intensity;
-  VBHMM < /*Dim*/ 2, /*number_of_states*/ 2 > VBHMM_intensity( HMM_intensity );
-
   //
   //
   return EXIT_SUCCESS;
 }
-
