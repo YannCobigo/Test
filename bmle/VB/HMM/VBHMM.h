@@ -53,7 +53,7 @@ namespace VB
  
     public:
       /** Constructor. */
-      explicit Hidden_Markov_Model( const std::vector< std::list< Eigen::Matrix< double, Dim, 1 > > >& );
+      explicit Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& );
     
       /** Destructor */
       virtual ~Hidden_Markov_Model(){};
@@ -70,7 +70,10 @@ namespace VB
 
       //
       // Accessors
-      using Var_post = std::tuple< VP_qsi<Dim,S>, VP_qdch<Dim,S>, VP_qgau<Dim,S>  >;
+      using Var_post = std::tuple< 
+	VB::HMM::VP_qsi<Dim,S>, 
+	VB::HMM::VP_qdch<Dim,S>, 
+	VB::HMM::VP_qgau<Dim,S>  >;
       enum Vpost {QSI,QDCH,QGAU};
 
     private:
@@ -82,7 +85,7 @@ namespace VB
       // Data set size
       std::size_t n_{0};
       // Data set
-      std::vector< std::list< Eigen::Matrix< double, Dim, 1 > > >  Y_; 
+      std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >  Y_; 
 
       //
       // variational posteriors and hyper parameters
@@ -98,14 +101,14 @@ namespace VB
     //
     //
     template < int Dim, int S >
-      Hidden_Markov_Model< Dim, S >::Hidden_Markov_Model( const std::vector< std::list< Eigen::Matrix< double, Dim, 1 > > >& Y ):
+      Hidden_Markov_Model< Dim, S >::Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Y ):
       Y_{Y}, n_{Y.size()}
     {
       //
       //
-      variational_posteriors_ = std::make_tuple( VP_qsi <Dim,S>( Y_ ),
-						 VP_qdch<Dim,S>( Y_ ),
-						 VP_qgau<Dim,S>( Y_ ) );
+      variational_posteriors_ = std::make_tuple( VB::HMM::VP_qsi <Dim,S>( Y_ ),
+						 VB::HMM::VP_qdch<Dim,S>( Y_ ),
+						 VB::HMM::VP_qgau<Dim,S>( Y_ ) );
       //
       // Initialization
       std::get< QSI  >(variational_posteriors_).Expectation( variational_posteriors_ );
