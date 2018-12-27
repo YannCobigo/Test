@@ -133,7 +133,10 @@ namespace VB
 
 	//
 	// hidden state
+	// <s_{i,t}>
 	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > s_;
+	// <s_{i,t-1} x s_{i,t}>
+	std::vector< std::vector< Eigen::Matrix < double, S , S > > > ss_;
 	//
 	// Dynamic programing
 	// Forward:  compute alpha(s_{i,t})
@@ -154,6 +157,7 @@ namespace VB
     {
       //
       s_.resize(n_);
+      ss_.resize(n_);
       alpha_i_t_.resize(n_);
       beta_i_t_.resize(n_);
       //
@@ -163,12 +167,14 @@ namespace VB
 	  int Ti = Y_[i].size();
 	  //
 	  s_[i].resize(Ti);
+	  ss_[i].resize(Ti);
 	  alpha_i_t_[i].resize(Ti);
 	  beta_i_t_[i].resize(Ti);
 	  //
 	  for ( int t = 0 ; t < Ti ; t++ )
 	    {
 	      s_[i][t]         = Eigen::Matrix < double, S , 1 >::Zero();
+	      ss_[i][t]        = Eigen::Matrix < double, S , S >::Zero();
 	      alpha_i_t_[i][t] = Eigen::Matrix < double, S , 1 >::Zero();
 	      beta_i_t_[i][t]  = Eigen::Matrix < double, S , 1 >::Zero();
 	    }
@@ -191,24 +197,68 @@ namespace VB
 	  {
 	    //
 	    int Ti = Y_[i].size();
+	    std::vector< double > scale(Ti,0.);
+
+	    //
+	    // alpha calculation
+	    // Since alpha(s_{t}) is the posterior probability of s_{t}
+	    // given data y_{1:t}, it must sum to one
 	    // 
 	    // first elements
 	    // Convension the first alpha is 1.
-	    alpha_i_t_[i][0] = Eigen::Matrix < double, S , 1 >::Ones();
+	    alpha_i_t_[i][0] = Eigen::Matrix < double, S , 1 >::Ones() / static_cast< double >(S);
+	    scale[0] = static_cast< double >(S);
+	    // each elements will be normalized to one
 	    alpha_i_t_[i][1] = (alpha_i_t_[i][0].transpose() * _pi_)(0,0) * _N_[i][1];
-	    for ( int t = 2 ; t < Ti ; t++ )
-	      // mult with array is a coefficient-wise multiplication
-	      alpha_i_t_[i][t]  = _N_[i][t].array() * (_A_.transpose() * alpha_i_t_[i][t-1]).array();
-	    // Convension the last beta is 1.
-	    beta_i_t_[i][Ti] = Eigen::Matrix < double, S , 1 >::Ones();
+	    scale[1] = alpha_i_t_[i][1].sum();
+	    alpha_i_t_[i][1] /= scale[1];
 	    //
-	    for ( int t = Ti-1 ; t >= 0 ; t-- )
-	      for ( int s = 0 ; s < S ; s++ )
-		{
-		  beta_i_t_[i][t] = Eigen::Matrix < double, S , 1 >::Zero();
+	    for ( int t = 2 ; t < Ti ; t++ )
+	      {
+		// mult with array is a coefficient-wise multiplication
+		alpha_i_t_[i][t]  = _N_[i][t].array() * (_A_.transpose() * alpha_i_t_[i][t-1]).array();
+		scale[t]          = alpha_i_t_[i][t].sum();
+		alpha_i_t_[i][t] /= scale[t];
+	      }
+	    //
+	    // Beta calculation
+	    // Convension the last beta is 1.
+	    beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones() / scale[Ti-1];
+	    //
+	    for ( int t = Ti-2 ; t >= 0 ; t-- )
+	      {
+		beta_i_t_[i][t] = Eigen::Matrix < double, S , 1 >::Zero();
+		for ( int s = 0 ; s < S ; s++ )
 		  for ( int ss = 0 ; ss < S ; ss++ )
 		    beta_i_t_[i][t](s,0) += _A_(s,ss) * _N_[i][t+1](ss,0) * beta_i_t_[i][t+1](ss,0);
-		}
+		//
+		beta_i_t_[i][t] /= scale[t];
+	      }
+	    //
+	    // <s_{i,t}> && <s_{i,t-1} x s_{i,t}>
+	    for ( int t = 0 ; t < Ti ; t++ )
+	      {
+		//
+		// <s_{i,t}>
+		s_[i][t]  = alpha_i_t_[i][t].array() * beta_i_t_[i][t].array();
+		s_[i][t] /= s_[i][t].sum();
+		//
+		//  <s_{i,t-1} x s_{i,t}>
+		if ( t > 0 )
+		  {
+		    double norm = 0.;
+		    for ( int s = 0 ; s < S ; s++ )
+		      for ( int ss = 0 ; ss < S ; ss++ )
+			{
+			  ss_[i][t](s,ss)  = alpha_i_t_[i][t-1](s,0)*_A_(s,ss);
+			  ss_[i][t](s,ss) *= beta_i_t_[i][t](ss,0)*_N_[i][t](ss,0);
+			  //
+			  norm +=  ss_[i][t](s,ss);
+			}
+		    //
+		    ss_[i][t] /= norm;
+		  }
+	      }
 	  }
       }
     //
