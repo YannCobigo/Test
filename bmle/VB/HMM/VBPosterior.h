@@ -117,8 +117,9 @@ namespace VB
 
 	//
 	// accessors
-	const inline double                        get_F()              const {return F_qsi_;}
-	const std::vector< std::vector< double > > get_responsability() const {return gamma_;}
+	const inline double                                                         get_F()  const {return F_qsi_;}
+	const        std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_s()  const {return s_;}
+	const        std::vector< std::vector< Eigen::Matrix < double, S , S > > >& get_ss() const {return ss_;}
   
       private:
 	//
@@ -185,6 +186,8 @@ namespace VB
     template< int Dim, int S > void
       VP_qsi<Dim,S>::forward_backwrd_( const Var_post& VP )
       {
+	//
+	//
 	const VP_qdch<Dim,S>  &qdch  = std::get< QDCH >( VP );
 	const VP_qgau<Dim,S>  &qgau  = std::get< QGAU >( VP );
 	//
@@ -371,7 +374,7 @@ namespace VB
       //
       // Posterior density of the state
       // Initialize posterior pi wit a !!!dirichlet distribution!!!
-      // Or at leat !!! normalize !!!
+      // Or at least !!! normalize !!!
       posterior_pi_ = Eigen::Matrix< double, S, 1 >::Random();
     }
     //
@@ -386,6 +389,25 @@ namespace VB
       VP_qdch<Dim,S>::Maximization( const Var_post& VP )
       {
 	//
+	//
+	const VP_qsi<Dim,S>  &qsi  = std::get< QSI >( VP );
+	//
+	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_  = qsi.get_s();
+	const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_ss_ = qsi.get_ss();
+	//
+	Eigen::Matrix< double, S, 1 > mean_s1 = Eigen::Matrix< double, S, 1 >::Zero();
+	Eigen::Matrix< double, S, S > mean_ss = Eigen::Matrix< double, S, S >::Zero();
+	//
+	for ( int i = 0 ; i < n_ ; i++ )
+	  {
+	    int Ti = Y_[i].size();
+	    mean_s1 += _s_[i][0];
+	    //
+	    for ( int t = 1 ; t < Ti ; t++ )
+	      mean_ss += _ss_[i][t]
+	  }
+	
+	//
 	// Posterior Dirichlet parameters
 	double                        prior_pi     = alpha_pi_0_ / static_cast< double >(S);
 	double                        prior_A      = alpha_A_0_  / static_cast< double >(S);
@@ -395,12 +417,12 @@ namespace VB
 	for ( int s = 0 ; s < S ; s++ )
 	  {
 	    // Pi
-	    alpha_pi_(s,0) = prior_pi + /*update from qsi*/ 0.;
+	    alpha_pi_(s,0) = prior_pi + mean_s1(s,0);
 	    alpha_pi_sum  += alpha_pi_(s,0);
 	    // A
 	    for ( int ss = 0 ; ss < S ; ss++ )
 	      {
-		alpha_A_(s,ss)     = prior_A  + /*update from qsi*/ 0.;
+		alpha_A_(s,ss)     = prior_A + mean_ss(s,ss);
 		alpha_A_sum(ss,0) += alpha_A_(s,ss);
 	      }
 	  }
@@ -476,8 +498,6 @@ namespace VB
 	//
 	//
 	std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > > Y_;
-	// Dimension reduction
-	std::vector< int > k_;
 	// Size of the data set
 	std::size_t n_{0};
 
@@ -546,6 +566,12 @@ namespace VB
       {
 	//
 	//
+	const VP_qsi<Dim,S>  &qsi  = std::get< QSI >( VP );
+	//
+	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_ = qsi.get_s();
+	
+	//
+	//
 	std::vector< double >                            Delta(S,0);
 	std::vector< Eigen::Matrix< double, Dim, 1 > >   y_mean( S, Eigen::Matrix< double, Dim, 1 >::Zero() );
 	std::vector< Eigen::Matrix< double, Dim, Dim > > W_mean_inv( S, Eigen::Matrix< double, Dim, Dim >::Zero() );
@@ -565,21 +591,22 @@ namespace VB
 	    // Build the means over the measures
 	    for ( int i = 0 ; i < n_ ; i++ )
 	      {
-		typename std::vector< Eigen::Matrix < double, Dim , 1 > >::const_iterator t;
-		for ( t = Y_[i].begin() ; t != Y_[i].end() ; t++ )
+		int Ti = Y_[i].size();
+		for ( int t = 0 ; t < Ti ; t++ )
 		  {
-		    y_mean[s] += /*<delta>*/ 1. * (*t); //!!!
-		    Delta[s]  += /*<delta>*/ 1.; //!!!
+		    y_mean[s] += _s_[i][t](s,0) * Y_[i][t];
+		    Delta[s]  += _s_[i][t](s,0);
 		  }
 	      }
 	    //
 	    for ( int i = 0 ; i < n_ ; i++ )
 	      {
 		typename std::vector< Eigen::Matrix < double, Dim , 1 > >::const_iterator t;
-		for ( t = Y_[i].begin() ; t != Y_[i].end() ; t++ )
+		int Ti = Y_[i].size();
+		for ( int t = 0 ; t < Ti ; t++ )
 		  {
-		    Eigen::Matrix< double, Dim, 1 > diff_vect = (*t) -  y_mean[s] / (beta_0_ * (beta_[s] - beta_0_));
-		    W_mean_inv[s] += /*<delta>*/ 1. * diff_vect * diff_vect.transpose(); // !!!
+		    Eigen::Matrix< double, Dim, 1 > diff_vect = Y_[i][t] - y_mean[s] / (beta_0_ * (beta_[s] - beta_0_));
+		    W_mean_inv[s] += _s_[i][t](s,0) * diff_vect * diff_vect.transpose(); 
 		  }
 	      }
 
