@@ -338,6 +338,12 @@ namespace VB
   
       private:
 	//
+	// Compute local Kullback-Leibler divergence for Dirichlet distributions
+	// KL(Q||P) = \int dX \, Q(X) \ln (Q(X)/P(X))
+	double KL_Dirichlet_(const Eigen::Matrix< double, S, 1 >&,
+			     const Eigen::Matrix< double, S, 1 >& ) const;
+
+	//
 	//
 	std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > > Y_;
 	// Size of the data set
@@ -375,8 +381,27 @@ namespace VB
       // Posterior density of the state
       // Initialize posterior pi wit a !!!dirichlet distribution!!!
       // Or at least !!! normalize !!!
-      posterior_pi_ = Eigen::Matrix< double, S, 1 >::Random();
+      posterior_pi_  = Eigen::Matrix< double, S, 1 >::Random();
     }
+    //
+    //
+    template< int Dim, int S > double
+      VP_qdch<Dim,S>::KL_Dirichlet_( const Eigen::Matrix< double, S, 1 > &Alpha_Q,
+				     const Eigen::Matrix< double, S, 1 > &Alpha_P  ) const 
+      {
+	double Alpha_Q_sum = Alpha_Q.sum();
+	double KL = gsl_sf_lngamma( Alpha_Q_sum ) - gsl_sf_lngamma( Alpha_P.sum() );
+	//
+	for ( int s = 0 ; s < S ; s++ )
+	  {
+	    KL -= gsl_sf_lngamma( Alpha_Q(s,0) ) - gsl_sf_lngamma( Alpha_P(s,0) );
+	    KL += (Alpha_Q(s,0)-Alpha_P(s,0)) * (gsl_sf_psi(Alpha_Q(s,0))-gsl_sf_psi(Alpha_Q_sum));
+	  }
+
+	//
+	//
+	return KL;
+      }
     //
     //
     template< int Dim, int S > void
@@ -406,19 +431,23 @@ namespace VB
 	    for ( int t = 1 ; t < Ti ; t++ )
 	      mean_ss += _ss_[i][t];
 	  }
-	
+
 	//
 	// Posterior Dirichlet parameters
-	double                        prior_pi     = alpha_pi_0_ / static_cast< double >(S);
-	double                        prior_A      = alpha_A_0_  / static_cast< double >(S);
-	double                        alpha_pi_sum = 0.;
-	Eigen::Matrix< double, S, 1 > alpha_A_sum  = Eigen::Matrix< double, S, 1 >::Zero();
+	//
+	double                        prior_pi       = alpha_pi_0_ / static_cast< double >(S);
+	double                        prior_A        = alpha_A_0_  / static_cast< double >(S);
+	double                        alpha_pi_sum   = 0.;
+	Eigen::Matrix< double, S, 1 > alpha_A_sum    = Eigen::Matrix< double, S, 1 >::Zero();
+	Eigen::Matrix< double, S, 1 > alpha_pi_prior = prior_pi * Eigen::Matrix< double, S, 1 >::Ones();
+	Eigen::Matrix< double, S, 1 > alpha_A_prior  = prior_A  * Eigen::Matrix< double, S, 1 >::Ones();
+	
+	//
+	alpha_pi_    = alpha_pi_prior + mean_s1;
+	alpha_pi_sum = alpha_pi_.sum();
 	//
 	for ( int s = 0 ; s < S ; s++ )
 	  {
-	    // Pi
-	    alpha_pi_(s,0) = prior_pi + mean_s1(s,0);
-	    alpha_pi_sum  += alpha_pi_(s,0);
 	    // A
 	    for ( int ss = 0 ; ss < S ; ss++ )
 	      {
@@ -426,10 +455,17 @@ namespace VB
 		alpha_A_sum(ss,0) += alpha_A_(s,ss);
 	      }
 	  }
-	// update the posterior proba density
-	// and the log marginal likelihood lower bound
-	double F_pi = gsl_sf_lngamma(alpha_pi_sum) - gsl_sf_lngamma(alpha_pi_0_);
+
+	//
+	// log marginal likelihood lower bound
+	double F_pi = - KL_Dirichlet_( alpha_pi_,  alpha_pi_prior );
 	double F_A  = 0.;
+	//
+	for ( int s = 0 ; s < S ; s++ )
+	  F_A -= KL_Dirichlet_( alpha_A_.col(s).transpose(),  alpha_A_prior );
+
+	//
+	// update the posterior proba density
 	for ( int s = 0 ; s < S ; s++ )
 	  {
 	    // Pi
@@ -439,15 +475,9 @@ namespace VB
 	      {
 		posterior_A_(s,ss) = exp( gsl_sf_psi(alpha_A_(s,ss)) - gsl_sf_psi(alpha_A_sum(ss,0)) );
 	      }
-	    //
-	    // log marginal likelihood lower bound
-	    // Pi
-	    F_pi += (alpha_pi_(s,0) - prior_pi)*( gsl_sf_psi(alpha_pi_(s,0)) - gsl_sf_psi(alpha_pi_sum) );
-	    F_pi -= gsl_sf_lngamma(alpha_pi_(s,0));
-	    // A
 	  }
 	//
-	F_qdch_ = ( F_pi + S*gsl_sf_lngamma(prior_pi) ) + F_A;
+	F_qdch_ = F_pi + F_A;
       }
     //
     //
