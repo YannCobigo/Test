@@ -123,10 +123,6 @@ namespace VB
   
       private:
 	//
-	// private function
-	void forward_backwrd_( const Var_post& );
-
-	//
 	//
 	std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > > Y_;
 	// Size of the data set
@@ -184,10 +180,17 @@ namespace VB
     //
     //
     template< int Dim, int S > void
-      VP_qsi<Dim,S>::forward_backwrd_( const Var_post& VP )
+      VP_qsi<Dim,S>::Expectation( const Var_post& VP )
       {
 	//
+	// The E step is carried out using a dynamic programming trick which 
+	// utilises the conditional independence of future hidden states from 
+	// past hidden states given the setting of the current hidden state.
 	//
+
+	//
+	//
+	F_qsi_ = 0.;
 	const VP_qdch<Dim,S>  &qdch  = std::get< QDCH >( VP );
 	const VP_qgau<Dim,S>  &qgau  = std::get< QGAU >( VP );
 	//
@@ -209,11 +212,13 @@ namespace VB
 	    // 
 	    // first elements
 	    // Convension the first alpha is 1.
-	    alpha_i_t_[i][0] = Eigen::Matrix < double, S , 1 >::Ones() / static_cast< double >(S);
 	    scale[0] = static_cast< double >(S);
+	    F_qsi_  += log(scale[0]);
+	    alpha_i_t_[i][0] = Eigen::Matrix < double, S , 1 >::Ones() / scale[0];
 	    // each elements will be normalized to one
 	    alpha_i_t_[i][1] = (alpha_i_t_[i][0].transpose() * _pi_)(0,0) * _N_[i][1];
 	    scale[1] = alpha_i_t_[i][1].sum();
+	    F_qsi_  += log(scale[1]);
 	    alpha_i_t_[i][1] /= scale[1];
 	    //
 	    for ( int t = 2 ; t < Ti ; t++ )
@@ -221,6 +226,7 @@ namespace VB
 		// mult with array is a coefficient-wise multiplication
 		alpha_i_t_[i][t]  = _N_[i][t].array() * (_A_.transpose() * alpha_i_t_[i][t-1]).array();
 		scale[t]          = alpha_i_t_[i][t].sum();
+		F_qsi_           += log(scale[t]);
 		alpha_i_t_[i][t] /= scale[t];
 	      }
 	    //
@@ -262,26 +268,6 @@ namespace VB
 		    ss_[i][t] /= norm;
 		  }
 	      }
-	  }
-      }
-    //
-    //
-    template< int Dim, int S > void
-      VP_qsi<Dim,S>::Expectation( const Var_post& VP )
-      {
-	//
-	// Dynamic programing
-	forward_backwrd_( VP );
-	
-	//
-	//
-	//const VP_hyper<Dim,S>  &hyper  = std::get< HYPER >( VP );
-	
-	//
-	//
-	//
-	for ( int s = 0 ; s < S ; s++ )
-	  {
 	  }
       }
     //
