@@ -404,7 +404,7 @@ namespace VB
 	    mean_s1 += _s_[i][0];
 	    //
 	    for ( int t = 1 ; t < Ti ; t++ )
-	      mean_ss += _ss_[i][t]
+	      mean_ss += _ss_[i][t];
 	  }
 	
 	//
