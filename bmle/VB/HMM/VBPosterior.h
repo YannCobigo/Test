@@ -13,7 +13,7 @@
 #include <gsl/gsl_sf_psi.h>
 #include <gsl/gsl_sf_gamma.h>
 //
-#define ln_2    0.69314718055994529L
+#define ln_2    0.6931471805599453L
 #define ln_2_pi 1.8378770664093453L
 #define ln_pi   1.1447298858494002L
 //
@@ -542,7 +542,7 @@ namespace VB
 	//
 	// Mean N over the posterior proba
 	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > posteriror_N_;
-	// log marginal likelihood lower bound: \qsi component
+	// log marginal likelihood lower bound: \qgau component
 	double F_qgau_{-1.e06};
       };
     //
@@ -646,12 +646,25 @@ namespace VB
       {
 	//posteriror_N_
 	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > ln_posteriror_N( posteriror_N_ );
-	double c1 = Dim * ln_2_pi;
+	double
+	  cd1       = - Dim * ln_2_pi,
+	  cd2       = 0., // <ln|lambda_j|>
+	  cd3       = S_0_inv_.inverse().determinant(), // ln|S_0|
+	  cd4       = S * Dim * log(beta_0_), // 
+	  cd5       = 1., // ln(prod beta_j)
+	  cd6       = 0., //
+	  cd7       = 0., // Sum nu_j
+	  cd8       = 0., // Sum nu_j * ln|Sj|
+	  diff_ln_Z = 0.;
+	// log marginal likelihood lower bound
+	F_qgau_ = 0.;
+	//
 	for ( int s = 0 ; s < S ; s++ )
 	  {
 	    //
 	    //
-	    double cs = Dim * ln_2;
+	    cd2  = Dim * ln_2;
+	    cd5 *= beta_[s];
 	    //
 	    // ln|S| = 2 * sum_i ln(Lii)
 	    // where S = LL^T
@@ -662,30 +675,47 @@ namespace VB
 	    //
 	    for ( int u = 0 ; u < Dim ; u++ )
 	      {
-		cs += gsl_sf_psi( 0.5*(nu_[s] + 1 - u) );
+		cd2 += gsl_sf_psi( 0.5*(nu_[s] + 1 - u) );
 		lnSigmadet += log( L(u,u) );
+		//
+		diff_ln_Z += gsl_sf_lngamma( 0.5*(nu_[s] + 1 - u) ) - gsl_sf_lngamma( 0.5*(nu_0_ + 1 - u) );
 	      }
 	    //
-	    cs += 2. * lnSigmadet;
-
+	    cd2 += 2. * lnSigmadet;
 	    //
 	    //
-	    double nu_beta = nu_[s] / beta_[s];
+	    Eigen::Matrix < double, Dim , 1 > diff_vec_0 = mu_mean_[s] - mu_0_[s];
+	    cd6  = nu_[s] * ( Dim - (S_0_inv_*S_mean).trace() ) + (nu_0_ - nu_[s])*cd2;
+	    cd6 -= nu_[s] * beta_0_ * (diff_vec_0.transpose() * S_mean * diff_vec_0)(0,0);
+	    //
+	    cd7 += nu_[s];
+	    cd8 += nu_[s] * 2. * lnSigmadet;
+	    //
+	    cd3 = nu_[s] * beta_[s];
 	    //
 	    for ( int i = 0 ; i < n_ ; i++ )
 	      {
 		int Ti = Y_[i].size();
 		for ( int t = 0 ; t < Ti ; t++ )
 		  {
-		    Eigen::Matrix < double, Dim , 1 > diff_vec = Y_[i][t] - mu_mean_[s];
-		    ln_posteriror_N[i][t](s,0)  = nu_beta * (diff_vec.transpose() * S_mean * diff_vec)(0,0);  
-		    ln_posteriror_N[i][t](s,0) += cs - c1 - static_cast<double >(Dim) / beta_[s];
-		    ln_posteriror_N[i][t](s,0) *= 0.5;
 		    //
-		    posteriror_N_[i][t](s,0) = exp( ln_posteriror_N[i][t](s,0) );
+		    //
+		    Eigen::Matrix < double, Dim , 1 > diff_vec = Y_[i][t] - mu_mean_[s];
+		    ln_posteriror_N[i][t](s,0)  = cd1 + cd2;
+		    ln_posteriror_N[i][t](s,0) -= cd3 * (diff_vec.transpose() * S_mean * diff_vec)(0,0);  
+		    ln_posteriror_N[i][t](s,0) *= 0.5;  
+		    //
+		    posteriror_N_[i][t](s,0)    = exp( ln_posteriror_N[i][t](s,0) );
 		  }
 	      }
 	  }
+	//
+	diff_ln_Z += 0.5 * Dim * ln_2 * ( cd7 - nu_0_ );
+	diff_ln_Z += 0.5 * ( cd8 - S * nu_0_ * cd3 );
+	//
+	F_qgau_  = cd4 - Dim * log(cd5) + cd6;
+	F_qgau_ *= 0.5;
+	F_qgau_ += diff_ln_Z;
       }
   }
 }
