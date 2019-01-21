@@ -149,6 +149,7 @@ namespace VB
 	    F_   += std::get< QGAU >(variational_posteriors_).get_F();
 	    //
 	    dF    = F_ - F_old;
+	    std::cout << dF << std::endl;
 	    F_history_.push_back( F_ );
 	  }
       }
