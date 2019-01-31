@@ -1196,16 +1196,9 @@ namespace MAC_bmle
 	  for ( int linco = 0 ; linco < Inv_Cov_eps.rows() ; linco++ )
 	    F_1 += log( Inv_Cov_eps(linco,linco) );
 	  // 
-	  // using cholesky decomposition
+	  // using Cholesky decomposition
 	  // ln |A| = 2 * sum_i ln(L_ii); where A=LL^{T}
-	  // compute the Cholesky decomposition of A
-	  Eigen::LLT< Eigen::MatrixXd > lltOf( Cov_theta_Y ); 
-	  // retrieve factor L in the decomposition
-	  Eigen::MatrixXd Lchol = lltOf.matrixL();
-	  for ( int linco = 0 ; linco < Cov_theta_Y.rows() ; linco++ )
-	    F_4 += log( Lchol(linco,linco) );
-	  //
-	  F_4 *= 2.;
+	  F_4 = NeuroBayes::ln_determinant( Cov_theta_Y );
 	
 	  double
 	    F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason

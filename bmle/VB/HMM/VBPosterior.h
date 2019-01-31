@@ -24,6 +24,10 @@
 //
 //
 //
+#include "Tools.h"
+//
+//
+//
 namespace VB 
 {
   namespace HMM
@@ -120,7 +124,7 @@ namespace VB
 	const inline double                                                         get_F()  const {return F_qsi_;}
 	const        std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_s()  const {return s_;}
 	const        std::vector< std::vector< Eigen::Matrix < double, S , S > > >& get_ss() const {return ss_;}
-  
+
       private:
 	//
 	//
@@ -250,6 +254,10 @@ namespace VB
 		//
 		// <s_{i,t}>
 		s_[i][t]  = alpha_i_t_[i][t].array() * beta_i_t_[i][t].array();
+		std::cout << "s_[i][t] " << s_[i][t]<< std::endl;
+		std::cout << "alpha_i_t_[i][t] " << alpha_i_t_[i][t] << std::endl;
+		std::cout << "beta_i_t_[i][t] " << beta_i_t_[i][t] << std::endl;
+		std::cout << "s_[i][t].sum() " << s_[i][t].sum() << std::endl;
 		s_[i][t] /= s_[i][t].sum();
 		//
 		//  <s_{i,t-1} x s_{i,t}>
@@ -375,6 +383,7 @@ namespace VB
       VP_qdch<Dim,S>::KL_Dirichlet_( const Eigen::Matrix< double, S, 1 > &Alpha_Q,
 				     const Eigen::Matrix< double, S, 1 > &Alpha_P  ) const 
       {
+	std::cout << Alpha_Q << std::endl;
 	double Alpha_Q_sum = Alpha_Q.sum();
 	double KL = gsl_sf_lngamma( Alpha_Q_sum ) - gsl_sf_lngamma( Alpha_P.sum() );
 	//
@@ -413,6 +422,8 @@ namespace VB
 	  {
 	    int Ti = Y_[i].size();
 	    mean_s1 += _s_[i][0];
+	    std::cout << mean_s1 << std::endl;
+	    std::cout << _s_[i][0] << std::endl;
 	    //
 	    for ( int t = 1 ; t < Ti ; t++ )
 	      mean_ss += _ss_[i][t];
@@ -444,6 +455,8 @@ namespace VB
 
 	//
 	// log marginal likelihood lower bound
+	std::cout << "alpha_pi_ \n" << alpha_pi_ << std::endl;
+	std::cout << "alpha_pi_prior \n" << alpha_pi_prior << std::endl;
 	double F_pi = - KL_Dirichlet_( alpha_pi_,  alpha_pi_prior );
 	double F_A  = 0.;
 	//
@@ -668,20 +681,17 @@ namespace VB
 	    //
 	    // ln|S| = 2 * sum_i ln(Lii)
 	    // where S = LL^T
-	    double lnSigmadet = 0;
 	    Eigen::Matrix< double, Dim, Dim > S_mean = S_mean_inv_[s].inverse();
-	    Eigen::LLT< Eigen::MatrixXd > lltOf( S_mean );
-	    Eigen::MatrixXd L = lltOf.matrixL(); 
+	    double ln_Sdet = NeuroBayes::ln_determinant( S_mean );
 	    //
 	    for ( int u = 0 ; u < Dim ; u++ )
 	      {
 		cd2 += gsl_sf_psi( 0.5*(nu_[s] + 1 - u) );
-		lnSigmadet += log( L(u,u) );
 		//
 		diff_ln_Z += gsl_sf_lngamma( 0.5*(nu_[s] + 1 - u) ) - gsl_sf_lngamma( 0.5*(nu_0_ + 1 - u) );
 	      }
 	    //
-	    cd2 += 2. * lnSigmadet;
+	    cd2 += ln_Sdet;
 	    //
 	    //
 	    Eigen::Matrix < double, Dim , 1 > diff_vec_0 = mu_mean_[s] - mu_0_[s];
@@ -689,7 +699,7 @@ namespace VB
 	    cd6 -= nu_[s] * beta_0_ * (diff_vec_0.transpose() * S_mean * diff_vec_0)(0,0);
 	    //
 	    cd7 += nu_[s];
-	    cd8 += nu_[s] * 2. * lnSigmadet;
+	    cd8 += nu_[s] * ln_Sdet;
 	    //
 	    cd3 = nu_[s] * beta_[s];
 	    //

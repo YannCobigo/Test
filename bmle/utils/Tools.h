@@ -50,5 +50,31 @@ namespace NeuroBayes
       //
       return fixed_matrix.inverse();
     }
+  //
+  //
+  // Logarithm determinant
+  // We use a cholesky decomposition
+  // ln|S| = 2 * sum_i ln(Lii)
+  // where S = LL^T
+  // If it is a Cholesky decomposition we should be sure 
+  // the matrix is positive definite
+  double ln_determinant( const Eigen::MatrixXd& S )
+    {
+      //
+      // result
+      double lnSdet = 0;
+      // They are supposed to be squarred matrices
+      int    dim    = S.cols();
+      // Cholesky decomposition
+      Eigen::LLT< Eigen::MatrixXd > lltOf( S );
+      Eigen::MatrixXd L = lltOf.matrixL(); 
+      //
+      for ( int u = 0 ; u < dim ; u++ )
+	lnSdet += log( L(u,u) );
+
+      //
+      //
+      return 2. * lnSdet;
+    }
 }
 #endif
