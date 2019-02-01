@@ -1,0 +1,21 @@
+
+* Tasks
+
+* Expectation-Minimization
+** Expectation
+*** VP_qsi
+    - [X] Algorithm alpha-beta :: 
+	 The algorithm has been corrected. Beta seems still having some 
+	 questions ...
+*** VP_qdch
+*** VP_qgau
+** Minimization
+*** VP_qdch
+*** VP_qgau
+*** VP_qgau
+    - [X] ln_posterior_N :: 
+	 It seems corrected.
+    - [ ] diff_ln_Z :: 
+    - [ ] F_qgau_ :: 
+
+* Lower bound
