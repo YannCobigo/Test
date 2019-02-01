@@ -253,8 +253,13 @@ namespace VB
 	      {
 		//
 		// <s_{i,t}>
+		std::cout << "(" << i << "," << t << ")" << std::endl;
+		std::cout << "alpha_i_t_[i][t] \n" << alpha_i_t_[i][t] << std::endl;
+		std::cout << "beta_i_t_[i][t] \n" << beta_i_t_[i][t] << std::endl;
+
 		s_[i][t]  = alpha_i_t_[i][t].array() * beta_i_t_[i][t].array();
-		std::cout << "s_[i][t] " << s_[i][t]<< std::endl;
+
+		std::cout << "s_[i][t] \n" << s_[i][t]<< std::endl;
 		std::cout << "alpha_i_t_[i][t] " << alpha_i_t_[i][t] << std::endl;
 		std::cout << "beta_i_t_[i][t] " << beta_i_t_[i][t] << std::endl;
 		std::cout << "s_[i][t].sum() " << s_[i][t].sum() << std::endl;
@@ -373,9 +378,24 @@ namespace VB
       alpha_A_  = ( alpha_A_0_  / static_cast< double >(S) ) * Eigen::Matrix< double, S, S >::Ones();
       //
       // Posterior density of the state
-      // Initialize posterior pi wit a !!!dirichlet distribution!!!
-      // Or at least !!! normalize !!!
-      posterior_pi_  = Eigen::Matrix< double, S, 1 >::Random();
+      // We initialize the posterior with a Dirichlet distribution
+      std::default_random_engine generator;
+      std::gamma_distribution< double > distribution_pi( alpha_pi_0_ / static_cast< double >(S),
+							 1.0 );
+      std::gamma_distribution< double > distribution_A( alpha_A_0_ / static_cast< double >(S),
+							 1.0 );
+      //
+      posterior_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
+      posterior_A_  = Eigen::Matrix< double, S, S >::Zero();
+      //
+      for ( int s = 0 ; s < S ; s++ ) 
+	{
+	  posterior_pi_(s,0) = distribution_pi( generator );
+	  for ( int ss = 0 ; ss < S ; ss++ )
+	    posterior_A_(s,ss) = distribution_A( generator );
+	}
+      std::cout << "posterior_pi_ = \n" << posterior_pi_ << std::endl;
+      std::cout << "posterior_A_ = \n" << posterior_A_ << std::endl;
     }
     //
     //
@@ -383,7 +403,7 @@ namespace VB
       VP_qdch<Dim,S>::KL_Dirichlet_( const Eigen::Matrix< double, S, 1 > &Alpha_Q,
 				     const Eigen::Matrix< double, S, 1 > &Alpha_P  ) const 
       {
-	std::cout << Alpha_Q << std::endl;
+	//std::cout << Alpha_Q << std::endl;
 	double Alpha_Q_sum = Alpha_Q.sum();
 	double KL = gsl_sf_lngamma( Alpha_Q_sum ) - gsl_sf_lngamma( Alpha_P.sum() );
 	//

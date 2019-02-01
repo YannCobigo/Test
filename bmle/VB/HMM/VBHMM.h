@@ -106,6 +106,11 @@ namespace VB
     {
       //
       //
+      VB::HMM::VP_qsi <Dim,S> a( Y_ );
+      VB::HMM::VP_qdch<Dim,S> b( Y_ );
+      VB::HMM::VP_qgau<Dim,S> c( Y_ );
+
+
       variational_posteriors_ = std::make_tuple( VB::HMM::VP_qsi <Dim,S>( Y_ ),
 						 VB::HMM::VP_qdch<Dim,S>( Y_ ),
 						 VB::HMM::VP_qgau<Dim,S>( Y_ ) );
