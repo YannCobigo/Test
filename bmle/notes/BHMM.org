@@ -28,6 +28,10 @@
 *** VP_qsi
     The function is empty.
 *** VP_qdch
+    - [ ] To Check ::
+      - [ ] Posterior Pi and A :: I renormailzed the posterior probabilities
+	   Should we do that? If we do that, should we normalize the lower bound 
+	   too?
 *** VP_qgau
     - [X] ln_posterior_N :: 
 	 It seems corrected.

@@ -473,12 +473,12 @@ namespace VB
 	  {
 	    int Ti = Y_[i].size();
 	    mean_s1 += _s_[i][0];
-	    std::cout << "mean_s1 \n" << mean_s1 << std::endl;
-	    std::cout << "_s_[i][0] \n" << _s_[i][0] << std::endl;
 	    //
 	    for ( int t = 1 ; t < Ti ; t++ )
 	      mean_ss += _ss_[i][t];
 	  }
+	//
+	//posterior_pi_(s,0) = 
 
 	//
 	// Posterior Dirichlet parameters
@@ -516,16 +516,42 @@ namespace VB
 
 	//
 	// update the posterior proba density
-	for ( int s = 0 ; s < S ; s++ )
+	if ( true )
 	  {
 	    // Pi
-	    posterior_pi_(s,0) = exp( gsl_sf_psi(alpha_pi_(s,0)) - gsl_sf_psi(alpha_pi_sum) );
+	    posterior_pi_ = mean_s1 / mean_s1.sum();
 	    // A
-	    for ( int ss = 0 ; ss < S ; ss++ )
+	    posterior_A_ = mean_ss;
+	    for ( int s = 0 ; s < S ; s++ )
 	      {
-		posterior_A_(s,ss) = exp( gsl_sf_psi(alpha_A_(s,ss)) - gsl_sf_psi(alpha_A_sum(ss,0)) );
+		double norm_row = 0.;
+		for ( int ss = 0 ; ss < S ; ss++ )
+		  norm_row += mean_ss(s,ss);
+		//
+		posterior_A_.row(s) /= norm_row;
 	      }
 	  }
+	else
+	  {
+	    double norm_pi = 0.;
+	    for ( int s = 0 ; s < S ; s++ )
+	      {
+		// Pi
+		norm_pi += posterior_pi_(s,0) = exp( gsl_sf_psi(alpha_pi_(s,0)) - gsl_sf_psi(alpha_pi_sum) );
+		// A
+		double norm_row = 0.;
+		for ( int ss = 0 ; ss < S ; ss++ )
+		  {
+		    norm_row += posterior_A_(s,ss) = exp( gsl_sf_psi(alpha_A_(s,ss)) - gsl_sf_psi(alpha_A_sum(ss,0)) );
+		  }
+		//
+		posterior_A_.row(s) /= norm_row;
+	      }
+	    //
+	    posterior_pi_ /= norm_pi;
+	  }
+	//
+	//
 	std::cout << "posterior Pi and A" << std::endl;
 	std::cout << "posterior_pi_\n" << posterior_pi_ << std::endl;
 	std::cout << "posterior_A_\n" << posterior_A_ << std::endl;
@@ -732,13 +758,13 @@ namespace VB
 	double
 	  cd1       = - Dim * ln_2_pi,
 	  cd2       = 0., // <ln|lambda_j|>
-	  //cd3       = S_0_inv_.inverse().determinant(), // ln|S_0|
 	  cd3       = 0., 
 	  cd4       = S * Dim * log(beta_0_), // 
 	  cd5       = 1., // ln(prod beta_j)
 	  cd6       = 0., //
 	  cd7       = 0., // Sum nu_j
 	  cd8       = 0., // Sum nu_j * ln|Sj|
+	  cd9       = log( S_0_inv_.inverse().determinant() ), // ln|S_0|
 	  diff_ln_Z = 0.;
 	// log marginal likelihood lower bound
 	F_qgau_ = 0.;
@@ -766,7 +792,7 @@ namespace VB
 	    //
 	    //
 	    Eigen::Matrix < double, Dim , 1 > diff_vec_0 = mu_mean_[s] - mu_0_[s];
-	    cd6  = nu_[s] * ( Dim - (S_0_inv_*S_mean).trace() ) + (nu_0_ - nu_[s])*cd2;
+	    cd6 += nu_[s] * ( Dim - (S_0_inv_*S_mean).trace() ) + (nu_0_ - nu_[s])*cd2;
 	    cd6 -= nu_[s] * beta_0_ * (diff_vec_0.transpose() * S_mean * diff_vec_0)(0,0);
 	    //
 	    cd7 += nu_[s];
@@ -794,11 +820,13 @@ namespace VB
 	  }
 	//
 	diff_ln_Z += 0.5 * Dim * ln_2 * ( cd7 - nu_0_ );
-	diff_ln_Z += 0.5 * ( cd8 - S * nu_0_ * cd3 );
+	diff_ln_Z += 0.5 * ( cd8 - S * nu_0_ * cd9 );
 	//
 	F_qgau_  = cd4 - Dim * log(cd5) + cd6;
 	F_qgau_ *= 0.5;
 	F_qgau_ += diff_ln_Z;
+	//
+	std::cout << "F_qgau_ " << F_qgau_ << std::endl;
       }
   }
 }

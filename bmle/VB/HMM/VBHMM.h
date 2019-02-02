@@ -106,11 +106,6 @@ namespace VB
     {
       //
       //
-      VB::HMM::VP_qsi <Dim,S> a( Y_ );
-      VB::HMM::VP_qdch<Dim,S> b( Y_ );
-      VB::HMM::VP_qgau<Dim,S> c( Y_ );
-
-
       variational_posteriors_ = std::make_tuple( VB::HMM::VP_qsi <Dim,S>( Y_ ),
 						 VB::HMM::VP_qdch<Dim,S>( Y_ ),
 						 VB::HMM::VP_qgau<Dim,S>( Y_ ) );
@@ -131,8 +126,10 @@ namespace VB
 	double
 	  dF    =  1.e06,
 	  F_old = -1.e-40;
+	int iteration = 0;
 	while ( fabs(dF) > 1.e-3  )
 	  {
+	    std::cout << "Begining iteration: " << ++iteration << std::endl;
 	    //
 	    // M step
 	    std::get< QSI  >(variational_posteriors_).Maximization( variational_posteriors_ );
@@ -154,8 +151,12 @@ namespace VB
 	    F_   += std::get< QGAU >(variational_posteriors_).get_F();
 	    //
 	    dF    = F_ - F_old;
-	    std::cout << dF << std::endl;
 	    F_history_.push_back( F_ );
+	    //
+	    //
+	    std::cout << "Ending iteration: " << iteration << std::endl;
+	    std::cout << "Lower bound: " << F_  << std::endl;
+	    std::cout << "Delta Lower bound: " << dF  << std::endl;
 	  }
       }
   }
