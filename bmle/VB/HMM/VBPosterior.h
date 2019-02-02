@@ -526,6 +526,11 @@ namespace VB
 		posterior_A_(s,ss) = exp( gsl_sf_psi(alpha_A_(s,ss)) - gsl_sf_psi(alpha_A_sum(ss,0)) );
 	      }
 	  }
+	std::cout << "posterior Pi and A" << std::endl;
+	std::cout << "posterior_pi_\n" << posterior_pi_ << std::endl;
+	std::cout << "posterior_A_\n" << posterior_A_ << std::endl;
+	
+	// 
 	//
 	F_qdch_ = F_pi + F_A;
       }
@@ -588,7 +593,7 @@ namespace VB
 	// Gaussian
 	// scalars
 	double beta_0_{1.};
-	std::vector< double > beta_{S};
+	std::vector< double > beta_{S,0.};
 	// vectors
 	std::vector< Eigen::Matrix< double, Dim, 1 > > mu_0_{S};
 	std::vector< Eigen::Matrix< double, Dim, 1 > > mu_mean_{S};
@@ -596,7 +601,7 @@ namespace VB
 	// Wishart
 	// scalars
 	double nu_0_{1000.};
-	std::vector< double > nu_{S};
+	std::vector< double > nu_{S,0.};
 	// vectors/matrices
 	Eigen::Matrix< double, Dim, Dim >                S_0_inv_{1.e-3*Eigen::Matrix< double, Dim, Dim >::Ones()};
 	std::vector< Eigen::Matrix< double, Dim, Dim > > S_mean_inv_{S};
@@ -653,7 +658,7 @@ namespace VB
 	
 	//
 	//
-	std::vector< double >                            Delta(S,0);
+	std::vector< double >                            Delta( S, 0 );
 	std::vector< Eigen::Matrix< double, Dim, 1 > >   y_mean( S, Eigen::Matrix< double, Dim, 1 >::Zero() );
 	std::vector< Eigen::Matrix< double, Dim, Dim > > W_mean_inv( S, Eigen::Matrix< double, Dim, Dim >::Zero() );
 	//
@@ -679,22 +684,31 @@ namespace VB
 		    Delta[s]  += _s_[i][t](s,0);
 		  }
 	      }
-	    //
-	    for ( int i = 0 ; i < n_ ; i++ )
-	      {
-		typename std::vector< Eigen::Matrix < double, Dim , 1 > >::const_iterator t;
-		int Ti = Y_[i].size();
-		for ( int t = 0 ; t < Ti ; t++ )
-		  {
-		    Eigen::Matrix< double, Dim, 1 > diff_vect = Y_[i][t] - y_mean[s] / (beta_0_ * (beta_[s] - beta_0_));
-		    W_mean_inv[s] += _s_[i][t](s,0) * diff_vect * diff_vect.transpose(); 
-		  }
-	      }
 
 	    //
 	    //
 	    beta_[s] += Delta[s];
 	    nu_[s]   += Delta[s];
+	    //
+	    for ( int i = 0 ; i < n_ ; i++ )
+	      {
+		int Ti = Y_[i].size();
+		for ( int t = 0 ; t < Ti ; t++ )
+		  {
+		    Eigen::Matrix< double, Dim, 1 > diff_vect = Y_[i][t] - y_mean[s] / (beta_0_ * (beta_[s] - beta_0_));
+		    W_mean_inv[s] += _s_[i][t](s,0) * diff_vect * diff_vect.transpose(); 
+		    std::cout << "#########################" << std::endl;
+		    std::cout << "W_mean_inv[" << s << "]\n" << W_mean_inv[s] << std::endl;
+		    std::cout << "Y_[i][t] \n" << Y_[i][t] << std::endl;
+		    std::cout << "y_mean[s] \n" << y_mean[s] << std::endl;
+		    std::cout << "(beta_0_ * (beta_[s] - beta_0_) " << (beta_0_ * (beta_[s] - beta_0_)) << std::endl;
+		    std::cout << "s_[i][t](s,0) " << _s_[i][t](s,0) << std::endl;
+		    std::cout << "diff_vect \n" << diff_vect << std::endl;
+		    std::cout << "diff_vect * diff_vect.transpose()  \n" << diff_vect * diff_vect.transpose() << std::endl;
+		    std::cout << "W_mean_inv[" << s << "]\n" << W_mean_inv[s] << std::endl;
+		  }
+	      }
+
 	    //
 	    mu_mean_[s]     = ( beta_0_ * mu_0_[s] + y_mean[s] ) / beta_[s];
 	    mu_0_mean_[s]   = y_mean[s] / ( beta_[s] - beta_0_ );
@@ -702,6 +716,10 @@ namespace VB
 	    Eigen::Matrix< double, Dim, 1 > diff_mus = mu_0_[s] - mu_0_mean_[s];
 	    S_mean_inv_[s] += beta_0_ * ( beta_[s] - beta_0_ ) * diff_mus * diff_mus.transpose() / beta_[s];
 	    S_mean_inv_[s] += W_mean_inv[s];
+	    //
+	    //
+	    std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
+	    std::cout << "S_mean_inv_[" << s << "]\n" << S_mean_inv_[s] << std::endl;
 	  }
       }
     //
