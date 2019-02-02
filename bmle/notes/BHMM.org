@@ -1,6 +1,6 @@
 
 * Tasks
-
+  
 * Expectation-Minimization
 ** Expectation
 *** VP_qsi
@@ -38,4 +38,8 @@
     - [ ] diff_ln_Z :: 
     - [ ] F_qgau_ :: 
 
-* Lower bound
+** Lower bound
+*** VP_qsi
+*** VP_qdch
+    The lower bond seems fine. 
+*** VP_qgau

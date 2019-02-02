@@ -819,6 +819,19 @@ namespace VB
 	      }
 	  }
 	//
+	//
+	if ( true )
+	  for ( int i = 0 ; i < n_ ; i++ )
+	    {
+	      int Ti = Y_[i].size();
+	      for ( int t = 0 ; t < Ti ; t++ )
+		{
+		  posteriror_N_[i][t] /= posteriror_N_[i][t].sum();
+		  std::cout << "posteriror_N_[" << i << "][" << t << "] \n" 
+			    << posteriror_N_[i][t] << std::endl;
+		}
+	    }
+	//
 	diff_ln_Z += 0.5 * Dim * ln_2 * ( cd7 - nu_0_ );
 	diff_ln_Z += 0.5 * ( cd8 - S * nu_0_ * cd9 );
 	//
