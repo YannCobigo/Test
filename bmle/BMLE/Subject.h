@@ -35,7 +35,7 @@
 //
 //
 //
-namespace MAC_bmle
+namespace NeuroBayes
 {
   inline bool file_exists ( const std::string& name )
   {
@@ -178,9 +178,9 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f >
-    MAC_bmle::BmleSubject< D_r, D_f >::BmleSubject( const std::string Pidn,
-						    const int Group,
-						    const std::string& Output_dir ):
+    NeuroBayes::BmleSubject< D_r, D_f >::BmleSubject( const std::string Pidn,
+						      const int Group,
+						      const std::string& Output_dir ):
     PIDN_{Pidn}, group_{Group}, output_dir_{Output_dir}
   {
     /* 
@@ -191,7 +191,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::build_design_matrices( const double Age_mean )
+    NeuroBayes::BmleSubject< D_r, D_f >::build_design_matrices( const double Age_mean )
     {
       try
 	{
@@ -269,9 +269,9 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::add_tp( const int                  Age,
-					       const std::list< double >& Covariates,
-					       const std::string&         Image )
+    NeuroBayes::BmleSubject< D_r, D_f >::add_tp( const int                  Age,
+						 const std::list< double >& Covariates,
+						 const std::string&         Image )
     {
       try
 	{
@@ -327,9 +327,9 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::set_fit( const MaskType::IndexType Idx, 
-						const Eigen::MatrixXd Model_fit, 
-						const Eigen::MatrixXd Cov_fit )
+    NeuroBayes::BmleSubject< D_r, D_f >::set_fit( const MaskType::IndexType Idx, 
+						  const Eigen::MatrixXd Model_fit, 
+						  const Eigen::MatrixXd Cov_fit )
     {
       //
       // ToDo: I would like to write the goodness of the score (r-square ...)
@@ -353,7 +353,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::create_theta_images()
+    NeuroBayes::BmleSubject< D_r, D_f >::create_theta_images()
     {
       //std::cout << "We create output only one time" << std::endl;
       // Model output
@@ -380,7 +380,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::write_solution()
+    NeuroBayes::BmleSubject< D_r, D_f >::write_solution()
     {
       if ( prediction_ )
 	{
@@ -397,7 +397,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::print() const
+    NeuroBayes::BmleSubject< D_r, D_f >::print() const
     {
       std::cout << "PIDN: " << PIDN_ << std::endl;
       std::cout << "Group: " << group_ << std::endl;
@@ -427,7 +427,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::load_model_matrices() 
+    NeuroBayes::BmleSubject< D_r, D_f >::load_model_matrices() 
     {
       try
 	{
@@ -509,8 +509,8 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::prediction( const MaskType::IndexType Idx, 
-						   const double Inv_C_eps )
+    NeuroBayes::BmleSubject< D_r, D_f >::prediction( const MaskType::IndexType Idx, 
+						     const double Inv_C_eps )
     {
       try
 	{
