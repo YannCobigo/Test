@@ -30,10 +30,25 @@ namespace NeuroBayes
 
   //
   //
-  //
+  // Numerical inversion
   Eigen::MatrixXd inverse( const Eigen::MatrixXd& Ill_matrix )
     {
-      Eigen::JacobiSVD<Eigen::MatrixXd> svd( Ill_matrix, Eigen::ComputeThinU | Eigen::ComputeThinV );
+      //
+      //
+      int mat_size      = Ill_matrix.rows();
+      Eigen::MatrixXd I = Eigen::MatrixXd::Ones( mat_size, mat_size );
+
+      //
+      //
+      return Ill_matrix.partialPivLu().solve(I);
+    }
+  //
+  //
+  // Inversion for definit positive matrix
+  // The input must be a definit positive matrix: covariance
+  Eigen::MatrixXd inverse_def_pos( const Eigen::MatrixXd& Def_pos_matrix )
+    {
+      Eigen::JacobiSVD<Eigen::MatrixXd> svd( Def_pos_matrix, Eigen::ComputeThinU | Eigen::ComputeThinV );
       //      std::cout << "eigen svd=" << svd.singularValues() << std::endl;
       Eigen::MatrixXd singular_values = svd.singularValues();
       for ( int eigen_val = 0 ; eigen_val < singular_values.rows() ; eigen_val++ )
@@ -42,13 +57,13 @@ namespace NeuroBayes
 
       Eigen::MatrixXd fixed_matrix =
 	svd.matrixU()*singular_values.asDiagonal()*svd.matrixV().transpose();
-//      Eigen::MatrixXd diff = fixed_matrix - Ill_matrix;
+//      Eigen::MatrixXd diff = fixed_matrix - Def_pos_matrix;
 //      std::cout << "diff:\n" << diff.array().abs().sum() << std::endl;
 //      std::cout << "fixed_matrix:\n" << fixed_matrix << std::endl;
 
       //
       //
-      return fixed_matrix.inverse();
+      return inverse(fixed_matrix);
     }
   //
   //

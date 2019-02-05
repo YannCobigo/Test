@@ -1193,12 +1193,28 @@ namespace MAC_bmle
 	  // log of determinants
 	  double F_1 = 0, F_4 = 0 ;
 	  //
+	  // the matrix is diagonal
 	  for ( int linco = 0 ; linco < Inv_Cov_eps.rows() ; linco++ )
 	    F_1 += log( Inv_Cov_eps(linco,linco) );
 	  // 
 	  // using Cholesky decomposition
 	  // ln |A| = 2 * sum_i ln(L_ii); where A=LL^{T}
-	  F_4 = NeuroBayes::ln_determinant( Cov_theta_Y );
+	  if ( true )
+	    {
+	      // ln |A| = 2 * sum_i ln(L_ii); where A=LL^{T}
+	      // compute the Cholesky decomposition of A
+	      Eigen::LLT< Eigen::MatrixXd > lltOf( Cov_theta_Y ); 
+	      // retrieve factor L in the decomposition
+	      Eigen::MatrixXd Lchol = lltOf.matrixL();
+	      for ( int linco = 0 ; linco < Cov_theta_Y_rows ; linco++ )
+		{
+		  //std::cout << "Lchol(linco,linco) " << Lchol(linco,linco) << " ** log " << log( Lchol(linco,linco) )<< std::endl;
+		  F_4 += (Lchol(linco,linco) < 1.e-16 ? -37.: log( Lchol(linco,linco) ));
+		}
+	      F_4 *= 2.;
+	    }
+	  else
+	    F_4 = NeuroBayes::ln_determinant( Cov_theta_Y );
 	
 	  double
 	    F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
