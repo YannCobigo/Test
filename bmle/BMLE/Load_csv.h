@@ -782,13 +782,14 @@ namespace NeuroBayes
 	//std::cout << "Cov_eps__ = \n" << Cov_eps << std::endl;
 
 	//
-	Eigen::MatrixXd inv_Cov_eps = Cov_eps.inverse();
+	Eigen::MatrixXd inv_Cov_eps = NeuroBayes::inverse( Cov_eps );
+	// Eigen::MatrixXd inv_Cov_eps = Cov_eps.inverse();
 
 	//
 	//
 	// posterior
-	// Eigen::MatrixXd cov_theta_Y = NeuroBayes::inverse( X_.transpose() * inv_Cov_eps * X_ );
-	Eigen::MatrixXd cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
+	Eigen::MatrixXd cov_theta_Y = NeuroBayes::inverse( X_.transpose() * inv_Cov_eps * X_ );
+	//Eigen::MatrixXd cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
 	Eigen::MatrixXd eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
 	// R-square calculation
 	Eigen::MatrixXd M_eta_theta = Eigen::MatrixXd::Zero( X_.rows(), X_.rows() );
@@ -810,15 +811,18 @@ namespace NeuroBayes
 	  NN = 1000,       // failed convergence criterias
 	  early_stop = 800;
 	//
-	if ( Fisher_H )
-	  early_stop = 100;
-	//
 	double 
 	  learning_rate_  = 1.e-04,//1.e-02,
 	  convergence_    = 1.e-06,
 	  new_convergence = 1.e-16,
 	  epsilon         = 1.e-16;
 	std::list< double > best_convergence;
+	//
+	if ( Fisher_H )
+	  {
+	    early_stop      = 100;
+	    learning_rate_  = 1.e-02;
+	  }
 	
 	//
 	while( n < N && it++ < NN )
@@ -828,8 +832,8 @@ namespace NeuroBayes
 
 	    //
 	    // Expectaction step
-	    //cov_theta_Y = NeuroBayes::inverse( X_.transpose() * inv_Cov_eps * X_ );
-	    cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
+	    cov_theta_Y = NeuroBayes::inverse( X_.transpose() * inv_Cov_eps * X_ );
+	    //cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
 	    eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
 	    //std::cout << "eta_theta_Y = \n" << eta_theta_Y << std::endl;
 	    //std::cout << "cov_theta_Y = \n" << cov_theta_Y << std::endl;
@@ -882,9 +886,8 @@ namespace NeuroBayes
 	    Eigen::MatrixXd delta_lambda;
 	    if ( Fisher_H )
 	      {
-		// delta_lambda = H.inverse()  * grad;
 		// delta_lambda = NeuroBayes::inverse( H ) * grad;
-		// delta_lambda = NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
+		//// delta_lambda = NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		// delta_lambda = -learning_rate_ * NeuroBayes::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) ) * grad;
 		delta_lambda = NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		//std::cout << NeuroBayes::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) )  << std::endl;
@@ -924,8 +927,8 @@ namespace NeuroBayes
 		}
 	    //std::cout << "Cov_eps_g_ = \n" << Cov_eps << std::endl;
 	    //
-	    inv_Cov_eps = Cov_eps.inverse();
-	    //inv_Cov_eps =  NeuroBayes::inverse( Cov_eps );
+	    inv_Cov_eps =  NeuroBayes::inverse( Cov_eps );
+	    //inv_Cov_eps = Cov_eps.inverse();
 	    //std::cout << "inv_Cov_eps_g_ = \n" << inv_Cov_eps << std::endl;
 	    //
 	    // Free energy
@@ -935,7 +938,7 @@ namespace NeuroBayes
 	      delta_F = F - F_old;
 	    
 	    double grad_level = 0.;
-	    for ( int r = 1 /*we don't want the first element 0 */ ; r < grad.rows() ; r++ )
+	    for ( int r = 1 /* we don't want the first element 0 */ ; r < grad.rows() ; r++ )
 	      grad_level += grad( r, 0 );
 	    
 	    //std::cout << "mark_out,"
@@ -977,7 +980,7 @@ namespace NeuroBayes
 	    //
 	    if ( it > early_stop && abs_deltaF_F < new_convergence )
 	      n = N;
-	  }
+	  } // while( n < N && it++ < NN )
 
 	//
 	//
@@ -1035,7 +1038,8 @@ namespace NeuroBayes
 	_X_.block( 0, 0, X1_.rows(),  X1_.cols() ) = X1_;
 	_X_.block( 0, X1_.cols(), X1_.rows(),  X2_.cols() ) = X1_ * X2_;
 	//
-	H_m  = L_m * (L_m.transpose() * L_m).inverse() * L_m.transpose();
+	H_m  = L_m * NeuroBayes::inverse(L_m.transpose() * L_m) * L_m.transpose();
+	// H_m  = L_m * (L_m.transpose() * L_m).inverse() * L_m.transpose();
 	//
 	Eigen::MatrixXd X_x_eta_theta_Y  = _X_ * eta_theta_Y;
 	double R_sqr = (X_x_eta_theta_Y.transpose() * (Id_m - H_m) * X_x_eta_theta_Y )(0,0) / (_Y_.transpose() * (Id_m - H_m) * _Y_)(0,0);
@@ -1213,20 +1217,11 @@ namespace NeuroBayes
 		//std::cout << "Lchol(linco,linco) " << Lchol(linco,linco) << " ** log " << log( Lchol(linco,linco) )<< std::endl;
 		F_4 += (Lchol(linco,linco) < 1.e-16 ? -37.: log( Lchol(linco,linco) ));
 	      }
+	    //
+	    F_4 *= 2.;
 	  }
 	else
-	  {
-	    // Robust Cholesky
-	    // ln |A| = 2 * sum_i ln(L_ii); where A=LL^{T}
-	    // compute the Cholesky decomposition of A
-	    Eigen::LDLT< Eigen::MatrixXd > lltOf(Cov_theta_Y);
-	    // retrieve factor L in the decomposition
-	    Eigen::MatrixXd Lchol = lltOf.matrixL();
-	    for ( int linco = 0 ; linco < Cov_theta_Y_rows ; linco++ )
-	      F_4 += log( Lchol(linco,linco) );
-	  }
-	//
-	F_4 *= 2.;
+	  F_4 = NeuroBayes::ln_determinant( Cov_theta_Y );
 	
 	double
 	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason

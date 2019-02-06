@@ -35,11 +35,17 @@ namespace NeuroBayes
     {
       //
       //
-      int mat_size      = Ill_matrix.rows();
-      Eigen::MatrixXd I = Eigen::MatrixXd::Ones( mat_size, mat_size );
+      int 
+	mat_rows      = Ill_matrix.rows(),
+	mat_cols      = Ill_matrix.cols();
+      Eigen::MatrixXd I = Eigen::MatrixXd::Identity( mat_rows, mat_cols );
 
       //
       //
+      //std::cout << "YOYOYO " <<  mat_rows << " " << mat_cols << std::endl;
+      //std::cout << "Ill_matrix\n" << Ill_matrix << std::endl;
+      //std::cout << "YAYAYAYA" << std::endl;
+      //std::cout << "Ill_matrix.partialPivLu().solve(I)\n" << Ill_matrix.partialPivLu().solve(I) << std::endl;
       return Ill_matrix.partialPivLu().solve(I);
     }
   //
