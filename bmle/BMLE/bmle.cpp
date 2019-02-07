@@ -1,11 +1,9 @@
-#include<iostream>
-#include <stdio.h>
+#include <iostream>
 #include <cstdlib>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <chrono>
-#include <sys/stat.h>
 //
 // ITK
 //
@@ -20,51 +18,7 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 #include "Thread_dispatching.h"
 #include "Exception.h"
 #include "Load_csv.h"
-//
-//
-// Check the output directory exists
-inline bool directory_exists( const std::string& Dir )
-{
-  struct stat sb;
-  //
-  if ( stat(Dir.c_str(), &sb ) == 0 && S_ISDIR( sb.st_mode ) )
-    return true;
-  else
-    return false;
-}
-//
-//
-//
-class InputParser{
-public:
-  explicit InputParser ( const int &argc, const char **argv )
-  {
-    for( int i = 1; i < argc; ++i )
-      tokens.push_back( std::string(argv[i]) );
-  }
-  //
-  const std::string getCmdOption( const std::string& option ) const
-  {
-    //
-    //
-    std::vector< std::string >::const_iterator itr = std::find( tokens.begin(),
-								tokens.end(),
-								option );
-    if ( itr != tokens.end() && ++itr != tokens.end() )
-      return *itr;
-
-    //
-    //
-    return "";
-  }
-  //
-  bool cmdOptionExists( const std::string& option ) const
-  {
-    return std::find( tokens.begin(), tokens.end(), option) != tokens.end();
-  }
-private:
-  std::vector < std::string > tokens;
-};
+#include "IO/Command_line.h"
 //
 //
 //
@@ -78,21 +32,30 @@ main( const int argc, const char **argv )
       //
       if( argc > 1 )
 	{
-	  InputParser input( argc, argv );
+	  NeuroBayes::InputParser input( argc, argv );
 	  if( input.cmdOptionExists("-h") )
-	    //
-	    // It is the responsability of the user to create the 
-	    // normalized/standardized hierarchical covariate
-	    //
-	    // -h                          : help
-	    // -X  inv_cov_error.nii.gz    : (prediction) inverse of error cov on parameters
-	    // -c   input.csv              : input file
-	    // -m   mask.nii.gz            : mask
-	    // -d                          : demeaning of age -> boolean
-	    //
-	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-						   "./bmle -c file.csv -m mask.nii.gz -o output_dir < -d (demeaning age) >",
-						   ITK_LOCATION );
+	    {
+	      //
+	      // It is the responsability of the user to create the 
+	      // normalized/standardized hierarchical covariate
+	      //
+	      // -h                          : help
+	      // -X   inv_cov_error.nii.gz   : (prediction) inverse of error cov on parameters
+	      // -c   input.csv              : input file
+	      // -m   mask.nii.gz            : mask
+	      // -d                          : demeaning of age -> boolean
+	      //
+	      std::string help = "It is the responsability of the user to create the ";
+	      help += "normalized/standardized hierarchical covariate.\n";
+	      help += "-h                          : help\n";
+	      help += "-X   inv_cov_error.nii.gz   : (prediction) inverse of error cov on parameters\n";
+	      help += "-c   input.csv              : input file\n";
+	      help += "-m   mask.nii.gz            : mask\n";
+	      help += "-d                          : demeaning of age -> boolean\n";
+	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						     help.c_str(),
+						     ITK_LOCATION );
+	    }
 
 	  //
 	  // takes the csv file ans the mask
@@ -115,7 +78,7 @@ main( const int argc, const char **argv )
 							 ITK_LOCATION );
 		}
 	      // output directory exists?
-	      if ( !directory_exists( output_dir ) )
+	      if ( !NeuroBayes::directory_exists( output_dir ) )
 		{
 		  std::string mess = "The output directory is not correct.\n";
 		  mess += "./bmle -c file.csv -m mask.nii.gz -o output_dir";
