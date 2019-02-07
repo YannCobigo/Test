@@ -182,7 +182,7 @@ namespace VB
       //
       // Initializarion
       //nu0_ = 1.e+6;// /*static_cast<double>(Dim) * */ static_cast< double >( data_set_size_ );
-      nu0_ = static_cast<double>( Dim * data_set_size_ );
+      nu0_ = static_cast<double>( 1./*Dim *  data_set_size_*/ );
       //
       // Creating a Definit positive random matrix
       W0_  = 1.e-02 / nu0_ * Eigen::Matrix< double, Dim, Dim >::Identity();
@@ -413,6 +413,7 @@ namespace VB
 		  << "\n m_["<< k <<"] \n" << m_[k]
 		  //<< "\n xm_["<< k <<"] \n" << x_mean_[k]
 		  << "\n W_["<< k <<"] \n" << W_[k]
+		  << "\n S_["<< k <<"] \n" << S_[k]
 		  << std::endl;
 	      }
 	    auto end   = std::chrono::steady_clock::now();
@@ -435,6 +436,7 @@ namespace VB
 	      << "\n m_["<< k <<"] \n" << m_[k]
 	      //<< "\n xm_["<< k <<"] \n" << x_mean_[k]
 	      << "\n W_["<< k <<"] \n" << W_[k]
+	      << "\n S_["<< k <<"] \n" << S_[k]
 	      << std::endl;
 	  }
 	//

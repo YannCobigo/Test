@@ -800,7 +800,7 @@ namespace NeuroBayes
 	Eigen::MatrixXd H_m         = Eigen::MatrixXd::Zero(num_3D_images_, num_3D_images_ ); ; //= L * (L.transpose() * L).inverse() * L.transpose();
 	
 	
-	bool Fisher_H = false;
+	bool Fisher_H = true;
 	double
 	  F_old = 1.,
 	  F     = 1.,
@@ -818,10 +818,11 @@ namespace NeuroBayes
 	  epsilon         = 1.e-16;
 	std::list< double > best_convergence;
 	//
+	// Fisher strategy
 	if ( Fisher_H )
 	  {
 	    early_stop      = 100;
-	    learning_rate_  = 1.e-02;
+	    learning_rate_  = 1.e-01;
 	  }
 	
 	//
@@ -889,7 +890,7 @@ namespace NeuroBayes
 		// delta_lambda = NeuroBayes::inverse( H ) * grad;
 		//// delta_lambda = NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		// delta_lambda = -learning_rate_ * NeuroBayes::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) ) * grad;
-		delta_lambda = NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
+		delta_lambda = learning_rate_ * NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		//std::cout << NeuroBayes::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) )  << std::endl;
 	      }
 	    else

@@ -26,10 +26,10 @@ int main(int argc, char const *argv[])
   //
   //
   std::default_random_engine generator;
-  std::normal_distribution< double > gauss_11(5.0,1.0);
-  std::normal_distribution< double > gauss_12(5.0,1.0);
-  std::normal_distribution< double > gauss_21(10.0,1.0);
-  std::normal_distribution< double > gauss_22(10.0,1.0);
+  std::normal_distribution< double > gauss_11(2.,5.);
+  std::normal_distribution< double > gauss_12(2.,2.);
+  std::normal_distribution< double > gauss_21(0.0,1.);
+  std::normal_distribution< double > gauss_22(0.0,10.);
   std::uniform_real_distribution< double > uniform(0.0,1.0);
 
   //
@@ -37,7 +37,8 @@ int main(int argc, char const *argv[])
   std::list< Eigen::Matrix< double, 2, 1 > > X_intensity;
   std::list< Eigen::Matrix< double, 3, 1 > > X_pos;
   //
-  for ( int i = 0 ; i < 100 ; i++ )
+  std::cout << "points,X,Y" << std::endl;
+  for ( int i = 0 ; i < 1000 ; i++ )
     {
       double mixture = uniform( generator );
       Eigen::Matrix< double, 2, 1 > mixture_gauss = Eigen::Matrix< double, 2, 1 >::Zero();
@@ -53,7 +54,7 @@ int main(int argc, char const *argv[])
 	}
       //
       X_intensity.push_back( mixture_gauss );
-      //std::cout << mixture_gauss(0,0) << "," << mixture_gauss(1,0) << std::endl;
+      std::cout << "points," << mixture_gauss(0,0) << "," << mixture_gauss(1,0) << std::endl;
     }
   
 
