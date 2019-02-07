@@ -890,7 +890,7 @@ namespace NeuroBayes
 		// delta_lambda = NeuroBayes::inverse( H ) * grad;
 		//// delta_lambda = NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		// delta_lambda = -learning_rate_ * NeuroBayes::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) ) * grad;
-		delta_lambda = learning_rate_ * NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
+		delta_lambda = - learning_rate_ * NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		//std::cout << NeuroBayes::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) )  << std::endl;
 	      }
 	    else
