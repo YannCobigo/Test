@@ -15,7 +15,7 @@
 #include <itkNiftiImageIO.h>
 #include <itkOrientImageFilter.h>
 #include <itkSpatialOrientation.h>
-using ImageType       = itk::Image< float, 3 >;
+using ImageType       = itk::Image< double, 3 >;
 using ImageReaderType = itk::ImageFileReader< ImageType >;
 using MaskType        = itk::Image< unsigned char, 3 >;
 using MaskReaderType  = itk::ImageFileReader< MaskType >;
@@ -85,6 +85,10 @@ int main(int argc, char const **argv)
 	    }
 
 	  //
+	  // parameters we would like to have in the arg line in the future
+	  const int K = 10;
+
+	  //
 	  // takes the csv file ans the mask
 	  const std::string& filename       = input.getCmdOption("-c");
 	  const std::string& mask           = input.getCmdOption("-m");
@@ -152,13 +156,18 @@ int main(int argc, char const **argv)
 	      
 	      //
 	      // loop over Mask area for every images
+	      std::list< Eigen::Matrix< double, 3, 1 > > X_positions;
 	      while( !imageIterator_mask.IsAtEnd() )
 		{
 		  if( static_cast<int>( imageIterator_mask.Value() ) != 0 )
 		    {
 		      MaskType::IndexType idx = imageIterator_mask.GetIndex();
-		      std::cout << imageIterator_mask.GetIndex() << std::endl;
-		      //subject_mapping.Expectation_Maximization( idx );
+		      Eigen::Matrix< double, 3, 1 > voxel;
+		      voxel << 
+			static_cast<double>( idx[0] ), 
+			static_cast<double>( idx[1] ), 
+			static_cast<double>( idx[2] );
+		      X_positions.push_back( voxel );
 		    }
 		  //
 		  ++imageIterator_mask;
@@ -168,7 +177,9 @@ int main(int argc, char const **argv)
 	      //
 	      // Expecttion Maximization
 	      //
-
+	      
+	      VB::GM::VBGaussianMixture < /*Dim*/ 3, /*K_gaussians*/ K > VB_Gaussian_Mixture( X_positions );
+	      VB_Gaussian_Mixture.ExpectationMaximization();
 
 
 	      //
@@ -180,9 +191,31 @@ int main(int argc, char const **argv)
 			<< " ms "<< std::endl;
 
 	      //
+	      // Output
 	      //
-	      std::cout << "All the mask has been covered" << std::endl;
-	      //subject_mapping.write_subjects_solutions();
+
+	      std::string output_string = output_dir + "/Clusters_probabilities.nii.gz";
+	      NeuroBayes::NeuroBayesMakeITKImage output;
+	      output = NeuroBayes::NeuroBayesMakeITKImage( K, output_string, reader_image_ );
+	      //
+	      int x = 0;
+	      for ( auto X : X_positions )
+		{
+		  //int idx[3];
+		  //idx[0] = X(0,0);
+		  //idx[1] = X(1,0);
+		  //idx[2] = X(2,0);
+		  for ( int k = 0 ; k < K ; k++ )
+		    output.set_val( k, 
+				    {static_cast< long int >( X(0,0) ),
+					static_cast< long int >( X(1,0) ),
+					static_cast< long int >( X(2,0) )}, 
+				    VB_Gaussian_Mixture.get_posterior_probabilities()[k][x] );
+		  //
+		  ++x;
+		}
+	      //
+	      output.write();
 	      std::cout << "All output have been written." << std::endl;
 	    }
 	  else

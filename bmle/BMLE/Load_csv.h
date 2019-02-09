@@ -97,6 +97,9 @@ namespace NeuroBayes
 	       const Eigen::MatrixXd& , const Eigen::MatrixXd& ) const;
     // Thermodynamic free energy
     void lambda_regulation_( std::map< int /*group*/, std::vector< double > >& );
+    // Thermodynamic free energy
+    bool check_convergence_( const std::list< double >&, const double, 
+			     const int, const int ) const;
     // Cumulative centered normal cumulative distribution function
     // https://en.wikipedia.org/wiki/Error_function
     double Normal_CFD_( const double value ) const
@@ -805,15 +808,16 @@ namespace NeuroBayes
 	  F_old = 1.,
 	  F     = 1.,
 	  delta_F  = 100.;
+	std::list< double > F_values;
 	int
 	  n  = 0, it = 0,
-	  N  = 10,         // N regulate the EM loop to be sure converge smootly
+	  N  = 20,         // N regulate the EM loop to be sure converge smootly
 	  NN = 1000,       // failed convergence criterias
 	  early_stop = 800;
 	//
 	double 
-	  learning_rate_  = 1.e-04,//1.e-02,
-	  convergence_    = 1.e-06,
+	  learning_rate_  = ( D_r > 2 ? 1.e-10 : 1.e-02 ),//1.e-02,//1.e-04,
+	  convergence_    = ( D_r > 2 ? 1.e-03 : 1.e-05 ), //1.e-03,
 	  new_convergence = 1.e-16,
 	  epsilon         = 1.e-16;
 	std::list< double > best_convergence;
@@ -826,13 +830,14 @@ namespace NeuroBayes
 	  }
 	
 	//
-	while( n < N && it++ < NN )
+	while( check_convergence_(F_values, convergence_, it++, N) /*&& it < NN*/ )
 	  {
 	    if( !isnan(F) )
 	      F_old = F;
 
 	    //
 	    // Expectaction step
+	    //cov_theta_Y = NeuroBayes::inverse_def_pos( X_.transpose() * inv_Cov_eps * X_ );
 	    cov_theta_Y = NeuroBayes::inverse( X_.transpose() * inv_Cov_eps * X_ );
 	    //cov_theta_Y = ( X_.transpose() * inv_Cov_eps * X_ ).inverse();
 	    eta_theta_Y = cov_theta_Y * X_.transpose() * inv_Cov_eps * Y;
@@ -890,7 +895,7 @@ namespace NeuroBayes
 		// delta_lambda = NeuroBayes::inverse( H ) * grad;
 		//// delta_lambda = NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		// delta_lambda = -learning_rate_ * NeuroBayes::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) ) * grad;
-		delta_lambda = - learning_rate_ * NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
+		delta_lambda = learning_rate_ * NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		//std::cout << NeuroBayes::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) )  << std::endl;
 	      }
 	    else
@@ -928,6 +933,7 @@ namespace NeuroBayes
 		}
 	    //std::cout << "Cov_eps_g_ = \n" << Cov_eps << std::endl;
 	    //
+	    //inv_Cov_eps =  NeuroBayes::inverse_def_pos( Cov_eps );
 	    inv_Cov_eps =  NeuroBayes::inverse( Cov_eps );
 	    //inv_Cov_eps = Cov_eps.inverse();
 	    //std::cout << "inv_Cov_eps_g_ = \n" << inv_Cov_eps << std::endl;
@@ -936,51 +942,48 @@ namespace NeuroBayes
 	    F = F_( Y, inv_Cov_eps, eta_theta_Y, cov_theta_Y );
 	    //
 	    if( !isnan(F) )
-	      delta_F = F - F_old;
-	    
-	    double grad_level = 0.;
-	    for ( int r = 1 /* we don't want the first element 0 */ ; r < grad.rows() ; r++ )
-	      grad_level += grad( r, 0 );
-	    
-	    //std::cout << "mark_out,"
-	    //	      << it << ","
-	    //	      << Idx[0] << "_"<< Idx[1] << "_"<< Idx[2] << ","
-	    //	      << n << ","
-	    //	      << F << ","
-	    //	      << F_old << "," 
-	    //	      << delta_F << "," 
-	    //	      << fabs( delta_F /F_old ) << "," 
-	    //	      <<  grad_level << std::endl;
-
-	    //
-	    //
-	    double abs_deltaF_F = fabs( delta_F /F_old );
-	    if ( abs_deltaF_F < 1. && abs_deltaF_F > convergence_)
-	      best_convergence.push_back( abs_deltaF_F );
-	    //
-	    //if ( fabs( grad_level ) < 5.e-03  )
-	    //if ( fabs( F ) < 5.e-30  )
-	    if ( abs_deltaF_F < convergence_ )
-	      n++;
-	    else
-	      n = 0;
-	    // Algo must converge fast
-	    // If at 100 iterations we still did not converge, we create a new threshold
-	    // based on the best values. Best value for the regular gradiant descent (800)
-	    if ( it == early_stop )
 	      {
-		best_convergence.sort();
-		auto fit = best_convergence.begin();
-		new_convergence  = *(++fit);
-		new_convergence += new_convergence/10.;
-		//std::cout << "mark_best,"
-		//	  << new_convergence << ","
-		//	  << *(++fit) << ","
-		//	  << *(++fit) << ",\n";
+		delta_F = F - F_old;
+		F_values.push_back(F);
 	      }
-	    //
-	    if ( it > early_stop && abs_deltaF_F < new_convergence )
-	      n = N;
+//	    
+//	    //std::cout << "mark_out,"
+//	    //	      << it << ","
+//	    //	      << Idx[0] << "_"<< Idx[1] << "_"<< Idx[2] << ","
+//	    //	      << n << ","
+//	    //	      << F << ","
+//	    //	      << F_old << "," 
+//	    //	      << delta_F << "," 
+//	    //	      << fabs( delta_F /F_old ) << std::endl;
+//
+//	    //
+//	    //
+//	    double abs_deltaF_F = ( delta_F / F_old > 0 ? delta_F / F_old : - delta_F / F_old );
+//	    if ( abs_deltaF_F < 1. && abs_deltaF_F > convergence_)
+//	      best_convergence.push_back( abs_deltaF_F );
+//	    //
+//	    //if ( fabs( F ) < 5.e-30  )
+//	    if ( abs_deltaF_F < convergence_ )
+//	      n++;
+//	    else
+//	      n = 0;
+//	    // Algo must converge fast
+//	    // If at 100 iterations we still did not converge, we create a new threshold
+//	    // based on the best values. Best value for the regular gradiant descent (800)
+//	    if ( it == early_stop )
+//	      {
+//		best_convergence.sort();
+//		auto fit = best_convergence.begin();
+//		new_convergence  = *(++fit);
+//		new_convergence += new_convergence/10.;
+//		//std::cout << "mark_best,"
+//		//	  << new_convergence << ","
+//		//	  << *(++fit) << ","
+//		//	  << *(++fit) << ",\n";
+//	      }
+//	    //
+//	    if ( it > early_stop && abs_deltaF_F < new_convergence )
+//	      n = N;
 	  } // while( n < N && it++ < NN )
 
 	//
@@ -1256,8 +1259,62 @@ namespace NeuroBayes
 		  lambda_k_g_k = 16.;
 		if ( lambda_k_g_k < -32 )
 		  lambda_k_g_k = -16.;
-		//std::cout << "lambda_k[" << g.first << "] = " << lambda_k_g_k << " " << exp(lambda_k_g_k)<< std::endl;
+		std::cout << "lambda_k[" << g.first << "] = " << lambda_k_g_k << " " << exp(lambda_k_g_k)<< std::endl;
 	      }
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  exit( -1 );
+	}
+    }
+  //
+  //
+  //
+  template< int D_r, int D_f > bool
+    BmleLoadCSV< D_r, D_f >::check_convergence_( const std::list< double >& F_val, 
+						 const double Convergence, 
+						 const int    Iteration, 
+						 const int    Window_size ) const
+    {    
+      try
+	{
+	  //
+	  // Check we have enough iterations
+	  if ( Window_size < Iteration )
+	    {
+	      //
+	      // mean
+	      double mean = 0.;
+	      std::list<double> window_values;
+	      std::list<double>::const_reverse_iterator rit = F_val.rbegin();
+	      for ( int i = 0 ; i < Window_size ; i++ )
+		{
+		  mean += *(rit);
+		  window_values.push_back( *(rit++) );
+		}
+	      //
+	      mean /= static_cast< double >( Window_size );
+	      //
+	      // Standard deviation
+	      double accum = 0.0;
+	      std::for_each ( std::begin( window_values ), std::end( window_values ), 
+			      [&](const double d) {accum += (d - mean) * (d - mean);} );
+	      //
+	      //double stdev = sqrt(accum / (F_val.size()-1));
+	      double var       = accum / static_cast< double >(Window_size-1);
+	      double stability = fabs( sqrt(var) / mean );
+	      //
+	      std::cout << "Convergence," << mean << "," << var << "," 
+			<< stability << "," 
+			<< std::endl;
+
+	      //
+	      //
+	      return ( stability < Convergence ? false : true );
+	    }
+	  else
+	    return true;
 	}
       catch( itk::ExceptionObject & err )
 	{

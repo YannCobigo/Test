@@ -116,7 +116,7 @@ namespace VB
       //
       // Gaussian-Wishart prior
       // Wishart on the precision
-      double                                           nu0_{50.};
+      double                                           nu0_{Dim * 100.};
       std::vector< double >                            nu_;
       Eigen::Matrix< double, Dim, Dim >                W0_;
       // Gaussian
@@ -181,8 +181,6 @@ namespace VB
 
       //
       // Initializarion
-      //nu0_ = 1.e+6;// /*static_cast<double>(Dim) * */ static_cast< double >( data_set_size_ );
-      nu0_ = static_cast<double>( 1./*Dim *  data_set_size_*/ );
       //
       // Creating a Definit positive random matrix
       W0_  = 1.e-02 / nu0_ * Eigen::Matrix< double, Dim, Dim >::Identity();

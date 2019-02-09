@@ -101,7 +101,7 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Load the CSV file
-	      NeuroBayes::BmleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
+	      NeuroBayes::BmleLoadCSV< 3/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
 									     input.cmdOptionExists("-d"), 
 									     inv_cov_error );
 	      // create the 4D iamge with all the images
@@ -160,9 +160,9 @@ main( const int argc, const char **argv )
 #else
 		      // Please do not remove the bracket!!
 		      // vertex
-		      if ( idx[0] > 92 - 5  && idx[0] < 92 + 5 && 
-			   idx[1] > 94 - 5  && idx[1] < 94 + 5 &&
-			   idx[2] > 63 - 5  && idx[2] < 63 + 5 )
+		      if ( idx[0] > 92 - 1  && idx[0] < 92 + 2 && 
+			   idx[1] > 94 - 1  && idx[1] < 94 + 2 &&
+			   idx[2] > 63 - 1  && idx[2] < 63 + 2 )
 //		      // ALL
 //		      if ( idx[0] > 5 && idx[0] < 110 && 
 //			   idx[1] > 5 && idx[1] < 140 &&
