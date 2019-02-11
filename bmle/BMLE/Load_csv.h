@@ -1255,11 +1255,17 @@ namespace NeuroBayes
 	  for ( auto g : Lambda )
 	    for ( auto& lambda_k_g_k : Lambda[g.first] )
 	      {
-		if ( lambda_k_g_k > 32 )
-		  lambda_k_g_k = 16.;
-		if ( lambda_k_g_k < -32 )
-		  lambda_k_g_k = -16.;
-		std::cout << "lambda_k[" << g.first << "] = " << lambda_k_g_k << " " << exp(lambda_k_g_k)<< std::endl;
+		//
+		std::cout << "av lambda_k[" << g.first << "] = " 
+			  << lambda_k_g_k << " " 
+			  << exp(lambda_k_g_k)<< std::endl;
+		//
+		if ( lambda_k_g_k > 600. )
+		  lambda_k_g_k = 600.;
+		//
+		std::cout << "lambda_k[" << g.first << "] = " 
+			  << lambda_k_g_k << " " 
+			  << exp(lambda_k_g_k)<< std::endl;
 	      }
 	}
       catch( itk::ExceptionObject & err )
