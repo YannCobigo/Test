@@ -30,11 +30,11 @@ int main(int argc, char const *argv[])
   //
   // model
   const int Dim = 1;
-  const int S   = 2;
+  const int S   = 3;
 
   //
   // Load the test dataset
-  NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08.csv");
+  NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_short.csv");
   // two dim NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_2.csv");
 
   //

@@ -626,7 +626,7 @@ namespace VB
 	//
 	// Wishart
 	// scalars
-	double nu_0_{1000.};
+	double nu_0_{Dim * 10.};
 	std::vector< double > nu_{S,0.};
 	// vectors/matrices
 	Eigen::Matrix< double, Dim, Dim >                S_0_inv_{1.e-3*Eigen::Matrix< double, Dim, Dim >::Ones()};

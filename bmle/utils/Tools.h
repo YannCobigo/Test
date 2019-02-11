@@ -1,32 +1,24 @@
 #ifndef TOOLS_H
 #define TOOLS_H
+//
+#include <limits>       // std::numeric_limits
+//
+//
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
 #include <Eigen/Sparse>
 //
 //
+// When we reach numerical limits
+// 
 //
 namespace NeuroBayes
 {
-//  //
-//  //
-//  //
-//  int power( double val, unsigned n )
-//  {
-//    return ( n == 0 ? 1 : val * power( val, n-1 ) );
-//  }
-//  
-//  template< int n >
-//    struct TMP_power
-//    {
-//      enum{value *= TMP_power<n-1>::value};
-//    };
-//  template<  >
-//    struct TMP_power<0>
-//    {
-//      enum{value = 1};
-//    };
+
+  //
+  // Linear Algebra
+  //
 
   //
   //
@@ -42,10 +34,6 @@ namespace NeuroBayes
 
       //
       //
-      //std::cout << "YOYOYO " <<  mat_rows << " " << mat_cols << std::endl;
-      //std::cout << "Ill_matrix\n" << Ill_matrix << std::endl;
-      //std::cout << "YAYAYAYA" << std::endl;
-      //std::cout << "Ill_matrix.partialPivLu().solve(I)\n" << Ill_matrix.partialPivLu().solve(I) << std::endl;
       return Ill_matrix.partialPivLu().solve(I);
     }
   //
@@ -54,12 +42,17 @@ namespace NeuroBayes
   // The input must be a definit positive matrix: covariance
   Eigen::MatrixXd inverse_def_pos( const Eigen::MatrixXd& Def_pos_matrix )
     {
+      int 
+	mat_rows      = Def_pos_matrix.rows(),
+	mat_cols      = Def_pos_matrix.cols();
+      Eigen::MatrixXd I = Eigen::MatrixXd::Identity( mat_rows, mat_cols );
+      //
       Eigen::JacobiSVD<Eigen::MatrixXd> svd( Def_pos_matrix, Eigen::ComputeThinU | Eigen::ComputeThinV );
       //      std::cout << "eigen svd=" << svd.singularValues() << std::endl;
       Eigen::MatrixXd singular_values = svd.singularValues();
-      for ( int eigen_val = 0 ; eigen_val < singular_values.rows() ; eigen_val++ )
-	if ( singular_values(eigen_val,0) < 1.e-16 )
-	  singular_values(eigen_val,0) = 1.e-16;
+      for ( int eigen_val = 0 ; eigen_val < mat_rows ; eigen_val++ )
+	if ( singular_values(eigen_val,0) < 1.e+03 * std::numeric_limits<double>::min() )
+	  singular_values(eigen_val,0) = 1.e+03 * std::numeric_limits<double>::min();
 
       Eigen::MatrixXd fixed_matrix =
 	svd.matrixU()*singular_values.asDiagonal()*svd.matrixV().transpose();
@@ -68,8 +61,9 @@ namespace NeuroBayes
 //      std::cout << "fixed_matrix:\n" << fixed_matrix << std::endl;
 
       //
-      //
-      return inverse(fixed_matrix);
+      // Inverse
+      //return inverse( fixed_matrix );
+      return fixed_matrix.llt().solve(I);
     }
   //
   //
