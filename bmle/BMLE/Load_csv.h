@@ -1259,7 +1259,7 @@ namespace NeuroBayes
 		  lambda_k_g_k = 16.;
 		if ( lambda_k_g_k < -32 )
 		  lambda_k_g_k = -16.;
-		std::cout << "lambda_k[" << g.first << "] = " << lambda_k_g_k << " " << exp(lambda_k_g_k)<< std::endl;
+		//std::cout << "lambda_k[" << g.first << "] = " << lambda_k_g_k << " " << exp(lambda_k_g_k)<< std::endl;
 	      }
 	}
       catch( itk::ExceptionObject & err )
