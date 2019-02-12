@@ -1,11 +1,9 @@
-#include<iostream>
-#include <stdio.h>
+#include <iostream>
 #include <cstdlib>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <chrono>
-#include <sys/stat.h>
 //
 // ITK
 //
@@ -20,51 +18,8 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 #include "Thread_dispatching.h"
 #include "Exception.h"
 #include "Load_csv.h"
-//
-//
-// Check the output directory exists
-inline bool directory_exists( const std::string& Dir )
-{
-  struct stat sb;
-  //
-  if ( stat(Dir.c_str(), &sb ) == 0 && S_ISDIR( sb.st_mode ) )
-    return true;
-  else
-    return false;
-}
-//
-//
-//
-class InputParser{
-public:
-  explicit InputParser ( const int &argc, const char **argv )
-  {
-    for( int i = 1; i < argc; ++i )
-      tokens.push_back( std::string(argv[i]) );
-  }
-  //
-  const std::string getCmdOption( const std::string& option ) const
-  {
-    //
-    //
-    std::vector< std::string >::const_iterator itr = std::find( tokens.begin(),
-								tokens.end(),
-								option );
-    if ( itr != tokens.end() && ++itr != tokens.end() )
-      return *itr;
-
-    //
-    //
-    return "";
-  }
-  //
-  bool cmdOptionExists( const std::string& option ) const
-  {
-    return std::find( tokens.begin(), tokens.end(), option) != tokens.end();
-  }
-private:
-  std::vector < std::string > tokens;
-};
+#include "Tools.h"
+#include "IO/Command_line.h"
 //
 //
 //
@@ -78,21 +33,31 @@ main( const int argc, const char **argv )
       //
       if( argc > 1 )
 	{
-	  InputParser input( argc, argv );
+	  NeuroBayes::InputParser input( argc, argv );
 	  if( input.cmdOptionExists("-h") )
-	    //
-	    // It is the responsability of the user to create the 
-	    // normalized/standardized hierarchical covariate
-	    //
-	    // -h                          : help
-	    // -X  inv_cov_error.nii.gz    : (prediction) inverse of error cov on parameters
-	    // -c   input.csv              : input file
-	    // -m   mask.nii.gz            : mask
-	    // -d                          : demeaning of age -> boolean
-	    //
-	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-						   "./bmle -c file.csv -m mask.nii.gz -o output_dir < -d (demeaning age) >",
-						   ITK_LOCATION );
+	    {
+	      //
+	      // It is the responsability of the user to create the 
+	      // normalized/standardized hierarchical covariate
+	      //
+	      // -h                          : help
+	      // -X   inv_cov_error.nii.gz   : (prediction) inverse of error cov on parameters
+	      // -c   input.csv              : input file
+	      // -m   mask.nii.gz            : mask
+	      // -d                          : demean, normalize, standardize
+	      //
+	      std::string help = "It is the responsability of the user to create the ";
+	      help += "normalized/standardized hierarchical covariate.\n";
+	      help += "-h                          : help\n";
+	      help += "-X   inv_cov_error.nii.gz   : (prediction) inverse of error cov on parameters\n";
+	      help += "-c   input.csv              : input file\n";
+	      help += "-o   output_dir             : output directory\n";
+	      help += "-m   mask.nii.gz            : mask\n";
+	      help += "-d                          : demean, normalize, standardize\n";
+	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						     help.c_str(),
+						     ITK_LOCATION );
+	    }
 
 	  //
 	  // takes the csv file ans the mask
@@ -100,7 +65,28 @@ main( const int argc, const char **argv )
 	  const std::string& mask           = input.getCmdOption("-m");
 	  const std::string& output_dir     = input.getCmdOption("-o");
 	  // Demean the age
-	  const std::string& demeaning      = input.getCmdOption("-d");
+	  const std::string& transformation       = input.getCmdOption("-d");
+	  NeuroStat::TimeTransformation time_tran = NeuroStat::TimeTransformation::NONE;
+	  if ( !transformation.empty() )
+	    {
+	      if ( transformation.compare("demean") == 0 )
+		time_tran = NeuroStat::TimeTransformation::DEMEAN;
+	      else if ( transformation.compare("normalize") == 0 )
+		time_tran = NeuroStat::TimeTransformation::NORMALIZE;
+	      else if ( transformation.compare("standardize") == 0 )
+		time_tran = NeuroStat::TimeTransformation::STANDARDIZE;
+	      else
+		{
+		  std::string mess  = "The time transformation can be: ";
+		   mess            += "none, demean, normalize, standardize.\n";
+		   mess            += "Trans formation: " + transformation;
+		   mess            += " is unknown.\n";
+		   mess            += " please try ./bmle -h for all options.\n";
+		   throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							  mess.c_str(),
+							  ITK_LOCATION );
+		}
+	    }
 	  // Prediction
 	  const std::string& inv_cov_error  = input.getCmdOption("-X");
 	  //
@@ -115,7 +101,7 @@ main( const int argc, const char **argv )
 							 ITK_LOCATION );
 		}
 	      // output directory exists?
-	      if ( !directory_exists( output_dir ) )
+	      if ( !NeuroBayes::directory_exists( output_dir ) )
 		{
 		  std::string mess = "The output directory is not correct.\n";
 		  mess += "./bmle -c file.csv -m mask.nii.gz -o output_dir";
@@ -134,13 +120,13 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 24;
+	      const int THREAD_NUM = 1;
 
 	      //
 	      // Load the CSV file
-	      MAC_bmle::BmleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
-									   input.cmdOptionExists("-d"), 
-									   inv_cov_error );
+	      NeuroBayes::BmleLoadCSV< 3/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
+									     time_tran, 
+									     inv_cov_error );
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();
 
@@ -197,13 +183,13 @@ main( const int argc, const char **argv )
 #else
 		      // Please do not remove the bracket!!
 		      // vertex
-//		      if ( idx[0] > 92 - 2  && idx[0] < 92 + 2 && 
-//			   idx[1] > 94 - 2  && idx[1] < 94 + 2 &&
-//			   idx[2] > 63 - 2  && idx[2] < 63 + 2 )
-		      // ALL
-		      if ( idx[0] > 5 && idx[0] < 110 && 
-			   idx[1] > 5 && idx[1] < 140 &&
-			   idx[2] > 5 && idx[2] < 110 )
+		      if ( idx[0] > 92 - 1  && idx[0] < 92 + 2 && 
+			   idx[1] > 94 - 1  && idx[1] < 94 + 2 &&
+			   idx[2] > 63 - 1  && idx[2] < 63 + 2 )
+//		      // ALL
+//		      if ( idx[0] > 5 && idx[0] < 110 && 
+//			   idx[1] > 5 && idx[1] < 140 &&
+//			   idx[2] > 5 && idx[2] < 110 )
 //		      // Octan 1
 //		      if ( idx[0] > 5 && idx[0] < 60  & 
 //			   idx[1] > 5 && idx[1] < 70  &&

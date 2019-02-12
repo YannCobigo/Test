@@ -23,9 +23,8 @@
 #include <itkSpatialOrientation.h>
 //
 //
-//
-#define inv_two_pi_squared 0.3989422804014327L
 #define inv_sqrt_2         0.70710678118654746
+#define inv_two_pi_squared 0.3989422804014327L
 //
 //
 //
@@ -33,7 +32,10 @@
 //
 //
 //
-namespace MAC_bmle
+//
+//
+//
+namespace NeuroBayes
 {
   inline bool file_exists ( const std::string& name )
   {
@@ -88,8 +90,12 @@ namespace MAC_bmle
     //
     // Add time point
     void add_tp( const int, const std::list< double >&, const std::string& );
+    //
     // Convariates' model
+    // for none and demean
     void build_design_matrices( const double );
+    // for normailization and standardization
+    void build_design_matrices( const double, const double );
     // Print
     void print() const;
 
@@ -176,9 +182,9 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f >
-    MAC_bmle::BmleSubject< D_r, D_f >::BmleSubject( const std::string Pidn,
-						    const int Group,
-						    const std::string& Output_dir ):
+    NeuroBayes::BmleSubject< D_r, D_f >::BmleSubject( const std::string Pidn,
+						      const int Group,
+						      const std::string& Output_dir ):
     PIDN_{Pidn}, group_{Group}, output_dir_{Output_dir}
   {
     /* 
@@ -189,7 +195,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::build_design_matrices( const double Age_mean )
+    NeuroBayes::BmleSubject< D_r, D_f >::build_design_matrices( const double Age_mean )
     {
       try
 	{
@@ -264,12 +270,94 @@ namespace MAC_bmle
 	}
     }
   //
+  //     norm       -- Std
+  // C1: min           mu (mean)
+  // C2: (max -min)    sigma (standard dev)
+  //
+  template < int D_r, int D_f > void
+    NeuroBayes::BmleSubject< D_r, D_f >::build_design_matrices( const double C1,
+								const double C2 )
+    {
+      try
+	{
+	  std::cout 
+	    << "NORM/STD: (" << C1 << "," << C2 << ")." << std::endl;
+	  //
+	  // Design matrix level 1
+	  //
+
+	  //
+	  //
+	  int num_lignes    = age_images_.size();
+	  //
+	  X_1_rand_.resize(  num_lignes, D_r );
+	  X_1_fixed_.resize( num_lignes, D_f );
+	  X_1_rand_  = Eigen::MatrixXd::Zero( num_lignes, D_r );
+	  X_1_fixed_ = Eigen::MatrixXd::Zero( num_lignes, D_f );
+	  // record ages
+	  std::vector< double > ages;
+	  for ( auto age : age_images_ )
+	    ages.push_back( age.first );
+	  // random part of the design matrix
+	  for ( int l = 0 ; l < num_lignes ; l++ )
+	    {
+	      for ( int c = 0 ; c <  D_r ; c++ )
+		X_1_rand_(l,c) = pow( (ages[l] - C1) / C2, c );
+	      // fixed part of the design matrix
+	      for ( int c = 0 ; c <  D_f ; c++ )
+		X_1_fixed_(l,c) = pow( (ages[l] - C1) / C2, D_r + c );
+	    }
+
+	  std::cout << "Random and fixed design matrices:" << std::endl;
+	  std::cout << X_1_rand_ << std::endl;
+	  std::cout << X_1_fixed_ << std::endl;
+	  std::cout << std::endl;
+	
+	  //
+	  // Design matrix level 2
+	  //
+
+	
+	  //
+	  // Initialize the covariate matrix
+	  // and the random parameters
+	  std::map< int, std::list< double > >::const_iterator age_cov_it = age_covariates_.begin();
+	  //
+	  X_2_.resize( D_r, ((*age_cov_it).second.size() + 1) * D_r );
+	  X_2_ = Eigen::MatrixXd::Zero( D_r, ((*age_cov_it).second.size() + 1)* D_r  );
+	  //
+	  //
+	  int line = 0;
+	  int col  = 0;
+	  X_2_.block< D_r, D_r >( 0, 0 ) = Eigen::MatrixXd::Identity( D_r, D_r );
+	  // covariates
+	  for ( auto cov : (*age_cov_it).second )
+	    X_2_.block< D_r, D_r >( 0, ++col * D_r ) = cov * Eigen::MatrixXd::Identity( D_r, D_r );
+      
+	  std::cout << X_2_ << std::endl;
+
+	  //
+	  // Prediction
+	  //
+	
+	  // Posterior parameters
+	  theta_y_ = Eigen::Matrix< double, D_r, 1 >::Zero( D_r );
+	  // Posterior covariance
+	  cov_theta_y_ = Eigen::Matrix< double, D_r, D_r >::Zero( D_r, D_r );
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  return exit( -1 );
+	}
+    }
+  //
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::add_tp( const int                  Age,
-					       const std::list< double >& Covariates,
-					       const std::string&         Image )
+    NeuroBayes::BmleSubject< D_r, D_f >::add_tp( const int                  Age,
+						 const std::list< double >& Covariates,
+						 const std::string&         Image )
     {
       try
 	{
@@ -325,9 +413,9 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::set_fit( const MaskType::IndexType Idx, 
-						const Eigen::MatrixXd Model_fit, 
-						const Eigen::MatrixXd Cov_fit )
+    NeuroBayes::BmleSubject< D_r, D_f >::set_fit( const MaskType::IndexType Idx, 
+						  const Eigen::MatrixXd Model_fit, 
+						  const Eigen::MatrixXd Cov_fit )
     {
       //
       // ToDo: I would like to write the goodness of the score (r-square ...)
@@ -351,7 +439,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::create_theta_images()
+    NeuroBayes::BmleSubject< D_r, D_f >::create_theta_images()
     {
       //std::cout << "We create output only one time" << std::endl;
       // Model output
@@ -378,7 +466,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::write_solution()
+    NeuroBayes::BmleSubject< D_r, D_f >::write_solution()
     {
       if ( prediction_ )
 	{
@@ -395,7 +483,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::print() const
+    NeuroBayes::BmleSubject< D_r, D_f >::print() const
     {
       std::cout << "PIDN: " << PIDN_ << std::endl;
       std::cout << "Group: " << group_ << std::endl;
@@ -425,7 +513,7 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::load_model_matrices() 
+    NeuroBayes::BmleSubject< D_r, D_f >::load_model_matrices() 
     {
       try
 	{
@@ -507,8 +595,8 @@ namespace MAC_bmle
   //
   //
   template < int D_r, int D_f > void
-    MAC_bmle::BmleSubject< D_r, D_f >::prediction( const MaskType::IndexType Idx, 
-						   const double Inv_C_eps )
+    NeuroBayes::BmleSubject< D_r, D_f >::prediction( const MaskType::IndexType Idx, 
+						     const double Inv_C_eps )
     {
       try
 	{
@@ -562,7 +650,6 @@ namespace MAC_bmle
 	      // record the value
 	      Probability_prediction_map_.set_val( tp, Idx,
 						   exp(arg) * inv_two_pi_squared / sqrt(variance) );
-	      //
 	      Error_prediction_map_.set_val( tp, Idx,
 					     erf( inv_sqrt_2 * (y-mu) / sqrt(variance) ) );
  
