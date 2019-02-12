@@ -847,30 +847,26 @@ namespace NeuroBayes
 	Eigen::MatrixXd H_m         = Eigen::MatrixXd::Zero(num_3D_images_, num_3D_images_ ); ; //= L * (L.transpose() * L).inverse() * L.transpose();
 	
 	
-	bool Fisher_H = true;
+	bool Fisher_H = false;
 	double
-	  F_old = 1.,
-	  F     = 1.,
-	  delta_F  = 100.;
+	  F_old   = 1.,
+	  F       = 1.,
+	  delta_F = 100.;
 	std::list< double > F_values;
 	int
 	  n  = 0, it = 0,
 	  N  = 20,         // N regulate the EM loop to be sure converge smootly
-	  NN = 1000,       // failed convergence criterias
-	  early_stop = 800;
+	  NN = 1000;       // failed convergence criterias
 	//
 	double 
-	  learning_rate_  = ( D_r < 3 ? 1.e-02 : 1.e-04 ),
-	  convergence_    = ( D_r < 3 ? 1.e-05 : 1.e-03 ),
-	  new_convergence = 1.e-16,
-	  epsilon         = 1.e-16;
+	  learning_rate_  = ( D_r < 3 ? 1.e-02 : 1.e-03 ),
+	  convergence_    = ( D_r < 3 ? 1.e-05 : 1.e-04 );
 	std::list< double > best_convergence;
 	//
 	// Fisher strategy
 	if ( Fisher_H )
 	  {
-	    early_stop      = 100;
-	    //learning_rate_  = 1.e-01;
+	    learning_rate_  = 1.e-01;
 	  }
 	
 	//
@@ -926,10 +922,8 @@ namespace NeuroBayes
 	      }
 	    //  comment
 	    //std::cout << P  << std::endl;
-	    std::cout <<  grad << std::endl;
-	    std::cout << H  << std::endl;
-	    std::cout << NeuroBayes::inverse( H )  << std::endl;
-	    std::cout << NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. )  << std::endl;
+	    //std::cout <<  grad << std::endl;
+	    //std::cout << H  << std::endl;
 	    ///  comment
 	    //
 	    // Lambda update
@@ -992,44 +986,6 @@ namespace NeuroBayes
 		delta_F = F - F_old;
 		F_values.push_back(F);
 	      }
-//	    
-//	    //std::cout << "mark_out,"
-//	    //	      << it << ","
-//	    //	      << Idx[0] << "_"<< Idx[1] << "_"<< Idx[2] << ","
-//	    //	      << n << ","
-//	    //	      << F << ","
-//	    //	      << F_old << "," 
-//	    //	      << delta_F << "," 
-//	    //	      << fabs( delta_F /F_old ) << std::endl;
-//
-//	    //
-//	    //
-//	    double abs_deltaF_F = ( delta_F / F_old > 0 ? delta_F / F_old : - delta_F / F_old );
-//	    if ( abs_deltaF_F < 1. && abs_deltaF_F > convergence_)
-//	      best_convergence.push_back( abs_deltaF_F );
-//	    //
-//	    //if ( fabs( F ) < 5.e-30  )
-//	    if ( abs_deltaF_F < convergence_ )
-//	      n++;
-//	    else
-//	      n = 0;
-//	    // Algo must converge fast
-//	    // If at 100 iterations we still did not converge, we create a new threshold
-//	    // based on the best values. Best value for the regular gradiant descent (800)
-//	    if ( it == early_stop )
-//	      {
-//		best_convergence.sort();
-//		auto fit = best_convergence.begin();
-//		new_convergence  = *(++fit);
-//		new_convergence += new_convergence/10.;
-//		//std::cout << "mark_best,"
-//		//	  << new_convergence << ","
-//		//	  << *(++fit) << ","
-//		//	  << *(++fit) << ",\n";
-//	      }
-//	    //
-//	    if ( it > early_stop && abs_deltaF_F < new_convergence )
-//	      n = N;
 	  } // while( n < N && it++ < NN )
 
 	//
@@ -1276,7 +1232,7 @@ namespace NeuroBayes
 	double
 	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
 	  F_3 = - ( Cov_theta_Y * X_.transpose() * Inv_Cov_eps * X_ ).trace();
-	std::cout << "mark_F1," << F_1 << "," << F_2 << "," << F_3 << "," << F_4  << "," << F_1 + F_2 + F_3 + F_4 << std::endl;
+	//std::cout << "mark_F1," << F_1 << "," << F_2 << "," << F_3 << "," << F_4  << "," << F_1 + F_2 + F_3 + F_4 << std::endl;
 	//std::cout << "Inv_Cov_eps = " << Inv_Cov_eps << std::endl;
 	//
 	//
@@ -1301,19 +1257,13 @@ namespace NeuroBayes
 	  for ( auto g : Lambda )
 	    for ( auto& lambda_k_g_k : Lambda[g.first] )
 	      {
-		//
-		std::cout << "av lambda_k[" << g.first << "] = " 
-			  << lambda_k_g_k << " " 
-			  << exp(lambda_k_g_k)<< std::endl;
-		//
 		if ( lambda_k_g_k > 4. )
 		  lambda_k_g_k = 1.e-03;
-		//if ( lambda_k_g_k < -64. )
-		//  lambda_k_g_k = -48.;
-		////
+		//
 		//std::cout << "lambda_k[" << g.first << "] = " 
 		//	  << lambda_k_g_k << " " 
 		//	  << exp(lambda_k_g_k)<< std::endl;
+		//
 	      }
 	}
       catch( itk::ExceptionObject & err )
@@ -1358,10 +1308,10 @@ namespace NeuroBayes
 	      //double stdev = sqrt(accum / (F_val.size()-1));
 	      double var       = accum / static_cast< double >(Window_size-1);
 	      double stability = fabs( sqrt(var) / mean );
-	      //
-	      std::cout << "Convergence," << mean << "," << var << "," 
-			<< stability << "," 
-			<< std::endl;
+	      ////
+	      //std::cout << "Convergence," << mean << "," << var << "," 
+	      //		<< stability << "," 
+	      //		<< std::endl;
 
 	      //
 	      //
