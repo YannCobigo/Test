@@ -754,7 +754,7 @@ namespace NeuroBayes
 	std::map< int /*group*/, std::vector< double > > lambda_k;
 	// C_eps_1 lambda
 	lambda_k[0]    = std::vector< double >( 1 );
-	lambda_k[0][0] = .01 /*log( 1.e+8 )*/;
+	lambda_k[0][0] = 1.e-03; /*log( 1.e+8 )*/;
 	// C_eps_2_ and fixed effects lambda
 	for ( auto g : groups_ )
 	  {
@@ -763,7 +763,7 @@ namespace NeuroBayes
 	    //
 	    for ( int d_r = 0 ; d_r < D_r ; d_r++ )
 	      {
-		lambda_k[g][d_r] = .02;
+		lambda_k[g][d_r] = 1.e-03;//.02;
 	      }
 	    // fixed effects
 	    if ( D_f > 0 )
@@ -816,8 +816,8 @@ namespace NeuroBayes
 	  early_stop = 800;
 	//
 	double 
-	  learning_rate_  = ( D_r > 2 ? 1.e-10 : 1.e-02 ),//1.e-02,//1.e-04,
-	  convergence_    = ( D_r > 2 ? 1.e-03 : 1.e-05 ), //1.e-03,
+	  learning_rate_  = ( D_r < 3 ? 1.e-02 : 1.e-04 ),
+	  convergence_    = ( D_r < 3 ? 1.e-05 : 1.e-03 ),
 	  new_convergence = 1.e-16,
 	  epsilon         = 1.e-16;
 	std::list< double > best_convergence;
@@ -826,7 +826,7 @@ namespace NeuroBayes
 	if ( Fisher_H )
 	  {
 	    early_stop      = 100;
-	    learning_rate_  = 1.e-01;
+	    //learning_rate_  = 1.e-01;
 	  }
 	
 	//
@@ -882,8 +882,10 @@ namespace NeuroBayes
 	      }
 	    //  comment
 	    //std::cout << P  << std::endl;
-	    //std::cout <<  grad << std::endl;
-	    //std::cout << H  << std::endl;
+	    std::cout <<  grad << std::endl;
+	    std::cout << H  << std::endl;
+	    std::cout << NeuroBayes::inverse( H )  << std::endl;
+	    std::cout << NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. )  << std::endl;
 	    ///  comment
 	    //
 	    // Lambda update
@@ -895,7 +897,7 @@ namespace NeuroBayes
 		// delta_lambda = NeuroBayes::inverse( H ) * grad;
 		//// delta_lambda = NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		// delta_lambda = -learning_rate_ * NeuroBayes::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) ) * grad;
-		delta_lambda = learning_rate_ * NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
+		delta_lambda = NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. ) * grad;
 		//std::cout << NeuroBayes::inverse( H - 1.e-16 * Eigen::MatrixXd::Identity( H.rows(), H.cols() ) )  << std::endl;
 	      }
 	    else
@@ -1219,7 +1221,7 @@ namespace NeuroBayes
 	    for ( int linco = 0 ; linco < Cov_theta_Y_rows ; linco++ )
 	      {
 		//std::cout << "Lchol(linco,linco) " << Lchol(linco,linco) << " ** log " << log( Lchol(linco,linco) )<< std::endl;
-		F_4 += (Lchol(linco,linco) < 1.e-16 ? -37.: log( Lchol(linco,linco) ));
+		F_4 += (Lchol(linco,linco) < 1.e-32 ? -73.: log( Lchol(linco,linco) ));
 	      }
 	    //
 	    F_4 *= 2.;
@@ -1260,12 +1262,14 @@ namespace NeuroBayes
 			  << lambda_k_g_k << " " 
 			  << exp(lambda_k_g_k)<< std::endl;
 		//
-		if ( lambda_k_g_k > 600. )
-		  lambda_k_g_k = 600.;
-		//
-		std::cout << "lambda_k[" << g.first << "] = " 
-			  << lambda_k_g_k << " " 
-			  << exp(lambda_k_g_k)<< std::endl;
+		if ( lambda_k_g_k > 4. )
+		  lambda_k_g_k = 1.e-03;
+		//if ( lambda_k_g_k < -64. )
+		//  lambda_k_g_k = -48.;
+		////
+		//std::cout << "lambda_k[" << g.first << "] = " 
+		//	  << lambda_k_g_k << " " 
+		//	  << exp(lambda_k_g_k)<< std::endl;
 	      }
 	}
       catch( itk::ExceptionObject & err )
