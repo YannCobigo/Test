@@ -51,8 +51,8 @@ namespace NeuroBayes
   public:
     /** Constructor. */
     explicit BmleLoadCSV( const std::string&, const std::string&, 
-			  // Age demeaning
-			  const bool,
+			  // Age Dns: demean, normalize, standardize
+			  const NeuroStat::TimeTransformation,
 			  // Prediction
 			  const std::string& );
     
@@ -214,7 +214,8 @@ namespace NeuroBayes
   template< int D_r, int D_f >
     BmleLoadCSV< D_r, D_f >::BmleLoadCSV( const std::string& CSV_file,
 					  const std::string& Output_dir,
-					  const bool Demeaning,
+					  // Age Dns: demean, normalize, standardize
+					  const NeuroStat::TimeTransformation Dns,
 					  const std::string& Inv_cov_error):
     csv_file_{ CSV_file.c_str() }, output_dir_{ Output_dir }
   {
@@ -222,7 +223,11 @@ namespace NeuroBayes
       {
 	//
 	//
-	double mean_age = 0.;
+	double 
+	  mean_age = 0.;
+	int
+	  max_age  = 0,
+	  min_age  = 70000;
 	std::string line;
 	//skip the first line
 	std::getline(csv_file_, line);
@@ -251,6 +256,10 @@ namespace NeuroBayes
 	    std::getline(lineStream, cell, ',');
 	    int age = std::stoi( cell );
 	    mean_age += static_cast< double >( age );
+	    if ( age < min_age )
+	      min_age = age;
+	    if ( age > max_age )
+	      max_age = age;
 	    // Get the image
 	    std::string image;
 	    std::getline(lineStream, image, ',');
@@ -288,21 +297,56 @@ namespace NeuroBayes
 	//
 	// mean age
 	mean_age /= static_cast< double >( num_3D_images_ );
-	if ( Demeaning )
-	  std::cout << "mean age: " << mean_age << std::endl;
-	else
-	  std::cout << "No demeaning " << std::endl;
 	//
 	Y_.resize( num_3D_images_ );
 	int sub_image{0};
-	for ( auto g : groups_ )
-	  for ( auto& s : group_pind_[g] )
+	//
+	switch ( Dns )
+	  {
+	  case NeuroStat::TimeTransformation::NONE:
+	  case NeuroStat::TimeTransformation::DEMEAN:
 	    {
-	      s.second.build_design_matrices( (Demeaning ? mean_age : 0) );
-	      // Create the vector of 3D measurements image
-	      for ( auto image : s.second.get_age_images() )
-		Y_[ sub_image++ ] = image.second;
+	      std::cout 
+		<< "Age will be demeaned with mean age: " 
+		<< mean_age << ".\n"
+		<< std::endl;
+	      //
+	      for ( auto g : groups_ )
+		for ( auto& s : group_pind_[g] )
+		  {
+		    s.second.build_design_matrices( (Dns == NeuroStat::TimeTransformation::NONE ? 
+						     0 : mean_age) );
+		    // Create the vector of 3D measurements image
+		    for ( auto image : s.second.get_age_images() )
+		      Y_[ sub_image++ ] = image.second;
+		  }
+	      //
+	      break;
 	    }
+	  case NeuroStat::TimeTransformation::NORMALIZE:
+	    {
+	      std::cout 
+		<< "Age will be normalized with: (" 
+		<< min_age << "," 
+		<< max_age << ").\n" 
+		<< std::endl;
+	      //
+	      for ( auto g : groups_ )
+		for ( auto& s : group_pind_[g] )
+		  {
+		    s.second.build_design_matrices( static_cast< double >(min_age),
+						    static_cast< double >(max_age - min_age) );
+		    // Create the vector of 3D measurements image
+		    for ( auto image : s.second.get_age_images() )
+		      Y_[ sub_image++ ] = image.second;
+		  }
+	      //
+	      break;
+	    }
+	  case NeuroStat::TimeTransformation::STANDARDIZE:
+	  default:
+	    std::cout << "No demeaning " << std::endl;
+	  }
 
 	//
 	// Prediction

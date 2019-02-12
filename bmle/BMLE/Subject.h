@@ -90,8 +90,12 @@ namespace NeuroBayes
     //
     // Add time point
     void add_tp( const int, const std::list< double >&, const std::string& );
+    //
     // Convariates' model
+    // for none and demean
     void build_design_matrices( const double );
+    // for normailization and standardization
+    void build_design_matrices( const double, const double );
     // Print
     void print() const;
 
@@ -220,6 +224,88 @@ namespace NeuroBayes
 	      // fixed part of the design matrix
 	      for ( int c = 0 ; c <  D_f ; c++ )
 		X_1_fixed_(l,c) = pow( ages[l] - Age_mean, D_r + c );
+	    }
+
+	  std::cout << "Random and fixed design matrices:" << std::endl;
+	  std::cout << X_1_rand_ << std::endl;
+	  std::cout << X_1_fixed_ << std::endl;
+	  std::cout << std::endl;
+	
+	  //
+	  // Design matrix level 2
+	  //
+
+	
+	  //
+	  // Initialize the covariate matrix
+	  // and the random parameters
+	  std::map< int, std::list< double > >::const_iterator age_cov_it = age_covariates_.begin();
+	  //
+	  X_2_.resize( D_r, ((*age_cov_it).second.size() + 1) * D_r );
+	  X_2_ = Eigen::MatrixXd::Zero( D_r, ((*age_cov_it).second.size() + 1)* D_r  );
+	  //
+	  //
+	  int line = 0;
+	  int col  = 0;
+	  X_2_.block< D_r, D_r >( 0, 0 ) = Eigen::MatrixXd::Identity( D_r, D_r );
+	  // covariates
+	  for ( auto cov : (*age_cov_it).second )
+	    X_2_.block< D_r, D_r >( 0, ++col * D_r ) = cov * Eigen::MatrixXd::Identity( D_r, D_r );
+      
+	  std::cout << X_2_ << std::endl;
+
+	  //
+	  // Prediction
+	  //
+	
+	  // Posterior parameters
+	  theta_y_ = Eigen::Matrix< double, D_r, 1 >::Zero( D_r );
+	  // Posterior covariance
+	  cov_theta_y_ = Eigen::Matrix< double, D_r, D_r >::Zero( D_r, D_r );
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  return exit( -1 );
+	}
+    }
+  //
+  //     norm       -- Std
+  // C1: min           mu (mean)
+  // C2: (max -min)    sigma (standard dev)
+  //
+  template < int D_r, int D_f > void
+    NeuroBayes::BmleSubject< D_r, D_f >::build_design_matrices( const double C1,
+								const double C2 )
+    {
+      try
+	{
+	  std::cout 
+	    << "NORM/STD: (" << C1 << "," << C2 << ")." << std::endl;
+	  //
+	  // Design matrix level 1
+	  //
+
+	  //
+	  //
+	  int num_lignes    = age_images_.size();
+	  //
+	  X_1_rand_.resize(  num_lignes, D_r );
+	  X_1_fixed_.resize( num_lignes, D_f );
+	  X_1_rand_  = Eigen::MatrixXd::Zero( num_lignes, D_r );
+	  X_1_fixed_ = Eigen::MatrixXd::Zero( num_lignes, D_f );
+	  // record ages
+	  std::vector< double > ages;
+	  for ( auto age : age_images_ )
+	    ages.push_back( age.first );
+	  // random part of the design matrix
+	  for ( int l = 0 ; l < num_lignes ; l++ )
+	    {
+	      for ( int c = 0 ; c <  D_r ; c++ )
+		X_1_rand_(l,c) = pow( (ages[l] - C1) / C2, c );
+	      // fixed part of the design matrix
+	      for ( int c = 0 ; c <  D_f ; c++ )
+		X_1_fixed_(l,c) = pow( (ages[l] - C1) / C2, D_r + c );
 	    }
 
 	  std::cout << "Random and fixed design matrices:" << std::endl;

@@ -18,6 +18,7 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 #include "Thread_dispatching.h"
 #include "Exception.h"
 #include "Load_csv.h"
+#include "Tools.h"
 #include "IO/Command_line.h"
 //
 //
@@ -43,15 +44,16 @@ main( const int argc, const char **argv )
 	      // -X   inv_cov_error.nii.gz   : (prediction) inverse of error cov on parameters
 	      // -c   input.csv              : input file
 	      // -m   mask.nii.gz            : mask
-	      // -d                          : demeaning of age -> boolean
+	      // -d                          : demean, normalize, standardize
 	      //
 	      std::string help = "It is the responsability of the user to create the ";
 	      help += "normalized/standardized hierarchical covariate.\n";
 	      help += "-h                          : help\n";
 	      help += "-X   inv_cov_error.nii.gz   : (prediction) inverse of error cov on parameters\n";
 	      help += "-c   input.csv              : input file\n";
+	      help += "-o   output_dir             : output directory\n";
 	      help += "-m   mask.nii.gz            : mask\n";
-	      help += "-d                          : demeaning of age -> boolean\n";
+	      help += "-d                          : demean, normalize, standardize\n";
 	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
 						     help.c_str(),
 						     ITK_LOCATION );
@@ -63,7 +65,28 @@ main( const int argc, const char **argv )
 	  const std::string& mask           = input.getCmdOption("-m");
 	  const std::string& output_dir     = input.getCmdOption("-o");
 	  // Demean the age
-	  const std::string& demeaning      = input.getCmdOption("-d");
+	  const std::string& transformation       = input.getCmdOption("-d");
+	  NeuroStat::TimeTransformation time_tran = NeuroStat::TimeTransformation::NONE;
+	  if ( !transformation.empty() )
+	    {
+	      if ( transformation.compare("demean") == 0 )
+		time_tran = NeuroStat::TimeTransformation::DEMEAN;
+	      else if ( transformation.compare("normalize") == 0 )
+		time_tran = NeuroStat::TimeTransformation::NORMALIZE;
+	      else if ( transformation.compare("standardize") == 0 )
+		time_tran = NeuroStat::TimeTransformation::STANDARDIZE;
+	      else
+		{
+		  std::string mess  = "The time transformation can be: ";
+		   mess            += "none, demean, normalize, standardize.\n";
+		   mess            += "Trans formation: " + transformation;
+		   mess            += " is unknown.\n";
+		   mess            += " please try ./bmle -h for all options.\n";
+		   throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							  mess.c_str(),
+							  ITK_LOCATION );
+		}
+	    }
 	  // Prediction
 	  const std::string& inv_cov_error  = input.getCmdOption("-X");
 	  //
@@ -102,7 +125,7 @@ main( const int argc, const char **argv )
 	      //
 	      // Load the CSV file
 	      NeuroBayes::BmleLoadCSV< 3/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
-									     input.cmdOptionExists("-d"), 
+									     time_tran, 
 									     inv_cov_error );
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();

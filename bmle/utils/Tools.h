@@ -11,8 +11,13 @@
 //
 //
 // When we reach numerical limits
-// 
+namespace NeuroStat
+{
+  enum TimeTransformation {NONE, DEMEAN, NORMALIZE, STANDARDIZE};
+}
 //
+//
+// When we reach numerical limits
 namespace NeuroBayes
 {
 
