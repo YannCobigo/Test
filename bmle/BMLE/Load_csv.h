@@ -228,6 +228,7 @@ namespace NeuroBayes
 	int
 	  max_age  = 0,
 	  min_age  = 70000;
+	std::list< int > age_stat;
 	std::string line;
 	//skip the first line
 	std::getline(csv_file_, line);
@@ -255,6 +256,7 @@ namespace NeuroBayes
 	    // Get the age
 	    std::getline(lineStream, cell, ',');
 	    int age = std::stoi( cell );
+	    age_stat.push_back(age);
 	    mean_age += static_cast< double >( age );
 	    if ( age < min_age )
 	      min_age = age;
@@ -308,7 +310,7 @@ namespace NeuroBayes
 	    {
 	      std::cout 
 		<< "Age will be demeaned with mean age: " 
-		<< mean_age << ".\n"
+		<< mean_age << " or 0 infunction of the option you have chosen.\n"
 		<< std::endl;
 	      //
 	      for ( auto g : groups_ )
@@ -326,16 +328,62 @@ namespace NeuroBayes
 	  case NeuroStat::TimeTransformation::NORMALIZE:
 	    {
 	      std::cout 
-		<< "Age will be normalized with: (" 
+		<< "Age will be normalized between: (" 
 		<< min_age << "," 
 		<< max_age << ").\n" 
 		<< std::endl;
 	      //
+	      double 
+		C1 = static_cast< double >(min_age),
+		C2 = static_cast< double >(max_age - min_age);
+	      //
+	      switch ( D_r )
+		{
+		case 2:
+		  {
+		    Eigen::Matrix< double, 2, 2 > M;
+		    M << 1., -C1/C2, 0., 1./C2;
+		    std::cout 
+		      <<  "C1 = min_age = " << min_age
+		      <<  ", C2 = (max_age - min_age) = " << max_age - min_age
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + epsilon\n"
+		      <<  "  = b0 + b2xu + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		case 3:
+		  {
+		    Eigen::Matrix< double, 3, 3 > M;
+		    M << 1., -C1/C2, C1*C1/C2/C2, 0., 1./C2, -2*C1/C2/C2, 0., 0., 1./C2/C2;
+		    std::cout 
+		      <<  "C1 = min_age = " << min_age
+		      <<  ", C2 = (max_age - min_age) = " << max_age - min_age
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + a1xt^2 + epsilon\n"
+		      <<  "  = b0 + b2xu + b2xu^2 + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		default:
+		  {
+		    std::string mess = "Case D_r is 4 or more, has not yet been developped.";
+		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							   mess.c_str(),
+							   ITK_LOCATION );
+		  }
+		}
+	      //
 	      for ( auto g : groups_ )
 		for ( auto& s : group_pind_[g] )
 		  {
-		    s.second.build_design_matrices( static_cast< double >(min_age),
-						    static_cast< double >(max_age - min_age) );
+		    s.second.build_design_matrices( C1, C2 );
 		    // Create the vector of 3D measurements image
 		    for ( auto image : s.second.get_age_images() )
 		      Y_[ sub_image++ ] = image.second;
@@ -344,8 +392,80 @@ namespace NeuroBayes
 	      break;
 	    }
 	  case NeuroStat::TimeTransformation::STANDARDIZE:
-	  default:
-	    std::cout << "No demeaning " << std::endl;
+	    {
+	      //
+	      // Standard deviation
+	      double accum = 0.0;
+	      std::for_each ( std::begin( age_stat ), std::end( age_stat ), 
+			      [&](const double d) {accum += (d - mean_age) * (d - mean_age);} );
+	      //
+	      double stdev = sqrt( accum / static_cast< double >(age_stat.size()-1) );
+	      //
+	      //
+	      std::cout 
+		<< "Age will be standardized with: (mu = " 
+		<< mean_age << ", std = " 
+		<< stdev << ").\n" 
+		<< std::endl;
+	      //
+	      double 
+		C1 = mean_age,
+		C2 = stdev;
+	      //
+	      switch ( D_r )
+		{
+		case 2:
+		  {
+		    Eigen::Matrix< double, 2, 2 > M;
+		    M << 1., -C1/C2, 0., 1./C2;
+		    std::cout 
+		      <<  "C1 = mu = " << C1
+		      <<  ", C2 = stdev = " << stdev
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + epsilon\n"
+		      <<  "  = b0 + b2xu + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		case 3:
+		  {
+		    Eigen::Matrix< double, 3, 3 > M;
+		    M << 1., -C1/C2, C1*C1/C2/C2, 0., 1./C2, -2*C1/C2/C2, 0., 0., 1./C2/C2;
+		    std::cout 
+		      <<  "C1 = mu = " << C1
+		      <<  ", C2 = stdev = " << stdev
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + a1xt^2 + epsilon\n"
+		      <<  "  = b0 + b2xu + b2xu^2 + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		default:
+		  {
+		    std::string mess = "Case D_r is 4 or more, has not yet been developped.";
+		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							   mess.c_str(),
+							   ITK_LOCATION );
+		  }
+		}
+	      //
+	      for ( auto g : groups_ )
+		for ( auto& s : group_pind_[g] )
+		  {
+		    s.second.build_design_matrices( C1, C2 );
+		    // Create the vector of 3D measurements image
+		    for ( auto image : s.second.get_age_images() )
+		      Y_[ sub_image++ ] = image.second;
+		  }
+	      //
+	      break;
+	    }
 	  }
 
 	//
