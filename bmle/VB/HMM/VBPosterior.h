@@ -407,6 +407,8 @@ namespace VB
       //
       posterior_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
       posterior_A_  = Eigen::Matrix< double, S, S >::Zero();
+      posterior_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
+      posterior_A_  = Eigen::Matrix< double, S, S >::Zero();
       //
       double                        norm_pi = 0.;
       Eigen::Matrix< double, S, 1 > norm_A  = Eigen::Matrix< double, S, 1 >::Zero();
@@ -626,7 +628,7 @@ namespace VB
 	//
 	// Wishart
 	// scalars
-	double nu_0_{Dim * 10.};
+	double nu_0_{Dim * 2.};
 	std::vector< double > nu_;
 	// vectors/matrices
 	Eigen::Matrix< double, Dim, Dim >                S_0_inv_{ 1.e-3 * Eigen::Matrix< double, Dim, Dim >::Identity() };
@@ -760,8 +762,8 @@ namespace VB
 	    S_mean_inv_[s] += W_mean_inv[s];
 	    //
 	    //
-	    //std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
-	    //std::cout << "S_mean_inv_[" << s << "]\n" << S_mean_inv_[s] << std::endl;
+	    std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
+	    std::cout << "S_mean_inv_[" << s << "]\n" << S_mean_inv_[s] << std::endl;
 	  }
       }
     //
