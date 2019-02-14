@@ -56,7 +56,7 @@ namespace VB
       explicit Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& );
     
       /** Destructor */
-      virtual ~Hidden_Markov_Model(){};
+      //~Hidden_Markov_Model(){};
 
       //
       // Accessors
@@ -68,13 +68,13 @@ namespace VB
       void   ExpectationMaximization();
 
 
-      //
-      // Accessors
-      using Var_post = std::tuple< 
-	VB::HMM::VP_qsi<Dim,S>, 
-	VB::HMM::VP_qdch<Dim,S>, 
-	VB::HMM::VP_qgau<Dim,S>  >;
-      enum Vpost {QSI,QDCH,QGAU};
+//rm      //
+//rm      // Accessors
+//rm      using Var_post = std::tuple< 
+//rm	VB::HMM::VP_qsi<Dim,S>, 
+//rm	VB::HMM::VP_qdch<Dim,S>, 
+//rm	VB::HMM::VP_qgau<Dim,S>  >;
+//rm      enum Vpost {QSI,QDCH,QGAU};
 
     private:
       //
@@ -89,7 +89,10 @@ namespace VB
 
       //
       // variational posteriors and hyper parameters
-      Var_post variational_posteriors_;
+      //rm      Var_post variational_posteriors_;
+      std::shared_ptr< VB::HMM::VP_qsi <Dim,S> > qsi_;
+      std::shared_ptr< VB::HMM::VP_qdch<Dim,S> > qdch_;
+      std::shared_ptr< VB::HMM::VP_qgau<Dim,S> > qgau_;
 
       //
       // log marginal likelihood lower bound
@@ -106,14 +109,20 @@ namespace VB
     {
       //
       //
-      variational_posteriors_ = std::make_tuple( VB::HMM::VP_qsi <Dim,S>( Y_ ),
-						 VB::HMM::VP_qdch<Dim,S>( Y_ ),
-						 VB::HMM::VP_qgau<Dim,S>( Y_ ) );
-      //
+//rm      variational_posteriors_ = std::make_tuple( VB::HMM::VP_qsi <Dim,S>( Y_ ),
+//rm						 VB::HMM::VP_qdch<Dim,S>( Y_ ),
+//rm						 VB::HMM::VP_qgau<Dim,S>( Y_ ) );
+      qsi_  = std::make_shared< VB::HMM::VP_qsi <Dim,S> >( Y_ );
+      qdch_ = std::make_shared< VB::HMM::VP_qdch<Dim,S> >( Y_ );
+      qgau_ = std::make_shared< VB::HMM::VP_qgau<Dim,S> >( Y_ );
+      // set dependencies
+      qsi_->set(qdch_,qgau_);
+      qdch_->set(qsi_);
+      qgau_->set(qsi_);
       // Initialization
-      std::get< QSI  >(variational_posteriors_).Expectation( variational_posteriors_ );
-      std::get< QDCH >(variational_posteriors_).Expectation( variational_posteriors_ );
-      std::get< QGAU >(variational_posteriors_).Expectation( variational_posteriors_ );
+      qsi_->Expectation();
+      qdch_->Expectation();
+      qgau_->Expectation();
       // Lower bound history
       F_history_.push_back( F_ );
     }
@@ -132,23 +141,23 @@ namespace VB
 	    std::cout << "Begining iteration: " << ++iteration << std::endl;
 	    //
 	    // M step
-	    std::get< QSI  >(variational_posteriors_).Maximization( variational_posteriors_ );
-	    std::get< QDCH >(variational_posteriors_).Maximization( variational_posteriors_ );
-	    std::get< QGAU >(variational_posteriors_).Maximization( variational_posteriors_ );
+	    qsi_->Maximization();
+	    qdch_->Maximization();
+	    qgau_->Maximization();
 	    //
 	    // E step
-	    std::get< QSI  >(variational_posteriors_).Expectation( variational_posteriors_ );
-	    std::get< QDCH >(variational_posteriors_).Expectation( variational_posteriors_ );
-	    std::get< QGAU >(variational_posteriors_).Expectation( variational_posteriors_ );
+	    qsi_->Expectation();
+	    qdch_->Expectation();
+	    qgau_->Expectation();
 
 	    //
 	    //
 	    F_old = F_;
 	    // Formaula (4.29)
 	    F_    = 0.;
-	    F_   += std::get< QSI  >(variational_posteriors_).get_F();
-	    F_   += std::get< QDCH >(variational_posteriors_).get_F();
-	    F_   += std::get< QGAU >(variational_posteriors_).get_F();
+	    F_   += qsi_->get_F();
+	    F_   += qdch_->get_F();
+	    F_   += qgau_->get_F();
 	    //
 	    dF    = F_ - F_old;
 	    F_history_.push_back( F_ );

@@ -30,17 +30,18 @@ int main(int argc, char const *argv[])
   //
   // model
   const int Dim = 1;
-  const int S   = 3;
+  const int S   = 4;
 
   //
   // Load the test dataset
+  //NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08.csv");
   NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_short.csv");
-  // two dim NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_2.csv");
+  //two dim NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_2.csv");
 
   //
   // Size of the sequence can be different for each entry (subject).
-  std::vector< std::vector< Eigen::Matrix< double, /*Dim*/ Dim, 1 > > >
-    HMM_intensity = reader.get_VB_HMM_date< Dim, S >();
+  std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >
+    HMM_intensity = reader.get_VB_HMM_date< Dim >();
   //
   for ( auto sub : HMM_intensity )
     {

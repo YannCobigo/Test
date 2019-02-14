@@ -39,8 +39,8 @@ namespace NeuroBayes
     // Destructor
     ~Load_csv(){};
     
-    template < int /*Dim*/ Dim, int /*number_of_states*/ S >
-      std::vector< std::vector< Eigen::Matrix< double, /*Dim*/ Dim, 1 > > >
+    template < int Dim >
+      std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >
       get_VB_HMM_date();
 
   private:
@@ -54,14 +54,14 @@ namespace NeuroBayes
   //
   // The number of timepoints can be different from one
   // subject to the other.
-  template < int /*Dim*/ Dim, int /*number_of_states*/ S >
-    std::vector< std::vector< Eigen::Matrix< double, /*Dim*/ Dim, 1 > > >
+  template < int /*Dim*/ Dim >
+    std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >
     Load_csv::get_VB_HMM_date()
     {
       //
       //
       std::ifstream file( file_name_ );
-      std::vector< std::vector< Eigen::Matrix< double, /*Dim*/ Dim, 1 > > > dataset;
+      std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > > dataset;
       std::string line = "";
       // 
       int dim = 0;

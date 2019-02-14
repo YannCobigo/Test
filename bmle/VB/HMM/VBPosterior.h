@@ -76,13 +76,9 @@ namespace VB
       //
       // Functions
       // Process the expectation step
-      using Var_post = std::tuple<
-	VP_qsi<Dim,S>,
-	VP_qdch<Dim,S>,
-	VP_qgau<Dim,S>
-	>;
-      virtual void Expectation( const Var_post& )  = 0;
-      virtual void Maximization( const Var_post& ) = 0;
+      //virtual ~VariationalPosterior(){};
+      virtual void Expectation()  = 0;
+      virtual void Maximization() = 0;
     };
     //
     //
@@ -111,21 +107,26 @@ namespace VB
 	//
 	// Functions
 	// Process the expectation step
-	using Var_post = std::tuple<
-	  VP_qsi<Dim,S>,
-	  VP_qdch<Dim,S>,
-	  VP_qgau<Dim,S>
-	  >;
-	virtual void Expectation( const Var_post& );
-	virtual void Maximization( const Var_post& );
+	virtual void Expectation();
+	virtual void Maximization();
 
 	//
 	// accessors
 	const inline double                                                         get_F()  const {return F_qsi_;}
 	const        std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_s()  const {return s_;}
 	const        std::vector< std::vector< Eigen::Matrix < double, S , S > > >& get_ss() const {return ss_;}
+	//
+	void set( std::shared_ptr< VB::HMM::VP_qdch<Dim,S> > Qdch,
+		  std::shared_ptr< VB::HMM::VP_qgau<Dim,S> > Qgau )
+	{qdch_ = Qdch; qgau_ = Qgau;};
 
       private:
+	//
+	//
+	std::shared_ptr< VB::HMM::VP_qdch<Dim,S> > qdch_;
+	std::shared_ptr< VB::HMM::VP_qgau<Dim,S> > qgau_;
+
+
 	//
 	//
 	std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > > Y_;
@@ -184,7 +185,7 @@ namespace VB
     //
     //
     template< int Dim, int S > void
-      VP_qsi<Dim,S>::Expectation( const Var_post& VP )
+      VP_qsi<Dim,S>::Expectation()
       {
 	//
 	// The E step is carried out using a dynamic programming trick which 
@@ -195,12 +196,10 @@ namespace VB
 	//
 	//
 	F_qsi_ = 0.;
-	const VP_qdch<Dim,S>  &qdch  = std::get< QDCH >( VP );
-	const VP_qgau<Dim,S>  &qgau  = std::get< QGAU >( VP );
 	//
-	const Eigen::Matrix< double, S, 1 >                                 &_pi_ = qdch.get_pi();
-	const Eigen::Matrix< double, S, S >                                 &_A_  = qdch.get_A();
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_N_  = qgau.get_N();
+	const Eigen::Matrix< double, S, 1 >                                 &_pi_ = qdch_->get_pi();
+	const Eigen::Matrix< double, S, S >                                 &_A_  = qdch_->get_A();
+	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_N_  = qgau_->get_N();
 	std::cout << "VP_qsi<Dim,S>::Expectation" << std::endl;
 	std::cout << "_pi_ \n" << _pi_ << std::endl;
 	std::cout << "_A_  \n" << _A_ << std::endl;
@@ -306,7 +305,7 @@ namespace VB
     //
     //
     template< int Dim, int S > void
-      VP_qsi<Dim,S>::Maximization( const Var_post& VP )
+      VP_qsi<Dim,S>::Maximization()
       {
       }
     //
@@ -340,22 +339,23 @@ namespace VB
 	//
 	// Functions
 	// Process the expectation step
-	using Var_post = std::tuple<
-	  VP_qsi<Dim,S>,
-	  VP_qdch<Dim,S>,
-	  VP_qgau<Dim,S>
-	  >;
-	virtual void Expectation( const Var_post& );
-	virtual void Maximization( const Var_post& );
+	virtual void Expectation();
+	virtual void Maximization();
 
 	//
 	// accessors
 	const inline double                        get_F()   const {return F_qdch_;}
 	const        Eigen::Matrix< double, S, 1 >& get_pi() const {return posterior_pi_;}
 	const        Eigen::Matrix< double, S, S >& get_A()  const {return posterior_A_;}
+	//
+	void set( std::shared_ptr< VB::HMM::VP_qsi<Dim,S> > Qsi )
+	{qsi_ = Qsi;};
 
   
       private:
+	//
+	//
+	std::shared_ptr< VB::HMM::VP_qsi<Dim,S> > qsi_;
 	//
 	// Compute local Kullback-Leibler divergence for Dirichlet distributions
 	// KL(Q||P) = \int dX \, Q(X) \ln (Q(X)/P(X))
@@ -451,20 +451,18 @@ namespace VB
     //
     //
     template< int Dim, int S > void
-      VP_qdch<Dim,S>::Expectation( const Var_post& VP )
+      VP_qdch<Dim,S>::Expectation()
       {
       }
     //
     //
     template< int Dim, int S > void
-      VP_qdch<Dim,S>::Maximization( const Var_post& VP )
+      VP_qdch<Dim,S>::Maximization()
       {
 	//
 	//
-	const VP_qsi<Dim,S>  &qsi  = std::get< QSI >( VP );
-	//
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_  = qsi.get_s();
-	const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_ss_ = qsi.get_ss();
+	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_  = qsi_->get_s();
+	const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_ss_ = qsi_->get_ss();
 	//
 	Eigen::Matrix< double, S, 1 > mean_s1 = Eigen::Matrix< double, S, 1 >::Zero();
 	Eigen::Matrix< double, S, S > mean_ss = Eigen::Matrix< double, S, S >::Zero();
@@ -593,19 +591,21 @@ namespace VB
 	//
 	// Functions
 	// Process the expectation step
-	using Var_post = std::tuple<
-	  VP_qsi<Dim,S>,
-	  VP_qdch<Dim,S>,
-	  VP_qgau<Dim,S>  >;
-	virtual void Expectation( const Var_post& );
-	virtual void Maximization( const Var_post& );
+	virtual void Expectation();
+	virtual void Maximization();
 
 	//
 	// accessors
 	const inline double                                                         get_F() const {return F_qgau_;}
 	const        std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_N() const {return posteriror_N_;}
+	//
+	void set( std::shared_ptr< VB::HMM::VP_qsi<Dim,S> > Qsi )
+	{qsi_ = Qsi;};
   
       private:
+	//
+	//
+	std::shared_ptr< VB::HMM::VP_qsi<Dim,S> > qsi_;
 	//
 	//
 	std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > > Y_;
@@ -619,19 +619,19 @@ namespace VB
 	// Gaussian
 	// scalars
 	double beta_0_{1.};
-	std::vector< double > beta_{S,0.};
+	std::vector< double > beta_;
 	// vectors
-	std::vector< Eigen::Matrix< double, Dim, 1 > > mu_0_{S};
-	std::vector< Eigen::Matrix< double, Dim, 1 > > mu_mean_{S};
+	std::vector< Eigen::Matrix< double, Dim, 1 > > mu_0_;
+	std::vector< Eigen::Matrix< double, Dim, 1 > > mu_mean_;
 	//
 	// Wishart
 	// scalars
 	double nu_0_{Dim * 10.};
-	std::vector< double > nu_{S,0.};
+	std::vector< double > nu_;
 	// vectors/matrices
-	Eigen::Matrix< double, Dim, Dim >                S_0_inv_{1.e-3*Eigen::Matrix< double, Dim, Dim >::Ones()};
-	std::vector< Eigen::Matrix< double, Dim, Dim > > S_mean_inv_{S};
-	std::vector< Eigen::Matrix< double, Dim, 1 > >   mu_0_mean_{S};
+	Eigen::Matrix< double, Dim, Dim >                S_0_inv_{ 1.e-3 * Eigen::Matrix< double, Dim, Dim >::Identity() };
+	std::vector< Eigen::Matrix< double, Dim, Dim > > S_mean_inv_;
+	std::vector< Eigen::Matrix< double, Dim, 1 > >   mu_0_mean_;
  
 
 	//
@@ -648,6 +648,19 @@ namespace VB
       VP_qgau<Dim,S>::VP_qgau(  const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y ):
       Y_{Y}, n_{Y.size()}
     {
+      //
+      //
+      beta_.resize(S);
+      // vectors
+      mu_0_.resize(S);
+      mu_mean_.resize(S);
+      //
+      // Wishart
+      // scalars
+      nu_.resize(S);
+      // vectors/matrices
+      S_mean_inv_.resize(S);
+      mu_0_mean_.resize(S);
       //
       for ( int s = 0 ; s < S ; s++ )
 	{
@@ -674,13 +687,12 @@ namespace VB
     //
     //
     template< int Dim, int S > void
-      VP_qgau<Dim,S>::Expectation( const Var_post& VP )
+      VP_qgau<Dim,S>::Expectation()
       {
+
 	//
 	//
-	const VP_qsi<Dim,S>  &qsi  = std::get< QSI >( VP );
-	//
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_ = qsi.get_s();
+	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_ = qsi_->get_s();
 	
 	//
 	//
@@ -698,7 +710,11 @@ namespace VB
 	    // Wishart part
 	    S_mean_inv_[s] = S_0_inv_;
 	    mu_0_mean_[s]  = Eigen::Matrix< double, Dim, 1 >::Zero();
-      
+	    nu_[s]         = nu_0_;
+	    // 
+	    y_mean[s]      = Eigen::Matrix< double, Dim, 1 >::Zero();
+	    W_mean_inv[s]  = Eigen::Matrix< double, Dim, Dim >::Zero();
+
 	    //
 	    // Build the means over the measures
 	    for ( int i = 0 ; i < n_ ; i++ )
@@ -744,14 +760,14 @@ namespace VB
 	    S_mean_inv_[s] += W_mean_inv[s];
 	    //
 	    //
-	    std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
-	    std::cout << "S_mean_inv_[" << s << "]\n" << S_mean_inv_[s] << std::endl;
+	    //std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
+	    //std::cout << "S_mean_inv_[" << s << "]\n" << S_mean_inv_[s] << std::endl;
 	  }
       }
     //
     //
     template< int Dim, int S > void
-      VP_qgau<Dim,S>::Maximization( const Var_post& VP )
+      VP_qgau<Dim,S>::Maximization()
       {
 	//posteriror_N_
 	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > ln_posteriror_N( posteriror_N_ );
