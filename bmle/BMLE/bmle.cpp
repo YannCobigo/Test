@@ -182,10 +182,10 @@ main( const int argc, const char **argv )
 			}
 #else
 		      // Please do not remove the bracket!!
-		      // vertex
-		      if ( idx[0] > 92 - 5  && idx[0] < 92 + 5 && 
-			   idx[1] > 94 - 5  && idx[1] < 94 + 5 &&
-			   idx[2] > 63 - 5  && idx[2] < 63 + 5 )
+//		      // vertex
+//		      if ( idx[0] > 92 - 5  && idx[0] < 92 + 5 && 
+//			   idx[1] > 94 - 5  && idx[1] < 94 + 5 &&
+//			   idx[2] > 63 - 5  && idx[2] < 63 + 5 )
 //		      // ALL
 //		      if ( idx[0] > 5 && idx[0] < 110 && 
 //			   idx[1] > 5 && idx[1] < 140 &&
@@ -219,9 +219,9 @@ main( const int argc, const char **argv )
 //			   idx[1] >= 70 && idx[1] < 140 &&
 //			   idx[2] >= 60 && idx[2] < 110 )
 //		      // Octan 8
-//		      if ( idx[0] >= 60 && idx[0] < 110 && 
-//			   idx[1] >= 70 && idx[1] < 140 &&
-//			   idx[2] >= 60 && idx[2] < 110 )
+		      if ( idx[0] >= 60 && idx[0] < 110 && 
+			   idx[1] >= 70 && idx[1] < 140 &&
+			   idx[2] >= 60 && idx[2] < 110 )
 			{
 			  pool.enqueue( std::ref(subject_mapping), idx );
 			}
