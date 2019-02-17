@@ -120,11 +120,11 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 1;
+	      const int THREAD_NUM = 16;
 
 	      //
 	      // Load the CSV file
-	      NeuroBayes::BmleLoadCSV< 3/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
+	      NeuroBayes::BmleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
 									     time_tran, 
 									     inv_cov_error );
 	      // create the 4D iamge with all the images
@@ -182,10 +182,10 @@ main( const int argc, const char **argv )
 			}
 #else
 		      // Please do not remove the bracket!!
-		      // vertex
-		      if ( idx[0] > 92 - 1  && idx[0] < 92 + 2 && 
-			   idx[1] > 94 - 1  && idx[1] < 94 + 2 &&
-			   idx[2] > 63 - 1  && idx[2] < 63 + 2 )
+//		      // vertex
+//		      if ( idx[0] > 92 - 5  && idx[0] < 92 + 5 && 
+//			   idx[1] > 94 - 5  && idx[1] < 94 + 5 &&
+//			   idx[2] > 63 - 5  && idx[2] < 63 + 5 )
 //		      // ALL
 //		      if ( idx[0] > 5 && idx[0] < 110 && 
 //			   idx[1] > 5 && idx[1] < 140 &&
@@ -219,9 +219,9 @@ main( const int argc, const char **argv )
 //			   idx[1] >= 70 && idx[1] < 140 &&
 //			   idx[2] >= 60 && idx[2] < 110 )
 //		      // Octan 8
-//		      if ( idx[0] >= 60 && idx[0] < 110 && 
-//			   idx[1] >= 70 && idx[1] < 140 &&
-//			   idx[2] >= 60 && idx[2] < 110 )
+		      if ( idx[0] >= 60 && idx[0] < 110 && 
+			   idx[1] >= 70 && idx[1] < 140 &&
+			   idx[2] >= 60 && idx[2] < 110 )
 			{
 			  pool.enqueue( std::ref(subject_mapping), idx );
 			}

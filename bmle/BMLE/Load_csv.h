@@ -228,6 +228,7 @@ namespace NeuroBayes
 	int
 	  max_age  = 0,
 	  min_age  = 70000;
+	std::list< int > age_stat;
 	std::string line;
 	//skip the first line
 	std::getline(csv_file_, line);
@@ -255,6 +256,7 @@ namespace NeuroBayes
 	    // Get the age
 	    std::getline(lineStream, cell, ',');
 	    int age = std::stoi( cell );
+	    age_stat.push_back(age);
 	    mean_age += static_cast< double >( age );
 	    if ( age < min_age )
 	      min_age = age;
@@ -308,7 +310,7 @@ namespace NeuroBayes
 	    {
 	      std::cout 
 		<< "Age will be demeaned with mean age: " 
-		<< mean_age << ".\n"
+		<< mean_age << " or 0 infunction of the option you have chosen.\n"
 		<< std::endl;
 	      //
 	      for ( auto g : groups_ )
@@ -326,16 +328,62 @@ namespace NeuroBayes
 	  case NeuroStat::TimeTransformation::NORMALIZE:
 	    {
 	      std::cout 
-		<< "Age will be normalized with: (" 
+		<< "Age will be normalized between: (" 
 		<< min_age << "," 
 		<< max_age << ").\n" 
 		<< std::endl;
 	      //
+	      double 
+		C1 = static_cast< double >(min_age),
+		C2 = static_cast< double >(max_age - min_age);
+	      //
+	      switch ( D_r )
+		{
+		case 2:
+		  {
+		    Eigen::Matrix< double, 2, 2 > M;
+		    M << 1., -C1/C2, 0., 1./C2;
+		    std::cout 
+		      <<  "C1 = min_age = " << min_age
+		      <<  ", C2 = (max_age - min_age) = " << max_age - min_age
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + epsilon\n"
+		      <<  "  = b0 + b2xu + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		case 3:
+		  {
+		    Eigen::Matrix< double, 3, 3 > M;
+		    M << 1., -C1/C2, C1*C1/C2/C2, 0., 1./C2, -2*C1/C2/C2, 0., 0., 1./C2/C2;
+		    std::cout 
+		      <<  "C1 = min_age = " << min_age
+		      <<  ", C2 = (max_age - min_age) = " << max_age - min_age
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + a1xt^2 + epsilon\n"
+		      <<  "  = b0 + b2xu + b2xu^2 + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		default:
+		  {
+		    std::string mess = "Case D_r is 4 or more, has not yet been developped.";
+		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							   mess.c_str(),
+							   ITK_LOCATION );
+		  }
+		}
+	      //
 	      for ( auto g : groups_ )
 		for ( auto& s : group_pind_[g] )
 		  {
-		    s.second.build_design_matrices( static_cast< double >(min_age),
-						    static_cast< double >(max_age - min_age) );
+		    s.second.build_design_matrices( C1, C2 );
 		    // Create the vector of 3D measurements image
 		    for ( auto image : s.second.get_age_images() )
 		      Y_[ sub_image++ ] = image.second;
@@ -344,8 +392,80 @@ namespace NeuroBayes
 	      break;
 	    }
 	  case NeuroStat::TimeTransformation::STANDARDIZE:
-	  default:
-	    std::cout << "No demeaning " << std::endl;
+	    {
+	      //
+	      // Standard deviation
+	      double accum = 0.0;
+	      std::for_each ( std::begin( age_stat ), std::end( age_stat ), 
+			      [&](const double d) {accum += (d - mean_age) * (d - mean_age);} );
+	      //
+	      double stdev = sqrt( accum / static_cast< double >(age_stat.size()-1) );
+	      //
+	      //
+	      std::cout 
+		<< "Age will be standardized with: (mu = " 
+		<< mean_age << ", std = " 
+		<< stdev << ").\n" 
+		<< std::endl;
+	      //
+	      double 
+		C1 = mean_age,
+		C2 = stdev;
+	      //
+	      switch ( D_r )
+		{
+		case 2:
+		  {
+		    Eigen::Matrix< double, 2, 2 > M;
+		    M << 1., -C1/C2, 0., 1./C2;
+		    std::cout 
+		      <<  "C1 = mu = " << C1
+		      <<  ", C2 = stdev = " << stdev
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + epsilon\n"
+		      <<  "  = b0 + b2xu + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		case 3:
+		  {
+		    Eigen::Matrix< double, 3, 3 > M;
+		    M << 1., -C1/C2, C1*C1/C2/C2, 0., 1./C2, -2*C1/C2/C2, 0., 0., 1./C2/C2;
+		    std::cout 
+		      <<  "C1 = mu = " << C1
+		      <<  ", C2 = stdev = " << stdev
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + a1xt^2 + epsilon\n"
+		      <<  "  = b0 + b2xu + b2xu^2 + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		default:
+		  {
+		    std::string mess = "Case D_r is 4 or more, has not yet been developped.";
+		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							   mess.c_str(),
+							   ITK_LOCATION );
+		  }
+		}
+	      //
+	      for ( auto g : groups_ )
+		for ( auto& s : group_pind_[g] )
+		  {
+		    s.second.build_design_matrices( C1, C2 );
+		    // Create the vector of 3D measurements image
+		    for ( auto image : s.second.get_age_images() )
+		      Y_[ sub_image++ ] = image.second;
+		  }
+	      //
+	      break;
+	    }
 	  }
 
 	//
@@ -847,30 +967,26 @@ namespace NeuroBayes
 	Eigen::MatrixXd H_m         = Eigen::MatrixXd::Zero(num_3D_images_, num_3D_images_ ); ; //= L * (L.transpose() * L).inverse() * L.transpose();
 	
 	
-	bool Fisher_H = true;
+	bool Fisher_H = false;
 	double
-	  F_old = 1.,
-	  F     = 1.,
-	  delta_F  = 100.;
+	  F_old   = 1.,
+	  F       = 1.,
+	  delta_F = 100.;
 	std::list< double > F_values;
 	int
 	  n  = 0, it = 0,
 	  N  = 20,         // N regulate the EM loop to be sure converge smootly
-	  NN = 1000,       // failed convergence criterias
-	  early_stop = 800;
+	  NN = 1000;       // failed convergence criterias
 	//
 	double 
-	  learning_rate_  = ( D_r < 3 ? 1.e-02 : 1.e-04 ),
-	  convergence_    = ( D_r < 3 ? 1.e-05 : 1.e-03 ),
-	  new_convergence = 1.e-16,
-	  epsilon         = 1.e-16;
+	  learning_rate_  = ( D_r < 3 ? 1.e-02 : 1.e-03 ),
+	  convergence_    = ( D_r < 3 ? 1.e-05 : 1.e-04 );
 	std::list< double > best_convergence;
 	//
 	// Fisher strategy
 	if ( Fisher_H )
 	  {
-	    early_stop      = 100;
-	    //learning_rate_  = 1.e-01;
+	    learning_rate_  = 1.e-01;
 	  }
 	
 	//
@@ -926,10 +1042,8 @@ namespace NeuroBayes
 	      }
 	    //  comment
 	    //std::cout << P  << std::endl;
-	    std::cout <<  grad << std::endl;
-	    std::cout << H  << std::endl;
-	    std::cout << NeuroBayes::inverse( H )  << std::endl;
-	    std::cout << NeuroBayes::inverse( H - Eigen::MatrixXd::Ones( H.rows(), H.cols() ) / 32. )  << std::endl;
+	    //std::cout <<  grad << std::endl;
+	    //std::cout << H  << std::endl;
 	    ///  comment
 	    //
 	    // Lambda update
@@ -992,44 +1106,6 @@ namespace NeuroBayes
 		delta_F = F - F_old;
 		F_values.push_back(F);
 	      }
-//	    
-//	    //std::cout << "mark_out,"
-//	    //	      << it << ","
-//	    //	      << Idx[0] << "_"<< Idx[1] << "_"<< Idx[2] << ","
-//	    //	      << n << ","
-//	    //	      << F << ","
-//	    //	      << F_old << "," 
-//	    //	      << delta_F << "," 
-//	    //	      << fabs( delta_F /F_old ) << std::endl;
-//
-//	    //
-//	    //
-//	    double abs_deltaF_F = ( delta_F / F_old > 0 ? delta_F / F_old : - delta_F / F_old );
-//	    if ( abs_deltaF_F < 1. && abs_deltaF_F > convergence_)
-//	      best_convergence.push_back( abs_deltaF_F );
-//	    //
-//	    //if ( fabs( F ) < 5.e-30  )
-//	    if ( abs_deltaF_F < convergence_ )
-//	      n++;
-//	    else
-//	      n = 0;
-//	    // Algo must converge fast
-//	    // If at 100 iterations we still did not converge, we create a new threshold
-//	    // based on the best values. Best value for the regular gradiant descent (800)
-//	    if ( it == early_stop )
-//	      {
-//		best_convergence.sort();
-//		auto fit = best_convergence.begin();
-//		new_convergence  = *(++fit);
-//		new_convergence += new_convergence/10.;
-//		//std::cout << "mark_best,"
-//		//	  << new_convergence << ","
-//		//	  << *(++fit) << ","
-//		//	  << *(++fit) << ",\n";
-//	      }
-//	    //
-//	    if ( it > early_stop && abs_deltaF_F < new_convergence )
-//	      n = N;
 	  } // while( n < N && it++ < NN )
 
 	//
@@ -1276,7 +1352,7 @@ namespace NeuroBayes
 	double
 	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
 	  F_3 = - ( Cov_theta_Y * X_.transpose() * Inv_Cov_eps * X_ ).trace();
-	std::cout << "mark_F1," << F_1 << "," << F_2 << "," << F_3 << "," << F_4  << "," << F_1 + F_2 + F_3 + F_4 << std::endl;
+	//std::cout << "mark_F1," << F_1 << "," << F_2 << "," << F_3 << "," << F_4  << "," << F_1 + F_2 + F_3 + F_4 << std::endl;
 	//std::cout << "Inv_Cov_eps = " << Inv_Cov_eps << std::endl;
 	//
 	//
@@ -1301,19 +1377,13 @@ namespace NeuroBayes
 	  for ( auto g : Lambda )
 	    for ( auto& lambda_k_g_k : Lambda[g.first] )
 	      {
-		//
-		std::cout << "av lambda_k[" << g.first << "] = " 
-			  << lambda_k_g_k << " " 
-			  << exp(lambda_k_g_k)<< std::endl;
-		//
 		if ( lambda_k_g_k > 4. )
 		  lambda_k_g_k = 1.e-03;
-		//if ( lambda_k_g_k < -64. )
-		//  lambda_k_g_k = -48.;
-		////
+		//
 		//std::cout << "lambda_k[" << g.first << "] = " 
 		//	  << lambda_k_g_k << " " 
 		//	  << exp(lambda_k_g_k)<< std::endl;
+		//
 	      }
 	}
       catch( itk::ExceptionObject & err )
@@ -1358,10 +1428,10 @@ namespace NeuroBayes
 	      //double stdev = sqrt(accum / (F_val.size()-1));
 	      double var       = accum / static_cast< double >(Window_size-1);
 	      double stability = fabs( sqrt(var) / mean );
-	      //
-	      std::cout << "Convergence," << mean << "," << var << "," 
-			<< stability << "," 
-			<< std::endl;
+	      ////
+	      //std::cout << "Convergence," << mean << "," << var << "," 
+	      //		<< stability << "," 
+	      //		<< std::endl;
 
 	      //
 	      //
