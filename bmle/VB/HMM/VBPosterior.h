@@ -373,6 +373,7 @@ namespace VB
 	Eigen::Matrix< double, S, 1 > alpha_pi_;
 	// Posterior density of the state
 	Eigen::Matrix< double, S, 1 > posterior_pi_;
+	Eigen::Matrix< double, S, 1 > posterior_alpha_pi_;
 
 	//
 	// A distribution
@@ -380,6 +381,7 @@ namespace VB
 	Eigen::Matrix< double, S, S > alpha_A_;
 	// Posterior density of the state
 	Eigen::Matrix< double, S, S > posterior_A_;
+	Eigen::Matrix< double, S, S > posterior_alpha_A_;
 
 	//
 	// log marginal likelihood lower bound: \qsi component
@@ -402,12 +404,13 @@ namespace VB
       std::gamma_distribution< double > distribution_pi( alpha_pi_0_ / static_cast< double >(S), 1.0 );
       std::gamma_distribution< double > distribution_A( alpha_A_0_ / static_cast< double >(S), 1.0 );
       //
-      posterior_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
-      posterior_A_  = Eigen::Matrix< double, S, S >::Zero();
+      posterior_pi_       = Eigen::Matrix< double, S, 1 >::Zero();
+      posterior_alpha_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
+      posterior_A_        = Eigen::Matrix< double, S, S >::Zero();
       //
       //
-      double                        norm_pi = 0.;
-      Eigen::Matrix< double, S, 1 > norm_A  = Eigen::Matrix< double, S, 1 >::Zero();
+      double                        norm_alpha_pi = 0.;
+      Eigen::Matrix< double, S, 1 > norm_alpha_A  = Eigen::Matrix< double, S, 1 >::Zero();
       // Calculate the full length of input data
       int total_length = 0;
       for ( int i = 0 ; i < n_ ; i++ )
@@ -415,24 +418,39 @@ namespace VB
       //
       for ( int s = 0 ; s < S ; s++ ) 
 	{
-	  posterior_pi_(s,0) = distribution_pi( generator );
-	  norm_pi           += posterior_pi_(s,0);
+	  posterior_alpha_pi_(s,0) = distribution_pi( generator );
+	  norm_alpha_pi           += posterior_alpha_pi_(s,0);
 	  for ( int ss = 0 ; ss < S ; ss++ )
 	    {
-	      posterior_A_(s,ss) = distribution_A( generator );
-	      norm_A(s)         += posterior_A_(s,ss);
+	      posterior_alpha_A_(s,ss) = distribution_A( generator );
+	      norm_alpha_A(s)         += posterior_alpha_A_(s,ss);
 	    }
 	}
       // normalization
-      posterior_pi_ /= norm_pi;
-      posterior_pi_ *= n_;
-      posterior_pi_ += alpha_pi_;
+      posterior_alpha_pi_ /= norm_alpha_pi;
+      posterior_alpha_pi_ *= n_;
+      posterior_alpha_pi_ += alpha_pi_;
+      //
+      // Posterior pi
+      double sum_post_alpha_pi = posterior_alpha_pi_.sum();
+      //
       for ( int s = 0 ; s < S ; s++ )
 	{
-	  posterior_A_.row(s) /= norm_A(s);
-	  posterior_A_.row(s) *= total_length;
+	  //
+	  posterior_pi_(s,0) = exp( gsl_sf_psi(posterior_alpha_pi_(s,0)) - gsl_sf_psi(sum_post_alpha_pi) );
+	  //
+	  posterior_alpha_A_.row(s) /= norm_alpha_A(s);
+	  posterior_alpha_A_.row(s) *= total_length;
 	}
-      posterior_A_ += alpha_A_;
+      posterior_alpha_A_ += alpha_A_;
+      // Poesterior A
+      Eigen::Matrix< double, S, 1 > sum_post_alpha_A = posterior_alpha_A_.rowwise().sum();
+      for ( int s = 0 ; s < S ; s++ )
+	for ( int ss = 0 ; ss < S ; ss++ )
+	  posterior_A_(s,ss) = exp( gsl_sf_psi(posterior_alpha_A_(s,ss)) - gsl_sf_psi(sum_post_alpha_A(s,0)) );
+      //
+      std::cout << "posterior_alpha_pi_ = \n" << posterior_alpha_pi_ << std::endl;
+      std::cout << "posterior_alpha_A_ = \n" << posterior_alpha_A_ << std::endl;
       //
       std::cout << "posterior_pi_ = \n" << posterior_pi_ << std::endl;
       std::cout << "posterior_A_ = \n" << posterior_A_ << std::endl;
