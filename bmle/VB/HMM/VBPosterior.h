@@ -249,19 +249,18 @@ namespace VB
 		for ( int s = 0 ; s < S ; s++ )
 		  {
 		    for ( int ss = 0 ; ss < S ; ss++ )
-		      {
-			beta_i_t_[i][t](s,0) += _A_(s,ss) * _N_[i][t+1](ss,0) * beta_i_t_[i][t+1](ss,0);
-			std::cout << "_A_(s,ss) " << _A_(s,ss) << std::endl;
-			std::cout << "_N_[i][t+1](ss,0) " << _N_[i][t+1](ss,0) << std::endl;
-			std::cout << "beta_i_t_[i][t+1](ss,0) " << beta_i_t_[i][t+1](ss,0) << std::endl;
-			std::cout << "beta_i_t_[i][t] \n" << beta_i_t_[i][t] << std::endl;
-		      }
+		      beta_i_t_[i][t](s,0) += _A_(s,ss) * _N_[i][t+1](ss,0) * beta_i_t_[i][t+1](ss,0);
 		    //
 		    beta_norm += beta_i_t_[i][t](s,0);
 		  }
 		//
 		beta_i_t_[i][t] /= beta_norm;
-		std::cout << "beta_i_t_[i][t] \n" << beta_i_t_[i][t]  << std::endl;
+		//
+		std::cout << "beta_i_t_["<<i<<"]["<<t<<"] \n" << beta_i_t_[i][t]  << std::endl;
+		std::cout << "_A_ \n " << _A_ << std::endl;
+		std::cout << "_N_["<<i<<"][t+1:"<<t+1<<"] \n" << _N_[i][t+1] << std::endl;
+		std::cout << "beta_i_t_["<<i<<"][t+1:"<<t+1<<"] \n" << beta_i_t_[i][t+1] << std::endl;
+		std::cout << "beta_i_t_["<<i<<"][t:"<<t<<"] \n" << beta_i_t_[i][t] << std::endl;
 	      }
 	    //
 	    // <s_{i,t}> && <s_{i,t-1} x s_{i,t}>
@@ -400,33 +399,41 @@ namespace VB
       // Posterior density of the state
       // We initialize the posterior with a Dirichlet distribution
       std::default_random_engine generator;
-      std::gamma_distribution< double > distribution_pi( alpha_pi_0_ / static_cast< double >(S),
-							 1.0 );
-      std::gamma_distribution< double > distribution_A( alpha_A_0_ / static_cast< double >(S),
-							 1.0 );
+      std::gamma_distribution< double > distribution_pi( alpha_pi_0_ / static_cast< double >(S), 1.0 );
+      std::gamma_distribution< double > distribution_A( alpha_A_0_ / static_cast< double >(S), 1.0 );
       //
       posterior_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
       posterior_A_  = Eigen::Matrix< double, S, S >::Zero();
-      posterior_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
-      posterior_A_  = Eigen::Matrix< double, S, S >::Zero();
+      //
       //
       double                        norm_pi = 0.;
       Eigen::Matrix< double, S, 1 > norm_A  = Eigen::Matrix< double, S, 1 >::Zero();
+      // Calculate the full length of input data
+      int total_length = 0;
+      for ( int i = 0 ; i < n_ ; i++ )
+	total_length += Y_[i].size();
       //
       for ( int s = 0 ; s < S ; s++ ) 
 	{
 	  posterior_pi_(s,0) = distribution_pi( generator );
-	  norm_pi += posterior_pi_(s,0);
+	  norm_pi           += posterior_pi_(s,0);
 	  for ( int ss = 0 ; ss < S ; ss++ )
 	    {
 	      posterior_A_(s,ss) = distribution_A( generator );
-	      norm_A(s) += posterior_A_(s,ss);
+	      norm_A(s)         += posterior_A_(s,ss);
 	    }
 	}
       // normalization
       posterior_pi_ /= norm_pi;
+      posterior_pi_ *= n_;
+      posterior_pi_ += alpha_pi_;
       for ( int s = 0 ; s < S ; s++ )
-	posterior_A_.row(s) /= norm_A(s);
+	{
+	  posterior_A_.row(s) /= norm_A(s);
+	  posterior_A_.row(s) *= total_length;
+	}
+      posterior_A_ += alpha_A_;
+      //
       std::cout << "posterior_pi_ = \n" << posterior_pi_ << std::endl;
       std::cout << "posterior_A_ = \n" << posterior_A_ << std::endl;
     }
