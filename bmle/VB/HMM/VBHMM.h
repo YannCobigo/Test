@@ -68,13 +68,6 @@ namespace VB
       void   ExpectationMaximization();
 
 
-//rm      //
-//rm      // Accessors
-//rm      using Var_post = std::tuple< 
-//rm	VB::HMM::VP_qsi<Dim,S>, 
-//rm	VB::HMM::VP_qdch<Dim,S>, 
-//rm	VB::HMM::VP_qgau<Dim,S>  >;
-//rm      enum Vpost {QSI,QDCH,QGAU};
 
     private:
       //
@@ -109,9 +102,6 @@ namespace VB
     {
       //
       //
-//rm      variational_posteriors_ = std::make_tuple( VB::HMM::VP_qsi <Dim,S>( Y_ ),
-//rm						 VB::HMM::VP_qdch<Dim,S>( Y_ ),
-//rm						 VB::HMM::VP_qgau<Dim,S>( Y_ ) );
       qsi_  = std::make_shared< VB::HMM::VP_qsi <Dim,S> >( Y_ );
       qdch_ = std::make_shared< VB::HMM::VP_qdch<Dim,S> >( Y_ );
       qgau_ = std::make_shared< VB::HMM::VP_qgau<Dim,S> >( Y_ );

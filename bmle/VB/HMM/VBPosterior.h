@@ -343,7 +343,7 @@ namespace VB
 
 	//
 	// accessors
-	const inline double                        get_F()   const {return F_qdch_;}
+	const inline double                         get_F()   const {return F_qdch_;}
 	const        Eigen::Matrix< double, S, 1 >& get_pi() const {return posterior_pi_;}
 	const        Eigen::Matrix< double, S, S >& get_A()  const {return posterior_A_;}
 	//
@@ -508,53 +508,46 @@ namespace VB
 	//
 	// Posterior Dirichlet parameters
 	//
-	double                        prior_pi       = alpha_pi_0_ / static_cast< double >(S);
-	double                        prior_A        = alpha_A_0_  / static_cast< double >(S);
-	double                        alpha_pi_sum   = 0.;
-	Eigen::Matrix< double, S, 1 > alpha_A_sum    = Eigen::Matrix< double, S, 1 >::Zero();
-	Eigen::Matrix< double, S, 1 > alpha_pi_prior = prior_pi * Eigen::Matrix< double, S, 1 >::Ones();
-	Eigen::Matrix< double, S, 1 > alpha_A_prior  = prior_A  * Eigen::Matrix< double, S, 1 >::Ones();
+	double                        posterior_alpha_pi_sum = 0.;
+	Eigen::Matrix< double, S, 1 > posterior_alpha_A_sum  = Eigen::Matrix< double, S, 1 >::Zero();
 	
 	//
-	alpha_pi_    = alpha_pi_prior + mean_s1;
-	alpha_pi_sum = alpha_pi_.sum();
+	posterior_alpha_pi_    = alpha_pi_ + mean_s1;
+	posterior_alpha_pi_sum = posterior_alpha_pi_.sum();
 	//
 	for ( int s = 0 ; s < S ; s++ )
-	  {
-	    // A
-	    for ( int ss = 0 ; ss < S ; ss++ )
-	      {
-		alpha_A_(s,ss)     = prior_A + mean_ss(s,ss);
-		alpha_A_sum(ss,0) += alpha_A_(s,ss);
-	      }
-	  }
+	  for ( int ss = 0 ; ss < S ; ss++ )
+	    {
+	      posterior_alpha_A_(s,ss)     = alpha_A_(s,0) + mean_ss(s,ss);
+	      posterior_alpha_A_sum(ss,0) += posterior_alpha_A_(s,ss);
+	    }
 
 	//
 	// log marginal likelihood lower bound
+	std::cout << "posterior_alpha_pi_ \n" << posterior_alpha_pi_ << std::endl;
 	std::cout << "alpha_pi_ \n" << alpha_pi_ << std::endl;
-	std::cout << "alpha_pi_prior \n" << alpha_pi_prior << std::endl;
-	double F_pi = - KL_Dirichlet_( alpha_pi_,  alpha_pi_prior );
+	double F_pi = - KL_Dirichlet_( posterior_alpha_pi_,  alpha_pi_ );
 	double F_A  = 0.;
 	//
 	for ( int s = 0 ; s < S ; s++ )
-	  F_A -= KL_Dirichlet_( alpha_A_.col(s).transpose(),  alpha_A_prior );
+	  F_A -= KL_Dirichlet_( posterior_alpha_A_.col(s).transpose(),  alpha_A_.col(s) );
 
 	//
 	// update the posterior proba density
-	if ( true )
+	if ( false )
 	  {
-	    // Pi
-	    posterior_pi_ = mean_s1 / mean_s1.sum();
-	    // A
-	    posterior_A_ = mean_ss;
-	    for ( int s = 0 ; s < S ; s++ )
-	      {
-		double norm_row = 0.;
-		for ( int ss = 0 ; ss < S ; ss++ )
-		  norm_row += mean_ss(s,ss);
-		//
-		posterior_A_.row(s) /= norm_row;
-	      }
+//	    // Pi
+//	    posterior_pi_ = mean_s1 / mean_s1.sum();
+//	    // A
+//	    posterior_A_ = mean_ss;
+//	    for ( int s = 0 ; s < S ; s++ )
+//	      {
+//		double norm_row = 0.;
+//		for ( int ss = 0 ; ss < S ; ss++ )
+//		  norm_row += mean_ss(s,ss);
+//		//
+//		posterior_A_.row(s) /= norm_row;
+//	      }
 	  }
 	else
 	  {
@@ -562,24 +555,19 @@ namespace VB
 	    for ( int s = 0 ; s < S ; s++ )
 	      {
 		// Pi
-		norm_pi += posterior_pi_(s,0) = exp( gsl_sf_psi(alpha_pi_(s,0)) - gsl_sf_psi(alpha_pi_sum) );
+		posterior_pi_(s,0) = exp( gsl_sf_psi(posterior_alpha_pi_(s,0)) - gsl_sf_psi(posterior_alpha_pi_sum) );
 		// A
-		double norm_row = 0.;
 		for ( int ss = 0 ; ss < S ; ss++ )
-		  {
-		    norm_row += posterior_A_(s,ss) = exp( gsl_sf_psi(alpha_A_(s,ss)) - gsl_sf_psi(alpha_A_sum(ss,0)) );
-		  }
-		//
-		posterior_A_.row(s) /= norm_row;
+		  posterior_A_(s,ss) = exp( gsl_sf_psi(posterior_alpha_A_(s,ss)) - gsl_sf_psi(posterior_alpha_A_sum(s,0)) );
 	      }
-	    //
-	    posterior_pi_ /= norm_pi;
 	  }
 	//
 	//
 	std::cout << "posterior Pi and A" << std::endl;
 	std::cout << "posterior_pi_\n" << posterior_pi_ << std::endl;
 	std::cout << "posterior_A_\n" << posterior_A_ << std::endl;
+	std::cout << "posterior_A_ col wise\n" << posterior_A_.colwise().sum() << std::endl;
+	std::cout << "posterior_A_ row wise\n" << posterior_A_.rowwise().sum().transpose() << std::endl;
 	
 	// 
 	//
