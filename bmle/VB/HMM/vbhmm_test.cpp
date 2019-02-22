@@ -34,8 +34,11 @@ int main(int argc, char const *argv[])
 
   //
   // Load the test dataset
-  //NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08.csv");
-  NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_short.csv");
+  NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08.csv");
+  // medium 1 2 5
+  //NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_medium5.csv");
+  // 20 cases
+  //NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_short.csv");
   //two dim NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_2.csv");
 
   //

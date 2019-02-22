@@ -126,7 +126,7 @@ namespace VB
 	  dF    =  1.e06,
 	  F_old = -1.e-40;
 	int iteration = 0;
-	while ( fabs(dF) > 1.e-3  )
+	while ( fabs(dF) > 1.e-6 )
 	  {
 	    std::cout << "Begining iteration: " << ++iteration << std::endl;
 	    //

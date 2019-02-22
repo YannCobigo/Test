@@ -123,8 +123,7 @@ namespace VB
       VB::HMM::Subject< Dim, Num_States >::Subject( const std::string Pidn,
 						    const std::string& Output_dir ):
       PIDN_{Pidn}, output_dir_{Output_dir}
-    {
-    }
+    {}
     //
     //
     //
