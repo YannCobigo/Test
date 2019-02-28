@@ -118,6 +118,8 @@ namespace NeuroBayes
     std::ifstream csv_file_;
     // output directory
     std::string   output_dir_;
+    // Statistic transformation of ages
+    std::string   age_statistics_tranformation_;
     //
     // Arrange pidns into groups
     std::set< int > groups_;
@@ -302,6 +304,7 @@ namespace NeuroBayes
 	//
 	Y_.resize( num_3D_images_ );
 	int sub_image{0};
+	age_statistics_tranformation_ = Output_dir + "/age_transformation.txt";
 	//
 	switch ( Dns )
 	  {
@@ -312,10 +315,17 @@ namespace NeuroBayes
 		<< "Age will be demeaned with mean age: " 
 		<< mean_age << " or 0 infunction of the option you have chosen.\n"
 		<< std::endl;
+	      // record the transformation
+	      std::ofstream fout( age_statistics_tranformation_ );
+	      fout << Dns << " " 
+		   << ( Dns == NeuroStat::TimeTransformation::NONE ? 0 : mean_age )
+		   << std::endl;
+	      fout.close();
 	      //
 	      for ( auto g : groups_ )
 		for ( auto& s : group_pind_[g] )
 		  {
+		    //
 		    s.second.build_design_matrices( (Dns == NeuroStat::TimeTransformation::NONE ? 
 						     0 : mean_age) );
 		    // Create the vector of 3D measurements image
@@ -379,6 +389,12 @@ namespace NeuroBayes
 							   ITK_LOCATION );
 		  }
 		}
+	      // record the transformation
+	      std::ofstream fout( age_statistics_tranformation_ );
+	      fout << Dns << " " 
+		   << C1 << " " << C2
+		   << std::endl;
+	      fout.close();
 	      //
 	      for ( auto g : groups_ )
 		for ( auto& s : group_pind_[g] )
@@ -454,6 +470,12 @@ namespace NeuroBayes
 							   ITK_LOCATION );
 		  }
 		}
+	      // record the transformation
+	      std::ofstream fout( age_statistics_tranformation_ );
+	      fout << Dns << " " 
+		   << C1 << " " << C2
+		   << std::endl;
+	      fout.close();
 	      //
 	      for ( auto g : groups_ )
 		for ( auto& s : group_pind_[g] )
@@ -463,6 +485,96 @@ namespace NeuroBayes
 		    for ( auto image : s.second.get_age_images() )
 		      Y_[ sub_image++ ] = image.second;
 		  }
+	      //
+	      break;
+	    }
+	  case NeuroStat::TimeTransformation::LOAD:
+	    {
+	      // record the transformation
+	      std::ifstream fin( age_statistics_tranformation_ );
+	      std::stringstream stat_string;
+	      // Check the file exist
+	      if ( fin )
+		stat_string << fin.rdbuf();
+	      else
+		{
+		  std::string mess = "The statistic transformation file does not exist.\n";
+		  mess += "Please, check on: " + age_statistics_tranformation_;
+		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							 mess.c_str(),
+							 ITK_LOCATION );
+		}
+	      //
+	      std::string str_time_transfo;
+	      int time_transfo = 0;
+	      //
+	      stat_string >> str_time_transfo;
+	      time_transfo = std::stoi( str_time_transfo );
+	      std::cout << "Transforamtion: " << time_transfo << std::endl;
+	      //
+	      //
+	      switch ( time_transfo )
+		{
+		case NeuroStat::TimeTransformation::NONE:
+		case NeuroStat::TimeTransformation::DEMEAN:
+		  {
+		    //
+		    std::string    str_C1;
+		    stat_string >> str_C1;
+		    //
+		    double             C1 = std::stod( str_C1 );
+		    std::cout << "C1 " << C1 << std::endl;
+		    //
+		    for ( auto g : groups_ )
+		      for ( auto& s : group_pind_[g] )
+			{
+			  s.second.build_design_matrices( C1 );
+			  // Create the vector of 3D measurements image
+			  for ( auto image : s.second.get_age_images() )
+			    Y_[ sub_image++ ] = image.second;
+			}
+		    //
+		    break;
+		  }
+		case NeuroStat::TimeTransformation::NORMALIZE:
+		case NeuroStat::TimeTransformation::STANDARDIZE:
+		  {
+		    std::string 
+		      str_C1,
+		      str_C2;
+		    stat_string >> str_C1 >> str_C2;
+		    //
+		    double          
+		      C1 = std::stod( str_C1 ),
+		      C2 = std::stod( str_C2 );
+		    std::cout << "C1 " << C1 << std::endl;
+		    std::cout << "C2 " << C2 << std::endl;
+		    //
+		    for ( auto g : groups_ )
+		      for ( auto& s : group_pind_[g] )
+			{
+			  s.second.build_design_matrices( C1, C2 );
+			  // Create the vector of 3D measurements image
+			  for ( auto image : s.second.get_age_images() )
+			    Y_[ sub_image++ ] = image.second;
+			}
+		    //
+		    break;
+		  }
+		default:
+		  {
+		    std::string mess = "The statistic transformation requiered is unknown.\n";
+		    mess += "Please, check on: " + age_statistics_tranformation_;
+		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							   mess.c_str(),
+							   ITK_LOCATION );
+		  }
+		}
+
+	      
+	      //
+	      //
+	      fin.close();
 	      //
 	      break;
 	    }

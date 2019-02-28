@@ -116,10 +116,14 @@ namespace NeuroBayes
     //
     // Add time point
     void create_theta_images();
-
     //
     // output directory
     std::string output_dir_;
+    //
+    // Statistics: age transformation
+    double 
+      C1_{0.},
+      C2_{0.};
 
 
     //
@@ -200,6 +204,7 @@ namespace NeuroBayes
       try
 	{
 	  std::cout << "DEMEAN AGE: " << Age_mean << std::endl;
+	  C1_ = Age_mean;
 	  //
 	  // Design matrix level 1
 	  //
@@ -282,6 +287,9 @@ namespace NeuroBayes
 	{
 	  std::cout 
 	    << "NORM/STD: (" << C1 << "," << C2 << ")." << std::endl;
+	  //
+	  C1_ = C1;
+	  C2_ = C2;
 	  //
 	  // Design matrix level 1
 	  //
@@ -627,7 +635,16 @@ namespace NeuroBayes
 	      //
 	      // Design
 	      Eigen::Matrix< double, D_r, 1 > x = X_1_rand_.row(tp).transpose();
-	      if ( age_img->first != x(1,0) )
+	      double age_statistic = 0.;
+	      if ( C2_ != 0.)
+		// Normalization or standardization
+		age_statistic = (static_cast<double>(age_img->first) - C1_) / C2_;
+	      else
+		// None or demean
+		age_statistic = static_cast<double>(age_img->first) - C1_;
+	      //
+	      // check the order of ages
+	      if ( age_statistic != x(1,0) )
 		{
 		  std::string mess = "Order of ages is not correct. Expected age: ";
 		  mess += std::to_string( age_img->first ) + " and received age: ";
