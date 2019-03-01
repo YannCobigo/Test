@@ -178,8 +178,8 @@ int main(int argc, char const **argv)
 		if ( VB_Gaussian_Mixture.get_pi(k) > 0.01 )
 		  best_culsters.insert(k);
 	      //
-	      std::cout << "The algorythm started with: " << K << " Gaussians.";
-	      std::cout << " And found " << best_culsters.size() << " releavant cluster(s):" << std::endl;
+	      std::cout << "The algorithm started with: " << K << " Gaussians.";
+	      std::cout << " And found " << best_culsters.size() << " relevant cluster(s):" << std::endl;
 	      //
 	      for ( auto k =  best_culsters.begin() ; k != best_culsters.end() ; k++ )
 		{

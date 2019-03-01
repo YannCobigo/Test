@@ -650,7 +650,7 @@ namespace VB
 	//
 	//
 	std::cout 
-	  << " - The cluster ["<<KK<<"] representes " << exp(ln_pi_[KK])
+	  << " - The cluster ["<<KK<<"] represents " << exp(ln_pi_[KK])
 	  << " of the statistics ("<< N_[KK] << " voxels)."
 	  << " The center of the cluster is:\n"
 	  << m_[KK]
