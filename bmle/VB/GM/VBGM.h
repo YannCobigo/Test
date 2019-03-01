@@ -96,6 +96,11 @@ namespace VB
       // posterior probabilities
       const std::vector< std::vector< double > >&
 	get_posterior_probabilities() const { return gamma_; };
+      // posterior responsability pi
+      const double get_pi( const int KK ) const { return exp(ln_pi_[KK]); };
+      // 
+      // Print cluster statistics
+      void         get_cluster_statistics( const int ) const;
 
     private:
       //
@@ -116,7 +121,7 @@ namespace VB
       //
       // Gaussian-Wishart prior
       // Wishart on the precision
-      double                                           nu0_{Dim * 100.};
+      double                                           nu0_{Dim * 50.};
       std::vector< double >                            nu_;
       Eigen::Matrix< double, Dim, Dim >                W0_;
       // Gaussian
@@ -183,14 +188,7 @@ namespace VB
       // Initializarion
       //
       // Creating a Definit positive random matrix
-      W0_  = 1.e-02 / nu0_ * Eigen::Matrix< double, Dim, Dim >::Identity();
-      //Eigen::MatrixXd random = Eigen::MatrixXd::Random( Dim, Dim );
-      //Eigen::JacobiSVD< Eigen::MatrixXd > 
-      //	svd( random, Eigen::ComputeThinU | Eigen::ComputeThinV );
-      //W0_ = Eigen::Matrix< double, Dim, Dim >::Identity();
-      //for ( int u = 0 ; u < Dim ; u++ )
-      //	W0_(u,u) = svd.singularValues()(u);
-      //W0_ /= nu0_;
+      W0_  = 1.e-4 /* / nu0_ */ * Eigen::Matrix< double, Dim, Dim >::Identity();
       //std::cout << W0_ << std::endl;
       //
       for ( int k = 0 ; k < K ; k++ )
@@ -392,55 +390,55 @@ namespace VB
 		//
 		std::cout << "Variational lower bound = " << variational_lower_bound_;
 		std::cout << " && difference last iter: " 
-			  <<   old_lower_bound - variational_lower_bound_  
+			  << variational_lower_bound_ - old_lower_bound
 			  << std::endl;
 	      }
       
 	    //
 	    // count time
-	    for ( int k = 0 ; k < K ; k++ )
-	      {
-		P += old_N[k] - N_[k];
-		//
-		std::cout 
-		  << " pi_[" << k <<"] " << exp(ln_pi_[k])
-		  << " N_["  << k <<"] " << N_[k]
-		  << " alpha_["  << k <<"] " << alpha_[k]
-		  << " beta_["  << k <<"] " << beta_[k]
-		  << " nu_["  << k <<"] \n" << nu_[k]
-		  << "\n m_["<< k <<"] \n" << m_[k]
-		  //<< "\n xm_["<< k <<"] \n" << x_mean_[k]
-		  << "\n W_["<< k <<"] \n" << W_[k]
-		  << "\n S_["<< k <<"] \n" << S_[k]
-		  << std::endl;
-	      }
-	    auto end   = std::chrono::steady_clock::now();
-	    auto duration = std::chrono::duration_cast< std::chrono::microseconds > 
-	      ( end - start ).count();
-	    std::cout << "Iteration: " << iteration << " -- duration: " << duration << " mu sec"<< std::endl;
+	    if (false)
+	      for ( int k = 0 ; k < K ; k++ )
+		{
+		  P += old_N[k] - N_[k];
+		  //
+		  std::cout 
+		    << " pi_[" << k <<"] " << exp(ln_pi_[k])
+		    << " N_["  << k <<"] " << N_[k]
+		    << " alpha_["  << k <<"] " << alpha_[k]
+		    << " beta_["  << k <<"] " << beta_[k]
+		    << " nu_["  << k <<"] \n" << nu_[k]
+		    << "\n m_["<< k <<"] \n" << m_[k]
+		    << "\n W_["<< k <<"] \n" << W_[k]
+		    << "\n S_["<< k <<"] \n" << S_[k]
+		    << std::endl;
+		}
+	    //
+	    //auto end   = std::chrono::steady_clock::now();
+	    //auto duration = std::chrono::duration_cast< std::chrono::microseconds > 
+	    //  ( end - start ).count();
+	    //std::cout << "Iteration: " << iteration << " -- duration: " << duration << " mu sec"<< std::endl;
 	  }
 	//
 	// count time
 	for ( int k = 0 ; k < K ; k++ )
 	  {
 	    P += old_N[k] - N_[k];
-	    //
-	    std::cout 
-	      << " pi_[" << k <<"] " << exp(ln_pi_[k])
-	      << " N_["  << k <<"] " << N_[k]
-	      << " alpha_["  << k <<"] " << alpha_[k]
-	      << " beta_["  << k <<"] " << beta_[k]
-	      << " nu_["  << k <<"] \n" << nu_[k]
-	      << "\n m_["<< k <<"] \n" << m_[k]
-	      //<< "\n xm_["<< k <<"] \n" << x_mean_[k]
-	      << "\n W_["<< k <<"] \n" << W_[k]
-	      << "\n S_["<< k <<"] \n" << S_[k]
-	      << std::endl;
+	    //	    //
+	    //	    std::cout 
+	    //	      << " pi_[" << k <<"] " << exp(ln_pi_[k])
+	    //	      << " N_["  << k <<"] " << N_[k]
+	    //	      << " alpha_["  << k <<"] " << alpha_[k]
+	    //	      << " beta_["  << k <<"] " << beta_[k]
+	    //	      << " nu_["  << k <<"] \n" << nu_[k]
+	    //	      << "\n m_["<< k <<"] \n" << m_[k]
+	    //	      << "\n W_["<< k <<"] \n" << W_[k]
+	    //	      << "\n S_["<< k <<"] \n" << S_[k]
+	    //	      << std::endl;
 	  }
 	//
-	std::cout << "Iteration: " << iteration << " P = " << P
-		  << " && difference last iter: " << P - old_P  
-		  << std::endl;
+	//std::cout << "Iteration: " << iteration << " delta = " << P
+	//	  << " && difference last iter: " << P - old_P  
+	//	  << std::endl;
       }
     //
     //
@@ -642,6 +640,23 @@ namespace VB
 
 	//
 	return log(Z) + max;
+      }
+    //
+    //
+    //
+    template < int Dim, int K > void
+      VBGaussianMixture< Dim, K >::get_cluster_statistics( const int KK ) const
+      {
+	//
+	//
+	std::cout 
+	  << " - The cluster ["<<KK<<"] representes " << exp(ln_pi_[KK])
+	  << " of the statistics ("<< N_[KK] << " voxels)."
+	  << " The center of the cluster is:\n"
+	  << m_[KK]
+	  << "\n The variance is: \n"
+	  << S_[KK]
+	  << std::endl;
       }
   }
 }

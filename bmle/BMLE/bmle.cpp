@@ -231,7 +231,7 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Load the CSV file
-	      NeuroBayes::BmleLoadCSV< 3/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
+	      NeuroBayes::BmleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
 									     time_tran, 
 									     inv_cov_error );
 	      // create the 4D iamge with all the images
