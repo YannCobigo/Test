@@ -108,7 +108,7 @@ namespace VB
       // set dependencies
       qsi_->set(qdch_,qgau_);
       qdch_->set(qsi_);
-      qgau_->set(qsi_);
+      qgau_->set(qsi_,qdch_);
       // Initialization
       qsi_->Expectation();
       qdch_->Expectation();

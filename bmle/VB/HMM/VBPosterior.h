@@ -201,9 +201,11 @@ namespace VB
 	const Eigen::Matrix< double, S, S >                                 &_A_  = qdch_->get_A();
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_N_  = qgau_->get_N();
 	//
+	Eigen::Matrix< double, S, 1 > update_posterior_delta    = Eigen::Matrix< double, S, 1 >::Zero();
 	Eigen::Matrix< double, S, 1 > update_posterior_alpha_pi = Eigen::Matrix< double, S, 1 >::Zero();
 	Eigen::Matrix< double, S, S > update_posterior_alpha_A  = Eigen::Matrix< double, S, S >::Zero();
-	  
+	//
+	std::vector< Eigen::Matrix< double, Dim, 1 > > update_y_mean( S, Eigen::Matrix< double, Dim, 1 >::Zero() );
 	//std::cout << "VP_qsi<Dim,S>::Expectation" << std::endl;
 	//std::cout << "_pi_ \n" << _pi_ << std::endl;
 	//std::cout << "_A_  \n" << _A_ << std::endl;
@@ -224,7 +226,7 @@ namespace VB
 	    // 
 	    // first elements
 	    // Convension the first alpha is 1. Each elements will be normalized
-	    alpha_i_t_[i][0] = _N_[i][0].array() * _pi_.array();
+	    alpha_i_t_[i][0]  = _N_[i][0].array() * _pi_.array();
 	    scale[0]          = alpha_i_t_[i][0].sum();
 	    F_qsi_           += log(scale[0]);
 	    alpha_i_t_[i][0] /= scale[0];
@@ -232,8 +234,11 @@ namespace VB
 	    // next timepoints
 	    for ( int t = 1 ; t < Ti ; t++ )
 	      {
-		// mult with array is a coefficient-wise multiplication
-		alpha_i_t_[i][t]  = _N_[i][t].array() * (_A_*alpha_i_t_[i][t-1]).array();
+		alpha_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
+		for ( int s = 0 ; s < S ; s++ )
+		  alpha_i_t_[i][t]  += ( alpha_i_t_[i][t-1](s,0) * _A_.row(s) ).transpose();
+		alpha_i_t_[i][t]     = alpha_i_t_[i][t].array() * _N_[i][t].array();
+		//
 		scale[t]          = alpha_i_t_[i][t].sum();
 		F_qsi_           += log(scale[t]);
 		alpha_i_t_[i][t] /= scale[t];
@@ -242,15 +247,15 @@ namespace VB
 	    //
 	    // Beta calculation
 	    // Convension the last beta is 1.
-	    beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones() / static_cast<double>(Ti/*S*/);
+	    beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones();// / static_cast<double>( S );
 	    //
 	    for ( int t = Ti-2 ; t >= 0 ; t-- )
 	      {
 		//
-		beta_i_t_[i][t] = Eigen::Matrix < double, S , 1 >::Zero();
-		double beta_norm = 0.;
-		//
-		beta_i_t_[i][t] = _N_[i][t+1].array() *(_A_*beta_i_t_[i][t+1]).array();
+		beta_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
+		for ( int s = 0 ; s < S ; s++ )
+		  beta_i_t_[i][t] += _N_[i][t+1](s,0) * beta_i_t_[i][t+1](s,0) * _A_.col(s);
+		beta_i_t_[i][t]   /= beta_i_t_[i][t].sum(); //scale[t];
 		//
 		//std::cout << "_A_ \n " << _A_ << std::endl;
 		//std::cout << "_N_["<<i<<"][t+1:"<<t+1<<"] \n" << _N_[i][t+1] << std::endl;
@@ -265,34 +270,34 @@ namespace VB
 		// <s_{i,t}>
 		s_[i][t]  = alpha_i_t_[i][t].array() * beta_i_t_[i][t].array();
 		s_[i][t] /= s_[i][t].sum();
+		//
+		for ( int s = 0 ; s < S ; s++ )
+		  update_y_mean[s] += s_[i][t](s,0) * Y_[i][t];
 
 		//std::cout << "alpha_i_t_["<<i<<"]["<<t<<"] \n" << alpha_i_t_[i][t] << std::endl;
 		//std::cout << "beta_i_t_["<<i<<"]["<<t<<"] \n" << beta_i_t_[i][t] << std::endl;
-		std::cout << "s_["<<i<<"]["<<t<<"] \n" << s_[i][t]<< std::endl;
+		//std::cout << "s_["<<i<<"]["<<t<<"] \n" << s_[i][t]<< std::endl;
 
 		//
 		//  <s_{i,t-1} x s_{i,t}>
 		if ( t > 0 )
 		  {
-		    Eigen::Matrix < double, S , S > B = Eigen::Matrix < double, S , S >::Zero();
 		    double norm = 0.;
-		    //
-		    B = alpha_i_t_[i][t-1] * (beta_i_t_[i][t].array()*_N_[i][t].array()).matrix().transpose();
 		    //
 		    for ( int s = 0 ; s < S ; s++ )
 		      for ( int ss = 0 ; ss < S ; ss++ )
 			{
-			  ss_[i][t](s,ss)  = _A_(s,ss) * B(s,ss);
-			  //ss_[i][t](s,ss)  = alpha_i_t_[i][t-1](s,0)*_A_(s,ss);
-			  //ss_[i][t](s,ss) *= beta_i_t_[i][t](ss,0)*_N_[i][t](ss,0);
-			  //
-			  norm +=  ss_[i][t](s,ss);
+			  ss_[i][t](s,ss)  = alpha_i_t_[i][t-1](s,0)*_A_(s,ss);
+			  ss_[i][t](s,ss) *= _N_[i][t](ss,0)*beta_i_t_[i][t](ss,0);
+			  norm            +=  ss_[i][t](s,ss);
 			}
+
 		    //
 		    ss_[i][t] /= norm;
 		    //std::cout << "ss_["<<i<<"]["<<t<<"] \n" <<  ss_[i][t] << std::endl;
 		  }
 		//
+		update_posterior_delta   += s_[i][t];
 		update_posterior_alpha_A += ss_[i][t];
 	      }
 
@@ -306,6 +311,8 @@ namespace VB
 	// Dirichlet
 	qdch_->update_alpha_pi( update_posterior_alpha_pi );
 	qdch_->update_alpha_A( update_posterior_alpha_A );
+	qgau_->update_delta( update_posterior_delta );
+	qgau_->update_y_mean( update_y_mean );
 	//
 	//std::cout << "update_posterior_alpha_pi\n" << update_posterior_alpha_pi << std::endl;
       }
@@ -350,9 +357,10 @@ namespace VB
 
 	//
 	// accessors
-	const inline double                         get_F()  const {return F_qdch_;}
-	const        Eigen::Matrix< double, S, 1 >& get_pi() const {return posterior_pi_;}
-	const        Eigen::Matrix< double, S, S >& get_A()  const {return posterior_A_;}
+	const inline double                         get_F()        const {return F_qdch_;}
+	const        Eigen::Matrix< double, S, 1 >& get_pi()       const {return posterior_pi_;}
+	const        Eigen::Matrix< double, S, 1 >& get_alpha_pi() const {return posterior_alpha_pi_;}
+	const        Eigen::Matrix< double, S, S >& get_A()        const {return posterior_A_;}
 	//
 	void update_alpha_pi( const Eigen::Matrix< double, S, 1 > Update )
 	{posterior_alpha_pi_ = Update + alpha_pi_;};
@@ -381,7 +389,7 @@ namespace VB
 
 	//
 	// Pi distribution
-	double alpha_pi_0_{1.};
+	double alpha_pi_0_{1.e+0};
 	Eigen::Matrix< double, S, 1 > alpha_pi_;
 	// Posterior density of the state
 	Eigen::Matrix< double, S, 1 > posterior_pi_;
@@ -389,7 +397,7 @@ namespace VB
 
 	//
 	// A distribution
-	double alpha_A_0_{1.};
+	double alpha_A_0_{1.e+0};
 	Eigen::Matrix< double, S, S > alpha_A_;
 	// Posterior density of the state
 	Eigen::Matrix< double, S, S > posterior_A_;
@@ -588,18 +596,27 @@ namespace VB
 	const inline double                                                         get_F() const {return F_qgau_;}
 	const        std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_N() const {return posteriror_N_;}
 	//
-	void set( std::shared_ptr< VB::HMM::VP_qsi<Dim,S> > Qsi )
-	{qsi_ = Qsi;};
+	void update_delta( const Eigen::Matrix< double, S, 1 > Update )
+	{delta_ = Update;};
+	void update_y_mean( const std::vector< Eigen::Matrix< double, Dim, 1 > > Update )
+	{y_mean_ = Update;};
+	//
+	void set( std::shared_ptr< VB::HMM::VP_qsi<Dim,S> >  Qsi,
+		  std::shared_ptr< VB::HMM::VP_qdch<Dim,S> > Qdch)
+	{qsi_ = Qsi; qdch_ = Qdch;};
   
       private:
 	//
 	//
-	std::shared_ptr< VB::HMM::VP_qsi<Dim,S> > qsi_;
+	std::shared_ptr< VB::HMM::VP_qsi<Dim,S> >  qsi_;
+	std::shared_ptr< VB::HMM::VP_qdch<Dim,S> > qdch_;
 	//
 	//
 	std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > > Y_;
 	// Size of the data set
 	std::size_t n_{0};
+
+	double ln_sum_exp( const Eigen::Matrix < double, S , 1 >&  ) const;
 
 	//
 	//
@@ -615,10 +632,10 @@ namespace VB
 	//
 	// Wishart
 	// scalars
-	double nu_0_{Dim * 2.};
+	double nu_0_{Dim * 50.};
 	std::vector< double > nu_;
 	// vectors/matrices
-	Eigen::Matrix< double, Dim, Dim >                S_0_inv_{ 1.e-3 * Eigen::Matrix< double, Dim, Dim >::Identity() };
+	Eigen::Matrix< double, Dim, Dim >                S_0_inv_{ 1.e-2 * Eigen::Matrix< double, Dim, Dim >::Identity() };
 	std::vector< Eigen::Matrix< double, Dim, Dim > > S_mean_inv_;
 	std::vector< Eigen::Matrix< double, Dim, 1 > >   mu_0_mean_;
  
@@ -627,6 +644,9 @@ namespace VB
 	// Mean N over the posterior proba
 	// N( Yit | mu_i,Lambda_i )
 	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > posteriror_N_;
+	// Number of items per cluster
+	Eigen::Matrix< double, S, 1 >                    delta_;
+	std::vector< Eigen::Matrix< double, Dim, 1 > >   y_mean_;
 	// log marginal likelihood lower bound: \qgau component
 	double F_qgau_{-1.e06};
       };
@@ -651,15 +671,19 @@ namespace VB
       S_mean_inv_.resize(S);
       mu_0_mean_.resize(S);
       //
+      y_mean_.resize(S);
+      //
       for ( int s = 0 ; s < S ; s++ )
 	{
 	  // Gaussian part
-	  mu_0_[s]       = Eigen::Matrix< double, Dim, 1 >::Zero();
+	  mu_0_[s]       = Eigen::Matrix< double, Dim, 1 >::Random();
 	  mu_mean_[s]    = Eigen::Matrix< double, Dim, 1 >::Zero();
 	  beta_[s]       = beta_0_;
 	  // Wishart part
 	  S_mean_inv_[s] = S_0_inv_;
 	  mu_0_mean_[s]  = Eigen::Matrix< double, Dim, 1 >::Zero();
+	  //
+	  y_mean_[s]     = Eigen::Matrix< double, Dim, 1 >::Zero();
 	}
       //
       posteriror_N_.resize(n_);
@@ -670,9 +694,41 @@ namespace VB
 	  //
 	  // 
 	  for ( int t = 0 ; t < Ti ; t++ )
-	    posteriror_N_[i][t] = (1. / static_cast<double>(S) ) * Eigen::Matrix < double, S , 1 >::Ones();
+	    {
+	      posteriror_N_[i][t]  = Eigen::Matrix < double, S , 1 >::Random();
+	      posteriror_N_[i][t] += Eigen::Matrix < double, S , 1 >::Ones();
+	      posteriror_N_[i][t] /= posteriror_N_[i][t].sum();
+	    }
 	}
+      //
+      delta_  = ( static_cast< double >(n_) / static_cast< double >(S) ) * Eigen::Matrix< double, S, 1 >::Ones();
     }
+    //
+    //
+    //
+    template< int Dim, int S > double
+      VP_qgau<Dim,S>::ln_sum_exp(  const Eigen::Matrix < double, S , 1 >& N_posterior  ) const
+    {
+      //
+      // by Tom Minka
+      double 
+	max = -700.,
+	Z   = 0.,
+	e_ln_gam[S];
+      for ( int s = 0 ; s < S ; s++ )
+	{
+	  if ( max < N_posterior(s,0) )
+	    max = N_posterior(s,0);
+	}
+      //
+      for ( int s = 0 ; s < S ; s++ )
+	Z += exp(N_posterior(s,0) - max);
+      
+      //
+      //
+      return log(Z) + max;
+    }
+    //
     //
     //
     template< int Dim, int S > void
@@ -685,8 +741,6 @@ namespace VB
 	
 	//
 	//
-	std::vector< double >                            Delta( S, 0 );
-	std::vector< Eigen::Matrix< double, Dim, 1 > >   y_mean( S, Eigen::Matrix< double, Dim, 1 >::Zero() );
 	std::vector< Eigen::Matrix< double, Dim, Dim > > W_mean_inv( S, Eigen::Matrix< double, Dim, Dim >::Zero() );
 	//
 	for ( int s = 0 ; s < S ; s++ )
@@ -701,56 +755,45 @@ namespace VB
 	    mu_0_mean_[s]  = Eigen::Matrix< double, Dim, 1 >::Zero();
 	    nu_[s]         = nu_0_;
 	    // 
-	    y_mean[s]      = Eigen::Matrix< double, Dim, 1 >::Zero();
+	    //y_mean[s]      = Eigen::Matrix< double, Dim, 1 >::Zero();
 	    W_mean_inv[s]  = Eigen::Matrix< double, Dim, Dim >::Zero();
 
-	    //
-	    // Build the means over the measures
-	    for ( int i = 0 ; i < n_ ; i++ )
-	      {
-		int Ti = Y_[i].size();
-		for ( int t = 0 ; t < Ti ; t++ )
-		  {
-		    y_mean[s] += _s_[i][t](s,0) * Y_[i][t];
-		    Delta[s]  += _s_[i][t](s,0);
-		  }
-	      }
 
 	    //
 	    //
-	    beta_[s] += Delta[s];
-	    nu_[s]   += Delta[s];
+	    beta_[s] += delta_(s,0);
+	    nu_[s]   += delta_(s,0);
 	    //
 	    for ( int i = 0 ; i < n_ ; i++ )
 	      {
 		int Ti = Y_[i].size();
 		for ( int t = 0 ; t < Ti ; t++ )
 		  {
-		    Eigen::Matrix< double, Dim, 1 > diff_vect = Y_[i][t] - y_mean[s] / (beta_0_ * (beta_[s] - beta_0_));
+		    Eigen::Matrix< double, Dim, 1 > diff_vect = Y_[i][t] - y_mean_[s] / delta_(s,0);
 		    W_mean_inv[s] += _s_[i][t](s,0) * diff_vect * diff_vect.transpose(); 
 		    //std::cout << "#########################" << std::endl;
 		    //std::cout << "W_mean_inv[" << s << "]\n" << W_mean_inv[s] << std::endl;
-		    //std::cout << "Y_[i][t] \n" << Y_[i][t] << std::endl;
-		    //std::cout << "y_mean[s] \n" << y_mean[s] << std::endl;
+		    //std::cout << "Y_["<<i<<"]["<<t<<"] \n" << Y_[i][t] << std::endl;
+		    //std::cout << "y_mean_["<<s<<"] \n" << y_mean_[s] << std::endl;
+		    //std::cout << "delta_("<<s<<",0) \n" << delta_(s,0) << std::endl;
 		    //std::cout << "(beta_0_ * (beta_[s] - beta_0_) " << (beta_0_ * (beta_[s] - beta_0_)) << std::endl;
-		    //std::cout << "s_[i][t](s,0) " << _s_[i][t](s,0) << std::endl;
+		    //std::cout << "s_["<<i<<"]["<<t<<"]("<<s<<",0) " << _s_[i][t](s,0) << std::endl;
 		    //std::cout << "diff_vect \n" << diff_vect << std::endl;
 		    //std::cout << "diff_vect * diff_vect.transpose()  \n" << diff_vect * diff_vect.transpose() << std::endl;
-		    //std::cout << "W_mean_inv[" << s << "]\n" << W_mean_inv[s] << std::endl;
 		  }
 	      }
 
 	    //
-	    mu_mean_[s]     = ( beta_0_ * mu_0_[s] + y_mean[s] ) / beta_[s];
-	    mu_0_mean_[s]   = y_mean[s] / ( beta_[s] - beta_0_ );
+	    mu_mean_[s]     = ( beta_0_ * mu_0_[s] + y_mean_[s] ) / beta_[s];
+	    mu_0_mean_[s]   = y_mean_[s] / delta_(s,0);
 	    //
 	    Eigen::Matrix< double, Dim, 1 > diff_mus = mu_0_[s] - mu_0_mean_[s];
-	    S_mean_inv_[s] += beta_0_ * ( beta_[s] - beta_0_ ) * diff_mus * diff_mus.transpose() / beta_[s];
+	    S_mean_inv_[s] += beta_0_ * delta_(s,0) * diff_mus * diff_mus.transpose() / beta_[s];
 	    S_mean_inv_[s] += W_mean_inv[s];
 	    //
 	    //
-	    std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
-	    std::cout << "S_mean_inv_[" << s << "]\n" << S_mean_inv_[s] << std::endl;
+	    //std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
+	    //std::cout << "S_mean_inv_[" << s << "]\n" << S_mean_inv_[s] << std::endl;
 	  }
       }
     //
@@ -758,8 +801,10 @@ namespace VB
     template< int Dim, int S > void
       VP_qgau<Dim,S>::Maximization()
       {
+	//
 	//posteriror_N_
 	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > ln_posteriror_N( posteriror_N_ );
+	//
 	double
 	  cd1       = - Dim * ln_2_pi,
 	  cd2       = 0., // <ln|lambda_j|>
@@ -803,7 +848,7 @@ namespace VB
 	    cd7 += nu_[s];
 	    cd8 += nu_[s] * ln_Sdet;
 	    //
-	    cd3 = nu_[s] / beta_[s];
+	    cd3 = nu_[s] /* / beta_[s] */;
 	    //
 	    for ( int i = 0 ; i < n_ ; i++ )
 	      {
@@ -815,27 +860,29 @@ namespace VB
 		    Eigen::Matrix < double, Dim , 1 > diff_vec = Y_[i][t] - mu_mean_[s];
 		    ln_posteriror_N[i][t](s,0)  = cd1 + cd2;
 		    ln_posteriror_N[i][t](s,0) -= cd3 * (diff_vec.transpose() * S_mean * diff_vec)(0,0);  
-		    ln_posteriror_N[i][t](s,0) -= Dim;  
-
+		    ln_posteriror_N[i][t](s,0) -= Dim / beta_[s];  
 		    ln_posteriror_N[i][t](s,0) *= 0.5;  
-		    //
-		    posteriror_N_[i][t](s,0)    = exp( ln_posteriror_N[i][t](s,0) );
 		  }
 	      }
 	  }
 	//
 	//
-	if ( true )
-	  for ( int i = 0 ; i < n_ ; i++ )
-	    {
-	      int Ti = Y_[i].size();
-	      for ( int t = 0 ; t < Ti ; t++ )
-		{
-		  posteriror_N_[i][t] /= posteriror_N_[i][t].sum();
-		//std::cout << "posteriror_N_[" << i << "][" << t << "] \n" 
-		//	    << posteriror_N_[i][t] << std::endl;
-		}
-	    }
+	for ( int i = 0 ; i < n_ ; i++ )
+	  {
+	    int Ti = Y_[i].size();
+	    for ( int t = 0 ; t < Ti ; t++ )
+	      {
+		double marginal = ln_sum_exp( ln_posteriror_N[i][t] );
+		for ( int s = 0 ; s < S ; s++ )
+		  {
+		    ln_posteriror_N[i][t](s,0) -= marginal;
+		    posteriror_N_[i][t](s,0)    = exp( ln_posteriror_N[i][t](s,0) );
+		  }
+		//
+		std::cout << "posteriror_N_[" << i << "][" << t << "] \n" 
+			  << posteriror_N_[i][t] << std::endl;
+	      }
+	  }
 	//
 	diff_ln_Z += 0.5 * Dim * ln_2 * ( cd7 - nu_0_ );
 	diff_ln_Z += 0.5 * ( cd8 - S * nu_0_ * cd9 );
