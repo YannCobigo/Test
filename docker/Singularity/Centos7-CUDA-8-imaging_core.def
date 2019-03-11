@@ -1,7 +1,8 @@
 BootStrap: docker
+# Mine's 10.1
 # Matt's 10.0
 # Cerebellum 7.5
-From: nvidia/cuda:7.5-runtime-centos7
+From: nvidia/cuda:10.1-runtime-centos7
 IncludeCmd: yes
 
 MAINTAINER Yann Cobigo
@@ -40,14 +41,18 @@ VERSION    v1.3.0
 	#
 	# CUDA	
 	# Versions: https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/
+	# 10.1
+	CUDA=10-1
+	CUDA_VERSION=10.1.105-1 
+	CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
 	# 10.0
 	#CUDA=10-0
 	#CUDA_VERSION=10.0.130-1 
 	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
 	# 7.5
-	CUDA=7-5
-	CUDA_VERSION=7.5-18
-	CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+	#CUDA=7-5
+	#CUDA_VERSION=7.5-18
+	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
 
 	#
 	#
@@ -80,7 +85,7 @@ VERSION    v1.3.0
 #	#ldconfig
 	# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a 
 	yum install -y cuda-samples-$CUDA
-	if [ $CUDA == "10-0" ] ;
+	if [ $CUDA == "10-0" ] || [ $CUDA == "10-1" ] ;
 	then
 		yum install -y cuda-compat-$CUDA
 	fi	
