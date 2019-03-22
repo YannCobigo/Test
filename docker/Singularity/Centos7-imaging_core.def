@@ -1,5 +1,5 @@
 # Bootstrap definition example for Centos-7 with the latest Open MPI from GitHub master
-# sudo singularity image.create --size 32768 /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
+# sudo singularity image.create --size `echo "1024 64" | awk -F" " '{print $1*$2}'` /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
 # sudo singularity image.create --size 1024 /mnt/coredata/Singularity/test.img
 # in to Docker/docker/Singularity/
 # sudo singularity build --writable /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img Centos7-imaging_core.def
