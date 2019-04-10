@@ -114,7 +114,7 @@ At this point the strategy of the weights correction can follow the gradient des
 A semantic clarification needs to be done about the multi-layer perceptron. As mentioned, $f$ is a discontinued step function, whereas neural network use step continuous, or sigmoidal, function like hyperbolic tangent, logistic, \dots In those terms, a neural network is not exactly a multilayer perceptron, but close enough.
 
 \subsection{Forward propagation, or feed-forward algorithm}
-Instead of relying on one perceptron, we use a layer of $L_{1}$ perceptrons and a bias. Each perceptron of the layer $(l_{1})$ loads all the inputs of the layer $(l_{0})$. The activation $l_{1}$ of the layer $(l_{1})$ is the dot product $a_{l_{1}} = \sum_{(l_{0})} \omega_{l_{1}l_{0}}z_{l_{0}}$ where the indexes of the layer $(l_{0})$ are $l_{0} = 0, \dots, L_{0}$, of the layer $(l_{1})$ are $l_{1} = 1, \dots, L_{1}$, and $z_{l_{0} = 0} = 1$ is the predictor conter part of the bias and $\omega_{l_{1}l_{0} = 0} = \omega_{l_{1}0}$ is the bias. At each layer, activations can be represented as a vector:
+Instead of relying on one perceptron, we use a layer of $L_{1}$ perceptrons and a bias. Each perceptron of the layer $(l_{1})$ loads all the inputs of the layer $(l_{0})$. The activation $l_{1}$ of the layer $(l_{1})$ is the dot product $a_{l_{1}} = \sum_{(l_{0})} \omega_{l_{1}l_{0}}z_{l_{0}} = \omega_{l_{1}}z^{(l_{0})}$ where the indexes of the layer $(l_{0})$ are $l_{0} = 0, \dots, L_{0}$, of the layer $(l_{1})$ are $l_{1} = 1, \dots, L_{1}$, and $z_{l_{0} = 0} = 1$ is the predictor conter part of the bias and $\omega_{l_{1}l_{0} = 0} = \omega_{l_{1}0}$ is the bias. At each layer, activations can be represented as a vector:
 
 \begin{eqnarray*}
   \left(
@@ -149,7 +149,7 @@ The cost function is estimated at the last layer of the neural network. In purpo
   \frac{\partial E_{i}}{\partial \omega_{l_{u}l_{v}}} = \frac{\partial E_{i}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{v}}} = \delta_{l_{u}}\frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{v}}} 
 \end{equation*}
 
-We define $\delta_{l_{u}}$ the error at the neuron $l_{u}$ on the layer $(l_{u})$. The cost function $E_{i}$ represents the error on the input $i$. The element $l_{v}$ represents some element on the layer $(l_{v})$. We are going to work with consecutive layers and, in general, $(l_{v}) = (l_{u-1})$. We decompose, using the chain rule, the partial derivative of the cost function to make apear the link between the layer $(l_{u})$ and the layer $(l_{u+1})$. 
+We define $\delta_{l_{u}}$ the error at the neuron $l_{u}$ on the layer $(l_{u})$. The cost function $E_{i}$ represents the error on the input $i$. The element $l_{v}$ represents some element on the layer $(l_{v})$. We are going to work with consecutive layers and, in general, $(l_{v}) = (l_{u-1})$. We decompose, using the chain rule, the partial derivative of the cost function to make appear the link between the layer $(l_{u})$ and the layer $(l_{u+1})$. 
 
 \begin{equation}
   \begin{split}
@@ -190,7 +190,7 @@ For the different type of neural networks we would like to accomplish, the input
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Output, activation functions and cost functions}
 
-A neuron is represented with an activation $a_{l_{i}} = \omega_{l_{i}l_{j}} z_{l_{j}}$, integrating pulses from activation function $z_{l_{j}}$ of the previouse layer, $(l_{j})$. The new activation function $z_{l_{i}} = f(a_{l_{i}})$ is the firering process of the neuron $l_{i}$. Usually, the activation function is a non-linear continuous step function. 
+A neuron is represented with an activation $a_{l_{i}} = \omega_{l_{i}} z^{(l_{j})}$, integrating pulses from activation function $z_{l_{j}}$ of the previouse layer, $(l_{j})$. The new activation function $z_{l_{i}} = f(a_{l_{i}})$ is the firering process of the neuron $l_{i}$. Usually, the activation function is a non-linear continuous step function. 
 
 \subsection{Activation functions}
 
