@@ -1,6 +1,8 @@
 %% sudo yum install tetex
 %% sudo yum install texlive-elsarticle.noarch  texlive-sttools.noarch texlive-lipsum.noarch
 %% pdflatex neural_network.tex && bibtex neural_network.aux && pdflatex neural_network.tex && pdflatex neural_network.tex
+%% can try to setup with 
+%% yum -y install 'tex(multirow.sty)'
 
 
 %\documentclass[a4paper,12pt]{}
@@ -85,21 +87,110 @@ Fijee \sep electrode \sep PEM \sep CEM
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Introduction}
-
 \lipsum[100-104]
 
-\paragraph{Perceptrons}{One of the key concept of the neural network is the perceptron algorithm. The perceptron was one of the first machine learning algorithm used with computers. It was introduce in neural network as multilyer perceptron (MLP). The pricipal of classification using perceptron seat on fitting linear model $\omega^{T}\alpha > \theta$, where $\omega$ is a vector of $N$ weights, $\alpha$ is a vector of $N$ predictors and $\theta$ is a threshold. We can incorporate the threshold in the dot product, $f(\alpha) = \omega^{T}\alpha - \theta \times 1 = \sum_{i=0}^{N} \omega_{i}\alpha_{i} > 0$, $\omega = (\omega_{0}, \omega_{0}, \dots, \omega_{N-1}, \theta)^{T}$ and $\alpha = (\alpha_{0}, \alpha_{1}, \dots, \alpha_{N-1}, 1)^{T}$.}
+\section{Multilayer perceptron}
 
-\paragraph{Inputs}{For the different type of neural networks we would like to accomplish, the input classes must be very differents. Most of the time we are going to work with medical images, implying using a dimensional correlation like the convolutional neural network (CNN). Unlike most of the machine learning algorithm taking vectors as input, CNN void the space decorrelation from the vectorization. However, providing different calsses for different inputs could offer some flexibility.}
+We are using the perceptron as an explenatory mecanism introducing the local elements of a deep learning principals. The perceptron can be seen as the firing elements of the neural network, receiving information from sevaral inputs and firing when the amount of stimuli exceed a threshold. In addition, we can apply the different gradient methods to the perceptron to fine tune its parameters.
 
-\ToDo{check ll sort of input we would want.} \\
+\subsection{Perceptrons: the building block}
+[revisite the position of the bias and weights]\\
+In the litterature, the neural network is often refered as {\it multilayer perceptron}. In other words, the neural network is based on layers of "perceptrons". The perceptron was one of the first machine learning algorithm used with computers. It is a supervise algorithm. The principal of classification using perceptron seat on fitting linear model $X^{T}\omega > \theta$, where $\omega$ is a vector of $N$ weights, $X$ is a vector of $N$ predictors and $\theta$ is a threshold. In its generalized linear model writing it becomes the non-linear step function: $f(X) = \phi(X)^{T}\omega \in \{-1,+1\}$, where $\phi$ can be non-linear. $\phi = (\phi_{0}, \phi_{1}, \cdots, \phi_{N})^{T}$ is a vector of $N$ components plus a bias $\phi_{0}$ corresponding to the threshold. The weights $\omega = (1, \omega_{1}, \cdots, \omega_{N})^{T}$ is a vector with $N$ weights plus $\omega_{0} = 1$ associated to the bias. It is convinient to move the unknown in the same vector and write the weights and the bias as $\omega = (\omega_{0}, \omega_{1}, \cdots, \omega_{N})^{T}$, then the predictors become $\phi = (\phi_{0} = 1, \phi_{1}, \cdots, \phi_{N})^{T}$. \\
+The perceptron is a binary classification method, the response of the training model is $t \in \{-1,+1\}$. Observing that {\it perceptron criteria} $t \times \phi(X)^{T}\omega > 0$ is always positive, the minimization is based on minimizing the number miss-classified elements: \\
+
+\begin{equation}
+E = - \sum_{c \in \mathcal{M}} t_{n} \times \phi(X_{n})^{T}\omega
+\label{eq:Optimization_perceptron}
+\end{equation}
+
+The set $\mathcal{M}$ gather all the miss-classified elements. The minimum is reached using the gradient descent algorithm $\omega^{e+1} = \omega^{e} - \eta \bm{\nabla} E$, where $e$ is the iterative epoque, $\eta$ is the learning rate, and:
+
+$$
+\bm{\nabla} E = - \sum_{c \in \mathcal{M}} t_{n} \times \phi(X_{n})
+$$
+
+[Make a section on the different gradient descent strategies]\\
+At this point the strategy of the weights correction can follow the gradient descent, as described. However, faster results were obtained by correcting the weights after each miss-classification, {\it stochastic gradient descent}, or after small batch of miss-classified elements, {\it mini-batch gradient descent}. The same principals are applied to the neural network training.\\
+A semantic clarification needs to be done about the multi-layer perceptron. As mentioned, $f$ is a discontinued step function, whereas neural network use step continuous, or sigmoidal, function like hyperbolic tangent, logistic, \dots In those terms, a neural network is not exactly a multilayer perceptron, but close enough.
+
+\subsection{Forward propagation, or feed-forward algorithm}
+Instead of relying on one perceptron, we use a layer of $L_{1}$ perceptrons and a bias. Each perceptron of the layer $(l_{1})$ loads all the inputs of the layer $(l_{0})$. The activation $l_{1}$ of the layer $(l_{1})$ is the dot product $a_{l_{1}} = \sum_{(l_{0})} \omega_{l_{1}l_{0}}z_{l_{0}}$ where the indexes of the layer $(l_{0})$ are $l_{0} = 0, \dots, L_{0}$, of the layer $(l_{1})$ are $l_{1} = 1, \dots, L_{1}$, and $z_{l_{0} = 0} = 1$ is the predictor conter part of the bias and $\omega_{l_{1}l_{0} = 0} = \omega_{l_{1}0}$ is the bias. At each layer, activations can be represented as a vector:
+
+\begin{eqnarray*}
+  \left(
+  \begin{array}{c}
+    a_{l_{1} = 1} \\
+    \vdots \\
+    a_{L_{1}}
+  \end{array}
+  \right) = \left(
+  \begin{array}{cccc}
+    \omega_{10} & \omega_{11} & \cdots & \omega_{1L_{0}} \\
+    \vdots     &            & \cdots & \vdots \\
+    \omega_{L_{1}0} & \omega_{L_{1}1} & \cdots & \omega_{L_{1}L_{0}} \\
+  \end{array}
+  \right)  \left(
+  \begin{array}{c}
+    z_{l_{0} = 0} = 1 \\
+    z_{l_{0} = 1} \\
+    \vdots \\
+    z_{L_{0}} 
+  \end{array}
+  \right)
+\end{eqnarray*}
+
+Which can be writen in a compact manner: $\bm{a}^{(l_{1})} = \Omega_{10}\bm{z}^{(l_{0})}$, and the matrix $\Omega_{10}$ is a $L_{1}\times(L_{0}+1)$ weights matrix. The activation function $\bm{z}^{(l_{1})} = (z_{l_{1} = 0} = 1, f(\bm{a}^{(l_{1})}))^{T}$ where $f$ is a smooth non-linear step function. If we have a second inner layer, the total number of weights will be $L_{1}\times(L_{0}+1) + L_{2}\times(L_{1}+1)$. Then for $n$ inner layers, we will have $L = \sum_{i = 1}^{n}L_{i}\times(L_{i-1}+1)$ weights. In this document $(l_{0})$ and $(l_{k})$ will represents, respectively, the input and output layers.
+
+\subsection{Backward propagation of the errors}
+
+The cost function is estimated at the last layer of the neural network. In purpose to adjust the weights in the inner layers we use the backward propagation method to propagate the error through all the layers. Let $(l_{u})$ be some layer in the set of inner layers:
+
+\begin{equation*}
+  \frac{\partial E_{i}}{\partial \omega_{l_{u}l_{v}}} = \frac{\partial E_{i}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{v}}} = \delta_{l_{u}}\frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{v}}} 
+\end{equation*}
+
+We define $\delta_{l_{u}}$ the error at the neuron $l_{u}$ on the layer $(l_{u})$. The cost function $E_{i}$ represents the error on the input $i$. The element $l_{v}$ represents some element on the layer $(l_{v})$. We are going to work with consecutive layers and, in general, $(l_{v}) = (l_{u-1})$. We decompose, using the chain rule, the partial derivative of the cost function to make apear the link between the layer $(l_{u})$ and the layer $(l_{u+1})$. 
+
+\begin{equation}
+  \begin{split}
+    \frac{\partial E_{i}}{\partial \omega_{l_{u}l_{u-1}}} = &  \frac{\partial E_{i}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{u-1}}} = \delta_{l_{u}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{u-1}}}  \\
+    = & \sum_{l'_{u+1}}\frac{\partial E_{i}}{\partial a_{l'_{u+1}}} \frac{\partial a_{l'_{u+1}}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{u-1}}}   \\
+    = & \sum_{l'_{u+1}} \delta_{l'_{u+1}} \frac{\partial a_{l'_{u+1}}}{\partial a_{l_{u}}} z_{l_{u-1}}   \\
+    = & \sum_{l'_{u+1}} \delta_{l'_{u+1}} \sum_{l'_{u}} \omega_{l'_{u+1}l'_{u}} f'(a_{l'_{u}}) \delta_{l'_{u}l_{u}} z_{l_{u-1}}   \\
+    = & \sum_{l'_{u+1}} \delta_{l'_{u+1}} \omega_{l'_{u+1}l_{u}} f'(a_{l_{u}}) z_{l_{u-1}}   \\
+  \end{split}
+\label{eq:backprob}
+\end{equation}
+
+
+\paragraph{$\bm{l = l_{k}}$}{ Using the results from the section~\ref{Cross_entropy_cost_function_sec}:
+
+  \begin{equation*}
+    \begin{split}
+      \frac{\partial E_{i}}{\partial \omega_{l_{k}l_{k-1}}} = &  \frac{\partial E_{i}}{\partial a_{l_{k}}} \frac{\partial a_{l_{k}}}{\partial \omega_{l_{k}l_{k-1}}}  \\
+              = &  (z_{l_{k}} - t_{l_{k}})z_{l_{k-1}} \\
+    \end{split}
+  \end{equation*}
+
+}
+
+\paragraph{$\bm{l = l_{u}}$}{We write the relation between the level $l_{u}$ and the layer immediatly after using the chain rules of partial derivative:
+
+
+}
+
+
+
+\subsection{Inputs}
+For the different type of neural networks we would like to accomplish, the input classes must be very different. Most of the time we are going to work with medical images, implying using a dimensional correlation like the convolutional neural network (CNN). Unlike most of the machine learning algorithm taking vectors as input, CNN void the space decorrelation from the vectorization. However, providing different classes for different inputs could offer some flexibility. The input could also be a sampling of aphasia speech to discriminate with other groups.
+
+\ToDo{check all sort of input we would want.} \\
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Functions}
+\section{Output, activation functions and cost functions}
 
-A neuron is represented with an activation $a_{l_{i}} = \sum_{l_{j} = 0}^{L_{j}} \omega_{l_{i}l_{j}} z_{l_{j}}$, integrating pulses from other neurons, and its activation function $z_{l_{i}} = f(a_{l_{i}})$, the firering process of the neuron. Usually, the activation function is taken non-linear. Following the litterature, we will mostly use $\tanh$ or logistic function.
+A neuron is represented with an activation $a_{l_{i}} = \omega_{l_{i}l_{j}} z_{l_{j}}$, integrating pulses from activation function $z_{l_{j}}$ of the previouse layer, $(l_{j})$. The new activation function $z_{l_{i}} = f(a_{l_{i}})$ is the firering process of the neuron $l_{i}$. Usually, the activation function is a non-linear continuous step function. 
 
 \subsection{Backpropabagion principal}
 
@@ -115,26 +206,68 @@ The sum runs over all voxels, $x$, of the images. The differential form of the a
 
 \subsection{Activation functions}
 
-Activation functions used for layers of neurons are the hyperbolic tangent, the logistic or the rectified linear unit (ReLU). Expcept for special layers like the last layer of a fully connected network. The derivetive of these funetion are:
+Activation functions used for layers of neurons are the hyperbolic tangent, the logistic or the rectified linear unit (ReLU). Except for special layers like the last layer of a fully connected network. The derivative of these functions are:
 
 \begin{itemize}
 \item hyperbolic tangent: $f = \tanh \rightarrow f' = 1 - \tanh \times \tanh$,
 \item logistic: $\sigma = \frac{1}{1+e^{-x}} \rightarrow \sigma' = \sigma (1 - \sigma)$,
 \item ReLU: $x^{+} = \max(0,x) \rightarrow 1$ if $x^{+} = x$, 0 otherwise.
+\item Unity: $f(x) = x \rightarrow f' = 1$
 \end{itemize}
-\ToDo{how to make the choise of the activation function.}
+\ToDo{how to make the chose of the activation function.}
 
-\subsubsection{Soft maximum}
-\label{soft_max_sec}
+\subsection{Cost functions}
+\label{sec:cost_functions}
 
-The soft maximum is often used in classfication problem involving multiple output classes. the output can be interpretated as probability following the distribution:
+The lastest layer of a neural network has its activation function linked to the cost function. Pairing the cost function with the activation function allow better optimization. Fitting a response would be best using the least-square cost function. In that case any activation function would work out. Testing binary classification would use a Bernouilli cost function. So on and so forth.\\
+The back propagation algorithm is going to make use of the gradient descent algorithm, and propagating the error through the different layers of the neural network is going to make use of the differentiability of the cost function in $a_{l_{i}}^{(l_{i})}$, {\it i.e.} the activation $a_{l_{i}}$ at the layer $(l_{i})$: {\it error} $\delta_{i}^{(l_{i})} = \frac{\partial E}{\partial a_{l_{i}}}$.
+
+\subsubsection{Least-square cost function}
+
+The least-square methode is the most general cost function and could be applyed along a large spectrum of problems. A simple example would be fitting a courve, or matching images. 
+
+\begin{equation}
+  E = \frac{1}{2} \sum_{i = 1}^{n} (\bm{z}(\bm{x}_{i}) - \bm{t}_{i})^{T}(\bm{z}(\bm{x}_{i}) - \bm{t}_{i})
+  \label{eq:least_squarre}
+\end{equation}
+
+The convexity of the cost function make it appealing in the gradient descent algorithm. The calculation of the error at the last layer, in the case of the least square, is:
+
+\begin{equation}
+  \delta_{k}^{(l_{k})} = \frac{\partial E}{\partial a_{l_{k}}} = \sum_{i = 1}^{n} (\bm{z}(\bm{x}_{i}) - \bm{t}_{i})\frac{\partial \bm{z}(\bm{x}_{i})}{\partial a_{l_{k}}}
+  \label{eq:least_squarre_error}
+\end{equation}
+ 
+If the activation function is the unit function, the propagation throught the first layer is simply $(\bm{z}(\bm{x}_{i}) - \bm{t}_{i})$.
+\subsubsection{Binary classification}
+
+segmentation?
+
+\subsubsection{Multiclass classification}
+\label{sec:MulticlassClassification}
+
+For the multiclass classification with $K$ classes the output is a vector. The sum of all dimensions is the unity. Each dimension of the output vector is the probability of the class $k$ among $K$ classes: $y_{x} = \exp(a_{k}) / \mathcal{Z}$. The denominator is the partition function normalizint the probability distribution, and $a_{k}$ is the activation. This activation function is called the soft-maximum. We use the mixture trick to determine the output probability. If we have $N$ samples, then the probability to get the element $\bm{t}$ is:
+
+\begin{equation}
+p(\bm{t} | \bm{x}_{n}, \bm{w}) = \prod_{n=1}^{N}\prod_{k=1}^{K} y_{k}(\bm{x}_{n})^{t_{k}}
+\end{equation}
+
+Where $t_{k} \in \{0,1\}$ is one-of-K element. the other elements $k' \ne k$ are zero. The cost function is the negative logarithm which is:
+
+\begin{equation}
+E = - \sum_{n=1}^{N}\sum_{k=1}^{K} t_{k} \ln (y_{k}(\bm{x}_{n}))
+\end{equation}
+
+Is has been shown good optimization results were reached by using the soft maximum as activation function in the case of multiclass classification.
+
+The soft maximum is often used in classification problem involving multiple output classes. the output can be interpreted as probability following the distribution:
 
 \begin{equation}
   g(a_{l_{k}}) = \frac{e^{a_{l_{k}}}}{\mathcal{Z}}
   \label{soft_max}
 \end{equation}
 
-Where $\mathcal{Z}$ is the partition function normalizing the distribution. Derivating the soft maximum in function of the parameter $a_{k}$ gives us:
+Where $\mathcal{Z}$ is the partition function normalizing the distribution. Derivation the soft maximum in function of the parameter $a_{k}$ gives us:
 
 \begin{equation*}
   \begin{split}
@@ -144,11 +277,7 @@ Where $\mathcal{Z}$ is the partition function normalizing the distribution. Deri
   \end{split}
 \end{equation*}
 
-\lipsum[2-2]
 
-\subsection{Cost functions}
-
-Training the neural network uses the gradient method. All functions representing the neural activity needs to be differentiable, including the cost fuction. \lipsum[3-3]
 
 \subsubsection{Least-squarre cost function}
 
@@ -180,16 +309,16 @@ In information theory, the cross entropy between two probability distributions $
   \label{cross_entropy}
 \end{equation}
 
-$t_{l'_{k}}$ represents the known label, $z_{l'_{k}} = y_{k}$ represents the response of the system, $n$ is the number of participents. 
+$t_{l'_{k}}$ represents the known label, $z_{l'_{k}} = y_{k}$ represents the response of the system, $n$ is the number of participants. 
 
-In this section, we are going to derivate the cross entropy~(\ref{cross_entropy}). To simplify the equation, we are derivating the cost function only for one subject and omitte the subscript $i$. At the output layer, the activation is $a_{l_{k}} = \sum_{l_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l_{k-1}} z_{l_{k-1}}$. The derivative of the cost function in function of the activtion is called the {\it error} and is written:
+In this section, we are going to derivative the cross entropy~(\ref{cross_entropy}). To simplify the equation, we are derivation the cost function only for one subject and omitted the subscript $i$. At the output layer, the activation is $a_{l_{k}} = \sum_{l_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l_{k-1}} z_{l_{k-1}}$. The derivative of the cost function in function of the activation is called the {\it error} and is written:
 
 \begin{equation}
   \delta_{k} = \frac{\partial E_{i}}{\partial a_{l_{k}}} = - \sum_{l'_{k} = 1}^{L_{k}} t_{l'_{k}} \times \frac{1}{z_{l'_{k}}} \frac{\partial z_{l'_{k}}}{\partial a_{k}}
   \label{cost_function_error}
 \end{equation}
 
-In the case of the last activation fuction for the output layer is a soft maximum, we can use the result of the soft maximum derivative from the paragraph~\ref{soft_max_sec}:
+In the case of the last activation function for the output layer is a soft maximum, we can use the result of the soft maximum derivative from the paragraph~\ref{sec:MulticlassClassification}:
 
 \begin{equation*}
   \begin{split}
@@ -605,22 +734,8 @@ the loss function become:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Densely connected neural network}
 
-Dense neural networks are caracterized by a full connection of a neurons of one layer with all neurons plus the bias from the previouse layer Fig.~\ref{fig:Densely_connected_neural_network}. Table~\ref{Layers_activations} presents the activation function for each layer. Each neuron, or activation, of a layer is the result of a perceptron, built from all the nerons of the previous layer and the bias, and filtered by an activation function. 
+Dense neural networks are caracterized by a full connection of a neurons of one layer with all neurons plus the bias from the previouse layer Fig.~\ref{fig:Densely_connected_neural_network} presents the activation function for each layer. Each neuron, or activation, of a layer is the result of a perceptron, built from all the nerons of the previous layer and the bias, and filtered by an activation function. 
 
-\subsection{Description and notation}
-
-In this document, the convention is $l = l_{0}$ for the input layer: $z_{l_{0} = 1} = x_{1}$, $z_{l_{0} = 2} = x_{2}$, \dots We will reserve the index 0 for the bias: $z_{l_{0} = 0} = x_{0} = b_{0}$ the bias on the input level. The last level is the output level: $l = l_{k}$, $z_{l_{k}} = y_{k}$. The output level does not have a bias node.
-
-\begin{table}[]
-\centering
-\caption{Neuron activation for each layers.}
-\label{Layers_activations}
-\begin{tabular}{llllll}
-  \hline
- $\{ z_{l_{0}}\}_{l_{0} = 0}^{L_{0}}$&  $\{ z_{l_{1}}\}_{l_{1} = 0}^{L_{1}}$ &  $\cdots$ & $\{ z_{l_{k-1}}\}_{l_{k-1} = 0}^{L_{k-1}}$ &  $\{ z_{l_{k}}\}_{l_{k} = 0}^{L_{k}-1}$ &  \\ 
-  \hline
-\end{tabular}
-\end{table}
 
 \begin{figure}[htbp]
    \begin{center}
@@ -630,82 +745,9 @@ In this document, the convention is $l = l_{0}$ for the input layer: $z_{l_{0} =
   \label{fig:Densely_connected_neural_network} 
 \end{figure}
 
-Each neuron is an activated function, $f$, of a linear combinaison of the neurons from the previous layer. Function $g$ is the activation function for the output layer.
-
-\begin{itemize}
-    \item $l = l_{0}$ we are at the level of the inputs
-    \item $l = l_{1}$ $a_{l_{1}} = \sum_{l'_{0} = 0}^{L_{0}} \omega_{l_{1}l'_{0}} z_{l'_{0}}$. And $z_{l_{1}} = f(a_{l_{1}})$ \\
-     $\vdots$
-    \item $l = l_{k-1}$ $a_{l_{k-1}} = \sum_{l'_{k-2} = 0}^{L_{k-2}} \omega_{l_{k-1}l'_{k-2}} z_{l'_{k-2}}$. And $z_{l_{k-1}} = f(a_{l_{k-1}})$ \\ 
-    \item $l = l_{k}$ $a_{l_{k}} = \sum_{l'_{k-1} = 0}^{L_{k-1}} \omega_{l_{k}l'_{k-1}} z_{l'_{k-1}}$. And $z_{l_{k}} = g(a_{l_{k}})$
-\end{itemize}
-
-At each layer, activations can be represented as a vector:
-
-\begin{eqnarray*}
-  \left(
-  \begin{array}{c}
-    a_{l_{1} = 0} \\
-    a_{l_{1} = 1} \\
-    \vdots \\
-    a_{L_{1} - 1}
-  \end{array}
-  \right) = \left(
-  \begin{array}{cccc}
-    \omega_{00} & \omega_{01} & \cdots & \omega_{0L_{0}} \\
-    \omega_{10} & \omega_{11} & \cdots & \omega_{1L_{0}} \\
-    \vdots     &            & \cdots & \vdots \\
-    \omega_{(L_{1}-1)0} & \omega_{(L_{1}-1)1} & \cdots & \omega_{(L_{1}-1)L_{0}} \\
-  \end{array}
-  \right)  \left(
-  \begin{array}{c}
-    z_{l_{0} = 0} \\
-    z_{l_{0} = 1} \\
-    \vdots \\
-    z_{L_{0} - 1} \\
-    1
-  \end{array}
-  \right)
-\end{eqnarray*}
-
-Which can be writen in a compact manner: $\bm{a}^{(l_{1})} = \Omega_{10}\bm{z}^{(l_{0})}$. The 1 at the end of the $\bm{z}$ vector represents the bias terme. Following he same writing, the forward algorithm can be written: $\bm{a} = \Omega\bm{z}$, where $\Omega$ is a block-diagonal matrix:
-
-\begin{eqnarray*}
-  \Omega = \left(
-  \begin{array}{cccc}
-    \Omega_{10} &            & 0      &  \\
-               & \Omega_{21} &        &  \\
-               &            & \ddots &  \\
-               & 0          &        & \Omega_{k(k-1)} \\
-  \end{array}
-  \right)
-\end{eqnarray*}
 
   There are several choises for the activation function and we will try to provide the possibility of using several of them. However, the first developpments will be done with the hyperbolic tangent for the activation of the inside layers neurons: $f = \tanh$ and $f' = (1 - \tanh^{2})$. The last layer, the output layer, will be calculated with a soft maximum: $g(z_{l_{k}}) = e^{a_{l_{k}}} / \mathcal{Z}$, where the partition function $\mathcal{Z} = \sum_{l_{k} = 1}^{L_{k}} e^{z_{l_{k}}}$, and $g' = g(1 - g)$.
   
-\subsection{Forward propagation}
-
-The forward propagation is straight forward. For a solution, $y_{k} = z_{l_{k}} = g(a_{l_{k}})$ where
-$$
-a_{l_{k}} = \omega_{l_{k}}^{T} z^{(k-1)} = \omega_{l_{k}}^{T} f(\omega_{l_{k-1}}^{T} z^{(k-2)}) = \omega_{l_{k}}^{T} f(\omega_{l_{k-1}}^{T} f(\omega_{l_{k-2}}^{T} z^{(k-3)})) = \dots
-$$
-
-\subsubsection{Algorithm}
-
-The Table~\ref{weights_in_mem} gives the distribution of the weights in a dense neural network. These weights can be represented in one long array in the hardware memory. The first layer $l = l_{1}$, after the inputs, has $(L_{0}+1)\times(L_{1})$ weights. The layer after has $(L_{1}+1)\times(L_{2})$ weights, so forth till the last layer having $(L_{k-1}+1)\times(L_{k})$.
-
-
-\begin{table}[]
-\centering
-\caption{Representation in a one dimension array of the all the weights.}
-\label{weights_in_mem}
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
-\hline
-\multicolumn{4}{|c|}{$l_{1}$} & $\hdots$ & \multicolumn{3}{c|}{$l_{k}$} \\ \hline
-$\omega_{l_{1}=0l_{0}=0}$   &   $\omega_{01}$   & $\hdots$  &  $\omega_{(L_{1}-1)L_{0}}$   & $\hdots$ &    $\omega_{l_{k}=0l_{k-1}=0}$    & $\hdots$  &   $\omega_{(L_{k}-1)L_{k-1}}$ \\ \hline
-\end{tabular}
-\end{table}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Backward propagation}
@@ -725,36 +767,6 @@ Where $\bm{\omega}$ represents the vector of weights, $e$ represents the {\it ep
 \subsubsection{Algorithm}
 
 The backward propagation for each layer, except the last layer, is a recursive estimtion of the deeper layer. The gradient Eq.~(\ref{gradient_descent}) at a particular weight is, using the error Eq.~(\ref{cost_function_error}),
-
-\begin{equation*}
-  \frac{\partial E_{i}}{\partial \omega_{l_{u}l_{v}}} = \frac{\partial E_{i}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{v}}} = \delta_{l_{u}}\frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{v}}} 
-\end{equation*}
-
-
-\paragraph{$\bm{l = l_{k}}$}{ Using the results from the section~\ref{Cross_entropy_cost_function_sec}:
-
-  \begin{equation*}
-    \begin{split}
-      \frac{\partial E_{i}}{\partial \omega_{l_{k}l_{k-1}}} = &  \frac{\partial E_{i}}{\partial a_{l_{k}}} \frac{\partial a_{l_{k}}}{\partial \omega_{l_{k}l_{k-1}}}  \\
-              = &  (z_{l_{k}} - t_{l_{k}})z_{l_{k-1}} \\
-    \end{split}
-  \end{equation*}
-
-}
-
-\paragraph{$\bm{l = l_{u}}$}{We write the relation between the level $l_{u}$ and the layer immediatly after using the chain rules of partial derivative:
-
-  \begin{equation*}
-    \begin{split}
-      \frac{\partial E_{i}}{\partial \omega_{l_{u}l_{u-1}}} = &  \frac{\partial E_{i}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{u-1}}} = \delta_{l_{u}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{u-1}}}  \\
-              = & \sum_{l'_{u+1}}\frac{\partial E_{i}}{\partial a_{l'_{u+1}}} \frac{\partial a_{l'_{u+1}}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{u-1}}}   \\
-              = & \sum_{l'_{u+1}} \delta_{l'_{u+1}} \frac{\partial a_{l'_{u+1}}}{\partial a_{l_{u}}} z_{l_{u-1}}   \\
-              = & \sum_{l'_{u+1}} \delta_{l'_{u+1}} \sum_{l'_{u}} \omega_{l'_{u+1}l'_{u}} f'(a_{l'_{u}}) \delta_{l'_{u}l_{u}} z_{l_{u-1}}   \\
-              = & \sum_{l'_{u+1}} \delta_{l'_{u+1}} \omega_{l'_{u+1}l_{u}} f'(a_{l_{u}}) z_{l_{u-1}}   \\
-    \end{split}
-\end{equation*}
-
-}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

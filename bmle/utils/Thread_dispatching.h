@@ -14,7 +14,7 @@
  * Name space 
  *
  */
-namespace MAC_bmle
+namespace NeuroBayes
 {
   /*! \class Thread_dispatching
    * \brief class representing whatever
