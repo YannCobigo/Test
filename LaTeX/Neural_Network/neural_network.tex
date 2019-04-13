@@ -129,7 +129,7 @@ $$
 dE = (\bm{\nabla}E)^{T} \bm{d \omega} + (\bm{d \omega})^{T}H\bm{d \omega} + \dots
 $$
 
-Minimizing the right hand of the total differential, we have $\bm{d \omega} = - H^{-1} \bm{\nabla}E$. Theorically, the Hessian optimization reach the minimum of the cost function fast, because the method holds information about the gradient and how it changes. However, the iteration is controled using smaller steps: $\omega^{e+1} = \omega^{e} - \eta  H^{-1} \bm{\nabla}E$, where $\eta$ is a positive parameter known as the learning rate. Beyond the interesting properties offered by the Hessian optimization, it is costly to use this method. We consider a problem with $n$ weights, the gradient will be calculated over the $n$ weights and the Hessian matrix will be calculated over $n \times n$ weights, then inversed.
+Minimizing the right hand of the total differential, we have $\bm{d \omega} = - H^{-1} \bm{\nabla}E$. Theorically, the Hessian optimization reach the minimum of the cost function fast, because the method holds information about the gradient and how it changes. However, the iteration is controled using smaller steps: $\omega^{e+1} = \omega^{e} - \eta  H^{-1} \bm{\nabla}E$, where $\eta$ is a positive parameter known as the learning rate. Beyond the interesting properties offered by the Hessian optimization, it is costly to use this method. We consider a problem with $n$ weights and biases, the gradient will be calculated over the $n$ weights and biases and the Hessian matrix will be calculated over $n \times n$ weights, then inversed.
 
 \subsubsection{Momentum based gradient descent}
 [Momentum based gradient descent]
@@ -140,7 +140,7 @@ Instead of relying on one perceptron, we use a layer of $L_{1}$ perceptrons and 
 \begin{eqnarray*}
   \left(
   \begin{array}{c}
-    a_{l_{1} = 1} \\
+    a_{l_{1}} \\
     \vdots \\
     a_{L_{1}}
   \end{array}
