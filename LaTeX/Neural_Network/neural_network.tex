@@ -91,11 +91,10 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 \section{Multilayer perceptron}
 
-We are using the perceptron as an explenatory mecanism introducing the local elements of a deep learning principals. The perceptron can be seen as the firing elements of the neural network, receiving information from sevaral inputs and firing when the amount of stimuli exceed a threshold. In addition, we can apply the different gradient methods to the perceptron to fine tune its parameters.
+We are using the perceptron as an explenatory mecanism introducing the local elements of a deep learning principals. The perceptron can be seen as the firing elements of the neural network, receiving information from sevaral inputs and firing when the amount of stimuli exceed a threshold. The weigths of the perceptron can be optimized using the gradient descent method. This section introduce the gradient descent method and applying different gradient strategies the perceptron fine tunes its parameters.
 
 \subsection{Perceptrons: the building block}
-[revisite the position of the bias and weights]\\
-In the litterature, the neural network is often refered as {\it multilayer perceptron}. In other words, the neural network is based on layers of "perceptrons". The perceptron was one of the first machine learning algorithm used with computers. It is a supervise algorithm. The principal of classification using perceptron seat on fitting linear model $X^{T}\omega > \theta$, where $\omega$ is a vector of $N$ weights, $X$ is a vector of $N$ predictors and $\theta$ is a threshold. In its generalized linear model writing it becomes the non-linear step function: $f(X) = \phi(X)^{T}\omega \in \{-1,+1\}$, where $\phi$ can be non-linear. $\phi = (\phi_{0}, \phi_{1}, \cdots, \phi_{N})^{T}$ is a vector of $N$ components plus a bias $\phi_{0}$ corresponding to the threshold. The weights $\omega = (1, \omega_{1}, \cdots, \omega_{N})^{T}$ is a vector with $N$ weights plus $\omega_{0} = 1$ associated to the bias. It is convinient to move the unknown in the same vector and write the weights and the bias as $\omega = (\omega_{0}, \omega_{1}, \cdots, \omega_{N})^{T}$, then the predictors become $\phi = (\phi_{0} = 1, \phi_{1}, \cdots, \phi_{N})^{T}$. \\
+In the litterature, the neural network is often refered as {\it multilayer perceptron}. In other words, the neural network is based on layers of "perceptrons". The perceptron was one of the first machine learning algorithm used with computers. It is a supervise algorithm. The principal of classification using perceptron seat on fitting linear model $X^{T}\omega > \theta$, where $\omega$ is a vector of $N$ weights, $X$ is a vector of $N$ predictors and $\theta$ is a threshold. In its generalized linear model writing it becomes the non-linear step function: $f(X) = \phi(X)^{T}\omega \in \{-1,+1\}$, where $\phi$ can be non-linear. $\phi = (1, \phi_{1}, \cdots, \phi_{N})^{T}$ is a vector of $N$ components plus a $1$ which is counter part to the bias corresponding to the threshold. The weights $\omega = (\omega_{0} = \theta, \omega_{1}, \cdots, \omega_{N})^{T}$ is a vector with $N$ weights plus $\omega_{0} = \theta$ associated to the bias. It is convinient to move the unknown in the same vector and write the weights and the bias as $\omega = (\omega_{0}, \omega_{1}, \cdots, \omega_{N})^{T}$, then the predictors become $\phi = (\phi_{0} = 1, \phi_{1}, \cdots, \phi_{N})^{T}$. \\
 The perceptron is a binary classification method, the response of the training model is $t \in \{-1,+1\}$. Observing that {\it perceptron criteria} $t \times \phi(X)^{T}\omega > 0$ is always positive, the minimization is based on minimizing the number miss-classified elements: \\
 
 \begin{equation}
@@ -109,9 +108,31 @@ $$
 \bm{\nabla} E = - \sum_{c \in \mathcal{M}} t_{n} \times \phi(X_{n})
 $$
 
-[Make a section on the different gradient descent strategies]\\
-At this point the strategy of the weights correction can follow the gradient descent, as described. However, faster results were obtained by correcting the weights after each miss-classification, {\it stochastic gradient descent}, or after small batch of miss-classified elements, {\it mini-batch gradient descent}. The same principals are applied to the neural network training.\\
 A semantic clarification needs to be done about the multi-layer perceptron. As mentioned, $f$ is a discontinued step function, whereas neural network use step continuous, or sigmoidal, function like hyperbolic tangent, logistic, \dots In those terms, a neural network is not exactly a multilayer perceptron, but close enough.
+
+\subsection{Gradient descent cement between blocks}
+
+The gradient descent is an iterative algorithm that tries to reach a local minimum in the optimization process. It is based on the link between the total differential of a scalar function and the gradient:
+
+$$
+dE = \bm{\nabla}E \cdot \bm{d \omega}
+$$
+
+Selecting $\bm{d\omega} = -\eta \bm{\nabla}E$, where $\eta$ is a positive parameter called the learning rate. The total differential of the cost functuion $E$ can be written: $dE = -\eta \bm{\nabla}E \cdot \bm{\nabla}E < 0$, meaning for each iteration $e$, $\omega^{e+1} = \omega^{e} - \eta \bm{\nabla} E$, the cost function is assured to decrease. 
+Faster results were obtained by correcting the weights after each miss-classification, {\it stochastic gradient descent}, or after small batch of miss-classified elements, {\it mini-batch gradient descent}. The same principals are applied to the neural network training.\\
+
+\subsubsection{Hessian optimization}
+
+The total differential of the cost function can be pushed an order higher:
+
+$$
+dE = (\bm{\nabla}E)^{T} \bm{d \omega} + (\bm{d \omega})^{T}H\bm{d \omega} + \dots
+$$
+
+Minimizing the right hand of the total differential, we have $\bm{d \omega} = - H^{-1} \bm{\nabla}E$. Theorically, the Hessian optimization reach the minimum of the cost function fast, because the method holds information about the gradient and how it changes. However, the iteration is controled using smaller steps: $\omega^{e+1} = \omega^{e} - \eta  H^{-1} \bm{\nabla}E$, where $\eta$ is a positive parameter known as the learning rate. Beyond the interesting properties offered by the Hessian optimization, it is costly to use this method. We consider a problem with $n$ weights, the gradient will be calculated over the $n$ weights and the Hessian matrix will be calculated over $n \times n$ weights, then inversed.
+
+\subsubsection{Momentum based gradient descent}
+[Momentum based gradient descent]
 
 \subsection{Forward propagation, or feed-forward algorithm}
 Instead of relying on one perceptron, we use a layer of $L_{1}$ perceptrons and a bias. Each perceptron of the layer $(l_{1})$ loads all the inputs of the layer $(l_{0})$. The activation $l_{1}$ of the layer $(l_{1})$ is the dot product $a_{l_{1}} = \sum_{(l_{0})} \omega_{l_{1}l_{0}}z_{l_{0}}$ where the indexes of the layer $(l_{0})$ are $l_{0} = 0, \dots, L_{0}$, of the layer $(l_{1})$ are $l_{1} = 1, \dots, L_{1}$, and $z_{l_{0} = 0} = 1$ is the predictor conter part of the bias and $\omega_{l_{1}l_{0} = 0} = \omega_{l_{1}0}$ is the bias. At each layer, activations can be represented as a vector:
