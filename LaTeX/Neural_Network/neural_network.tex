@@ -170,7 +170,14 @@ The cost function is estimated at the last layer of the neural network. In purpo
   \frac{\partial E_{i}}{\partial \omega_{l_{u}l_{v}}} = \frac{\partial E_{i}}{\partial a_{l_{u}}} \frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{v}}} = \delta_{l_{u}}\frac{\partial a_{l_{u}}}{\partial \omega_{l_{u}l_{v}}} 
 \end{equation*}
 
-We define $\delta_{l_{u}}$ the error at the neuron $l_{u}$ on the layer $(l_{u})$. The cost function $E_{i}$ represents the error on the input $i$. The element $l_{v}$ represents some element on the layer $(l_{v})$. We are going to work with consecutive layers and, in general, $(l_{v}) = (l_{u-1})$. We decompose, using the chain rule, the partial derivative of the cost function to make apear the link between the layer $(l_{u})$ and the layer $(l_{u+1})$. 
+We define $\delta_{l_{u}}$ the error at the neuron $l_{u}$ on the layer $(l_{u})$. The cost function $E_{i}$ represents the error on the input $i$. The element $l_{v}$ represents some element on the layer $(l_{v})$. We are going to work with consecutive layers and, in general, $(l_{v}) = (l_{u-1})$. At the last layer $(l_{k})$, the gradient components are estimated using:
+
+\begin{equation}
+  \frac{\partial E_{i}}{\partial \omega_{l_{k}l_{k-1}}} = \delta_{l_{k}}\frac{\partial a_{l_{k}}}{\partial \omega_{l_{k}l_{k-1}}} 
+\label{eq:backprob_layer_k}
+\end{equation}
+
+For the subsequent layers, we decompose the partial derivative of the cost function, using the chain rule, to make appear the link between the layer $(l_{u})$ and the layer $(l_{u+1})$. 
 
 \begin{equation}
   \begin{split}
@@ -183,23 +190,7 @@ We define $\delta_{l_{u}}$ the error at the neuron $l_{u}$ on the layer $(l_{u})
 \label{eq:backprob}
 \end{equation}
 
-
-\paragraph{$\bm{l = l_{k}}$}{ Using the results from the section~\ref{Cross_entropy_cost_function_sec}:
-
-  \begin{equation*}
-    \begin{split}
-      \frac{\partial E_{i}}{\partial \omega_{l_{k}l_{k-1}}} = &  \frac{\partial E_{i}}{\partial a_{l_{k}}} \frac{\partial a_{l_{k}}}{\partial \omega_{l_{k}l_{k-1}}}  \\
-              = &  (z_{l_{k}} - t_{l_{k}})z_{l_{k-1}} \\
-    \end{split}
-  \end{equation*}
-
-}
-
-\paragraph{$\bm{l = l_{u}}$}{We write the relation between the level $l_{u}$ and the layer immediatly after using the chain rules of partial derivative:
-
-
-}
-
+Equations~(\ref{eq:backprob_layer_k}) and~(\ref{eq:backprob}) are the back propagation equations. In the followin section, we are going to apply the back propagation equations to different cost functions.
 
 
 \subsection{Inputs}
@@ -209,21 +200,9 @@ For the different type of neural networks we would like to accomplish, the input
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Output, activation functions and cost functions}
+\section{Cost functions and activation functions}
 
 A neuron is represented with an activation $a_{l_{i}} = \omega_{l_{i}l_{j}} z_{l_{j}}$, integrating pulses from activation function $z_{l_{j}}$ of the previouse layer, $(l_{j})$. The new activation function $z_{l_{i}} = f(a_{l_{i}})$ is the firering process of the neuron $l_{i}$. Usually, the activation function is a non-linear continuous step function. 
-
-\subsection{Backpropabagion principal}
-
-% Learning representations by back-propagating errors (Rumelhart D Hinton G Williams R)
-We can build the total differential form the a cost function $E$ as the sum of the differential of its functionals $a_{x,l_{i}}^{(\sigma)}$. For example if we have a neural network with twoactivation levels, $i$ and $o$, the total differential form the a cost function $E$ is:
-
-\begin{equation}
-  dE = \sum_{o,x} \frac{\partial E}{\partial a_{x,l_{2}}^{(o)}} da_{x,l_{2}}^{(o)} + \sum_{i,x} \frac{\partial E}{\partial a_{x,l_{1}}^{(i)}} da_{x,l_{1}}^{(i)}
-  \label{eq:total_diff}
-\end{equation}
-
-The sum runs over all voxels, $x$, of the images. The differential form of the activation functions can be written explicitly. In the next sections, we will adapt the definitions of the activation adequate to the problem we want to solve.
 
 \subsection{Activation functions}
 
