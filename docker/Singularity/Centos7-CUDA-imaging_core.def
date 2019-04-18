@@ -108,6 +108,7 @@ VERSION    v1.3.0
 	    emacs tmux htop git wget tree.x86_64 cmake gcc.x86_64 gcc-c++ gcc-gfortran \
 	    fftw-libs-single-3.3.3-8.el7.x86_64 python-devel.x86_64 \
 	    tcsh.x86_64 \
+	    yasm.x86_64 yasm-devel.x86_64 \
 	    atlas-devel.x86_64 boost-devel.x86_64 gflags-devel.x86_64 glog-devel.x86_64 hdf5-devel.x86_64 \
 	    openblas.x86_64 openblas-Rblas.x86_64 openblas-devel.x86_64 openblas-openmp.x86_64 openblas-static.x86_64 \
 	     openblas-threads.x86_64openblas-threads64.x86_64 openblas-serial64.x86_64 openblas-openmp64.x86_64 \
