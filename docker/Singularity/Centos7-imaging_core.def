@@ -78,7 +78,7 @@ IncludeCmd: yes
 	    emacs tmux htop git wget tree.x86_64 cmake gcc.x86_64 gcc-c++ gcc-gfortran \
 	    fftw-libs-single-3.3.3-8.el7.x86_64 python-devel.x86_64 \
 	    yasm.x86_64 yasm-devel.x86_64 mercurial.x86_64 \
-	    tcsh.x86_64 \*openblas\*.x86_64 \
+	    tcsh.x86_64 *openblas*.x86_64 \
 	    libuuid.x86_64 libuuid-devel.x86_64 lua.x86_64 lua-devel.x86_64 patch.x86_64 \
 	    atlas-devel.x86_64 boost-devel.x86_64 gflags-devel.x86_64 glog-devel.x86_64 hdf5-devel.x86_64 \
 	    leveldb-devel.x86_64 lmdb-devel.x86_64 opencv-devel.x86_64 protobuf-devel.x86_64 snappy-devel.x86_64 \
