@@ -1,6 +1,6 @@
 BootStrap: docker
 # Mine's 10.1
-# Matt's 10.0
+# Matt's 10.0, 9.1
 # Cerebellum 7.5
 From: nvidia/cuda:10.0-runtime-centos7
 IncludeCmd: yes
@@ -53,6 +53,10 @@ VERSION    v1.3.0
 	CUDA=10-0
 	CUDA_VERSION=10.0.130-1 
 	CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+	# 9.1
+	#CUDA=9-1
+	#CUDA_VERSION=9.1.85-1 
+	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
 	# 7.5
 	#CUDA=7-5
 	#CUDA_VERSION=7.5-18
@@ -68,9 +72,9 @@ VERSION    v1.3.0
 #	#
 	NVIDIA_VISIBLE_DEVICES=all 
 	NVIDIA_DRIVER_CAPABILITIES=compute,utility 
-#	NVIDIA_REQUIRE_CUDA="cuda>=10.0 brand=tesla,driver>=410,driver<411"
-#	# cuDNN 
-#        CUDNN_VERSION=7.4.2.24 
+	NVIDIA_REQUIRE_CUDA="cuda>=10.0 brand=tesla,driver>=410,driver<411"
+	# cuDNN 
+        CUDNN_VERSION=7.4.2.24 
 #	#LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}" 
 #	#
 #	NVIDIA_GPGKEY_SUM="d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5" 
@@ -79,14 +83,14 @@ VERSION    v1.3.0
 #	#curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-${CUDA_PKG_VERSION}.x86_64.rpm 
 	rpm -i  https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-${CUDA_VERSION}.x86_64.rpm 
 	echo "exclude=xorg-x11-drv-nvidia*,akmod-nvidia*,kmod-nvidia*,nvidia-driver*,nvidia-settings,nvidia-xconfig,nvidia-persistenced,cuda-nvidia-kmod-common,dkms-nvidia,nvidia-libXNVCtrl" >> /etc/yum.repos.d/cuda.repo 
-#	#
-#	## cuDNN license: https://developer.nvidia.com/cudnn/license_agreement 
-#	#CUDNN_DOWNLOAD_SUM=2edfc86a02b50d17e88c478955a332e6a1e8174e7e53a3458b4ea51faf02daa3 
-#	#curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.4.2/cudnn-10.0-linux-x64-v7.4.2.24.tgz -O 
-#	#echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.0-linux-x64-v7.4.2.24.tgz" | sha256sum -c -     
-#	#tar --no-same-owner -xzf cudnn-10.0-linux-x64-v7.4.2.24.tgz -C /usr/local --wildcards 'cuda/lib64/libcudnn.so.*'
-#	#rm cudnn-10.0-linux-x64-v7.4.2.24.tgz 
-#	#ldconfig
+	#
+	# cuDNN license: https://developer.nvidia.com/cudnn/license_agreement 
+	CUDNN_DOWNLOAD_SUM=2edfc86a02b50d17e88c478955a332e6a1e8174e7e53a3458b4ea51faf02daa3 
+	curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.4.2/cudnn-10.0-linux-x64-v7.4.2.24.tgz -O 
+	echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.0-linux-x64-v7.4.2.24.tgz" | sha256sum -c -     
+	tar --no-same-owner -xzf cudnn-10.0-linux-x64-v7.4.2.24.tgz -C /usr/local --wildcards 'cuda/lib64/libcudnn.so.*'
+	rm cudnn-10.0-linux-x64-v7.4.2.24.tgz 
+	ldconfig
 	# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a 
 	yum install -y cuda-samples-$CUDA
 	if [ $CUDA == "10-0" ] || [ $CUDA == "10-1" ] ;
@@ -124,7 +128,7 @@ VERSION    v1.3.0
 	    sudo.x86_64 net-tools initscripts nautilus.x86_64 tkinter curl.x86_64 curl-devel \
 	    octave.x86_64 octave-*.x86_64 \
 	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
-	    firefox.x86_64 firefox-pkcs11-loader.x86_64
+	    firefox.x86_64 firefox-pkcs11-loader.x86_64 libxml2.x86_64 libxml2-python.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64
 
 #	#
 #	#
@@ -161,19 +165,27 @@ VERSION    v1.3.0
 	#
 	echo "Python installation"
 	yum install -y  python-pip && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-	python get-pip.py pip==9.0.2 wheel==0.30.0 setuptools==28.8.0
-	yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy python-nose  \
-	    libxml2-devel.x86_64 libxml2-python.x86_64 libxslt.x86_64 libxslt-devel.x86_64 libxslt-python.x86_64 \
-
-	#
-	#
-	echo "Python pip installation"
-	pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz scipy sklearn progressbar requests matplotlib ipython pandas sympy nose \
-	    && pip install --upgrade lockfile future simplejson prov statsmodels psutil cython untangle jsonpath-rw bctpy h5py networkx sortedcontainers \
-	       XlsxWriter pydicom seaborn pyyaml hmmlearn xlrd 
-	pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype && pip install --upgrade pygraphviz Pillow python-igraph
+	#python get-pip.py pip==9.0.2 wheel==0.30.0 setuptools==28.8.0
 	# tensor flow
+	pip install --upgrade pip
 	pip install --upgrade tensorflow-gpu && pip install --upgrade keras
+	pip install --upgrade matplotlib nibabel networkx rdflib sphinx graphviz scipy sklearn progressbar requests
+	pip install --upgrade ipython pandas sympy nose lockfile future simplejson prov statsmodels psutil cython 
+	pip install --upgrade untangle jsonpath-rw bctpy h5py networkx sortedcontainers XlsxWriter pydicom seaborn 
+	pip install --upgrade pyyaml hmmlearn xlrd
+	pip install --upgrade nipype pygraphviz Pillow 
+	#python-igraph 
+
+#	yum install -y  numpy scipy python-matplotlib ipython python-pandas sympy python-nose  \
+#	    libxml2-devel.x86_64 libxml2-python.x86_64 libxslt.x86_64 libxslt-devel.x86_64 libxslt-python.x86_64 \
+#
+#	#
+#	#
+#	echo "Python pip installation"
+#	pip install --upgrade pip nibabel networkx numpy rdflib sphinx graphviz scipy sklearn progressbar requests matplotlib ipython pandas sympy nose \
+#	    && pip install --upgrade lockfile future simplejson prov statsmodels psutil cython untangle jsonpath-rw bctpy h5py networkx sortedcontainers \
+#	       XlsxWriter pydicom seaborn pyyaml hmmlearn xlrd 
+#	pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype && pip install --upgrade pygraphviz Pillow python-igraph
 
 
 
