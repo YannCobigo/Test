@@ -92,6 +92,42 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Mathematical preliminaries}
+
+In this section we are lying bases on fondamental mathematics principals. Those fondations are not proven and serve as a base for the understanding of the rest of this report. For the ost part, we will use the Einstein summing convetion.\\
+We consider a map $f: X \rightarrow Y$ as an homomorphism if the algebraic structure of the set $X$, {\it e.g.} addition or multiplication, is preseved under the mapping $f$. For example $f$ is an homomorphism if $\forall a,b \in X: f(ab) = f(a)f(b)$. The mapping $f$ is an isomorphism if it is a bijective homomorphism. A map is said to be continous if the inverse image of an open set on $Y$ is an open set on $X$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Vector spaces}
+
+A vetor space $V$ is define on a corp $\mathbb{K}$ ({\it i.e.} a field), the elements of the vector space are vectors defined on the field $\mathbb{K}$. A vector space has a structure of a group. In addition, we have the addition of vectors and the multiplication with a scalar of $\mathbb{K}$. Let $\{e_{\mu}\}$ a set of vectors on the field $\mathbb{K}$ linearly independent if the only solution of the equation $x^{\mu}e_{\mu} = 0$ is $x^{\mu} = 0$ for any $\mu$. A set of linearly independ set of vectors is a basis of $V$. Any element $\bm{v}$ of $V$ can be written in an unique way:
+
+$$
+v = v^{\mu}e_{\mu},~~~v^{\mu} \in \mathbb{K}
+$$
+
+The linear map is an example of homomorphism that preserves the vector addition and the scalar multiplication. Let $\bm{v}$ and $\bm{w}$ two vectors of the vector space $V$ and $f : V \rightarrow W$ a linear map between the vector spaces $V$ and $W$. Then for all $a$ and $b$ in the field $\mathbb{K}$, $f(a\bm{v} + b\bm{w}) = af(\bm{v}) + bf(\bm{w})$. The linear map on the vector space is an extention of the linear application on the field $\mathbb{K}$. The image, $Img~f$, of the map is define as $f(V) \subset W$. and the kernel, $Ker~f$, is defined as $\{ \bm{v} \in V / f(\bm{v}) = \bm{0}\}$. \\
+Let $f : V \rightarrow W$ a linear map and $\bm{v} = v^{\mu} e_{\mu}$ a vector of $V$ defined of the basis $e_{\mu}$. We defined the dual space, $V^{*}$, through the mapp $f(\bm{v}) = v^{\mu} f(e_{\mu})$. The dual basis become $f(e_{\mu})$ if, for each $\mu$ the $f(e_{\mu})$ is defined. We introduce $e^{\mu} = f(e_{\mu})$ it can be completly specified by: $e^{\mu}e_{\nu} = \delta_{~\nu}^{\mu}$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Tensors}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Topological spaces}
+
+Topological spaces are, mathematicaly, a general space. The goal of  topologies is to classify the equivalence of shapes. If we can build a continuous application $f : X \rightarrow Y$ between two topologies $X$ and $Y$, and the inverse $f^{-1}$ of the application $f$ exists and is continous. Then $f$ is called an homeomorphism and the two spaces, $X$ and $Y$, are homeomorphic.
+We tend to work with metric spaces that are subset of manifold that are subset of topological spaces. In this section we are going to describe manifold that can be seen locally as a vector space and globaly as a topology.
+
+\paragraph{Definition}{Let $X$ be a set. A topological space, $\mathcal{T}$, is a set of subset $U_{i}$ of $X$. $X$ and $\varnothing$ are in $\mathcal{T}$. The intersections and unions of sets $U_{i}$ are in $mathcal{T}$.
+
+If the union of all the subset is coverses $X$, $\cup_{i} U_{i} = X$. The family $\{U_{i} \}$ is called a covering of $X$.
+For $x,~y,~z \in X$, we define a metric as the symmetric application $d : X \times X \rightarrow \mathbb{R}$ and $d(x,y) = d(y,x)$ such that $d(x,x) \ge 0$ and $d(x,y) + d(y,z) \ge d(x,z)$. A topological space $\mathcal{T}$ with a metric $d$ is a metric topological space. The subset of the topological space are the usual open ({\it i.e.} the open balls) $U_{i} = \{ x \in \mathcal{T} / \forall y \in U_{i} ~~ d(x,y) < \varepsilon \}$.
+  
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

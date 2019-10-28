@@ -95,7 +95,7 @@ Fijee \sep electrode \sep PEM \sep CEM
 We are using the perceptron as an explenatory mecanism introducing the local elements of a deep learning principals. The perceptron can be seen as the firing elements of the neural network, receiving information from sevaral inputs and firing when the amount of stimuli exceed a threshold. The weigths of the perceptron can be optimized using the gradient descent method. This section introduce the gradient descent method and applying different gradient strategies the perceptron fine tunes its parameters.
 
 \subsection{Perceptrons: the building block}
-In the litterature, the neural network is often refered as {\it multilayer perceptron}. In other words, the neural network is based on layers of "perceptrons". The perceptron was one of the first machine learning algorithm used with computers. It is a supervise algorithm. The principal of classification using perceptron seat on fitting linear model $X^{T}\omega > \theta$, where $\omega$ is a vector of $N$ weights, $X$ is a vector of $N$ predictors and $\theta$ is a threshold. In its generalized linear model writing it becomes the non-linear step function: $f(X) = \phi(X)^{T}\omega \in \{-1,+1\}$, where $\phi$ can be non-linear. $\phi = (1, \phi_{1}, \cdots, \phi_{N})^{T}$ is a vector of $N$ components plus a $1$ which is counter part to the bias corresponding to the threshold. The weights $\omega = (\omega_{0} = \theta, \omega_{1}, \cdots, \omega_{N})^{T}$ is a vector with $N$ weights plus $\omega_{0} = \theta$ associated to the bias. It is convinient to move the unknown in the same vector and write the weights and the bias as $\omega = (\omega_{0}, \omega_{1}, \cdots, \omega_{N})^{T}$, then the predictors become $\phi = (\phi_{0} = 1, \phi_{1}, \cdots, \phi_{N})^{T}$. \\
+In the litterature, the neural network is often refered as {\it multilayer perceptron}. In other words, the neural network is based on layers of "perceptrons". The perceptron was one of the first machine learning algorithm used with computers. It is a supervise algorithm. The principal of classification using perceptron seat on fitting linear model $X^{T}\omega > \theta$, where $\omega$ is a vector of $N$ weights, $X$ is a vector of $N$ predictors and $\theta$ is a threshold. In its generalized linear model writing it becomes the non-linear step function: $f(X) = \phi(X)^{T}\omega \in \{-1,+1\}$, where $\phi$ can be non-linear. $\phi = (1, \phi_{1}, \cdots, \phi_{N})^{T}$ is a vector of $N$ components plus a $1$ which is counter part to the bias weight, corresponding to the threshold. The weights $\omega = (\omega_{0} = \theta, \omega_{1}, \cdots, \omega_{N})^{T}$ is a vector with $N$ weights plus $\omega_{0} = \theta$ associated to the bias. It is convinient to move the unknown in the same vector and write the weights and the bias as $\omega = (\omega_{0}, \omega_{1}, \cdots, \omega_{N})^{T}$, then the predictors become $\phi = (\phi_{0} = 1, \phi_{1}, \cdots, \phi_{N})^{T}$. \\
 The perceptron is a binary classification method, the response of the training model is $t \in \{-1,+1\}$. Observing that {\it perceptron criteria} $t \times \phi(X)^{T}\omega > 0$ is always positive, the minimization is based on minimizing the number miss-classified elements: \\
 
 \begin{equation}
@@ -112,7 +112,6 @@ $$
 A semantic clarification needs to be done about the multi-layer perceptron. As mentioned, $f$ is a discontinued step function, whereas neural network use step continuous, or sigmoidal, function like hyperbolic tangent, logistic, \dots In those terms, a neural network is not exactly a multilayer perceptron, but close enough.
 
 \subsection{Gradient descent cement between blocks}
-
 The gradient descent is an iterative algorithm that tries to reach a local minimum in the optimization process. It is based on the link between the total differential of a scalar function and the gradient:
 
 $$
@@ -120,20 +119,68 @@ dE = \bm{\nabla}E \cdot \bm{d \omega}
 $$
 
 Selecting $\bm{d\omega} = -\eta \bm{\nabla}E$, where $\eta$ is a positive parameter called the learning rate. The total differential of the cost functuion $E$ can be written: $dE = -\eta \bm{\nabla}E \cdot \bm{\nabla}E < 0$, meaning for each iteration $e$, $\omega^{e+1} = \omega^{e} - \eta \bm{\nabla} E$, the cost function is assured to decrease. 
-Faster results were obtained by correcting the weights after each miss-classification, {\it stochastic gradient descent}, or after small batch of miss-classified elements, {\it mini-batch gradient descent}. The same principals are applied to the neural network training.\\
+Faster results, or memory preserving, were obtained by correcting the weights after each miss-classification, {\it stochastic gradient descent}, or after small batch of miss-classified elements, {\it mini-batch gradient descent}. The same principals are applied to the neural network training.\\
+In the next sections we are going to describe the other major optimization algorithms. All of them are derivated from the gradient descent and took their position as a sub-section of the gradient descent. An overview can be found in~\cite{DBLP:Ruder16}.
 
 \subsubsection{Hessian optimization}
 
-The total differential of the cost function can be pushed an order higher:
+The total differential of the cost function can be pushed an order higher from the Taylor expension:
 
 $$
-dE = (\bm{\nabla}E)^{T} \bm{d \omega} + (\bm{d \omega})^{T}H\bm{d \omega} + \dots
+dE = (\bm{\nabla}E)^{T} \bm{d \omega} + \frac{1}{2!}(\bm{d \omega})^{T}H\bm{d \omega} + \dots
 $$
 
 Minimizing the right hand of the total differential in function of $\bm{d \omega}$, we have $\bm{d \omega} = - H^{-1} \bm{\nabla}E$. Theorically, the Hessian optimization reach the minimum of the cost function fast, because the method holds information about the gradient and how it changes. However, the iteration is controled using smaller steps: $\omega^{e+1} = \omega^{e} - \eta  H^{-1} \bm{\nabla}E$, where $\eta$ is a positive parameter known as the learning rate. Beyond the interesting properties offered by the Hessian optimization, it is costly to use this method. We consider a problem with $n$ weights and biases, the gradient will be calculated over the $n$ weights and biases and the Hessian matrix will be calculated over $n \times n$ weights, then inversed.
 
 \subsubsection{Momentum based gradient descent}
-[Momentum based gradient descent]
+The momentum method was introduced in~[Polyak - 1964]~\footnote{Some methods of speeding up the convergence of iteration methods -- need to create the reference}. The algorithm~(\ref{eq:Momentum}) was proposed to increase the speed of the gradient descent. 
+\begin{equation}
+\left.
+\begin{aligned}
+\bm{v}^{(i)}      & = \mu \bm{v}^{(i-1)} - \eta \nabla E
+\\
+\bm{\omega}^{(i)} & = \bm{\omega}^{(i-1)} + \bm{v}^{(i)}
+\end{aligned}
+\right.
+\label{eq:Momentum}
+\end{equation}
+The additional velocity term force the update of the weights, at the iteration $(i)$, to stay close to the previous iteration $(i-1)$. The weight $\mu$, between [0,1], regulates the influence of the previous iteration velocity, and the term $\mu \bm{v}^{(u)}$ resembles to the physical momentum, explaining the name of the method. A weight of $\mu = 0.9$ is usually used in optimization problem.
+
+\subsubsection{AdaGrad}
+Adaptive Online Gradient Descent (AdaGrad)~\cite{adagrad} introduces a different approach. Instead of working with a constant learning rate, the algorithm updates it. The equation~(\ref{eq:AdaGrad}) describes the AdaGrad algorithm. The element $\sigma_{j}^{(i)}$ represents the $j$-th element of the $(i)$-th iteration of the vector $\bm{\sigma}$. The vector $\bm{\sigma}$ is the sum of square of all the cost function gradients til the $(i)$-th iteration. The goal of AdaGrad is to monotonically decrease the learning rate using the function $\bm{\sigma}$.
+
+\begin{equation}
+\left\lbrace
+\begin{array}{ccc}
+\bm{\sigma}_{j}^{(i)} & = & \bm{\sigma}_{j}^{(i-1)} + (\nabla_{j} E)^{2} \\
+\bm{v}^{(i)} & = & -\frac{\eta}{\sqrt{\bm{\sigma}^{(i)} + \epsilon}} \odot \nabla E
+\end{array}
+\right.
+\label{eq:AdaGrad}
+\end{equation}
+
+One of the drawback of the method comes from the important weight the function $\bm{\sigma}$ will apply on the learning rate after cumulating many iterations. Causing the search of a minimum to stall. The coefficient $\epsilon$ is added to prevent the zero-machine division. The update of the weights is done the following way:
+\begin{equation*}
+\bm{\omega}^{(i)} = \bm{\omega}^{(i-1)} + \bm{v}^{(i)}
+\end{equation*}
+
+\subsubsection{Adadelta}
+Adadelta~\cite{DBLP:abs-1212-5701} is also an adaptive learning rate method which improve AdaGrad algorithm equation~(\ref{eq:AdaGrad}). The algorithm is presented equation~(\ref{eq:Adadelta}). The improvement is defined in two aspects and target to lower the aggressivity on the learning rate decrease. The first part of the improvement reduced the cumule of the squared gradient of the cost function into a window, $w$, representing the $w$ past iterations. In this window, the culume is replaced by a running average of the squared gradient of the cost function. The second part of the improvement adds a weight, $\mu$, on the update of the velocity, the same way it was introduced in the momentum method equation~(\ref{eq:Momentum}). As in the momentum method, the weight $\mu = 0.99$.
+
+\begin{equation}
+\left\lbrace
+\begin{array}{ccc}
+  E[(\nabla E)^{2}]_{w}^{(i)} & = & \mu E[(\nabla E)^{2}]_{w}^{(i-1)} + (\mu - 1)(\nabla E)^{2} \\
+  \bm{v}^{(i)}              & = & -\frac{\eta}{\sqrt{E[(\nabla E)^{2}]_{w}^{(i)} + \epsilon}} \odot \nabla E
+\end{array}
+\right.
+\label{eq:Adadelta}
+\end{equation}
+
+The weights are updated in a similar way as AdaGrad method.
+
+\subsubsection{Adam}
+[Adam]
 
 \subsubsection{Initialization of weights}
 [Initialization of weights]
@@ -217,6 +264,7 @@ For the different type of neural networks we would like to accomplish, the input
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Cost functions and activation functions}
 
+In the field of machine learning minimizing the cost function is the central point of the game. The cost function represents the objective of a problem. For example, in a maximum likelihood problem, we try to estimate how much a set of data drift from a parametric function, {\it e.g.} a polynomial function, through a probability distribution. The Gaussian probability distribution is used most of the time. Like every cost, the learning process is going to try to minimize it. In the example of the maximum likelihood, the optimization scheme will be to change the parameters of the parametric function to fit closer the set of points. In other words, minimize the negative logarithm of the probability distribution in the case of a Gaussian. \\
 A neuron is represented with an activation $a_{l_{i}} = \sum_{l_{i-1}}\omega_{l_{i}l_{i-1}} z_{l_{i-1}}$, integrating pulses from activation function $z_{l_{j}}$ of the previouse layer, $(l_{j})$. The new activation function $z_{l_{i}} = f(a_{l_{i}})$ is the firering process of the neuron $l_{i}$. Usually, the activation function is a non-linear continuous step function. 
 
 \subsection{Activation functions}
