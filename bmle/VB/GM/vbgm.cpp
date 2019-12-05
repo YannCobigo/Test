@@ -28,29 +28,6 @@ using MaskReaderType  = itk::ImageFileReader< MaskType >;
 //
 //
 //
-//itk::ImageIOBase::Pointer getImageIO(std::string input){
-//  itk::ImageIOBase::Pointer imageIO = itk::ImageIOFactory::CreateImageIO(input.c_str(), itk::ImageIOFactory::ReadMode);
-//
-//  imageIO->SetFileName(input);
-//  imageIO->ReadImageInformation();
-//
-//  return imageIO;
-//}
-//
-//itk::ImageIOBase::IOComponentType component_type(itk::ImageIOBase::Pointer imageIO){
-//  return imageIO->GetComponentType();
-//}
-//
-//itk::ImageIOBase::IOPixelType pixel_type(itk::ImageIOBase::Pointer imageIO){
-//  return imageIO->GetPixelType();
-//}
-//
-//size_t num_dimensions(itk::ImageIOBase::Pointer imageIO){
-//  return imageIO->GetNumberOfDimensions();
-//}
-//
-//
-//
 int main(int argc, char const **argv)
 {
   //
@@ -193,10 +170,28 @@ int main(int argc, char const **argv)
 	      //
 	      // Output
 	      //
+	      
+	      //
+	      // First select the clusters with some voxels
+	      std::set< int > best_culsters;
+	      for ( int k = 0 ; k < K ; k++ )
+		if ( VB_Gaussian_Mixture.get_pi(k) > 0.01 )
+		  best_culsters.insert(k);
+	      //
+	      std::cout << "The algorithm started with: " << K << " Gaussians.";
+	      std::cout << " And found " << best_culsters.size() << " relevant cluster(s):" << std::endl;
+	      //
+	      for ( auto k =  best_culsters.begin() ; k != best_culsters.end() ; k++ )
+		{
+		  VB_Gaussian_Mixture.get_cluster_statistics(*k);
+		  std::cout << std::endl;
+		}
 
+	      //
+	      //
 	      std::string output_string = output_dir + "/Clusters_probabilities.nii.gz";
 	      NeuroBayes::NeuroBayesMakeITKImage output;
-	      output = NeuroBayes::NeuroBayesMakeITKImage( K, output_string, reader_image_ );
+	      output = NeuroBayes::NeuroBayesMakeITKImage( best_culsters.size(), output_string, reader_image_ );
 	      //
 	      int x = 0;
 	      for ( auto X : X_positions )
@@ -205,12 +200,13 @@ int main(int argc, char const **argv)
 		  //idx[0] = X(0,0);
 		  //idx[1] = X(1,0);
 		  //idx[2] = X(2,0);
-		  for ( int k = 0 ; k < K ; k++ )
-		    output.set_val( k, 
+		  int im = 0;
+		  for ( auto k =  best_culsters.begin() ; k != best_culsters.end() ; k++ )
+		    output.set_val( im++, 
 				    {static_cast< long int >( X(0,0) ),
 					static_cast< long int >( X(1,0) ),
 					static_cast< long int >( X(2,0) )}, 
-				    VB_Gaussian_Mixture.get_posterior_probabilities()[k][x] );
+				    VB_Gaussian_Mixture.get_posterior_probabilities()[*k][x] );
 		  //
 		  ++x;
 		}

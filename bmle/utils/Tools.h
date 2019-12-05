@@ -13,7 +13,7 @@
 // When we reach numerical limits
 namespace NeuroStat
 {
-  enum TimeTransformation {NONE, DEMEAN, NORMALIZE, STANDARDIZE};
+  enum TimeTransformation {NONE, DEMEAN, NORMALIZE, STANDARDIZE, LOAD};
 }
 //
 //

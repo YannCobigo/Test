@@ -27,7 +27,8 @@ namespace NeuroBayes
   //
   //
   //
-  class InputParser{
+  class InputParser
+  {
   public:
     explicit InputParser ( const int &argc, const char **argv )
     {
@@ -53,6 +54,20 @@ namespace NeuroBayes
     bool cmdOptionExists( const std::string& option ) const
     {
       return std::find( tokens.begin(), tokens.end(), option) != tokens.end();
+    }
+    //
+    std::string cmdOptionPrint() const
+    {
+      //
+      //
+      std::string options;
+      std::vector< std::string >::const_iterator itr = tokens.begin();
+      //
+      for ( ; itr != tokens.end() ; ++itr )
+	options += " " + *itr;
+      std::cout << std::endl;
+      //
+      return options;
     }
   private:
     std::vector < std::string > tokens;
