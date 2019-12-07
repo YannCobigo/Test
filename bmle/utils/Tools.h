@@ -9,6 +9,13 @@
 #include <Eigen/Eigen>
 #include <Eigen/Sparse>
 //
+#define ln_2    0.69314718055994529L
+#define ln_2_pi 1.8378770664093453L
+#define ln_pi   1.1447298858494002L
+#define pi_2    6.28318530718L
+#define pi      3.14159265359L
+
+//
 //
 // When we reach numerical limits
 namespace NeuroStat
@@ -95,6 +102,36 @@ namespace NeuroBayes
       //
       //
       return 2. * lnSdet;
+    }
+  //
+  //
+  // Logarithm normal (Gaussian)
+  template < int Dim > double
+    log_gaussian( const Eigen::Matrix< double, Dim, 1 >&   Y, 
+		  const Eigen::Matrix< double, Dim, 1 >&   Mu, 
+		  const Eigen::Matrix< double, Dim, Dim >& Precision )
+    {
+      double ln_N = - 0.5 * Dim * ln_2_pi;
+      ln_N += 0.5 * ln_determinant( Precision );
+      ln_N -= ( (Y-Mu).transpose() * Precision - (Y-Mu) )(0,0);
+      //
+      return ln_N;
+    }
+  //
+  //  Normal (Gaussian)
+  template < int Dim > double
+    gaussian( const Eigen::Matrix< double, Dim, 1 >&   Y, 
+	      const Eigen::Matrix< double, Dim, 1 >&   Mu, 
+	      const Eigen::Matrix< double, Dim, Dim >& Precision )
+    {
+      double dim_2pi = 1.;
+      for ( int d = 0 ; d < Dim ; d++ )
+	dim_2pi *= pi_2;
+      //
+      double N = sqrt( Precision.determinant() / dim_2pi ) ;
+      N       *= exp( ((Y-Mu).transpose() * Precision - (Y-Mu))(0,0) );
+      //
+      return N;
     }
 }
 #endif

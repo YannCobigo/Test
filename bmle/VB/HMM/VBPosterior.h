@@ -13,10 +13,6 @@
 #include <gsl/gsl_sf_psi.h>
 #include <gsl/gsl_sf_gamma.h>
 //
-#define ln_2    0.6931471805599453L
-#define ln_2_pi 1.8378770664093453L
-#define ln_pi   1.1447298858494002L
-//
 //
 // Eigen
 #include <Eigen/Core>

@@ -35,7 +35,7 @@ namespace VB
   {
     /** \class Hidden_Markov_Model
      *
-     * \brief  Expaectation-Maximization algorithm
+     * \brief  Expectation-Maximization algorithm
      * 
      * Dim is the number of dimensions
      * input:
