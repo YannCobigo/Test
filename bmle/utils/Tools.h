@@ -113,7 +113,7 @@ namespace NeuroBayes
     {
       double ln_N = - Dim * ln_2_pi;
       ln_N += ln_determinant( Precision );
-      ln_N -= ( (Y-Mu).transpose() * Precision - (Y-Mu) )(0,0);
+      ln_N -= ( (Y-Mu).transpose() * Precision * (Y-Mu) )(0,0);
       //
       return 0.5*ln_N;
     }
@@ -129,7 +129,7 @@ namespace NeuroBayes
 	dim_2pi *= pi_2;
       //
       double N = sqrt( Precision.determinant() / dim_2pi ) ;
-      N       *= exp( 0.5*((Y-Mu).transpose() * Precision - (Y-Mu))(0,0) );
+      N       *= exp( -0.5*((Y-Mu).transpose() * Precision * (Y-Mu))(0,0) );
       //
       return N;
     }

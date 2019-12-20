@@ -154,13 +154,13 @@ namespace noVB
       //
       // random engine
       std::random_device rd;
-      std::mt19937 generator( rd() );
+      std::mt19937       generator( rd() );
       std::uniform_real_distribution< double > uniform(0., 1.);
       //
-      s_.resize(n_);
-      ss_.resize(n_);
-      alpha_i_t_.resize(n_);
-      beta_i_t_.resize(n_);
+      s_.resize( n_ );
+      ss_.resize( n_ );
+      alpha_i_t_.resize( n_ );
+      beta_i_t_.resize( n_ );
       //
       //
       pi_ = Eigen::Matrix < double, S , 1 >::Zero();
@@ -168,10 +168,10 @@ namespace noVB
 	{
 	  int Ti = Y_[i].size();
 	  //
-	  s_[i].resize(Ti);
-	  ss_[i].resize(Ti);
-	  alpha_i_t_[i].resize(Ti);
-	  beta_i_t_[i].resize(Ti);
+	  s_[i].resize( Ti );
+	  ss_[i].resize( Ti );
+	  alpha_i_t_[i].resize( Ti );
+	  beta_i_t_[i].resize( Ti );
 	  //
 	  for ( int t = 0 ; t < Ti ; t++ )
 	    {
@@ -219,7 +219,9 @@ namespace noVB
 	const Eigen::Matrix< double, S, S >                                 &_A_  = qdch_->get_A();
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_N_  = qgau_->get_gamma();
 	//
+	// reset pi
 	Eigen::Matrix < double, S , 1 > old_pi = pi_;
+	pi_ = Eigen::Matrix < double, S , 1 >::Zero();
 	//
 	for ( int i = 0 ; i < n_ ; i++ )
 	  {
@@ -258,7 +260,7 @@ namespace noVB
 	    // Beta calculation
 	    // Convension the last beta is 1.
 	    //beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones() / static_cast<double>( S );
-	    beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones() /*/ scale[Ti-1]*/;
+	    beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones() / scale[Ti-1];
 	    //
 	    for ( int t = Ti-2 ; t >= 0 ; t-- )
 	      {
@@ -270,7 +272,7 @@ namespace noVB
 //		beta_i_t_[i][t]  = _N_[i][t+1].array() * beta_i_t_[i][t+1].array();
 //		beta_i_t_[i][t]  = (beta_i_t_[i][t].transpose() * _A_.transpose()).transpose();
 
-		beta_i_t_[i][t] /= /*beta_i_t_[i][t].sum(); */ scale[t+1];
+		beta_i_t_[i][t] /= /*beta_i_t_[i][t].sum(); */ scale[t];
 
 //		for ( int s = 0 ; s < S ; s++ )
 //		  for ( int ss = 0 ; ss < S ; ss++ )
@@ -292,7 +294,7 @@ namespace noVB
 		s_[i][t] /= s_[i][t].sum();
 		//std::cout << "alpha_i_t_["<<i<<"]["<<t<<"] \n" << alpha_i_t_[i][t] << std::endl;
 		//std::cout << "beta_i_t_["<<i<<"]["<<t<<"] \n" << beta_i_t_[i][t] << std::endl;
-		std::cout << "Expect. s_["<<i<<"]["<<t<<"] \n" << s_[i][t]<< std::endl;
+		//std::cout << "Expect. s_["<<i<<"]["<<t<<"] \n" << s_[i][t]<< std::endl;
 
 		//
 		//  <s_{i,t-1} x s_{i,t}>
@@ -416,16 +418,15 @@ namespace noVB
 	//
 	for ( int s = 0 ; s < S ; s++ ) 
 	  {
-	    double norm = 0.;
 	    for ( int ss = 0 ; ss < S ; ss++ ) 
 	      {
+		double norm = 0.;
 		for ( int i = 0 ; i < n_ ; i++ )
 		  {
 		    int Ti = Y_[i].size();
 		    for ( int t = 1 ; t < Ti ; t++ )
 		      {
 			posterior_A_(s, ss) += _ss_[i][t](s,ss);
-			//if ( ss == 0 )
 			norm += _s_[i][t-1](s,0);
 		      }
 		  }
@@ -545,7 +546,7 @@ namespace noVB
 	{
 	  //
 	  precision_[s] = Eigen::Matrix< double, Dim, Dim >::Identity();
-	  Cov[s]        = Eigen::Matrix< double, Dim, Dim >::Identity();
+	  Cov[s]        = Eigen::Matrix< double, Dim, Dim >::Zero();
 	  //
 	  mu_s_[s]      = Eigen::Matrix< double, Dim, 1 >::Zero();
 	  double norm   = 0.;
@@ -561,14 +562,14 @@ namespace noVB
 	  //
 	  mu_s_[s] /= norm;
 	  // Variance
-//	  for ( int i = 0 ; i < n_ ; i++ )
-//	    {
-//	      int    Ti     = Y_[i].size();
-//	      for ( int t = 0 ; t < Ti ; t++ )
-//		Cov[s] += _s_[i][t](s,0) * (Y_[i][t]-mu_s_[s])*(Y_[i][t]-mu_s_[s]).transpose();
-//	    }
-//	  //
-//	  Cov[s] /= norm;
+	  for ( int i = 0 ; i < n_ ; i++ )
+	    {
+	      int    Ti     = Y_[i].size();
+	      for ( int t = 0 ; t < Ti ; t++ )
+		Cov[s] += _s_[i][t](s,0) * (Y_[i][t]-mu_s_[s]) * ((Y_[i][t]-mu_s_[s]).transpose());
+	    }
+	  //
+	  Cov[s] /= norm;
 	  precision_[s] = Cov[s].inverse();
 	  std::cout << "mu_["<<s<<"] = " << mu_s_[s]  << std::endl;
 	  std::cout << "precision_["<<s<<"] = " << precision_[s]  << std::endl;
