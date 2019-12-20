@@ -244,13 +244,8 @@ namespace noVB
 	    for ( int t = 1 ; t < Ti ; t++ )
 	      {
 		alpha_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
-//		for ( int s = 0 ; s < S ; s++ )
-//		  alpha_i_t_[i][t]  += ( alpha_i_t_[i][t-1](s,0) * _A_.row(s) ).transpose();
-//		alpha_i_t_[i][t]     = alpha_i_t_[i][t].array() * _N_[i][t].array();
 		Eigen::Matrix < double, S , 1 > test = (alpha_i_t_[i][t-1].transpose() * _A_).transpose();
 		alpha_i_t_[i][t] = _N_[i][t].array() * test.array();
-//		for ( int s = 0 ; s < S ; s++ )
-//		  alpha_i_t_[i][t](s,0) = (alpha_i_t_[i][t-1](s,0) * _A_.row(s) ) * _N_[i][t];
 		//
 		scale[t]          = alpha_i_t_[i][t].sum();
 		alpha_i_t_[i][t] /= scale[t];
@@ -268,19 +263,7 @@ namespace noVB
 		beta_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
 		for ( int s = 0 ; s < S ; s++ )
 		  beta_i_t_[i][t] += _N_[i][t+1](s,0) * beta_i_t_[i][t+1](s,0) * _A_.col(s);
-
-//		beta_i_t_[i][t]  = _N_[i][t+1].array() * beta_i_t_[i][t+1].array();
-//		beta_i_t_[i][t]  = (beta_i_t_[i][t].transpose() * _A_.transpose()).transpose();
-
-		beta_i_t_[i][t] /= /*beta_i_t_[i][t].sum(); */ scale[t];
-
-//		for ( int s = 0 ; s < S ; s++ )
-//		  for ( int ss = 0 ; ss < S ; ss++ )
-//		    beta_i_t_[i][t](s,0) += _N_[i][t+1](ss,0) * beta_i_t_[i][t+1](ss,0) * _A_(s,ss);
-//		beta_i_t_[i][t]   /= /*beta_i_t_[i][t].sum(); */ scale[t];
-		//
-		//std::cout << "_A_ \n " << _A_ << std::endl;
-		//std::cout << "_N_["<<i<<"][t+1:"<<t+1<<"] \n" << _N_[i][t+1] << std::endl;
+		beta_i_t_[i][t] /= scale[t];
 		//std::cout << "beta_i_t_["<<i<<"][t+1:"<<t+1<<"] \n" << beta_i_t_[i][t+1] << std::endl;
 		//std::cout << "beta_i_t_["<<i<<"][t:"<<t<<"] \n" << beta_i_t_[i][t] << std::endl;
 	      }
@@ -294,17 +277,12 @@ namespace noVB
 		s_[i][t] /= s_[i][t].sum();
 		//std::cout << "alpha_i_t_["<<i<<"]["<<t<<"] \n" << alpha_i_t_[i][t] << std::endl;
 		//std::cout << "beta_i_t_["<<i<<"]["<<t<<"] \n" << beta_i_t_[i][t] << std::endl;
-		//std::cout << "Expect. s_["<<i<<"]["<<t<<"] \n" << s_[i][t]<< std::endl;
+		std::cout << "Expect. s_["<<i<<"]["<<t<<"] \n" << s_[i][t]<< std::endl;
 
 		//
 		//  <s_{i,t-1} x s_{i,t}>
 		if ( t > 0 )
 		  {
-//		    Eigen::Matrix < double, S , 1 > test2 = _N_[i][t].array() * beta_i_t_[i][t].array();
-//		    Eigen::Matrix < double, S , S > test3 = alpha_i_t_[i][t-1] * test2.transpose();
-//		    //
-//		    ss_[i][t] = _A_.array() * test3.array();
-
 		    //
 		    double norm = 0.;
 		    for ( int s = 0 ; s < S ; s++ )
@@ -327,6 +305,7 @@ namespace noVB
 	//
 	// renormalization of pi
 	pi_ /= n_;
+	std::cout << "pi_ =  \n" <<  pi_ << std::endl;
       }
     //
     //

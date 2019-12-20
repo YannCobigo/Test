@@ -85,21 +85,21 @@ int main(int argc, char const *argv[])
       if ( 0. < choose && choose <= Pi(0,0) )
 	{
 	  double val = gauss_11( generator);
-	  Y.push_back( ( val > 0 ? val:-val) );
+	  Y.push_back( val );
 	  T.push_back( 0 );
 	  s = 0;
 	}
       else if ( Pi(0,0) < choose && choose <= Pi(0,0)+Pi(1,0) )
 	{
 	  double val = gauss_21( generator);
-	  Y.push_back( ( val > 0 ? val:-val) );
+	  Y.push_back( val );
 	  T.push_back( 0 );
 	  s = 1;
 	}
       else 
 	{
 	  double val = gauss_31( generator);
-	  Y.push_back( ( val > 0 ? val:-val) );
+	  Y.push_back( val );
 	  T.push_back( 0 );
 	  s = 2;
 	}
@@ -114,21 +114,21 @@ int main(int argc, char const *argv[])
 	  if ( 0. < choose && choose <= A(s,0) )
 	    {
 	      double val = gauss_11( generator);
-	      Y.push_back( (val > 0 ? val:-val) );
+	      Y.push_back( val );
 	      T.push_back( t );
 	      s = 0;
 	    }
 	  else if ( A(s,0) < choose && choose <= A(s,0)+A(s,1) )
 	    {
 	      double val = gauss_21( generator);
-	      Y.push_back( ( val > 0 ? val:-val) );
+	      Y.push_back( val );
 	      T.push_back( t );
 	      s = 1;
 	    }
 	  else 
 	    {
 	      double val = gauss_31( generator);
-	      Y.push_back( ( val > 0 ? val:-val) );
+	      Y.push_back( val );
 	      T.push_back( t );
 	      s = 2;
 	    }
