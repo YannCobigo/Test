@@ -128,7 +128,7 @@ namespace noVB
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_ln_gamma_  = qgau_->get_ln_gamma();
 	const                           Eigen::Matrix < double, S , S >     &_A_         = qdch_->get_A();
 	//
-	while ( fabs(dL) > 1.e-16 )
+	while ( fabs(dL) > 1.e-32 )
 	  {
 	    std::cout << "Begining iteration: " << ++iteration << std::endl;
 	    //
@@ -175,6 +175,7 @@ namespace noVB
 	    L_history_.push_back( L_ );
 	    //
 	    //
+	    std::cout << "#################" << std::endl;
 	    std::cout << "Ending iteration: " << iteration << std::endl;
 	    std::cout << "Lower bound: " << L_  << std::endl;
 	    std::cout << "Delta Lower bound: " << dL  << std::endl;

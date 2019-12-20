@@ -30,7 +30,7 @@ int main(int argc, char const *argv[])
   //
   // model
   const int Dim = 1;
-  const int S   = 2;
+  const int S   = 3;
 
   //
   // Load the test dataset
@@ -58,12 +58,11 @@ int main(int argc, char const *argv[])
     {
       HMM_intensity[subject].resize( HMM_intensity_age[subject].size() );
       HMM_age[subject].resize( HMM_intensity_age[subject].size() );
-      std::cout << "Subject " << subject << std::endl;
+      //std::cout << "Subject " << subject << std::endl;
       int timepoint = 0;
       for ( auto tp : sub )
 	{
-	  std::cout << tp << std::endl;
-	  
+	  //std::cout << tp << std::endl;
 	  HMM_intensity[subject][timepoint] << tp(0,0);
 	  HMM_age[subject][timepoint++] << tp(1,0);
 	}

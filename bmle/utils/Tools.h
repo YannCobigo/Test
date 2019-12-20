@@ -111,11 +111,11 @@ namespace NeuroBayes
 		  const Eigen::Matrix< double, Dim, 1 >&   Mu, 
 		  const Eigen::Matrix< double, Dim, Dim >& Precision )
     {
-      double ln_N = - 0.5 * Dim * ln_2_pi;
-      ln_N += 0.5 * ln_determinant( Precision );
+      double ln_N = - Dim * ln_2_pi;
+      ln_N += ln_determinant( Precision );
       ln_N -= ( (Y-Mu).transpose() * Precision - (Y-Mu) )(0,0);
       //
-      return ln_N;
+      return 0.5*ln_N;
     }
   //
   //  Normal (Gaussian)
@@ -129,7 +129,7 @@ namespace NeuroBayes
 	dim_2pi *= pi_2;
       //
       double N = sqrt( Precision.determinant() / dim_2pi ) ;
-      N       *= exp( ((Y-Mu).transpose() * Precision - (Y-Mu))(0,0) );
+      N       *= exp( 0.5*((Y-Mu).transpose() * Precision - (Y-Mu))(0,0) );
       //
       return N;
     }

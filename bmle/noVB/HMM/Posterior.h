@@ -156,18 +156,6 @@ namespace noVB
       std::random_device rd;
       std::mt19937 generator( rd() );
       std::uniform_real_distribution< double > uniform(0., 1.);
-//      //
-//      // temporary random stchastic transition matrix
-//      Eigen::Matrix< double, S, S > _A_  = Eigen::Matrix< double, S, S >::Zero();
-//      for ( int s = 0 ; s < S ; s++ )
-//	{
-//	  double norm = 0;
-//	  for ( int ss = 0 ; ss < S ; ss++ ) 
-//	    norm += _A_(s,ss) = uniform( generator );
-//	  for ( int ss = 0 ; ss < S ; ss++ ) 
-//	    _A_(s,ss) /= norm;
-//	}
-//      std::cout << "Stochastic trans matrix: \n" << _A_ << std::endl;
       //
       s_.resize(n_);
       ss_.resize(n_);
@@ -193,10 +181,12 @@ namespace noVB
 	      beta_i_t_[i][t]  = Eigen::Matrix < double, S , 1 >::Zero();
 	      //
 	      for ( int s = 0 ; s < S ; s++ )
-		s_[i][t](s,0)         = uniform( generator );
+		{
+		  s_[i][t](s,0)         = uniform( generator );
+		}
 	      //
-	      s_[i][t]         /= s_[i][t].sum();
-	      //std::cout << "s_["<<i<<"]["<<t<<"] = " << s_[i][t] << std::endl;
+	      s_[i][t] /= s_[i][t].sum();
+	      //std::cout << "s_["<<i<<"]["<<t<<"] = \n" << s_[i][t] << std::endl;
 	      //
 	      // Simplified cross-states calculation to initialize the
 	      // stochastic transition matrix
@@ -209,7 +199,7 @@ namespace noVB
 	  pi_ += s_[i][0];
 	}
       // normalize the first state probability
-      pi_ /= pi_.sum();
+      pi_ /= n_;
       //std::cout << "pi_ = \n" << pi_ << std::endl;
     }
     //
@@ -229,6 +219,8 @@ namespace noVB
 	const Eigen::Matrix< double, S, S >                                 &_A_  = qdch_->get_A();
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_N_  = qgau_->get_gamma();
 	//
+	Eigen::Matrix < double, S , 1 > old_pi = pi_;
+	//
 	for ( int i = 0 ; i < n_ ; i++ )
 	  {
 	    //
@@ -242,7 +234,7 @@ namespace noVB
 	    // 
 	    // first elements
 	    // Convension the first alpha is 1. Each elements will be normalized
-	    alpha_i_t_[i][0]  = _N_[i][0].array() * pi_.array();
+	    alpha_i_t_[i][0]  = _N_[i][0].array() * old_pi.array();
 	    scale[0]          = alpha_i_t_[i][0].sum();
 	    alpha_i_t_[i][0] /= scale[0];
 	    //std::cout << "alpha_i_t_["<<i<<"][0] \n" << alpha_i_t_[i][0] << std::endl;
@@ -250,9 +242,13 @@ namespace noVB
 	    for ( int t = 1 ; t < Ti ; t++ )
 	      {
 		alpha_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
-		for ( int s = 0 ; s < S ; s++ )
-		  alpha_i_t_[i][t]  += ( alpha_i_t_[i][t-1](s,0) * _A_.row(s) ).transpose();
-		alpha_i_t_[i][t]     = alpha_i_t_[i][t].array() * _N_[i][t].array();
+//		for ( int s = 0 ; s < S ; s++ )
+//		  alpha_i_t_[i][t]  += ( alpha_i_t_[i][t-1](s,0) * _A_.row(s) ).transpose();
+//		alpha_i_t_[i][t]     = alpha_i_t_[i][t].array() * _N_[i][t].array();
+		Eigen::Matrix < double, S , 1 > test = (alpha_i_t_[i][t-1].transpose() * _A_).transpose();
+		alpha_i_t_[i][t] = _N_[i][t].array() * test.array();
+//		for ( int s = 0 ; s < S ; s++ )
+//		  alpha_i_t_[i][t](s,0) = (alpha_i_t_[i][t-1](s,0) * _A_.row(s) ) * _N_[i][t];
 		//
 		scale[t]          = alpha_i_t_[i][t].sum();
 		alpha_i_t_[i][t] /= scale[t];
@@ -261,7 +257,8 @@ namespace noVB
 	    //
 	    // Beta calculation
 	    // Convension the last beta is 1.
-	    beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones();// / static_cast<double>( S );
+	    //beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones() / static_cast<double>( S );
+	    beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones() /*/ scale[Ti-1]*/;
 	    //
 	    for ( int t = Ti-2 ; t >= 0 ; t-- )
 	      {
@@ -269,7 +266,16 @@ namespace noVB
 		beta_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
 		for ( int s = 0 ; s < S ; s++ )
 		  beta_i_t_[i][t] += _N_[i][t+1](s,0) * beta_i_t_[i][t+1](s,0) * _A_.col(s);
-		beta_i_t_[i][t]   /= beta_i_t_[i][t].sum(); //scale[t];
+
+//		beta_i_t_[i][t]  = _N_[i][t+1].array() * beta_i_t_[i][t+1].array();
+//		beta_i_t_[i][t]  = (beta_i_t_[i][t].transpose() * _A_.transpose()).transpose();
+
+		beta_i_t_[i][t] /= /*beta_i_t_[i][t].sum(); */ scale[t+1];
+
+//		for ( int s = 0 ; s < S ; s++ )
+//		  for ( int ss = 0 ; ss < S ; ss++ )
+//		    beta_i_t_[i][t](s,0) += _N_[i][t+1](ss,0) * beta_i_t_[i][t+1](ss,0) * _A_(s,ss);
+//		beta_i_t_[i][t]   /= /*beta_i_t_[i][t].sum(); */ scale[t];
 		//
 		//std::cout << "_A_ \n " << _A_ << std::endl;
 		//std::cout << "_N_["<<i<<"][t+1:"<<t+1<<"] \n" << _N_[i][t+1] << std::endl;
@@ -286,28 +292,39 @@ namespace noVB
 		s_[i][t] /= s_[i][t].sum();
 		//std::cout << "alpha_i_t_["<<i<<"]["<<t<<"] \n" << alpha_i_t_[i][t] << std::endl;
 		//std::cout << "beta_i_t_["<<i<<"]["<<t<<"] \n" << beta_i_t_[i][t] << std::endl;
-		//std::cout << "s_["<<i<<"]["<<t<<"] \n" << s_[i][t]<< std::endl;
+		std::cout << "Expect. s_["<<i<<"]["<<t<<"] \n" << s_[i][t]<< std::endl;
 
 		//
 		//  <s_{i,t-1} x s_{i,t}>
 		if ( t > 0 )
 		  {
-		    double norm = 0.;
+//		    Eigen::Matrix < double, S , 1 > test2 = _N_[i][t].array() * beta_i_t_[i][t].array();
+//		    Eigen::Matrix < double, S , S > test3 = alpha_i_t_[i][t-1] * test2.transpose();
+//		    //
+//		    ss_[i][t] = _A_.array() * test3.array();
+
 		    //
+		    double norm = 0.;
 		    for ( int s = 0 ; s < S ; s++ )
 		      for ( int ss = 0 ; ss < S ; ss++ )
 			{
 			  ss_[i][t](s,ss)  = alpha_i_t_[i][t-1](s,0)*_A_(s,ss);
 			  ss_[i][t](s,ss) *= _N_[i][t](ss,0)*beta_i_t_[i][t](ss,0);
-			  norm            +=  ss_[i][t](s,ss);
+			  norm += ss_[i][t](s,ss);
 			}
-
 		    //
 		    ss_[i][t] /= norm;
+		    //ss_[i][t] /= s_[i][t].sum();
 		    //std::cout << "ss_["<<i<<"]["<<t<<"] \n" <<  ss_[i][t] << std::endl;
 		  }
 	      }
+	    //
+	    // Update of pi_
+	    pi_ += s_[i][0];
 	  }// for ( int i = 0 ; i < n_ ; i++ )
+	//
+	// renormalization of pi
+	pi_ /= n_;
       }
     //
     //
@@ -398,23 +415,25 @@ namespace noVB
 	//
 	//
 	for ( int s = 0 ; s < S ; s++ ) 
-	  for ( int ss = 0 ; ss < S ; ss++ ) 
-	    {
-	      double norm = 0.;
-	      for ( int i = 0 ; i < n_ ; i++ )
-		{
-		  int Ti = Y_[i].size();
-		  for ( int t = 1 ; t < Ti ; t++ )
-		    {
-		      posterior_A_(s, ss) += _ss_[i][t](s,ss);
-		      //std::cout << "_s_["<<i<<"]["<<t-1<<"]("<<s<<",0) = " << _s_[i][t-1](s,0) << std::endl;
-		      norm += _s_[i][t-1](s,0);
-		    }
-		}
-	      //
-	      posterior_A_(s, ss) /= norm;
-	    }
-	//std::cout << "transition matrix: \n" << posterior_A_ << std::endl;
+	  {
+	    double norm = 0.;
+	    for ( int ss = 0 ; ss < S ; ss++ ) 
+	      {
+		for ( int i = 0 ; i < n_ ; i++ )
+		  {
+		    int Ti = Y_[i].size();
+		    for ( int t = 1 ; t < Ti ; t++ )
+		      {
+			posterior_A_(s, ss) += _ss_[i][t](s,ss);
+			//if ( ss == 0 )
+			norm += _s_[i][t-1](s,0);
+		      }
+		  }
+		//
+		posterior_A_(s, ss) /= norm;
+	      }
+	  }
+	std::cout << "transition matrix: \n" << posterior_A_ << std::endl;
       }
     //
     //
@@ -520,16 +539,18 @@ namespace noVB
       gamma_.resize(n_);
       ln_gamma_.resize(n_);
       //
+      std::vector< Eigen::Matrix< double, Dim, Dim > > Cov(S);
+      //
       for ( int s = 0 ; s < S ; s++ )
 	{
 	  //
 	  precision_[s] = Eigen::Matrix< double, Dim, Dim >::Identity();
+	  Cov[s]        = Eigen::Matrix< double, Dim, Dim >::Identity();
 	  //
 	  mu_s_[s]      = Eigen::Matrix< double, Dim, 1 >::Zero();
 	  double norm   = 0.;
 	  for ( int i = 0 ; i < n_ ; i++ )
 	    {
-	      double norm_i = 0.;
 	      int    Ti     = Y_[i].size();
 	      for ( int t = 0 ; t < Ti ; t++ )
 		{
@@ -539,7 +560,18 @@ namespace noVB
 	    }
 	  //
 	  mu_s_[s] /= norm;
-	  //std::cout << "mu_s_["<<s<<"] = " << mu_s_[s]  << std::endl;
+	  // Variance
+//	  for ( int i = 0 ; i < n_ ; i++ )
+//	    {
+//	      int    Ti     = Y_[i].size();
+//	      for ( int t = 0 ; t < Ti ; t++ )
+//		Cov[s] += _s_[i][t](s,0) * (Y_[i][t]-mu_s_[s])*(Y_[i][t]-mu_s_[s]).transpose();
+//	    }
+//	  //
+//	  Cov[s] /= norm;
+	  precision_[s] = Cov[s].inverse();
+	  std::cout << "mu_["<<s<<"] = " << mu_s_[s]  << std::endl;
+	  std::cout << "precision_["<<s<<"] = " << precision_[s]  << std::endl;
 	  //
 	  // responsability
 	  for ( int i = 0 ; i < n_ ; i++ )
