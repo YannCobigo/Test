@@ -99,7 +99,8 @@ namespace noVB
     //
     //
     template < int Dim, int S >
-      Hidden_Markov_Model< Dim, S >::Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Y, const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Age ):
+      Hidden_Markov_Model< Dim, S >::Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Y,
+							  const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Age ):
       Y_{Y}, Age_{Age}, n_{Y.size()}
     {
       //
@@ -124,8 +125,8 @@ namespace noVB
 	//
 	// Access the states
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_         = qsi_->get_s();
-	const                           Eigen::Matrix < double, S , 1 >     &_pi_        = qsi_->get_pi();
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_ln_gamma_  = qgau_->get_ln_gamma();
+	const                           Eigen::Matrix < double, S , 1 >     &_pi_        = qdch_->get_pi();
 	const                           Eigen::Matrix < double, S , S >     &_A_         = qdch_->get_A();
 	//
 	while ( fabs(dL) > 1.e-32 )

@@ -109,7 +109,6 @@ namespace noVB
 	//
 	// accessors
 	const        std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_s()  const {return s_;}
-	const        Eigen::Matrix < double, S , 1 >&                               get_pi() const {return pi_;}
 	const        std::vector< std::vector< Eigen::Matrix < double, S , S > > >& get_ss() const {return ss_;}
 	//
 	void set( std::shared_ptr< noVB::HMM::P_qdch<Dim,S> > Qdch,
@@ -133,8 +132,6 @@ namespace noVB
 	// hidden state
 	// <s_{i,t}>
 	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > s_;
-	// State probability
-	Eigen::Matrix < double, S , 1 >                               pi_;
 	// <s_{i,t-1} x s_{i,t}>
 	std::vector< std::vector< Eigen::Matrix < double, S , S > > > ss_;
 	//
@@ -151,7 +148,6 @@ namespace noVB
       Y_{Y}, n_{Y.size()}
     {
       //
-      //
       // random engine
       std::random_device rd;
       std::mt19937       generator( rd() );
@@ -162,8 +158,6 @@ namespace noVB
       alpha_i_t_.resize( n_ );
       beta_i_t_.resize( n_ );
       //
-      //
-      pi_ = Eigen::Matrix < double, S , 1 >::Zero();
       for ( int i = 0 ; i < n_ ; i++ )
 	{
 	  int Ti = Y_[i].size();
@@ -195,12 +189,7 @@ namespace noVB
 		  for ( int ss = 0 ; ss < S ; ss++ )
 		    ss_[i][t](s, ss) = s_[i][t-1](s,0) * s_[i][t](ss,0);		
 	    }
-	  // State probability
-	  pi_ += s_[i][0];
 	}
-      // normalize the first state probability
-      pi_ /= n_;
-      //std::cout << "pi_ = \n" << pi_ << std::endl;
     }
     //
     //
@@ -215,13 +204,9 @@ namespace noVB
 
 	//
 	//
-	//const Eigen::Matrix< double, S, 1 >                                 &_pi_ = qdch_->get_pi();
+	const Eigen::Matrix< double, S, 1 >                                 &_pi_ = qdch_->get_pi();
 	const Eigen::Matrix< double, S, S >                                 &_A_  = qdch_->get_A();
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_N_  = qgau_->get_gamma();
-	//
-	// reset pi
-	Eigen::Matrix < double, S , 1 > old_pi = pi_;
-	pi_ = Eigen::Matrix < double, S , 1 >::Zero();
 	//
 	for ( int i = 0 ; i < n_ ; i++ )
 	  {
@@ -236,7 +221,7 @@ namespace noVB
 	    // 
 	    // first elements
 	    // Convension the first alpha is 1. Each elements will be normalized
-	    alpha_i_t_[i][0]  = _N_[i][0].array() * old_pi.array();
+	    alpha_i_t_[i][0]  = _N_[i][0].array() * _pi_.array();
 	    scale[0]          = alpha_i_t_[i][0].sum();
 	    alpha_i_t_[i][0] /= scale[0];
 	    //std::cout << "alpha_i_t_["<<i<<"][0] \n" << alpha_i_t_[i][0] << std::endl;
@@ -244,8 +229,9 @@ namespace noVB
 	    for ( int t = 1 ; t < Ti ; t++ )
 	      {
 		alpha_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
-		Eigen::Matrix < double, S , 1 > test = (alpha_i_t_[i][t-1].transpose() * _A_).transpose();
-		alpha_i_t_[i][t] = _N_[i][t].array() * test.array();
+		Eigen::Matrix < double, S , 1 >
+		  alpha_A = (alpha_i_t_[i][t-1].transpose() * _A_).transpose();
+		alpha_i_t_[i][t] = _N_[i][t].array() * alpha_A.array();
 		//
 		scale[t]          = alpha_i_t_[i][t].sum();
 		alpha_i_t_[i][t] /= scale[t];
@@ -290,7 +276,7 @@ namespace noVB
 			{
 			  ss_[i][t](s,ss)  = alpha_i_t_[i][t-1](s,0)*_A_(s,ss);
 			  ss_[i][t](s,ss) *= _N_[i][t](ss,0)*beta_i_t_[i][t](ss,0);
-			  norm += ss_[i][t](s,ss);
+			  norm            += ss_[i][t](s,ss);
 			}
 		    //
 		    ss_[i][t] /= norm;
@@ -298,14 +284,14 @@ namespace noVB
 		    //std::cout << "ss_["<<i<<"]["<<t<<"] \n" <<  ss_[i][t] << std::endl;
 		  }
 	      }
-	    //
-	    // Update of pi_
-	    pi_ += s_[i][0];
+//	    //
+//	    // Update of pi_
+//	    pi_ += s_[i][0];
 	  }// for ( int i = 0 ; i < n_ ; i++ )
-	//
-	// renormalization of pi
-	pi_ /= n_;
-	std::cout << "pi_ =  \n" <<  pi_ << std::endl;
+//	//
+//	// renormalization of pi
+//	pi_ /= n_;
+//	std::cout << "pi_ =  \n" <<  pi_ << std::endl;
       }
     //
     //
@@ -335,7 +321,7 @@ namespace noVB
 	/** Constructor. */
 	explicit P_qdch(){};
 	/** Constructor. */
-	explicit P_qdch( std::shared_ptr< noVB::HMM::P_qsi<Dim,S> >,
+	explicit P_qdch(      std::shared_ptr< noVB::HMM::P_qsi<Dim,S> >,
 			 const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& );
     
 	/** Destructor */
@@ -349,11 +335,9 @@ namespace noVB
 
 	//
 	// accessors
-	const Eigen::Matrix< double, S, S >& get_A() const {return posterior_A_;}
-	//
-	void set( std::shared_ptr< noVB::HMM::P_qsi<Dim,S> > Qsi )
-	{qsi_ = Qsi;};
-
+	const Eigen::Matrix< double, S, 1 >& get_pi() const {return posterior_pi_;}
+	const Eigen::Matrix< double, S, S >& get_A()  const {return posterior_A_;}
+	
   
       private:
 	//
@@ -367,13 +351,16 @@ namespace noVB
 	std::size_t n_{0};
 
 	//
-	// A distribution
+	// Pi and A distribution
+	// State probability
+	Eigen::Matrix< double, S, 1 > posterior_pi_;
+	// Transition matrix
 	Eigen::Matrix< double, S, S > posterior_A_;
       };
     //
     //
     template< int Dim, int S > 
-      P_qdch<Dim,S>::P_qdch( std::shared_ptr< noVB::HMM::P_qsi<Dim,S> >                             Qsi,
+      P_qdch<Dim,S>::P_qdch(       std::shared_ptr< noVB::HMM::P_qsi<Dim,S> >                       Qsi,
 			     const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y ):
       qsi_{Qsi}, Y_{Y}, n_{Y.size()}
     {
@@ -392,7 +379,8 @@ namespace noVB
 	//
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_  = qsi_->get_s();
 	const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_ss_ = qsi_->get_ss();
-	posterior_A_ = Eigen::Matrix< double, S, S >::Zero();
+	posterior_A_  = Eigen::Matrix< double, S, S >::Zero();
+	posterior_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
 	//
 	//
 	for ( int s = 0 ; s < S ; s++ ) 
@@ -408,12 +396,18 @@ namespace noVB
 			posterior_A_(s, ss) += _ss_[i][t](s,ss);
 			norm += _s_[i][t-1](s,0);
 		      }
+		    // State probability
+		    if ( s == 0 && ss == 0 )
+		      posterior_pi_ += _s_[i][0];
 		  }
 		//
 		posterior_A_(s, ss) /= norm;
 	      }
 	  }
 	std::cout << "transition matrix: \n" << posterior_A_ << std::endl;
+	//normalize the first state probability
+	posterior_pi_ /= n_;
+	//std::cout << "pi_ = \n" << pi_ << std::endl;
       }
     //
     //

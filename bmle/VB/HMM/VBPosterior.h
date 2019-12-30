@@ -108,7 +108,7 @@ namespace VB
 
 	//
 	// accessors
-	const inline double                                                         get_F()  const {return F_qsi_;}
+	const inline double                                                         get_F() const {return F_qsi_;}
 	const        std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_s()  const {return s_;}
 	const        std::vector< std::vector< Eigen::Matrix < double, S , S > > >& get_ss() const {return ss_;}
 	//
@@ -340,7 +340,8 @@ namespace VB
 	/** Constructor. */
 	explicit VP_qdch(){};
 	/** Constructor. */
-	explicit VP_qdch( const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& );
+	explicit VP_qdch(       std::shared_ptr< VB::HMM::VP_qsi<Dim,S> >,
+			   const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& );
     
 	/** Destructor */
 	virtual ~VP_qdch(){};
@@ -374,8 +375,8 @@ namespace VB
 	//
 	// Compute local Kullback-Leibler divergence for Dirichlet distributions
 	// KL(Q||P) = \int dX \, Q(X) \ln (Q(X)/P(X))
-	double KL_Dirichlet_(const Eigen::Matrix< double, S, 1 >&,
-			     const Eigen::Matrix< double, S, 1 >& ) const;
+	double KL_Dirichlet_( const Eigen::Matrix< double, S, 1 >&,
+			       const Eigen::Matrix< double, S, 1 >& ) const;
 
 	//
 	//
@@ -406,8 +407,9 @@ namespace VB
     //
     //
     template< int Dim, int S > 
-      VP_qdch<Dim,S>::VP_qdch(  const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y ):
-      Y_{Y}, n_{Y.size()}
+      VP_qdch<Dim,S>::VP_qdch(       std::shared_ptr< VB::HMM::VP_qsi<Dim,S> >                        Qsi,
+			       const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y ):
+      qsi_{Qsi}, Y_{Y}, n_{Y.size()}
     {
       //
       //
@@ -576,7 +578,8 @@ namespace VB
 	/** Constructor. */
 	explicit VP_qgau(){};
 	/** Constructor. */
-	explicit VP_qgau( const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& );
+	explicit VP_qgau(       std::shared_ptr< VB::HMM::VP_qsi<Dim,S> >,
+			   const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& );
     
 	/** Destructor */
 	virtual ~VP_qgau(){};
@@ -650,8 +653,9 @@ namespace VB
     //
     //
     template< int Dim, int S > 
-      VP_qgau<Dim,S>::VP_qgau(  const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y ):
-      Y_{Y}, n_{Y.size()}
+      VP_qgau<Dim,S>::VP_qgau(       std::shared_ptr< VB::HMM::VP_qsi<Dim,S> >                        Qsi,
+			       const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y ):
+      qsi_{Qsi}, Y_{Y}, n_{Y.size()}
     {
       //
       //
