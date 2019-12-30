@@ -231,9 +231,14 @@ namespace VB
 	    for ( int t = 1 ; t < Ti ; t++ )
 	      {
 		alpha_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
-		for ( int s = 0 ; s < S ; s++ )
-		  alpha_i_t_[i][t]  += ( alpha_i_t_[i][t-1](s,0) * _A_.row(s) ).transpose();
-		alpha_i_t_[i][t]     = alpha_i_t_[i][t].array() * _N_[i][t].array();
+		Eigen::Matrix < double, S , 1 >
+		  alpha_A = (alpha_i_t_[i][t-1].transpose() * _A_).transpose();
+		alpha_i_t_[i][t] = _N_[i][t].array() * alpha_A.array();
+
+//		for ( int s = 0 ; s < S ; s++ )
+//		  alpha_i_t_[i][t]  += ( alpha_i_t_[i][t-1](s,0) * _A_.row(s) ).transpose();
+//		alpha_i_t_[i][t]     = alpha_i_t_[i][t].array() * _N_[i][t].array();
+		
 		//
 		scale[t]          = alpha_i_t_[i][t].sum();
 		F_qsi_           += log(scale[t]);
@@ -243,7 +248,8 @@ namespace VB
 	    //
 	    // Beta calculation
 	    // Convension the last beta is 1.
-	    beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones();// / static_cast<double>( S );
+	    //beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones();// / static_cast<double>( S );
+	    beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones() / scale[Ti-1];
 	    //
 	    for ( int t = Ti-2 ; t >= 0 ; t-- )
 	      {
@@ -251,7 +257,7 @@ namespace VB
 		beta_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
 		for ( int s = 0 ; s < S ; s++ )
 		  beta_i_t_[i][t] += _N_[i][t+1](s,0) * beta_i_t_[i][t+1](s,0) * _A_.col(s);
-		beta_i_t_[i][t]   /= beta_i_t_[i][t].sum(); //scale[t];
+		beta_i_t_[i][t]   /= scale[t];
 		//
 		//std::cout << "_A_ \n " << _A_ << std::endl;
 		//std::cout << "_N_["<<i<<"][t+1:"<<t+1<<"] \n" << _N_[i][t+1] << std::endl;
@@ -278,14 +284,14 @@ namespace VB
 		//  <s_{i,t-1} x s_{i,t}>
 		if ( t > 0 )
 		  {
-		    double norm = 0.;
 		    //
+		    double norm = 0.;
 		    for ( int s = 0 ; s < S ; s++ )
 		      for ( int ss = 0 ; ss < S ; ss++ )
 			{
 			  ss_[i][t](s,ss)  = alpha_i_t_[i][t-1](s,0)*_A_(s,ss);
 			  ss_[i][t](s,ss) *= _N_[i][t](ss,0)*beta_i_t_[i][t](ss,0);
-			  norm            +=  ss_[i][t](s,ss);
+			  norm            += ss_[i][t](s,ss);
 			}
 
 		    //

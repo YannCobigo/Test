@@ -284,14 +284,7 @@ namespace noVB
 		    //std::cout << "ss_["<<i<<"]["<<t<<"] \n" <<  ss_[i][t] << std::endl;
 		  }
 	      }
-//	    //
-//	    // Update of pi_
-//	    pi_ += s_[i][0];
 	  }// for ( int i = 0 ; i < n_ ; i++ )
-//	//
-//	// renormalization of pi
-//	pi_ /= n_;
-//	std::cout << "pi_ =  \n" <<  pi_ << std::endl;
       }
     //
     //
