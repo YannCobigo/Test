@@ -400,7 +400,7 @@ namespace noVB
 	std::cout << "transition matrix: \n" << posterior_A_ << std::endl;
 	//normalize the first state probability
 	posterior_pi_ /= n_;
-	//std::cout << "pi_ = \n" << pi_ << std::endl;
+	std::cout << "pi_ = \n" << posterior_pi_ << std::endl;
       }
     //
     //

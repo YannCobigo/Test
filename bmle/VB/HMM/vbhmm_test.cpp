@@ -30,7 +30,7 @@ int main(int argc, char const *argv[])
   //
   // model
   const int Dim = 1;
-  const int S   = 3;
+  const int S   = 5;
 
   //
   // Load the test dataset

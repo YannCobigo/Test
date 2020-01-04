@@ -129,7 +129,7 @@ namespace noVB
 	const                           Eigen::Matrix < double, S , 1 >     &_pi_        = qdch_->get_pi();
 	const                           Eigen::Matrix < double, S , S >     &_A_         = qdch_->get_A();
 	//
-	while ( fabs(dL) > 1.e-32 )
+	while ( fabs(dL) > 1.e-10 )
 	  {
 	    std::cout << "Begining iteration: " << ++iteration << std::endl;
 	    //

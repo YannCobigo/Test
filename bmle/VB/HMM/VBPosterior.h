@@ -424,9 +424,17 @@ namespace VB
       //
       // Posterior density of the state
       // We initialize the posterior with a Dirichlet distribution
-      std::default_random_engine generator;
-      std::gamma_distribution< double > distribution_pi( alpha_pi_0_ / static_cast< double >(S), 1.0 );
-      std::gamma_distribution< double > distribution_A( alpha_A_0_ / static_cast< double >(S), 1.0 );
+      std::random_device rd;
+      std::mt19937       generator( rd() );
+//      std::default_random_engine generator;
+//      std::gamma_distribution< double > distribution_pi( alpha_pi_0_ / static_cast< double >(S), 1.0 );
+//      std::gamma_distribution< double > distribution_A( alpha_A_0_ / static_cast< double >(S), 1.0 );
+      double
+	threshold = 1. / static_cast< double >(S),
+	epsilon   = threshold / 10.;
+      
+      std::uniform_real_distribution< double > distribution_pi( threshold - epsilon, threshold + epsilon );
+      std::uniform_real_distribution< double > distribution_A( threshold - epsilon, threshold + epsilon );
       //
       posterior_pi_       = Eigen::Matrix< double, S, 1 >::Zero();
       posterior_alpha_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
@@ -629,7 +637,7 @@ namespace VB
 	//
 	// Gaussian
 	// scalars
-	double beta_0_{1.};
+	double beta_0_{0.1};
 	std::vector< double > beta_;
 	// vectors
 	std::vector< Eigen::Matrix< double, Dim, 1 > > mu_0_;
@@ -637,10 +645,10 @@ namespace VB
 	//
 	// Wishart
 	// scalars
-	double nu_0_{Dim * 50.};
+	double nu_0_{Dim * 0.01};
 	std::vector< double > nu_;
 	// vectors/matrices
-	Eigen::Matrix< double, Dim, Dim >                S_0_inv_{ 1.e-2 * Eigen::Matrix< double, Dim, Dim >::Identity() };
+	Eigen::Matrix< double, Dim, Dim >                S_0_inv_{ 1./*e+2*/ * Eigen::Matrix< double, Dim, Dim >::Identity() };
 	std::vector< Eigen::Matrix< double, Dim, Dim > > S_mean_inv_;
 	std::vector< Eigen::Matrix< double, Dim, 1 > >   mu_0_mean_;
  
@@ -775,7 +783,7 @@ namespace VB
 		int Ti = Y_[i].size();
 		for ( int t = 0 ; t < Ti ; t++ )
 		  {
-		    Eigen::Matrix< double, Dim, 1 > diff_vect = Y_[i][t] - y_mean_[s] / delta_(s,0);
+		    Eigen::Matrix< double, Dim, 1 > diff_vect = Y_[i][t] - y_mean_[s] / (/*beta_0_ **/ delta_(s,0));
 		    W_mean_inv[s] += _s_[i][t](s,0) * diff_vect * diff_vect.transpose(); 
 		    //std::cout << "#########################" << std::endl;
 		    //std::cout << "W_mean_inv[" << s << "]\n" << W_mean_inv[s] << std::endl;
@@ -788,6 +796,8 @@ namespace VB
 		    //std::cout << "diff_vect * diff_vect.transpose()  \n" << diff_vect * diff_vect.transpose() << std::endl;
 		  }
 	      }
+	    // ToDo: T
+	    //std::cout << "W_[" << s << "]\n" << W_mean_inv[s] / delta_(s,0) << std::endl;
 
 	    //
 	    mu_mean_[s]     = ( beta_0_ * mu_0_[s] + y_mean_[s] ) / beta_[s];
@@ -798,8 +808,9 @@ namespace VB
 	    S_mean_inv_[s] += W_mean_inv[s];
 	    //
 	    //
-	    //std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
-	    //std::cout << "S_mean_inv_[" << s << "]\n" << S_mean_inv_[s] << std::endl;
+	    //std::cout << "mu_mean_[" << s << "]\n" << mu_mean_[s] << std::endl;
+	    std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
+	    std::cout << "S_[" << s << "]\n" << nu_[s] * S_mean_inv_[s].inverse() << std::endl;
 	  }
       }
     //
