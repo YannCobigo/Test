@@ -33,7 +33,7 @@ int main(int argc, char const *argv[])
   //
   const int Dim = 1;
   const int S   = 3;
-  const int n   = 50;
+  const int n   = 100;
   //
   //
   std::default_random_engine generator;
@@ -50,11 +50,11 @@ int main(int argc, char const *argv[])
   //
   Eigen::Matrix< double, S, S > A;
   A <<
-    0.85, 0.10, 0.05,
+    0.80, 0.15, 0.05,
     0.05, 0.75, 0.20,
     0.02, 0.05, 0.93;
   Eigen::Matrix< double, S, 1 > Pi;
-  Pi << 0.40, 0.30, 0.30;
+  Pi << 0.50, 0.30, 0.20;
   //
   //
   int
