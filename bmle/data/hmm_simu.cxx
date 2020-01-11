@@ -31,28 +31,32 @@ gaussian( const Eigen::Matrix< double, Dim, 1 >&   Y,
 int main(int argc, char const *argv[])
 {
   //
-  const int Dim = 1;
+  const int Dim = 4;
   const int S   = 3;
   const int n   = 100;
   //
   //
   std::default_random_engine generator;
-  std::normal_distribution< double > gauss_11( 1.0, 1.0 );
-  std::normal_distribution< double > gauss_12( 1.0, 1.0 );
-  std::normal_distribution< double > gauss_21( 3.0, 1.0 );
-  std::normal_distribution< double > gauss_22( 3.0, 1.0 );
-  std::normal_distribution< double > gauss_31( 5.0, 1.0 );
-  std::normal_distribution< double > gauss_32( 5.0, 1.0 );
-  std::normal_distribution< double > sigma( 6.0, 1.0 );
+  std::vector< std::vector< std::normal_distribution< double > > > gauss_sd;
+  //
+  gauss_sd.resize( S );
+  for ( int s = 0 ; s < S ; s++ )
+    {
+      gauss_sd[s].resize( Dim );
+      for ( int d = 0 ; d < Dim ; d++ )
+	gauss_sd[s][d] = std::normal_distribution< double >( static_cast< double >( (s+1) * (d+1) ),
+							     1.0 );
+    }
+  //
   std::uniform_real_distribution< double > uniform(0.0,1.0);
   std::uniform_int_distribution< int >     uniform_1_10(1,10);
   std::uniform_int_distribution< int >     distribution(0,9);
   //
   Eigen::Matrix< double, S, S > A;
   A <<
-    0.80, 0.15, 0.05,
-    0.05, 0.75, 0.20,
-    0.02, 0.05, 0.93;
+    0.70, 0.20, 0.10,
+    0.05, 0.50, 0.45,
+    0.02, 0.03, 0.95;
   Eigen::Matrix< double, S, 1 > Pi;
   Pi << 0.50, 0.30, 0.20;
   //
@@ -70,8 +74,8 @@ int main(int argc, char const *argv[])
       std::cout << "subject: " << i << std::endl;
       //
       choose = uniform( generator );
-      std::vector< double > Y;
-      std::vector< int >    T;
+      std::vector< std::vector< double > > Y;
+      std::vector< int >                   T;
       std::string line = "S = ";
       int s = 0;
       //
@@ -81,28 +85,18 @@ int main(int argc, char const *argv[])
       std::cout << "Ti = " << Ti << std::endl;
       //
       // first measure
-      //
+      T.push_back( 0 );
+      Y.resize(Ti);
       if ( 0. < choose && choose <= Pi(0,0) )
-	{
-	  double val = gauss_11( generator);
-	  Y.push_back( val );
-	  T.push_back( 0 );
-	  s = 0;
-	}
+	s = 0;
       else if ( Pi(0,0) < choose && choose <= Pi(0,0)+Pi(1,0) )
-	{
-	  double val = gauss_21( generator);
-	  Y.push_back( val );
-	  T.push_back( 0 );
-	  s = 1;
-	}
+	s = 1;
       else 
-	{
-	  double val = gauss_31( generator);
-	  Y.push_back( val );
-	  T.push_back( 0 );
-	  s = 2;
-	}
+	s = 2;
+      //
+      Y[0].resize( Dim );
+      for ( int d = 0 ; d < Dim ; d++ )
+	Y[0][d] = gauss_sd[s][d]( generator);
       //
       line += std::to_string( s ) + ",";
       
@@ -111,36 +105,31 @@ int main(int argc, char const *argv[])
       for ( int t = 1 ; t < Ti ; t++ )
 	{
 	  choose = uniform( generator );
+	  T.push_back( t );
+	  //
 	  if ( 0. < choose && choose <= A(s,0) )
-	    {
-	      double val = gauss_11( generator);
-	      Y.push_back( val );
-	      T.push_back( t );
-	      s = 0;
-	    }
+	    s = 0;
 	  else if ( A(s,0) < choose && choose <= A(s,0)+A(s,1) )
-	    {
-	      double val = gauss_21( generator);
-	      Y.push_back( val );
-	      T.push_back( t );
-	      s = 1;
-	    }
+	    s = 1;
 	  else 
-	    {
-	      double val = gauss_31( generator);
-	      Y.push_back( val );
-	      T.push_back( t );
-	      s = 2;
-	    }
+	    s = 2;
+	  //
+	  Y[t].resize( Dim );
+	  for ( int d = 0 ; d < Dim ; d++ )
+	    Y[t][d] = gauss_sd[s][d]( generator );
+	  //
 	  //
 	  line += std::to_string( s ) + ",";
 	}
 
       //
       //
-      for ( double y : Y )
-	std::cout << y << ",";
-      std::cout << std::endl;
+      for ( int d = 0 ; d < Dim ; d++ )
+	{
+	  for ( auto y : Y )
+	    std::cout << y[d] << ",";
+	  std::cout << std::endl;
+	}
       for ( double t : T )
 	std::cout << t << ",";
       std::cout << std::endl;
@@ -152,4 +141,3 @@ int main(int argc, char const *argv[])
   //
   return EXIT_SUCCESS;
 }
-
