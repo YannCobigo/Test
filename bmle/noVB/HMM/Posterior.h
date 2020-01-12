@@ -424,8 +424,8 @@ namespace noVB
 	explicit P_qgau(){};
 	/** Constructor. */
 	explicit P_qgau( std::shared_ptr< noVB::HMM::P_qsi<Dim,S> >,
-			 const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >&,
-			 const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& );
+			 const std::vector< std::vector< Eigen::Matrix < double, Dim, 1 > > >&,
+			 const std::vector< std::vector< Eigen::Matrix < double, 1, 1 > > >& );
     
 	/** Destructor */
 	virtual ~P_qgau(){};
@@ -453,7 +453,7 @@ namespace noVB
 	//
 	//
 	std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > > Y_;
-	std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > > Age_;
+	std::vector< std::vector< Eigen::Matrix < double, 1, 1 > > >    Age_;
 	// Size of the data set
 	std::size_t n_{0};
 
@@ -477,8 +477,8 @@ namespace noVB
     //
     template< int Dim, int S > 
       P_qgau<Dim,S>::P_qgau( std::shared_ptr< noVB::HMM::P_qsi<Dim,S> >                             Qsi,
-			     const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y ,
-			     const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Age ):
+			     const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y,
+			     const std::vector< std::vector< Eigen::Matrix < double, 1, 1 > > >&    Age ):
       qsi_{Qsi}, Y_{Y}, Age_{Age}, n_{Y.size()}
     {
       P_qgau<Dim,S>::Maximization();
