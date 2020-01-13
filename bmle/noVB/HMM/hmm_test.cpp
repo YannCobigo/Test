@@ -29,26 +29,19 @@ int main(int argc, char const *argv[])
 {
   //
   // model
-  const int Dim = 1;
-  const int S   = 4;
+  const int Dim = 2;
+  const int S   = 5;
 
   //
   // Load the test dataset
-  //NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08.csv");
-  // medium 1 2 5
-  //NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_medium1.csv");
   NeuroBayes::Load_csv reader("../data/hhm.csv");
-  // 20 cases
-  //NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_short.csv");
-  //two dim NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_2.csv");
-
   //
   // Size of the sequence can be different for each entry (subject).
   std::vector< std::vector< Eigen::Matrix< double, Dim+1, 1 > > >
     HMM_intensity_age = reader.get_VB_HMM_date< Dim+1 >();
   std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >
     HMM_intensity;
-  std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >
+  std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >
     HMM_age;
   //
   HMM_intensity.resize( HMM_intensity_age.size() );
@@ -63,8 +56,10 @@ int main(int argc, char const *argv[])
       for ( auto tp : sub )
 	{
 	  //std::cout << tp << std::endl;
-	  HMM_intensity[subject][timepoint] << tp(0,0);
-	  HMM_age[subject][timepoint++] << tp(1,0);
+	  int d = 0;
+	  for ( d = 0 ; d < Dim ; d++ )
+	    HMM_intensity[subject][timepoint](d,0) = tp(d,0);
+	  HMM_age[subject][timepoint++] << tp(d,0);
 	}
       subject++;
     }

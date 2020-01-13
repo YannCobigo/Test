@@ -54,7 +54,7 @@ namespace VB
     public:
       /** Constructor. */
       explicit Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& ,
-				    const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& );
+				    const std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >& );
     
       /** Destructor */
       ~Hidden_Markov_Model(){};
@@ -80,7 +80,7 @@ namespace VB
       std::size_t n_{0};
       // Data set
       std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >  Y_; 
-      std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >  Age_; 
+      std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >  Age_; 
 
       //
       // variational posteriors and hyper parameters
@@ -100,7 +100,7 @@ namespace VB
     //
     template < int Dim, int S >
       Hidden_Markov_Model< Dim, S >::Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Y,
-							  const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Age ):
+							  const std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >& Age ):
       Y_{Y}, Age_{Age}, n_{Y.size()}
     {
       //
