@@ -37,6 +37,13 @@ main( const int argc, const char **argv )
       extrema[0] = {5,117}; //X
       extrema[1] = {5,141}; //Y
       extrema[2] = {5,117}; //Z
+      // FSL TBSS mask: 128x128x64
+      // 128 =>  |
+      //  64 =>  | Global max diviser = 64
+      //-> std::vector< std::vector< int > > extrema(3);
+      //-> extrema[0] = {0,127}; //X
+      //-> extrema[1] = {0,127}; //Y
+      //-> extrema[2] = {0,63};  //Z
 
       //
       // Parse the arguments
