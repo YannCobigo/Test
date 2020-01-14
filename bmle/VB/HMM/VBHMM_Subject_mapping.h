@@ -52,7 +52,7 @@ namespace VB
     {
     public:
       /** Constructor. */
-      explicit SubjectMapping( const std::string&, const std::string& );
+      explicit SubjectMapping( const std::string&, const std::string&, const NeuroStat::TimeTransformation );
     
       /** Destructor */
       virtual ~SubjectMapping() {};
@@ -81,53 +81,78 @@ namespace VB
       //
       // Members
       //
-    
+      //
+      // Arrange pidns into groups
+      std::map< std::string /*pidn*/, VB::HMM::Subject< Dim, Num_States > > group_pind_;
+      // CSV file
+      std::ifstream csv_file_;
+      // output directory
+      std::string   output_dir_;
+      // Statistic transformation of ages
+      std::string   age_statistics_tranformation_;
+      // number of PIDN
+      long unsigned int num_subjects_{0};
+      // number of 3D images = number of time points (TP)
+      long unsigned int num_3D_images_{0};
     };
     //
     //
     //
     template< int Dim, int Num_States >
       SubjectMapping< Dim, Num_States >::SubjectMapping( const std::string& CSV_file,
-							 const std::string& Output_dir )
+							 const std::string& Output_dir,
+							 // Age Dns: demean, normalize, standardize
+							 const NeuroStat::TimeTransformation Dns ):
+      csv_file_{ CSV_file.c_str() }, output_dir_{ Output_dir }
       {
 	try
 	  {
-//	    //
-//	    //
-//	    double mean_age = 0.;
-//	    std::string line;
-//	    //skip the first line
-//	    std::getline(csv_file_, line);
-//	    //
-//	    // then loop
-//	    while( std::getline(csv_file_, line) )
-//	      {
-//		std::stringstream  lineStream( line );
-//		std::string        cell;
-//		std::cout << "ligne: " << line << std::endl;
-//
-//		//
-//		// Get the PIDN
-//		std::getline(lineStream, cell, ',');
-//		const std::string PIDN = cell;
-//		// Get the group
-//		std::getline(lineStream, cell, ',');
-//		const int group = std::stoi( cell );
-//		if ( group == 0 )
-//		  //
-//		  // The groups must be labeled 1, 2, 3, ...
-//		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//							 "Select another group name than 0 (e.g. 1, 2, ...). 0 is reserved.",
-//							 ITK_LOCATION );
-//		// Get the age
-//		std::getline(lineStream, cell, ',');
-//		int age = std::stoi( cell );
-//		mean_age += static_cast< double >( age );
-//		// Get the image
-//		std::string image;
-//		std::getline(lineStream, image, ',');
-//		// Covariates
-//		std::list< double > covariates;
+	    //
+	    //
+	    double 
+	      mean_age = 0.;
+	    int
+	      max_age  = 0,
+	      min_age  = 70000;
+	    std::list< int > age_stat;
+	    std::string line;
+	    //skip the first line
+	    std::getline(csv_file_, line);
+	    //
+	    // then loop
+	    while( std::getline(csv_file_, line) )
+	      {
+		std::stringstream  lineStream( line );
+		std::string        cell;
+		std::cout << "ligne: " << line << std::endl;
+
+		//
+		// Get the PIDN
+		std::getline(lineStream, cell, ',');
+		const std::string PIDN = cell;
+		// Get the group
+		std::getline(lineStream, cell, ',');
+		const int group = std::stoi( cell );
+		if ( group == 0 )
+		  //
+		  // The groups must be labeled 1, 2, 3, ...
+		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							 "Select another group name than 0 (e.g. 1, 2, ...). 0 is reserved.",
+							 ITK_LOCATION );
+		// Get the age
+		std::getline(lineStream, cell, ',');
+		int age = std::stoi( cell );
+		age_stat.push_back(age);
+		mean_age += static_cast< double >( age );
+		if ( age < min_age )
+		  min_age = age;
+		if ( age > max_age )
+		  max_age = age;
+		// Get the image
+		std::string image;
+		std::getline(lineStream, image, ',');
+		// Covariates
+		std::list< double > covariates;
 //		while( std::getline(lineStream, cell, ',') )
 //		  covariates.push_back( std::stof(cell) );
 //		num_covariates_ = covariates.size();
@@ -138,43 +163,242 @@ namespace VB
 //		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
 //							 "The CSV file should have less than 10 gourps.",
 //							 ITK_LOCATION );
-//		// If the PIDN does not yet exist
-//		if ( group_pind_[ group ].find( PIDN ) == group_pind_[ group ].end() )
-//		  {
-//		    std::cout << PIDN << " " << group << std::endl;
-//		    groups_.insert( group );
-//		    group_pind_[ group ][PIDN] = BmleSubject< Dim, Num_States >( PIDN, group, Output_dir );
-//		    group_num_subjects_[ group ]++;
-//		    num_subjects_++;
-//		  }
-//		//
-//		group_pind_[ group ][ PIDN ].add_tp( age, covariates, image );
-//		num_3D_images_++;
-//	      }
-//	    //
-//
-//	    // 
-//	    // Design Matrix for every subject
-//	    //
-//
-//	    //
-//	    // mean age
-//	    mean_age /= static_cast< double >( num_3D_images_ );
-//	    if ( Demeaning )
-//	      std::cout << "mean age: " << mean_age << std::endl;
-//	    else
-//	      std::cout << "No demeaning " << std::endl;
+		// If the PIDN does not yet exist
+		if ( group_pind_.find( PIDN ) == group_pind_.end() )
+		  {
+		    std::cout << PIDN << " " << group << std::endl;
+		    group_pind_[PIDN] = VB::HMM::Subject< Dim, Num_States >( PIDN, Output_dir );
+		    num_subjects_++;
+		  }
+		//
+		group_pind_[ PIDN ].add_tp( age, covariates, image );
+		num_3D_images_++;
+	      } // while( std::getline(csv_file_, line) )
+	    //
+
+	    // 
+	    // Design Matrix for every subject
+	    //
+
+	    //
+	    // mean age
+	    mean_age /= static_cast< double >( num_3D_images_ );
 //	    //
 //	    Y_.resize( num_3D_images_ );
 //	    int sub_image{0};
-//	    for ( auto g : groups_ )
-//	      for ( auto& s : group_pind_[g] )
-//		{
-//		  s.second.build_design_matrices( (Demeaning ? mean_age : 0) );
-//		  // Create the vector of 3D measurements image
-//		  for ( auto image : s.second.get_age_images() )
-//		    Y_[ sub_image++ ] = image.second;
-//		}
+	    age_statistics_tranformation_ = Output_dir + "/age_transformation.txt";
+	    //
+	    switch ( Dns )
+	      {
+	      case NeuroStat::TimeTransformation::NONE:
+	      case NeuroStat::TimeTransformation::DEMEAN:
+		{
+		  std::cout 
+		    << "Age will be demeaned with mean age: " 
+		    << mean_age << " or 0 infunction of the option you have chosen.\n"
+		    << std::endl;
+		  // record the transformation
+		  std::ofstream fout( age_statistics_tranformation_ );
+		  fout << Dns << " " 
+		       << ( Dns == NeuroStat::TimeTransformation::NONE ? 0 : mean_age )
+		       << std::endl;
+		  fout.close();
+//		  //
+//		  for ( auto g : groups_ )
+//		    for ( auto& s : group_pind_[g] )
+//		      {
+//			//
+//			s.second.build_design_matrices( (Dns == NeuroStat::TimeTransformation::NONE ? 
+//							 0 : mean_age) );
+//			// Create the vector of 3D measurements image
+//			for ( auto image : s.second.get_age_images() )
+//			  Y_[ sub_image++ ] = image.second;
+//		      }
+		  //
+		  break;
+		}
+	      case NeuroStat::TimeTransformation::NORMALIZE:
+		{
+		  std::cout 
+		    << "Age will be normalized between: (" 
+		    << min_age << "," 
+		    << max_age << ").\n" 
+		    << std::endl;
+		  //
+		  double 
+		    C1 = static_cast< double >(min_age),
+		    C2 = static_cast< double >(max_age - min_age);
+		  //
+		  Eigen::Matrix< double, 2, 2 > M;
+		  M << 1., -C1/C2, 0., 1./C2;
+		  std::cout 
+		    <<  "C1 = min_age = " << min_age
+		    <<  ", C2 = (max_age - min_age) = " << max_age - min_age
+		    <<  ". change of variable is u = (t-C1)/C2. \n"
+		    <<  "y = a0 + a1xt + epsilon\n"
+		    <<  "  = b0 + b2xu + epsilon\n"
+		    <<  "a = M x b. Where M = \n"
+		    <<  M
+		    << std::endl;
+		  // record the transformation
+		  std::ofstream fout( age_statistics_tranformation_ );
+		  fout << Dns << " " 
+		       << C1 << " " << C2
+		       << std::endl;
+		  fout.close();
+//		  //
+//		  for ( auto g : groups_ )
+//		    for ( auto& s : group_pind_[g] )
+//		      {
+//			s.second.build_design_matrices( C1, C2 );
+//			// Create the vector of 3D measurements image
+//			for ( auto image : s.second.get_age_images() )
+//			  Y_[ sub_image++ ] = image.second;
+//		      }
+		  //
+		  break;
+		}
+	      case NeuroStat::TimeTransformation::STANDARDIZE:
+		{
+		  //
+		  // Standard deviation
+		  double accum = 0.0;
+		  std::for_each ( std::begin( age_stat ), std::end( age_stat ), 
+				  [&](const double d) {accum += (d - mean_age) * (d - mean_age);} );
+		  //
+		  double stdev = sqrt( accum / static_cast< double >(age_stat.size()-1) );
+		  //
+		  //
+		  std::cout 
+		    << "Age will be standardized with: (mu = " 
+		    << mean_age << ", std = " 
+		    << stdev << ").\n" 
+		    << std::endl;
+		  //
+		  double 
+		    C1 = mean_age,
+		    C2 = stdev;
+		  //
+		  Eigen::Matrix< double, 2, 2 > M;
+		  M << 1., -C1/C2, 0., 1./C2;
+		  std::cout 
+		    <<  "C1 = mu = " << C1
+		    <<  ", C2 = stdev = " << stdev
+		    <<  ". change of variable is u = (t-C1)/C2. \n"
+		    <<  "y = a0 + a1xt + epsilon\n"
+		    <<  "  = b0 + b2xu + epsilon\n"
+		    <<  "a = M x b. Where M = \n"
+		    <<  M
+		    << std::endl;
+		  // record the transformation
+		  std::ofstream fout( age_statistics_tranformation_ );
+		  fout << Dns << " " 
+		       << C1 << " " << C2
+		       << std::endl;
+		  fout.close();
+//		  //
+//		  for ( auto g : groups_ )
+//		    for ( auto& s : group_pind_[g] )
+//		      {
+//			s.second.build_design_matrices( C1, C2 );
+//			// Create the vector of 3D measurements image
+//			for ( auto image : s.second.get_age_images() )
+//			  Y_[ sub_image++ ] = image.second;
+//		      }
+		  //
+		  break;
+		}
+	      case NeuroStat::TimeTransformation::LOAD:
+		{
+		  // record the transformation
+		  std::ifstream fin( age_statistics_tranformation_ );
+		  std::stringstream stat_string;
+		  // Check the file exist
+		  if ( fin )
+		    stat_string << fin.rdbuf();
+		  else
+		    {
+		      std::string mess = "The statistic transformation file does not exist.\n";
+		      mess += "Please, check on: " + age_statistics_tranformation_;
+		      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							     mess.c_str(),
+							     ITK_LOCATION );
+		    }
+		  //
+		  std::string str_time_transfo;
+		  int time_transfo = 0;
+		  //
+		  stat_string >> str_time_transfo;
+		  time_transfo = std::stoi( str_time_transfo );
+		  std::cout << "Transforamtion: " << time_transfo << std::endl;
+		  //
+		  //
+		  switch ( time_transfo )
+		    {
+		    case NeuroStat::TimeTransformation::NONE:
+		    case NeuroStat::TimeTransformation::DEMEAN:
+		      {
+			//
+			std::string    str_C1;
+			stat_string >> str_C1;
+			//
+			double             C1 = std::stod( str_C1 );
+			std::cout << "C1 " << C1 << std::endl;
+//			//
+//			for ( auto g : groups_ )
+//			  for ( auto& s : group_pind_[g] )
+//			    {
+//			      s.second.build_design_matrices( C1 );
+//			      // Create the vector of 3D measurements image
+//			      for ( auto image : s.second.get_age_images() )
+//				Y_[ sub_image++ ] = image.second;
+//			    }
+			//
+			break;
+		      }
+		    case NeuroStat::TimeTransformation::NORMALIZE:
+		    case NeuroStat::TimeTransformation::STANDARDIZE:
+		      {
+			std::string 
+			  str_C1,
+			  str_C2;
+			stat_string >> str_C1 >> str_C2;
+			//
+			double          
+			  C1 = std::stod( str_C1 ),
+			  C2 = std::stod( str_C2 );
+			std::cout << "C1 " << C1 << std::endl;
+			std::cout << "C2 " << C2 << std::endl;
+			//
+//			for ( auto g : groups_ )
+//			  for ( auto& s : group_pind_[g] )
+//			    {
+//			      s.second.build_design_matrices( C1, C2 );
+//			      // Create the vector of 3D measurements image
+//			      for ( auto image : s.second.get_age_images() )
+//				Y_[ sub_image++ ] = image.second;
+//			    }
+			//
+			break;
+		      }
+		    default:
+		      {
+			std::string mess = "The statistic transformation requiered is unknown.\n";
+			mess += "Please, check on: " + age_statistics_tranformation_;
+			throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							       mess.c_str(),
+							       ITK_LOCATION );
+		      }
+		    }
+
+	      
+		  //
+		  //
+		  fin.close();
+		  //
+		  break;
+		}
+	      }
 	  }
 	catch( itk::ExceptionObject & err )
 	  {

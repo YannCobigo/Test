@@ -85,9 +85,9 @@ main( const int argc, const char **argv )
 	    // normalized/standardized hierarchical covariate
 	    //
 	    // -h                          : help
-	    // -X  inv_cov_error.nii.gz    : (prediction) inverse of error cov on parameters
 	    // -c   input.csv              : input file
 	    // -m   mask.nii.gz            : mask
+	    // -o   output_dir             : output directory
 	    //
 	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
 						   "./vbhmm -c file.csv -m mask.nii.gz -o output_dir ",
@@ -98,6 +98,32 @@ main( const int argc, const char **argv )
 	  const std::string& filename       = input.getCmdOption("-c");
 	  const std::string& mask           = input.getCmdOption("-m");
 	  const std::string& output_dir     = input.getCmdOption("-o");
+	  // Demean the age
+	  const std::string& transformation       = input.getCmdOption("-d");
+	  NeuroStat::TimeTransformation time_tran = NeuroStat::TimeTransformation::NONE;
+	  if ( !transformation.empty() )
+	    {
+	      if ( transformation.compare("demean") == 0 )
+		time_tran = NeuroStat::TimeTransformation::DEMEAN;
+	      else if ( transformation.compare("normalize") == 0 )
+		time_tran = NeuroStat::TimeTransformation::NORMALIZE;
+	      else if ( transformation.compare("standardize") == 0 )
+		time_tran = NeuroStat::TimeTransformation::STANDARDIZE;
+	      else if ( transformation.compare("load") == 0 )
+		time_tran = NeuroStat::TimeTransformation::LOAD;
+	      else
+		{
+		  std::string mess  = "The time transformation can be: ";
+		   mess            += "none, demean, normalize, standardize.\n";
+		   mess            += "Trans formation: " + transformation;
+		   mess            += " is unknown.\n";
+		   mess            += " please try ./bmle -h for all options.\n";
+		   throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							  mess.c_str(),
+							  ITK_LOCATION );
+		}
+	    }
+	  // Slicing the space
 	  //
 	  if ( !filename.empty() )
 	    {
@@ -129,11 +155,13 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 24;
+	      const int THREAD_NUM = 4;
 
 	      //
 	      // Load the CSV file
-	      VB::HMM::SubjectMapping< /*Dim*/ 2, /*number_of_states*/ 2 > subject_mapping( filename, output_dir );
+	      // Dim is the number of modalities in the subject's timepoint
+	      // number_of_states is the first guess on the number of states
+	      VB::HMM::SubjectMapping< /*Dim*/ 3, /*number_of_states*/ 5 > subject_mapping( filename, output_dir, time_tran );
 
 	      //
 	      // Expecttion Maximization
@@ -188,13 +216,13 @@ main( const int argc, const char **argv )
 #else
 		      // Please do not remove the bracket!!
 		      // vertex
-//		      if ( idx[0] > 92 - 2  && idx[0] < 92 + 2 && 
-//			   idx[1] > 94 - 2  && idx[1] < 94 + 2 &&
-//			   idx[2] > 63 - 2  && idx[2] < 63 + 2 )
-		      // ALL
-		      if ( idx[0] > 5 && idx[0] < 110 && 
-			   idx[1] > 5 && idx[1] < 140 &&
-			   idx[2] > 5 && idx[2] < 110 )
+		      if ( idx[0] > 76 - 1  && idx[0] < 76 + 1 && 
+			   idx[1] > 78 - 1  && idx[1] < 78 + 1 &&
+			   idx[2] > 35 - 1  && idx[2] < 35 + 1 )
+//		      // ALL
+//		      if ( idx[0] > 5 && idx[0] < 110 && 
+//			   idx[1] > 5 && idx[1] < 140 &&
+//			   idx[2] > 5 && idx[2] < 110 )
 //		      // Octan 1
 //		      if ( idx[0] > 5 && idx[0] < 60  & 
 //			   idx[1] > 5 && idx[1] < 70  &&
@@ -256,12 +284,12 @@ main( const int argc, const char **argv )
 	    }
 	  else
 	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-						   "./vbhmm -c file.csv -m mask.nii.gz >",
+						   "./vbhmm -c file.csv -m mask.nii.gz  -o output_dir ",
 						   ITK_LOCATION );
 	}
       else
 	throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-					       "./vbhmm -c file.csv -m mask.nii.gz >",
+					       "./vbhmm -c file.csv -m mask.nii.gz  -o output_dir ",
 					       ITK_LOCATION );
     }
   catch( itk::ExceptionObject & err )
