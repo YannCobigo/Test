@@ -193,6 +193,25 @@ namespace VB
 							       std::vector< Eigen::Matrix< double, Dim, 1 > >& Intensity,
 							       std::vector< Eigen::Matrix< double, 1, 1 > >&   Age )
     {
+      //
+      // go over the images
+      // ToDo: normalize/standardize the age
+      for ( auto ai : age_ITK_images_ )
+	{
+	  // 
+	  Eigen::Matrix< double, Dim, 1 > intensity = Eigen::Matrix< double, Dim, 1 >::Zero();
+	  Eigen::Matrix< double, 1, 1 >   age;
+	  // record the age
+	  age(0,0) = ai.first;
+	  Age.push_back( age );
+	  // record the intensity
+	  for ( int d = 0 ; d < Dim ; d++ )
+	    {
+	      Reader4D::IndexType idx4d = {Idx[0], Idx[1], Idx[2], d};
+	      intensity(d,0) = ai.second->GetOutput()->GetPixel( idx4d );
+	    }
+	  Intensity.push_back( intensity );
+	}   
     }
     //
     //

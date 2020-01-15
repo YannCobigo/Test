@@ -82,7 +82,6 @@ namespace VB
       //
       // Members
       //
-      //
       // Arrange pidns into groups
       std::map< std::string /*pidn*/, VB::HMM::Subject< Dim, Num_States > > group_pind_;
       // CSV file
@@ -95,6 +94,13 @@ namespace VB
       long unsigned int num_subjects_{0};
       // number of 3D images = number of time points (TP)
       long unsigned int num_3D_images_{0};
+
+      //
+      // Records
+      //
+      // Lower bound
+      NeuroBayes::NeuroBayesMakeITKImage lower_bound_;
+
     };
     //
     //
@@ -400,6 +406,13 @@ namespace VB
 		  break;
 		}
 	      }
+
+	    //
+	    // Create output images
+	    std::string
+	      lower_bound_name = output_dir_ + "/" + "lower_bounld.nii.gz";
+	    //
+	    //lower_bound_ = NeuroBayes::NeuroBayesMakeITKImage( 1, lower_bound_name, Y_[0] );
 	  }
 	catch( itk::ExceptionObject & err )
 	  {
@@ -434,7 +447,15 @@ namespace VB
 	    // Run the model
 	    VB::HMM::Hidden_Markov_Model < Dim, Num_States > hidden_Markov_model( intensity, age );
 	    //
-	    hidden_Markov_model.ExpectationMaximization();
+	    //hidden_Markov_model.ExpectationMaximization();
+
+	    for ( int s = 0 ; s < num_subjects_ ; s++ )
+	      {
+		std::cout << "Subject " << s << std::endl;
+		int Ti = intensity[s].size();
+		for ( int tp = 0 ; tp < Ti ; tp++ )
+		  std::cout << intensity[s][tp] << std::endl; 
+	      }
 	  }
 	catch( itk::ExceptionObject & err )
 	  {
