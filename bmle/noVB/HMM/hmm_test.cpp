@@ -29,12 +29,13 @@ int main(int argc, char const *argv[])
 {
   //
   // model
-  const int Dim = 2;
+  const int Dim = 1;
   const int S   = 5;
 
   //
   // Load the test dataset
-  NeuroBayes::Load_csv reader("../data/hhm.csv");
+  //NeuroBayes::Load_csv reader("../data/hhm.csv");
+  NeuroBayes::Load_csv reader("../data/ADNI_clusters.csv");
   //
   // Size of the sequence can be different for each entry (subject).
   std::vector< std::vector< Eigen::Matrix< double, Dim+1, 1 > > >

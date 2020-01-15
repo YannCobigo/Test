@@ -35,6 +35,7 @@ using MaskType4D = itk::Image< unsigned char, 4 >;
 #include "MakeITKImage.h"
 #include "Tools.h"
 #include "VBHMM_Subject.h"
+#include "VBHMM.h"
 //
 //
 //
@@ -414,6 +415,26 @@ namespace VB
       {
 	try
 	  {
+	    //
+	    // Create the all subjects time series
+	    std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > > intensity( num_subjects_ );
+	    std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >   age( num_subjects_ );
+	    // 
+	    int subject_number = 0;
+	    std::map< std::string /*pidn*/, int /*subject_number*/ > pind_subject_num;
+	    for ( auto& s : group_pind_ )
+	      {
+		s.second.build_time_series( Idx, 
+					    intensity[subject_number], 
+					    age[subject_number] );
+		//
+		pind_subject_num[ s.first ] = subject_number++;
+	      }
+	    //
+	    // Run the model
+	    VB::HMM::Hidden_Markov_Model < Dim, Num_States > hidden_Markov_model( intensity, age );
+	    //
+	    hidden_Markov_model.ExpectationMaximization();
 	  }
 	catch( itk::ExceptionObject & err )
 	  {

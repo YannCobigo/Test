@@ -50,8 +50,8 @@ namespace VB
     {
       //
       // Some typedef
-      using Image3DType = itk::Image< double, 3 >;
-      using Reader3D    = itk::ImageFileReader< Image3DType >;
+      using Image4DType = itk::Image< double, 4 >;
+      using Reader4D    = itk::ImageFileReader< Image4DType >;
       using MaskType    = itk::Image< unsigned char, 3 >;
  
     public:
@@ -67,9 +67,15 @@ namespace VB
       // Accessors
       inline const std::string get_PIDN() const { return PIDN_ ;}
       //
-      inline const std::map< int, Reader3D::Pointer >&
+      inline const std::map< int, Reader4D::Pointer >&
 	get_age_images() const { return age_ITK_images_ ;}
 
+      //
+      // Write the fitted solution to the output image pointer
+      void build_time_series( const MaskType::IndexType, 
+			      std::vector< Eigen::Matrix< double, Dim, 1 > >&,
+			      std::vector< Eigen::Matrix< double, 1, 1 > >& );
+ 
       //
       // Write the output matrix: fitted parameters and the covariance matrix
       void write_solution();
@@ -105,7 +111,7 @@ namespace VB
       // age-image name
       std::map< int, std::string >       age_images_; 
       // age-ITK image
-      std::map< int, Reader3D::Pointer > age_ITK_images_; 
+      std::map< int, Reader4D::Pointer > age_ITK_images_; 
       //
       // Number of time points
       int time_points_{0};
@@ -134,47 +140,44 @@ namespace VB
       {
 	try
 	  {
-//	    if ( age_covariates_.find( Age ) == age_covariates_.end() )
-//	      {
-//		age_covariates_[ Age ] = Covariates;
-//		age_images_[ Age ]     = Image;
-//		//
-//		// load the ITK images
-//		if ( file_exists(Image) )
-//		  {
-//		    //
-//		    // load the image ITK pointer
-//		    auto image_ptr = itk::ImageIOFactory::CreateImageIO( Image.c_str(),
-//									 itk::ImageIOFactory::ReadMode );
-//		    image_ptr->SetFileName( Image );
-//		    image_ptr->ReadImageInformation();
-//		    // Read the ITK image
-//		    age_ITK_images_[ Age ] = Reader3D::New();
-//		    age_ITK_images_[ Age ]->SetFileName( image_ptr->GetFileName() );
-//		    age_ITK_images_[ Age ]->Update();
-//		    // create the result image, only one time
-//		    if ( age_ITK_images_.size() < 2 )
-//		      create_theta_images();
-//		  }
-//		else
-//		  {
-//		    std::string mess = "Image " + Image + " does not exists.";
-//		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//							   mess.c_str(),
-//							   ITK_LOCATION );
-//		  }
-//		//
-//		time_points_++;
-//	      }
-//	    else
-//	      {
-//		std::string mess = "Age " + std::to_string(Age) + " is already entered for the patient ";
-//		mess += PIDN_ + ".";
-//		//
-//		throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//						       mess.c_str(),
-//						       ITK_LOCATION );
-//	      }
+	    if ( age_covariates_.find( Age ) == age_covariates_.end() )
+	      {
+		age_covariates_[ Age ] = Covariates;
+		age_images_[ Age ]     = Image;
+		//
+		// load the ITK images
+		if ( file_exists(Image) )
+		  {
+		    //
+		    // load the image ITK pointer
+		    auto image_ptr = itk::ImageIOFactory::CreateImageIO( Image.c_str(),
+									 itk::ImageIOFactory::ReadMode );
+		    image_ptr->SetFileName( Image );
+		    image_ptr->ReadImageInformation();
+		    // Read the ITK image
+		    age_ITK_images_[ Age ] = Reader4D::New();
+		    age_ITK_images_[ Age ]->SetFileName( image_ptr->GetFileName() );
+		    age_ITK_images_[ Age ]->Update();
+		  }
+		else
+		  {
+		    std::string mess = "Image " + Image + " does not exists.";
+		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							   mess.c_str(),
+							   ITK_LOCATION );
+		  }
+		//
+		time_points_++;
+	      }
+	    else
+	      {
+		std::string mess = "Age " + std::to_string(Age) + " is already entered for the patient ";
+		mess += PIDN_ + ".";
+		//
+		throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						       mess.c_str(),
+						       ITK_LOCATION );
+	      }
 	  }
 	catch( itk::ExceptionObject & err )
 	  {
@@ -182,6 +185,15 @@ namespace VB
 	    return exit( -1 );
 	  }
       }
+    //
+    //
+    //
+    template < int Dim, int Num_States > void
+       VB::HMM::Subject< Dim, Num_States >::build_time_series( const MaskType::IndexType                       Idx, 
+							       std::vector< Eigen::Matrix< double, Dim, 1 > >& Intensity,
+							       std::vector< Eigen::Matrix< double, 1, 1 > >&   Age )
+    {
+    }
     //
     //
     //
