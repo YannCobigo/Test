@@ -10,10 +10,19 @@
 // ITK
 //
 #include <itkImageFileReader.h>
+#include <itkImageFileWriter.h>
 #include <itkSpatialOrientationAdapter.h>
 #include "itkChangeInformationImageFilter.h"
+#include "itkRescaleIntensityImageFilter.h"
 using MaskType       = itk::Image< unsigned char, 3 >;
 using MaskReaderType = itk::ImageFileReader< MaskType >;
+using Image3DType    = itk::Image< double, 3 >;
+using Reader3D       = itk::ImageFileReader< Image3DType >;
+using Writer3D       = itk::ImageFileWriter< Image3DType >;
+using Image4DType    = itk::Image< double, 4 >;
+using Reader4D       = itk::ImageFileReader< Image4DType >;
+using Writer4D       = itk::ImageFileWriter< Image4DType >;
+using FilterType     = itk::RescaleIntensityImageFilter< MaskType, Image3DType >;
 //
 // 
 //
@@ -152,18 +161,6 @@ main( const int argc, const char **argv )
 	      ////////////////////////////
 
 	      //
-	      // Number of THREADS in case of multi-threading
-	      // this program hadles the multi-threading it self
-	      // in no-debug mode
-	      const int THREAD_NUM = 4;
-
-	      //
-	      // Load the CSV file
-	      // Dim is the number of modalities in the subject's timepoint
-	      // number_of_states is the first guess on the number of states
-	      VB::HMM::SubjectMapping< /*Dim*/ 3, /*number_of_states*/ 5 > subject_mapping( filename, output_dir, time_tran );
-
-	      //
 	      // Expecttion Maximization
 	      //
 
@@ -185,7 +182,33 @@ main( const int argc, const char **argv )
 	      itk::ImageRegionIterator< MaskType >
 		imageIterator_mask( reader_mask_->GetOutput(), region ),
 		imageIterator_progress( reader_mask_->GetOutput(), region );
+	      //
+	      // Saving the mask as double precision
+	      FilterType::Pointer filter = FilterType::New();
+	      filter->SetOutputMinimum( 0. );
+	      filter->SetOutputMaximum( 1. );
+	      filter->SetInput( reader_mask_->GetOutput() );
+	      //
+	      std::string output_mask_name = output_dir + "/mask_double_precision.nii.gz";
+	      Writer3D::Pointer writer = Writer3D::New();
+	      writer->SetInput( filter->GetOutput() );
+	      writer->SetFileName( output_mask_name.c_str() );
+	      writer->Update();
+ 
 
+	      //
+	      // Number of THREADS in case of multi-threading
+	      // this program hadles the multi-threading it self
+	      // in no-debug mode
+	      const int THREAD_NUM = 4;
+	      //
+	      // Load the CSV file
+	      // Dim is the number of modalities in the subject's timepoint
+	      // number_of_states is the first guess on the number of states
+	      VB::HMM::SubjectMapping< /*Dim*/ 3, /*number_of_states*/ 5 > subject_mapping( filename, output_dir, time_tran );
+
+
+	      
 	      //
 	      // Task progress: elapse time
 	      using  ms         = std::chrono::milliseconds;

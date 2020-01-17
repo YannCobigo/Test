@@ -26,8 +26,12 @@
 #include <itkImageFileReader.h>
 #include <itkSpatialOrientationAdapter.h>
 #include "itkChangeInformationImageFilter.h"
-using MaskType   = itk::Image< unsigned char, 3 >;
-using MaskType4D = itk::Image< unsigned char, 4 >;
+using MaskType    = itk::Image< unsigned char, 3 >;
+using MaskType4D  = itk::Image< unsigned char, 4 >;
+using Image3DType = itk::Image< double, 3 >;
+using Reader3D    = itk::ImageFileReader< Image3DType >;
+using Image4DType = itk::Image< double, 4 >;
+using Reader4D    = itk::ImageFileReader< Image4DType >;
 //
 //
 //
@@ -77,7 +81,7 @@ namespace VB
       //
       // Functions
       //
-
+      void build_outputs();
 
       //
       // Members
@@ -156,9 +160,9 @@ namespace VB
 		if ( age > max_age )
 		  max_age = age;
 		// Get the image
-		std::string image;
+		std::string image = "";
 		std::getline(lineStream, image, ',');
-		// Covariates
+		// Covariates11
 		std::list< double > covariates;
 //		while( std::getline(lineStream, cell, ',') )
 //		  covariates.push_back( std::stof(cell) );
@@ -409,10 +413,7 @@ namespace VB
 
 	    //
 	    // Create output images
-	    std::string
-	      lower_bound_name = output_dir_ + "/" + "lower_bounld.nii.gz";
-	    //
-	    //lower_bound_ = NeuroBayes::NeuroBayesMakeITKImage( 1, lower_bound_name, Y_[0] );
+	    build_outputs();
 	  }
 	catch( itk::ExceptionObject & err )
 	  {
@@ -447,8 +448,18 @@ namespace VB
 	    // Run the model
 	    VB::HMM::Hidden_Markov_Model < Dim, Num_States > hidden_Markov_model( intensity, age );
 	    //
-	    //hidden_Markov_model.ExpectationMaximization();
+	    hidden_Markov_model.ExpectationMaximization();
 
+	    //
+	    // write the outputs
+	    // lower bound
+	    double lb = 34.;
+	    std::cout << "BEFORE" << std::endl;
+	    lower_bound_.set_val( 0, Idx, lb);
+	    std::cout << "AFTER" << std::endl;
+	    
+	    //
+	    // Other things to remove
 	    for ( int s = 0 ; s < num_subjects_ ; s++ )
 	      {
 		std::cout << "Subject " << s << std::endl;
@@ -467,10 +478,44 @@ namespace VB
     //
     //
     template< int Dim, int Num_States > void
+      SubjectMapping< Dim, Num_States >::build_outputs()
+      {
+	try
+	  {
+	    //
+	    // We load the mask we created in teh main
+	    std::string output_mask_name = output_dir_ + "/mask_double_precision.nii.gz";
+	    auto image_ptr = itk::ImageIOFactory::CreateImageIO( output_mask_name.c_str(),
+								 itk::ImageIOFactory::ReadMode );
+	    image_ptr->SetFileName( output_mask_name.c_str() );
+	    image_ptr->ReadImageInformation();
+	    // Read the ITK image
+	    Reader3D::Pointer tempo = Reader3D::New();
+	    tempo->SetFileName( image_ptr->GetFileName() );
+	    tempo->Update();
+
+	    //
+	    // outputs
+	    std::string
+	      lower_bound_name = output_dir_ + "/" + "lower_bounld.nii.gz";
+	    //
+	    lower_bound_ = NeuroBayes::NeuroBayesMakeITKImage( 1, lower_bound_name, tempo );
+	  }
+	catch( itk::ExceptionObject & err )
+	  {
+	    std::cerr << err << std::endl;
+	    exit( -1 );
+	  }
+      }
+    //
+    //
+    //
+    template< int Dim, int Num_States > void
       SubjectMapping< Dim, Num_States >::write_subjects_solutions( )
       {
 	try
 	  {
+	    lower_bound_.write();
 	  }
 	catch( itk::ExceptionObject & err )
 	  {
