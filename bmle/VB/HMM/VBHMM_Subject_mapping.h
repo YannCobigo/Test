@@ -104,6 +104,14 @@ namespace VB
       //
       // Lower bound
       NeuroBayes::NeuroBayesMakeITKImage lower_bound_;
+      // Transition matrix
+      NeuroBayes::NeuroBayesMakeITKImage transition_matrix_;
+      // First states
+      NeuroBayes::NeuroBayesMakeITKImage first_states_;
+      // Mu: cluster centroids
+      NeuroBayes::NeuroBayesMakeITKImage mu_;
+      // Precision of the matrix
+      NeuroBayes::NeuroBayesMakeITKImage variance_;
 
     };
     //
@@ -452,21 +460,60 @@ namespace VB
 
 	    //
 	    // write the outputs
-	    // lower bound
-	    double lb = 34.;
-	    std::cout << "BEFORE" << std::endl;
-	    lower_bound_.set_val( 0, Idx, lb);
-	    std::cout << "AFTER" << std::endl;
-	    
 	    //
-	    // Other things to remove
-	    for ( int s = 0 ; s < num_subjects_ ; s++ )
+	    // lower bound
+	    lower_bound_.set_val( 0, Idx,
+				  hidden_Markov_model.get_lower_bound() );
+	    //
+	    // Transition matrix and first states
+	    const Eigen::Matrix< double, Num_States, 1 >&
+	      fs = hidden_Markov_model.get_first_states();
+	    const Eigen::Matrix< double, Num_States, Num_States >&
+	      tm = hidden_Markov_model.get_transition_matrix();
+	    // Centroids and variances
+	    const std::vector< Eigen::Matrix< double, Dim, 1 > >&
+	      mu_vec = hidden_Markov_model.get_mu();
+	    const std::vector< Eigen::Matrix< double, Dim, Dim > >&
+	      var_mat = hidden_Markov_model.get_var();
+	      //
+	    int
+	      mat_index = 0,
+	      mu_index  = 0,
+	      var_index = 0;
+	    for ( int s = 0 ; s < Num_States ; s++ )
 	      {
-		std::cout << "Subject " << s << std::endl;
-		int Ti = intensity[s].size();
-		for ( int tp = 0 ; tp < Ti ; tp++ )
-		  std::cout << intensity[s][tp] << std::endl; 
+		// Centroids and variances
+		for ( int d = 0 ; d < Dim ; d++ )
+		  {
+		    mu_index = d + Dim * s;
+		    mu_.set_val( mu_index, Idx, mu_vec[s](d,0) );
+		    //
+		    for ( int dd = 0 ; dd < Dim ; dd++ )
+		      {
+			var_index = dd + Dim * d + Dim * Dim * s;
+			variance_.set_val( mu_index, Idx, var_mat[s](d,dd) );
+		      }
+		  }
+		// Transition matrix
+		for ( int ss = 0 ; ss < Num_States ; ss++ )
+		  {
+		    mat_index = ss + Num_States * s;
+		    transition_matrix_.set_val( mat_index, Idx, tm(s,ss) );
+		  }
+		// First states
+		first_states_.set_val( s, Idx, fs(s,0) );
 	      }
+
+	    
+//	    //
+//	    // Other things to remove
+//	    for ( int s = 0 ; s < num_subjects_ ; s++ )
+//	      {
+//		std::cout << "Subject " << s << std::endl;
+//		int Ti = intensity[s].size();
+//		for ( int tp = 0 ; tp < Ti ; tp++ )
+//		  std::cout << intensity[s][tp] << std::endl; 
+//	      }
 	  }
 	catch( itk::ExceptionObject & err )
 	  {
@@ -497,9 +544,42 @@ namespace VB
 	    //
 	    // outputs
 	    std::string
-	      lower_bound_name = output_dir_ + "/" + "lower_bounld.nii.gz";
+	      lower_bound_name       = output_dir_ + "/",
+	      transition_matrix_name = output_dir_ + "/",
+	      first_states_name      = output_dir_ + "/",
+	      mu_name                = output_dir_ + "/",
+	      variance_name          = output_dir_ + "/";
 	    //
-	    lower_bound_ = NeuroBayes::NeuroBayesMakeITKImage( 1, lower_bound_name, tempo );
+	    lower_bound_name        += "lower_bound_"       + std::to_string(Dim)  + "_dimensions_";
+	    lower_bound_name        += std::to_string(Num_States)                  + "_states.nii.gz";
+	    //			    
+	    transition_matrix_name  += "transition_matrix_" + std::to_string(Dim)  + "_dimensions_";
+	    transition_matrix_name  += std::to_string(Num_States)                  + "_states.nii.gz";
+	    //			    
+	    first_states_name       += "first_states_"      + std::to_string(Dim)  + "_dimensions_";
+	    first_states_name       += std::to_string(Num_States)                  + "_states.nii.gz";
+	    //			    
+	    mu_name                 += "cluster_centers_"   + std::to_string(Dim)  + "_dimensions_";
+	    mu_name                 += std::to_string(Num_States)                  + "_states.nii.gz";
+	    //			    
+	    variance_name           += "variance_"          + std::to_string(Dim)  + "_dimensions_";
+	    variance_name           += std::to_string(Num_States)                  + "_states.nii.gz";
+	    //
+	    lower_bound_             = NeuroBayes::NeuroBayesMakeITKImage( 1,
+									   lower_bound_name, tempo );
+	    transition_matrix_       = NeuroBayes::NeuroBayesMakeITKImage( Num_States * Num_States,
+									   transition_matrix_name, tempo );
+	    first_states_            = NeuroBayes::NeuroBayesMakeITKImage( Num_States,
+									   first_states_name, tempo );
+	    mu_                      = NeuroBayes::NeuroBayesMakeITKImage( Num_States*Dim,
+									   mu_name, tempo );
+	    variance_                = NeuroBayes::NeuroBayesMakeITKImage( Num_States*Dim*Dim,
+									   variance_name, tempo );
+
+//	    //
+//	    // Build the subject outputs
+//	    for ( auto s : group_pind_ )
+//	      s.second.build_outputs( tempo );
 	  }
 	catch( itk::ExceptionObject & err )
 	  {
@@ -515,7 +595,19 @@ namespace VB
       {
 	try
 	  {
+	    //
+	    // Global metrics
 	    lower_bound_.write();
+	    //
+	    transition_matrix_.write();
+	    first_states_.write();
+	    //
+	    mu_.write();
+	    variance_.write();
+//	    //
+//	    // write subjects outputs
+//	    for ( auto s : group_pind_ )
+//	      s.second.write_solution();
 	  }
 	catch( itk::ExceptionObject & err )
 	  {

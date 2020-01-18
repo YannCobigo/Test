@@ -71,10 +71,13 @@ namespace VB
 	get_age_images() const { return age_ITK_images_ ;}
 
       //
+      // Functions
       // Write the fitted solution to the output image pointer
       void build_time_series( const MaskType::IndexType, 
 			      std::vector< Eigen::Matrix< double, Dim, 1 > >&,
 			      std::vector< Eigen::Matrix< double, 1, 1 > >& );
+      // Build output
+      void build_outputs( const Reader3D::Pointer );
  
       //
       // Write the output matrix: fitted parameters and the covariance matrix
@@ -109,17 +112,17 @@ namespace VB
       //
       // Age image maps
       // age-image name
-      std::map< int, std::string >       age_images_; 
+      std::map< int, std::string >         age_images_; 
       // age-ITK image
-      std::map< int, Reader4D::Pointer > age_ITK_images_; 
+      std::map< int, Reader4D::Pointer >   age_ITK_images_; 
       //
       // Number of time points
       int time_points_{0};
 
       //
-      // Model parameters
-      //
-
+      // Outputs
+      // State probability
+      NeuroBayes::NeuroBayesMakeITKImage state_proba_;
     };
 
     //
@@ -217,10 +220,25 @@ namespace VB
     //
     //
     template < int Dim, int Num_States > void
+       VB::HMM::Subject< Dim, Num_States >::build_outputs( const Reader3D::Pointer Tempo_mask )
+    {
+      std::string state_proba_name;
+      state_proba_name  = output_dir_                  + "/";
+      state_proba_name += PIDN_                        + "_" ;
+      state_proba_name += std::to_string(time_points_) + "_tps_" ;
+      state_proba_name += std::to_string(Dim)          + "_dimensions_";
+      state_proba_name += std::to_string(Num_States)   + "_states.nii.gz";
+      //
+      state_proba_ = NeuroBayes::NeuroBayesMakeITKImage( time_points_ * Num_States,
+							 state_proba_name, Tempo_mask );
+    }
+      //
+    //
+    //
+    template < int Dim, int Num_States > void
       VB::HMM::Subject< Dim, Num_States >::write_solution()
       {
-	//	Random_effect_ITK_model_.write();
-	//	Random_effect_ITK_variance_.write();
+	state_proba_.write();
       }
     //
     //

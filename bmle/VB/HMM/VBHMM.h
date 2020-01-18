@@ -61,8 +61,15 @@ namespace VB
 
       //
       // Accessors
-      // posterior probabilities
+      // lower bound
+      inline const double                  get_lower_bound()          const {return F_;};
+      const Eigen::Matrix< double, S, 1 >& get_first_states()           const {return qdch_->get_pi();};
+      const Eigen::Matrix< double, S, S >& get_transition_matrix()      const {return qdch_->get_A();};
+      //
+      const std::vector< Eigen::Matrix< double, Dim, 1 > >&   get_mu()  const {return qgau_->get_mu();};
+      const std::vector< Eigen::Matrix< double, Dim, Dim > >& get_var() const {return qgau_->get_var();};
 
+      
       //
       // Functions
       // main algorithn

@@ -360,7 +360,7 @@ namespace VB
 
 	//
 	// accessors
-	const inline double                         get_F()        const {return F_qdch_;}
+	const inline double                         get_F()       const {return F_qdch_;}
 	const        Eigen::Matrix< double, S, 1 >& get_pi()       const {return posterior_pi_;}
 	const        Eigen::Matrix< double, S, 1 >& get_alpha_pi() const {return posterior_alpha_pi_;}
 	const        Eigen::Matrix< double, S, S >& get_A()        const {return posterior_A_;}
@@ -617,6 +617,11 @@ namespace VB
 	void set( std::shared_ptr< VB::HMM::VP_qsi<Dim,S> >  Qsi,
 		  std::shared_ptr< VB::HMM::VP_qdch<Dim,S> > Qdch)
 	{qsi_ = Qsi; qdch_ = Qdch;};
+	// Cluster centers
+	const std::vector< Eigen::Matrix< double, Dim, 1 > >&   get_mu()    const {return mu_0_mean_;};
+	// Variance of the clusters
+	const std::vector< Eigen::Matrix< double, Dim, Dim > >& get_var() const {return variance_mu_0_;};
+	  
   
       private:
 	//
@@ -651,6 +656,7 @@ namespace VB
 	Eigen::Matrix< double, Dim, Dim >                S_0_inv_{ 1./*e+2*/ * Eigen::Matrix< double, Dim, Dim >::Identity() };
 	std::vector< Eigen::Matrix< double, Dim, Dim > > S_mean_inv_;
 	std::vector< Eigen::Matrix< double, Dim, 1 > >   mu_0_mean_;
+	std::vector< Eigen::Matrix< double, Dim, Dim > > variance_mu_0_;
  
 
 	//
@@ -684,18 +690,20 @@ namespace VB
       // vectors/matrices
       S_mean_inv_.resize(S);
       mu_0_mean_.resize(S);
+      variance_mu_0_.resize(S);
       //
       y_mean_.resize(S);
       //
       for ( int s = 0 ; s < S ; s++ )
 	{
 	  // Gaussian part
-	  mu_0_[s]       = Eigen::Matrix< double, Dim, 1 >::Random();
-	  mu_mean_[s]    = Eigen::Matrix< double, Dim, 1 >::Zero();
-	  beta_[s]       = beta_0_;
+	  mu_0_[s]          = Eigen::Matrix< double, Dim, 1 >::Random();
+	  mu_mean_[s]       = Eigen::Matrix< double, Dim, 1 >::Zero();
+	  beta_[s]          = beta_0_;
 	  // Wishart part
-	  S_mean_inv_[s] = S_0_inv_;
-	  mu_0_mean_[s]  = Eigen::Matrix< double, Dim, 1 >::Zero();
+	  S_mean_inv_[s]    = S_0_inv_;
+	  mu_0_mean_[s]     = Eigen::Matrix< double, Dim, 1 >::Zero();
+	  variance_mu_0_[s] = Eigen::Matrix< double, Dim, Dim >::Zero();
 	  //
 	  y_mean_[s]     = Eigen::Matrix< double, Dim, 1 >::Zero();
 	}
@@ -762,12 +770,13 @@ namespace VB
 	    //
 	    // Re-initialise
 	    // Gaussian part
-	    mu_mean_[s]    = Eigen::Matrix< double, Dim, 1 >::Zero();
-	    beta_[s]       = beta_0_;
+	    mu_mean_[s]       = Eigen::Matrix< double, Dim, 1 >::Zero();
+	    beta_[s]          = beta_0_;
 	    // Wishart part
-	    S_mean_inv_[s] = S_0_inv_;
-	    mu_0_mean_[s]  = Eigen::Matrix< double, Dim, 1 >::Zero();
-	    nu_[s]         = nu_0_;
+	    S_mean_inv_[s]    = S_0_inv_;
+	    mu_0_mean_[s]     = Eigen::Matrix< double, Dim, 1 >::Zero();
+	    variance_mu_0_[s] = Eigen::Matrix< double, Dim, Dim >::Zero();
+	    nu_[s]            = nu_0_;
 	    // 
 	    //y_mean[s]      = Eigen::Matrix< double, Dim, 1 >::Zero();
 	    W_mean_inv[s]  = Eigen::Matrix< double, Dim, Dim >::Zero();
@@ -807,9 +816,12 @@ namespace VB
 	    S_mean_inv_[s] += beta_0_ * delta_(s,0) * diff_mus * diff_mus.transpose() / beta_[s];
 	    S_mean_inv_[s] += W_mean_inv[s];
 	    //
+	    variance_mu_0_[s] = nu_[s] * S_mean_inv_[s];
+
 	    //
 	    //std::cout << "mu_mean_[" << s << "]\n" << mu_mean_[s] << std::endl;
 	    std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
+	    std::cout << "Sigma_[" << s << "]\n" <<  variance_mu_0_[s] << std::endl;
 	    std::cout << "S_[" << s << "]\n" << nu_[s] * S_mean_inv_[s].inverse() << std::endl;
 	  }
       }
