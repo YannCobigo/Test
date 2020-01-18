@@ -66,8 +66,9 @@ namespace VB
       const Eigen::Matrix< double, S, 1 >& get_first_states()           const {return qdch_->get_pi();};
       const Eigen::Matrix< double, S, S >& get_transition_matrix()      const {return qdch_->get_A();};
       //
-      const std::vector< Eigen::Matrix< double, Dim, 1 > >&   get_mu()  const {return qgau_->get_mu();};
-      const std::vector< Eigen::Matrix< double, Dim, Dim > >& get_var() const {return qgau_->get_var();};
+      const std::vector< Eigen::Matrix< double, Dim, 1 > >&                get_mu()  const {return qgau_->get_mu();};
+      const std::vector< Eigen::Matrix< double, Dim, Dim > >&              get_var() const {return qgau_->get_var();};
+      const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_N()   const {return qgau_->get_N();};
 
       
       //

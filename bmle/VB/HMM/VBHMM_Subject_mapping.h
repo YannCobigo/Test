@@ -443,14 +443,14 @@ namespace VB
 	    std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >   age( num_subjects_ );
 	    // 
 	    int subject_number = 0;
-	    std::map< std::string /*pidn*/, int /*subject_number*/ > pind_subject_num;
+	    std::map< std::string /*pidn*/, int /*subject_number*/ > pidn_subject_num;
 	    for ( auto& s : group_pind_ )
 	      {
 		s.second.build_time_series( Idx, 
 					    intensity[subject_number], 
 					    age[subject_number] );
 		//
-		pind_subject_num[ s.first ] = subject_number++;
+		pidn_subject_num[ s.first ] = subject_number++;
 	      }
 	    //
 	    // Run the model
@@ -459,7 +459,13 @@ namespace VB
 	    hidden_Markov_model.ExpectationMaximization();
 
 	    //
-	    // write the outputs
+	    //
+	    // record the outputs
+	    //
+	    //
+
+	    //
+	    // Globals
 	    //
 	    // lower bound
 	    lower_bound_.set_val( 0, Idx,
@@ -503,6 +509,18 @@ namespace VB
 		// First states
 		first_states_.set_val( s, Idx, fs(s,0) );
 	      }
+
+	    //
+	    //
+	    // locals
+	    //
+	    // Subjects
+	    for ( auto &s : group_pind_ )
+	      {
+		s.second.record_state( Idx,
+				       (hidden_Markov_model.get_N())[ pidn_subject_num[s.first] ] );
+	      }
+	    
 
 	    
 //	    //
@@ -576,10 +594,10 @@ namespace VB
 	    variance_                = NeuroBayes::NeuroBayesMakeITKImage( Num_States*Dim*Dim,
 									   variance_name, tempo );
 
-//	    //
-//	    // Build the subject outputs
-//	    for ( auto s : group_pind_ )
-//	      s.second.build_outputs( tempo );
+	    //
+	    // Build the subject outputs
+	    for ( auto &s : group_pind_ )
+	      s.second.build_outputs( tempo );
 	  }
 	catch( itk::ExceptionObject & err )
 	  {
@@ -604,10 +622,10 @@ namespace VB
 	    //
 	    mu_.write();
 	    variance_.write();
-//	    //
-//	    // write subjects outputs
-//	    for ( auto s : group_pind_ )
-//	      s.second.write_solution();
+	    //
+	    // write subjects outputs
+	    for ( auto s : group_pind_ )
+	      s.second.write_solution();
 	  }
 	catch( itk::ExceptionObject & err )
 	  {

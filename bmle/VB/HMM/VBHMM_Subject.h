@@ -76,6 +76,9 @@ namespace VB
       void build_time_series( const MaskType::IndexType, 
 			      std::vector< Eigen::Matrix< double, Dim, 1 > >&,
 			      std::vector< Eigen::Matrix< double, 1, 1 > >& );
+      // Write the fitted solution to the output image pointer
+      void record_state( const MaskType::IndexType, 
+			 const std::vector< Eigen::Matrix < double, Num_States , 1 > >& );
       // Build output
       void build_outputs( const Reader3D::Pointer );
  
@@ -215,6 +218,23 @@ namespace VB
 	    }
 	  Intensity.push_back( intensity );
 	}   
+    }
+    //
+    //
+    //
+    template < int Dim, int Num_States > void
+      VB::HMM::Subject< Dim, Num_States >::record_state( const MaskType::IndexType                                     Idx,
+							 const std::vector< Eigen::Matrix < double, Num_States, 1 > >& States )
+    {
+      //
+      // record the state for each timepoint
+      int state_index = 0;
+      for( int tp = 0 ; tp < time_points_ ; tp++ )
+	for( int s = 0 ; s < Num_States ; s++ )
+	{
+	  state_index = s + Num_States * tp;
+	  state_proba_.set_val( state_index, Idx, States[tp](s,0) );
+	}
     }
     //
     //
