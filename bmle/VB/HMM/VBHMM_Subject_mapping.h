@@ -58,6 +58,9 @@ namespace VB
     public:
       /** Constructor. */
       explicit SubjectMapping( const std::string&, const std::string&, const NeuroStat::TimeTransformation );
+      /** Constructor. */
+      explicit SubjectMapping( const std::string&, const std::string&, const std::string&,
+			        const std::string&, const NeuroStat::TimeTransformation );
     
       /** Destructor */
       virtual ~SubjectMapping() {};
@@ -89,16 +92,25 @@ namespace VB
       // Arrange pidns into groups
       std::map< std::string /*pidn*/, VB::HMM::Subject< Dim, Num_States > > group_pind_;
       // CSV file
-      std::ifstream csv_file_;
+      std::ifstream     csv_file_;
       // output directory
-      std::string   output_dir_;
+      std::string       output_dir_;
       // Statistic transformation of ages
-      std::string   age_statistics_tranformation_;
+      std::string       age_statistics_tranformation_;
       // number of PIDN
       long unsigned int num_subjects_{0};
       // number of 3D images = number of time points (TP)
       long unsigned int num_3D_images_{0};
-
+      //
+      // Projection variables
+      //
+      // PIDN last state
+      Reader4D::Pointer PIDN_states_;
+      // Transition matrix
+      Reader4D::Pointer A_;
+      // Number of time the projection is going to be done
+      double            number_projection_;
+      
       //
       // Records
       //
@@ -112,7 +124,13 @@ namespace VB
       NeuroBayes::NeuroBayesMakeITKImage mu_;
       // Precision of the matrix
       NeuroBayes::NeuroBayesMakeITKImage variance_;
-
+      //
+      // Projection variables
+      //
+      // Image projection
+      NeuroBayes::NeuroBayesMakeITKImage projection_;
+      // State projection
+      NeuroBayes::NeuroBayesMakeITKImage projection_states_;
     };
     //
     //
@@ -432,6 +450,80 @@ namespace VB
     //
     //
     //
+    template< int Dim, int Num_States >
+      SubjectMapping< Dim, Num_States >::SubjectMapping( const std::string& PIDN_file,
+							 const std::string& Transition_matrix,
+							 const std::string& Number_projections,
+							 const std::string& Output_dir,
+							 // Age Dns: demean, normalize, standardize
+							 const NeuroStat::TimeTransformation Dns ):
+      csv_file_{ "" }, output_dir_{ Output_dir }
+      {
+	try
+	  {
+	    //
+	    // Load the last state of the PIDN
+	    auto PIDN_ptr = itk::ImageIOFactory::CreateImageIO( PIDN_file.c_str(),
+							     itk::ImageIOFactory::ReadMode );
+	    PIDN_ptr->SetFileName( PIDN_file.c_str() );
+	    PIDN_ptr->ReadImageInformation();
+	    // Read the ITK image
+	    PIDN_states_ = Reader4D::New();
+	    PIDN_states_->SetFileName( PIDN_ptr->GetFileName() );
+	    PIDN_states_->Update();
+
+	    //
+	    // Load the trasition matrix
+	    auto A_ptr = itk::ImageIOFactory::CreateImageIO( Transition_matrix.c_str(),
+							     itk::ImageIOFactory::ReadMode );
+	    A_ptr->SetFileName( Transition_matrix.c_str() );
+	    A_ptr->ReadImageInformation();
+	    // Read the ITK image
+	    A_ = Reader4D::New();
+	    A_->SetFileName( A_ptr->GetFileName() );
+	    A_->Update();
+
+	    //
+	    // Number of time the projection os going to be done
+	    number_projection_ = std::stod( Number_projections );
+
+	    //
+	    // Create the projection file
+	    // We load the mask we created in the main
+	    std::string output_mask_name = output_dir_ + "/mask_double_precision.nii.gz";
+	    auto image_ptr = itk::ImageIOFactory::CreateImageIO( output_mask_name.c_str(),
+								 itk::ImageIOFactory::ReadMode );
+	    image_ptr->SetFileName( output_mask_name.c_str() );
+	    image_ptr->ReadImageInformation();
+	    // Read the ITK image
+	    Reader3D::Pointer tempo = Reader3D::New();
+	    tempo->SetFileName( image_ptr->GetFileName() );
+	    tempo->Update();
+	    // outputs
+	    std::string
+	      projection_name        = output_dir_   + "/",
+	      projection_states_name = output_dir_   + "/";
+	    projection_name         += "projection_" + Number_projections       + "_times_";
+	    projection_name         += std::to_string(Dim)                      + "_dimensions_";
+	    projection_name         += std::to_string(Num_States)               + "_states.nii.gz";
+	    projection_states_name  += "state_projection_" + Number_projections + "_times_";
+	    projection_states_name  += std::to_string(Dim)                      + "_dimensions_";
+	    projection_states_name  += std::to_string(Num_States)               + "_states.nii.gz";
+	    //
+	    projection_        = NeuroBayes::NeuroBayesMakeITKImage( Dim,
+								     projection_name, tempo );
+	    projection_states_ = NeuroBayes::NeuroBayesMakeITKImage( Num_States,
+								     projection_states_name, tempo );
+	  }
+	catch( itk::ExceptionObject & err )
+	  {
+	    std::cerr << err << std::endl;
+	    exit( -1 );
+	  }
+      }
+    //
+    //
+    //
     template< int Dim, int Num_States > void
       SubjectMapping< Dim, Num_States >::Expectation_Maximization( MaskType::IndexType Idx )
       {
@@ -548,7 +640,7 @@ namespace VB
 	try
 	  {
 	    //
-	    // We load the mask we created in teh main
+	    // We load the mask we created in the main
 	    std::string output_mask_name = output_dir_ + "/mask_double_precision.nii.gz";
 	    auto image_ptr = itk::ImageIOFactory::CreateImageIO( output_mask_name.c_str(),
 								 itk::ImageIOFactory::ReadMode );
