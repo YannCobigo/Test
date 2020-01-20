@@ -133,5 +133,36 @@ namespace NeuroBayes
       //
       return N;
     }
+  //
+  //
+  template < int Dim >
+    Eigen::Matrix< double, Dim, 1 >
+    gaussian_multivariate( const Eigen::Matrix< double, Dim, 1 >&   Mu, 
+			   const Eigen::Matrix< double, Dim, Dim >& Covariance )
+    {
+      // random seed
+      std::random_device rd;
+      std::mt19937                       generator( rd() );
+      std::normal_distribution< double > normal_dist(0.0,1.0);
+      // Vector of multivariate gaussians
+      Eigen::Matrix< double, Dim, 1 > Gaussian_multi_variate;
+      
+      //
+      // Cholesky decomposition
+      Eigen::LLT< Eigen::MatrixXd > lltOf( Covariance );
+      Eigen::MatrixXd L = lltOf.matrixL(); 
+      
+      //
+      // Sampling
+      Eigen::Matrix< double, Dim, 1 > z;
+      for ( int d = 0 ; d < Dim ; d++ )
+	z(d,0) = normal_dist( generator );
+      //
+      Gaussian_multi_variate = Mu + L*z;
+      
+      //
+      //
+      return Gaussian_multi_variate;
+    }
 }
 #endif

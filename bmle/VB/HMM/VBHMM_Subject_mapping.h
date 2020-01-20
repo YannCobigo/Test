@@ -124,6 +124,8 @@ namespace VB
       Reader4D::Pointer Covariance_;
       // Number of time the projection is going to be done
       double            number_projection_;
+      // number of iteration used to sample the projected image
+      long int          number_sampling_iteration_{10};
       
       //
       // Records
@@ -143,6 +145,8 @@ namespace VB
       //
       // Image projection
       NeuroBayes::NeuroBayesMakeITKImage projection_;
+      // Image projection covariance
+      NeuroBayes::NeuroBayesMakeITKImage projection_covariance_;
       // State projection
       NeuroBayes::NeuroBayesMakeITKImage projection_states_;
     };
@@ -546,19 +550,25 @@ namespace VB
 	  tempo->Update();
 	  // outputs
 	  std::string
-	    projection_name        = output_dir_   + "/",
-	    projection_states_name = output_dir_   + "/";
-	  projection_name         += "projection_" + Number_projections       + "_times_";
-	  projection_name         += std::to_string(Dim)                      + "_dimensions_";
-	  projection_name         += std::to_string(Num_States)               + "_states.nii.gz";
-	  projection_states_name  += "state_projection_" + Number_projections + "_times_";
-	  projection_states_name  += std::to_string(Dim)                      + "_dimensions_";
-	  projection_states_name  += std::to_string(Num_States)               + "_states.nii.gz";
+	    projection_name            = output_dir_   + "/",
+	    projection_covariance_name = output_dir_   + "/",
+	    projection_states_name     = output_dir_   + "/";
+	  projection_name             += "projection_" + Number_projections       + "_times_";
+	  projection_name             += std::to_string(Dim)                      + "_dimensions_";
+	  projection_name             += std::to_string(Num_States)               + "_states.nii.gz";
+	  projection_covariance_name  += "projection_cov_" + Number_projections   + "_times_";
+	  projection_covariance_name  += std::to_string(Dim)                      + "_dimensions_";
+	  projection_covariance_name  += std::to_string(Num_States)               + "_states.nii.gz";
+	  projection_states_name      += "state_projection_" + Number_projections + "_times_";
+	  projection_states_name      += std::to_string(Dim)                      + "_dimensions_";
+	  projection_states_name      += std::to_string(Num_States)               + "_states.nii.gz";
 	  //
-	  projection_        = NeuroBayes::NeuroBayesMakeITKImage( Dim,
-								   projection_name, tempo );
-	  projection_states_ = NeuroBayes::NeuroBayesMakeITKImage( Num_States,
-								   projection_states_name, tempo );
+	  projection_            = NeuroBayes::NeuroBayesMakeITKImage( Dim,
+								       projection_name, tempo );
+	  projection_covariance_ = NeuroBayes::NeuroBayesMakeITKImage( Dim*Dim,
+								       projection_covariance_name, tempo );
+	  projection_states_     = NeuroBayes::NeuroBayesMakeITKImage( Num_States,
+								       projection_states_name, tempo );
 	}
       catch( itk::ExceptionObject & err )
 	{
@@ -681,6 +691,7 @@ namespace VB
 		  // Results
 		  std::vector< double >                  cumul_ppi( Num_States );
 		  Eigen::Matrix< double, Dim, 1 >        projection = Eigen::Matrix< double, Dim, 1 >::Zero();
+		  Eigen::Matrix< double, Dim, Dim >      proj_var   = Eigen::Matrix< double, Dim, Dim >::Zero();
 		  Eigen::Matrix< double, Num_States, 1 > ppi        = Eigen::Matrix< double, Num_States, 1 >::Zero();
 
 		  //
@@ -747,8 +758,8 @@ namespace VB
 			      var_mat[s](d,dd) = Covariance_->GetOutput()->GetPixel( idx4d_var );
 			    }
 			}
-		      std::cout << "mu_vec["<<s<<"] = \n" << mu_vec[s] << std::endl;
-		      std::cout << "var_mat["<<s<<"] = \n" << var_mat[s] << std::endl;
+		      //std::cout << "mu_vec["<<s<<"] = \n" << mu_vec[s] << std::endl;
+		      //std::cout << "var_mat["<<s<<"] = \n" << var_mat[s] << std::endl;
 		    }
 
 		    
@@ -767,27 +778,49 @@ namespace VB
 			cumul_ppi[s] = ppi(s,0);
 		      else
 			cumul_ppi[s] = cumul_ppi[s-1] + ppi(s,0);
-		      std::cout << "cumul_ppi["<<s<<"] = " << cumul_ppi[s] << std::endl;
+		      //std::cout << "cumul_ppi["<<s<<"] = " << cumul_ppi[s] << std::endl;
 		    }
 		  //
 		  // Extrapolation of the images
-		  double u = 0;
+		  double u     = 0;
 		  int    state = 0;
-		  for ( int iteration = 0 ; iteration < 1.e01 ; iteration++ )
+		  std::vector< Eigen::Matrix< double, Dim, 1 > > samples( number_sampling_iteration_ );
+		  for ( int iteration = 0 ; iteration < number_sampling_iteration_ ; iteration++ )
 		    {
 		      u = uniform( generator );
 		      state = 0;
 		      while ( u > cumul_ppi[state] && state < Num_States )
 			state++;
-		      std::cout << "u = " << u << std::endl;
-		      std::cout << "s = " << state << std::endl;
+		      //std::cout << "u = " << u << std::endl;
+		      //std::cout << "s = " << state << std::endl;
+		      samples[ iteration ] = NeuroBayes::gaussian_multivariate<Dim>( mu_vec[state], var_mat[state] );
 		    }
+		  //
+		  // Moments
+		  // mean
+		  for ( auto vec : samples )
+		    projection += vec;
+		  projection /= static_cast<double>( number_sampling_iteration_ );
+		  // variance
+		  for ( auto vec : samples )
+		    proj_var += (vec - projection) * (vec - projection).transpose();
+		  proj_var /= static_cast<double>( number_sampling_iteration_ - 1 );
+		  std::cout << "projection = \n" << projection << std::endl;
+		  std::cout << "proj_var = \n"   << proj_var << std::endl;
+
 		    
 		  //
 		  // Record the results
 		  // record the projection
 		  for ( int d = 0 ; d < Dim ; d++ )
-		    projection_.set_val( d, Idx, projection(d,0) );
+		    {
+		      projection_.set_val( d, Idx, projection(d,0) );
+		      for ( int dd = 0 ; dd < Dim ; dd++ )
+			{
+			  int cov_index = dd + Dim*d;
+			  projection_covariance_.set_val( cov_index, Idx, proj_var(d,dd) );
+			}
+		    }
 		  // record the projected state
 		  for ( int s = 0 ; s < Num_States ; s++ )
 		    projection_states_.set_val( s, Idx, ppi(s,0) );
@@ -908,6 +941,7 @@ namespace VB
 	      case PROJECTION:
 		{
 		  projection_.write();
+		  projection_covariance_.write();
 		  projection_states_.write();
 		  break;
 		}
