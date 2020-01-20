@@ -67,8 +67,8 @@ namespace VB
 			       const NeuroStat::TimeTransformation );
       /** Constructor. */
       explicit SubjectMapping( const std::string&, const std::string&, const std::string&,
-			         const std::string&, const std::string&, const std::string&,
-			         const NeuroStat::TimeTransformation );
+			       const std::string&, const std::string&, const std::string&,
+			       const NeuroStat::TimeTransformation );
     
       /** Destructor */
       virtual ~SubjectMapping() {};
@@ -77,6 +77,9 @@ namespace VB
       //
       // Expectation maximization algorithm
       void Expectation_Maximization( MaskType::IndexType );
+      //
+      // Expectation maximization algorithm
+      void projection_estimation( MaskType::IndexType );
       // Write the output
       void write_subjects_solutions( );
       // multi-threading
@@ -84,7 +87,27 @@ namespace VB
       {
 	std::cout << "treatment for parameters: " 
 		  << idx;
-	Expectation_Maximization( idx );
+	switch ( activity_ )
+	  {
+	  case FIT:
+	    {
+	      Expectation_Maximization( idx );
+	      break;
+	    }
+	  case PROJECTION:
+	    {
+	      projection_estimation( idx );
+	      break;
+	    }
+	  case UNKNOWN:
+	  default:
+	    {
+	      std::string mess = "HMM activity is unknown.\n";
+	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						     mess.c_str(),
+						     ITK_LOCATION );
+	    }
+	  }
       };
 
 
@@ -125,7 +148,7 @@ namespace VB
       // Number of time the projection is going to be done
       double            number_projection_;
       // number of iteration used to sample the projected image
-      long int          number_sampling_iteration_{10};
+      long int          number_sampling_iteration_{10000};
       
       //
       // Records
@@ -513,7 +536,7 @@ namespace VB
 	  //
 	  // Load the gaussian centroids
 	  auto Gauss_ptr = itk::ImageIOFactory::CreateImageIO( Gauss_clusters.c_str(),
-							   itk::ImageIOFactory::ReadMode );
+							       itk::ImageIOFactory::ReadMode );
 	  Gauss_ptr->SetFileName( Gauss_clusters.c_str() );
 	  Gauss_ptr->ReadImageInformation();
 	  // Read the ITK image
@@ -584,260 +607,253 @@ namespace VB
       {
 	try
 	  {
-	    switch ( activity_ )
+	    //
+	    // Create the all subjects time series
+	    std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > > intensity( num_subjects_ );
+	    std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >   age( num_subjects_ );
+	    // 
+	    int subject_number = 0;
+	    std::map< std::string /*pidn*/, int /*subject_number*/ > pidn_subject_num;
+	    for ( auto& s : group_pind_ )
 	      {
-	      case FIT:
-		{
-		  //
-		  // Create the all subjects time series
-		  std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > > intensity( num_subjects_ );
-		  std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >   age( num_subjects_ );
-		  // 
-		  int subject_number = 0;
-		  std::map< std::string /*pidn*/, int /*subject_number*/ > pidn_subject_num;
-		  for ( auto& s : group_pind_ )
-		    {
-		      s.second.build_time_series( Idx, 
-						  intensity[subject_number], 
-						  age[subject_number] );
-		      //
-		      pidn_subject_num[ s.first ] = subject_number++;
-		    }
-		  //
-		  // Run the model
-		  VB::HMM::Hidden_Markov_Model < Dim, Num_States > hidden_Markov_model( intensity, age );
-		  //
-		  hidden_Markov_model.ExpectationMaximization();
-
-		  //
-		  //
-		  // record the outputs
-		  //
-		  //
-
-		  //
-		  // Globals
-		  //
-		  // lower bound
-		  lower_bound_.set_val( 0, Idx,
-					hidden_Markov_model.get_lower_bound() );
-		  //
-		  // Transition matrix and first states
-		  const Eigen::Matrix< double, Num_States, 1 >&
-		    fs = hidden_Markov_model.get_first_states();
-		  const Eigen::Matrix< double, Num_States, Num_States >&
-		    tm = hidden_Markov_model.get_transition_matrix();
-		  // Centroids and variances
-		  const std::vector< Eigen::Matrix< double, Dim, 1 > >&
-		    mu_vec = hidden_Markov_model.get_mu();
-		  const std::vector< Eigen::Matrix< double, Dim, Dim > >&
-		    var_mat = hidden_Markov_model.get_var();
-		  //
-		  int
-		    mat_index = 0,
-		    mu_index  = 0,
-		    var_index = 0;
-		  for ( int s = 0 ; s < Num_States ; s++ )
-		    {
-		      // Centroids and variances
-		      for ( int d = 0 ; d < Dim ; d++ )
-			{
-			  mu_index = d + Dim * s;
-			  mu_.set_val( mu_index, Idx, mu_vec[s](d,0) );
-			  //
-			  for ( int dd = 0 ; dd < Dim ; dd++ )
-			    {
-			      var_index = dd + Dim * d + Dim * Dim * s;
-			      variance_.set_val( var_index, Idx, var_mat[s](d,dd) );
-			    }
-			}
-		      // Transition matrix
-		      for ( int ss = 0 ; ss < Num_States ; ss++ )
-			{
-			  mat_index = ss + Num_States * s;
-			  transition_matrix_.set_val( mat_index, Idx, tm(s,ss) );
-			}
-		      // First states
-		      first_states_.set_val( s, Idx, fs(s,0) );
-		    }
-
-		  //
-		  //
-		  // locals
-		  //
-		  // Subjects
-		  for ( auto &s : group_pind_ )
-		    {
-		      s.second.record_state( Idx,
-					     (hidden_Markov_model.get_N())[ pidn_subject_num[s.first] ] );
-		    }
-	    
-
-	    
-		  //	    //
-		  //	    // Other things to remove
-		  //	    for ( int s = 0 ; s < num_subjects_ ; s++ )
-		  //	      {
-		  //		std::cout << "Subject " << s << std::endl;
-		  //		int Ti = intensity[s].size();
-		  //		for ( int tp = 0 ; tp < Ti ; tp++ )
-		  //		  std::cout << intensity[s][tp] << std::endl; 
-		  //	      }
-		  break;
-		}
-	      case PROJECTION:
-		{
-		  //
-		  // Results
-		  std::vector< double >                  cumul_ppi( Num_States );
-		  Eigen::Matrix< double, Dim, 1 >        projection = Eigen::Matrix< double, Dim, 1 >::Zero();
-		  Eigen::Matrix< double, Dim, Dim >      proj_var   = Eigen::Matrix< double, Dim, Dim >::Zero();
-		  Eigen::Matrix< double, Num_States, 1 > ppi        = Eigen::Matrix< double, Num_States, 1 >::Zero();
-
-		  //
-		  // Initiate the random generator
-		  std::random_device rd;
-		  std::mt19937                             generator( rd() );
-		  //std::default_random_engine               generator;
-		  std::uniform_real_distribution< double > uniform(0.0,1.0);
-
-		  
-		  //
-		  // Get the last state and build the cumulted probabilities
-		  Eigen::Matrix< double, Num_States, 1 > pii = Eigen::Matrix< double, Num_States, 1 >::Zero();
-		  // Pull subject last state distribution
-		  Image4DType::SizeType size = PIDN_states_->GetOutput()->GetLargestPossibleRegion().GetSize();
-		  // extract the number of timepoints
-		  int num_tp        = size[3] / Num_States;
-		  int last_tp_state = Num_States * (num_tp - 1);
-		  for ( int s = 0 ; s < Num_States ; s++ )
-		    {
-		      Reader4D::IndexType idx4d = { Idx[0], Idx[1], Idx[2],
-						    (last_tp_state + s) };
-		      pii(s,0) = PIDN_states_->GetOutput()->GetPixel( idx4d );
-		    }
-		  //std::cout << "pii \n" << pii << std::endl;
-
-
-		  //
-		  // Get the transition matrix
-		  Eigen::Matrix< double, Num_States, Num_States > A = Eigen::Matrix< double, Num_States, Num_States >::Zero();
-		  //
-		  int mat_index = 0;
-		  for ( int s = 0 ; s < Num_States ; s++ )
-		    for ( int ss = 0 ; ss < Num_States ; ss++ )
-		      {
-			mat_index = ss + Num_States * s;
-			Reader4D::IndexType idx4d = {Idx[0], Idx[1], Idx[2], mat_index};
-			A(s,ss) = A_->GetOutput()->GetPixel( idx4d );
-		      }
-		  std::cout << "A = \n" << A << std::endl;
-
-		  //
-		  // Get the gaussian centroid and the gussian covariance
-		  std::vector< Eigen::Matrix< double, Dim, 1 > >   mu_vec(Num_States);
-		  std::vector< Eigen::Matrix< double, Dim, Dim > > var_mat(Num_States);
-		  //
-		  int
-		    mu_index  = 0,
-		    var_index = 0;
-		  for ( int s = 0 ; s < Num_States ; s++ )
-		    {
-		      mu_vec[s]  = Eigen::Matrix< double, Dim, 1 >::Zero();
-		      var_mat[s] = Eigen::Matrix< double, Dim, Dim >::Zero();
-		      for ( int d = 0 ; d < Dim ; d++ )
-			{
-			  mu_index                     = d + Dim * s;
-			  Reader4D::IndexType idx4d_mu = {Idx[0], Idx[1], Idx[2], mu_index};
-			  mu_vec[s](d,0) = Gauss_->GetOutput()->GetPixel( idx4d_mu );
-			  //
-			  for ( int dd = 0 ; dd < Dim ; dd++ )
-			    {
-			      var_index = dd + Dim * d + Dim * Dim * s;
-			      Reader4D::IndexType idx4d_var = {Idx[0], Idx[1], Idx[2], var_index};
-			      var_mat[s](d,dd) = Covariance_->GetOutput()->GetPixel( idx4d_var );
-			    }
-			}
-		      //std::cout << "mu_vec["<<s<<"] = \n" << mu_vec[s] << std::endl;
-		      //std::cout << "var_mat["<<s<<"] = \n" << var_mat[s] << std::endl;
-		    }
-
-		    
-		  //
-		  // Make the estimation
-		  // Get the projected state
-		  ppi = pii;
-		  for ( int tp = 0 ; tp < number_projection_ ; tp++ )
-		    ppi = ppi.transpose() * A;
-		  ppi /= ppi.sum();
-		  std::cout << "ppi = \n" << ppi<< std::endl;
-		  // create an array of cunulative probabilities
-		  for ( int s = 0 ; s < Num_States ; s++ )
-		    {
-		      if ( s == 0 )
-			cumul_ppi[s] = ppi(s,0);
-		      else
-			cumul_ppi[s] = cumul_ppi[s-1] + ppi(s,0);
-		      //std::cout << "cumul_ppi["<<s<<"] = " << cumul_ppi[s] << std::endl;
-		    }
-		  //
-		  // Extrapolation of the images
-		  double u     = 0;
-		  int    state = 0;
-		  std::vector< Eigen::Matrix< double, Dim, 1 > > samples( number_sampling_iteration_ );
-		  for ( int iteration = 0 ; iteration < number_sampling_iteration_ ; iteration++ )
-		    {
-		      u = uniform( generator );
-		      state = 0;
-		      while ( u > cumul_ppi[state] && state < Num_States )
-			state++;
-		      //std::cout << "u = " << u << std::endl;
-		      //std::cout << "s = " << state << std::endl;
-		      samples[ iteration ] = NeuroBayes::gaussian_multivariate<Dim>( mu_vec[state], var_mat[state] );
-		    }
-		  //
-		  // Moments
-		  // mean
-		  for ( auto vec : samples )
-		    projection += vec;
-		  projection /= static_cast<double>( number_sampling_iteration_ );
-		  // variance
-		  for ( auto vec : samples )
-		    proj_var += (vec - projection) * (vec - projection).transpose();
-		  proj_var /= static_cast<double>( number_sampling_iteration_ - 1 );
-		  std::cout << "projection = \n" << projection << std::endl;
-		  std::cout << "proj_var = \n"   << proj_var << std::endl;
-
-		    
-		  //
-		  // Record the results
-		  // record the projection
-		  for ( int d = 0 ; d < Dim ; d++ )
-		    {
-		      projection_.set_val( d, Idx, projection(d,0) );
-		      for ( int dd = 0 ; dd < Dim ; dd++ )
-			{
-			  int cov_index = dd + Dim*d;
-			  projection_covariance_.set_val( cov_index, Idx, proj_var(d,dd) );
-			}
-		    }
-		  // record the projected state
-		  for ( int s = 0 ; s < Num_States ; s++ )
-		    projection_states_.set_val( s, Idx, ppi(s,0) );
-		  
-		  //
-		  //
-		  break;
-		}
-	      case UNKNOWN:
-	      default:
-		{
-		  std::string mess = "HMM activity is unknown.\n";
-		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-							 mess.c_str(),
-							 ITK_LOCATION );
-		}
+		s.second.build_time_series( Idx, 
+					    intensity[subject_number], 
+					    age[subject_number] );
+		//
+		pidn_subject_num[ s.first ] = subject_number++;
 	      }
+	    //
+	    // Run the model
+	    VB::HMM::Hidden_Markov_Model < Dim, Num_States > hidden_Markov_model( intensity, age );
+	    //
+	    hidden_Markov_model.ExpectationMaximization();
+
+	    //
+	    //
+	    // record the outputs
+	    //
+	    //
+
+	    //
+	    // Globals
+	    //
+	    // lower bound
+	    lower_bound_.set_val( 0, Idx,
+				  hidden_Markov_model.get_lower_bound() );
+	    //
+	    // Transition matrix and first states
+	    const Eigen::Matrix< double, Num_States, 1 >&
+	      fs = hidden_Markov_model.get_first_states();
+	    const Eigen::Matrix< double, Num_States, Num_States >&
+	      tm = hidden_Markov_model.get_transition_matrix();
+	    // Centroids and variances
+	    const std::vector< Eigen::Matrix< double, Dim, 1 > >&
+	      mu_vec = hidden_Markov_model.get_mu();
+	    const std::vector< Eigen::Matrix< double, Dim, Dim > >&
+	      var_mat = hidden_Markov_model.get_var();
+	    //
+	    int
+	      mat_index = 0,
+	      mu_index  = 0,
+	      var_index = 0;
+	    for ( int s = 0 ; s < Num_States ; s++ )
+	      {
+		// Centroids and variances
+		for ( int d = 0 ; d < Dim ; d++ )
+		  {
+		    mu_index = d + Dim * s;
+		    mu_.set_val( mu_index, Idx, mu_vec[s](d,0) );
+		    //
+		    for ( int dd = 0 ; dd < Dim ; dd++ )
+		      {
+			var_index = dd + Dim * d + Dim * Dim * s;
+			variance_.set_val( var_index, Idx, var_mat[s](d,dd) );
+		      }
+		  }
+		// Transition matrix
+		for ( int ss = 0 ; ss < Num_States ; ss++ )
+		  {
+		    mat_index = ss + Num_States * s;
+		    transition_matrix_.set_val( mat_index, Idx, tm(s,ss) );
+		  }
+		// First states
+		first_states_.set_val( s, Idx, fs(s,0) );
+	      }
+
+	    //
+	    //
+	    // locals
+	    //
+	    // Subjects
+	    for ( auto &s : group_pind_ )
+	      {
+		s.second.record_state( Idx,
+				       (hidden_Markov_model.get_N())[ pidn_subject_num[s.first] ] );
+	      }
+	    
+
+	    
+	    //	    //
+	    //	    // Other things to remove
+	    //	    for ( int s = 0 ; s < num_subjects_ ; s++ )
+	    //	      {
+	    //		std::cout << "Subject " << s << std::endl;
+	    //		int Ti = intensity[s].size();
+	    //		for ( int tp = 0 ; tp < Ti ; tp++ )
+	    //		  std::cout << intensity[s][tp] << std::endl; 
+	    //	      }
+	  }
+	catch( itk::ExceptionObject & err )
+	  {
+	    std::cerr << err << std::endl;
+	    exit( -1 );
+	  }
+      }
+    //
+    //
+    //
+    template< int Dim, int Num_States > void
+      SubjectMapping< Dim, Num_States >::projection_estimation( MaskType::IndexType Idx )
+      {
+	try
+	  {
+	    //
+	    // Results
+	    std::vector< double >                  cumul_ppi( Num_States );
+	    Eigen::Matrix< double, Dim, 1 >        projection = Eigen::Matrix< double, Dim, 1 >::Zero();
+	    Eigen::Matrix< double, Dim, Dim >      proj_var   = Eigen::Matrix< double, Dim, Dim >::Zero();
+	    Eigen::Matrix< double, Num_States, 1 > ppi        = Eigen::Matrix< double, Num_States, 1 >::Zero();
+
+	    //
+	    // Initiate the random generator
+	    std::random_device rd;
+	    std::mt19937                             generator( rd() );
+	    //std::default_random_engine               generator;
+	    std::uniform_real_distribution< double > uniform(0.0,1.0);
+
+		  
+	    //
+	    // Get the last state and build the cumulted probabilities
+	    Eigen::Matrix< double, Num_States, 1 > pii = Eigen::Matrix< double, Num_States, 1 >::Zero();
+	    // Pull subject last state distribution
+	    Image4DType::SizeType size = PIDN_states_->GetOutput()->GetLargestPossibleRegion().GetSize();
+	    // extract the number of timepoints
+	    int num_tp        = size[3] / Num_States;
+	    int last_tp_state = Num_States * (num_tp - 1);
+	    for ( int s = 0 ; s < Num_States ; s++ )
+	      {
+		Reader4D::IndexType idx4d = { Idx[0], Idx[1], Idx[2],
+					      (last_tp_state + s) };
+		pii(s,0) = PIDN_states_->GetOutput()->GetPixel( idx4d );
+	      }
+	    //std::cout << "pii \n" << pii << std::endl;
+
+
+	    //
+	    // Get the transition matrix
+	    Eigen::Matrix< double, Num_States, Num_States > A = Eigen::Matrix< double, Num_States, Num_States >::Zero();
+	    //
+	    int mat_index = 0;
+	    for ( int s = 0 ; s < Num_States ; s++ )
+	      for ( int ss = 0 ; ss < Num_States ; ss++ )
+		{
+		  mat_index = ss + Num_States * s;
+		  Reader4D::IndexType idx4d = {Idx[0], Idx[1], Idx[2], mat_index};
+		  A(s,ss) = A_->GetOutput()->GetPixel( idx4d );
+		}
+	    std::cout << "A = \n" << A << std::endl;
+
+	    //
+	    // Get the gaussian centroid and the gussian covariance
+	    std::vector< Eigen::Matrix< double, Dim, 1 > >   mu_vec(Num_States);
+	    std::vector< Eigen::Matrix< double, Dim, Dim > > var_mat(Num_States);
+	    //
+	    int
+	      mu_index  = 0,
+	      var_index = 0;
+	    for ( int s = 0 ; s < Num_States ; s++ )
+	      {
+		mu_vec[s]  = Eigen::Matrix< double, Dim, 1 >::Zero();
+		var_mat[s] = Eigen::Matrix< double, Dim, Dim >::Zero();
+		for ( int d = 0 ; d < Dim ; d++ )
+		  {
+		    mu_index                     = d + Dim * s;
+		    Reader4D::IndexType idx4d_mu = {Idx[0], Idx[1], Idx[2], mu_index};
+		    mu_vec[s](d,0) = Gauss_->GetOutput()->GetPixel( idx4d_mu );
+		    //
+		    for ( int dd = 0 ; dd < Dim ; dd++ )
+		      {
+			var_index = dd + Dim * d + Dim * Dim * s;
+			Reader4D::IndexType idx4d_var = {Idx[0], Idx[1], Idx[2], var_index};
+			var_mat[s](d,dd) = Covariance_->GetOutput()->GetPixel( idx4d_var );
+		      }
+		  }
+		//std::cout << "mu_vec["<<s<<"] = \n" << mu_vec[s] << std::endl;
+		//std::cout << "var_mat["<<s<<"] = \n" << var_mat[s] << std::endl;
+	      }
+
+		    
+	    //
+	    // Make the estimation
+	    // Get the projected state
+	    ppi = pii;
+	    for ( int tp = 0 ; tp < number_projection_ ; tp++ )
+	      ppi = ppi.transpose() * A;
+	    ppi /= ppi.sum();
+	    std::cout << "ppi = \n" << ppi<< std::endl;
+	    // create an array of cunulative probabilities
+	    for ( int s = 0 ; s < Num_States ; s++ )
+	      {
+		if ( s == 0 )
+		  cumul_ppi[s] = ppi(s,0);
+		else
+		  cumul_ppi[s] = cumul_ppi[s-1] + ppi(s,0);
+		//std::cout << "cumul_ppi["<<s<<"] = " << cumul_ppi[s] << std::endl;
+	      }
+	    //
+	    // Extrapolation of the images
+	    double u     = 0;
+	    int    state = 0;
+	    std::vector< Eigen::Matrix< double, Dim, 1 > > samples( number_sampling_iteration_ );
+	    for ( int iteration = 0 ; iteration < number_sampling_iteration_ ; iteration++ )
+	      {
+		u = uniform( generator );
+		state = 0;
+		while ( u > cumul_ppi[state] && state < Num_States )
+		  state++;
+		//std::cout << "u = " << u << std::endl;
+		//std::cout << "s = " << state << std::endl;
+		samples[ iteration ] = NeuroBayes::gaussian_multivariate<Dim>( mu_vec[state], var_mat[state] );
+	      }
+	    //
+	    // Moments
+	    // mean
+	    for ( auto vec : samples )
+	      projection += vec;
+	    projection /= static_cast<double>( number_sampling_iteration_ );
+	    // variance
+	    for ( auto vec : samples )
+	      proj_var += (vec - projection) * (vec - projection).transpose();
+	    proj_var /= static_cast<double>( number_sampling_iteration_ - 1 );
+	    std::cout << "projection = \n" << projection << std::endl;
+	    std::cout << "proj_var = \n"   << proj_var << std::endl;
+
+		    
+	    //
+	    // Record the results
+	    // record the projection
+	    for ( int d = 0 ; d < Dim ; d++ )
+	      {
+		projection_.set_val( d, Idx, projection(d,0) );
+		for ( int dd = 0 ; dd < Dim ; dd++ )
+		  {
+		    int cov_index = dd + Dim*d;
+		    projection_covariance_.set_val( cov_index, Idx, proj_var(d,dd) );
+		  }
+	      }
+	    // record the projected state
+	    for ( int s = 0 ; s < Num_States ; s++ )
+	      projection_states_.set_val( s, Idx, ppi(s,0) );
 	  }
 	catch( itk::ExceptionObject & err )
 	  {
