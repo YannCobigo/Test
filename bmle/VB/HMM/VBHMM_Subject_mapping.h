@@ -638,7 +638,7 @@ namespace VB
 			  for ( int dd = 0 ; dd < Dim ; dd++ )
 			    {
 			      var_index = dd + Dim * d + Dim * Dim * s;
-			      variance_.set_val( mu_index, Idx, var_mat[s](d,dd) );
+			      variance_.set_val( var_index, Idx, var_mat[s](d,dd) );
 			    }
 			}
 		      // Transition matrix
@@ -685,7 +685,9 @@ namespace VB
 
 		  //
 		  // Initiate the random generator
-		  std::default_random_engine               generator;
+		  std::random_device rd;
+		  std::mt19937                             generator( rd() );
+		  //std::default_random_engine               generator;
 		  std::uniform_real_distribution< double > uniform(0.0,1.0);
 
 		  
@@ -745,8 +747,8 @@ namespace VB
 			      var_mat[s](d,dd) = Covariance_->GetOutput()->GetPixel( idx4d_var );
 			    }
 			}
-		      //std::cout << "mu_vec["<<s<<"] = \n" << mu_vec[s] << std::endl;
-		      //std::cout << "var_mat["<<s<<"] = \n" << var_mat[s] << std::endl;
+		      std::cout << "mu_vec["<<s<<"] = \n" << mu_vec[s] << std::endl;
+		      std::cout << "var_mat["<<s<<"] = \n" << var_mat[s] << std::endl;
 		    }
 
 		    
@@ -774,7 +776,8 @@ namespace VB
 		  for ( int iteration = 0 ; iteration < 1.e01 ; iteration++ )
 		    {
 		      u = uniform( generator );
-		      while ( u < cumul_ppi[state] && state < Num_States )
+		      state = 0;
+		      while ( u > cumul_ppi[state] && state < Num_States )
 			state++;
 		      std::cout << "u = " << u << std::endl;
 		      std::cout << "s = " << state << std::endl;

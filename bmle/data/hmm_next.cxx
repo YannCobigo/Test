@@ -66,7 +66,7 @@ int main(int argc, char const *argv[])
   //
   const int Dim = 2;
   const int S   = 5;
-  const int n   = 10000;
+  const int n   = 100000;
   //
   //
   std::default_random_engine generator;
@@ -125,7 +125,19 @@ int main(int argc, char const *argv[])
   //
   //
   Eigen::Matrix< double, S, 1 > new_State = State.transpose() * A;
+  new_State /= new_State.sum();
+  std::vector< double >         cumul_new_state( S );
   std::cout << "new state: \n" << new_State << std::endl;
+  //
+  for ( int s = 0 ; s < S ; s++ )
+    {
+      if ( s == 0 )
+	cumul_new_state[s] = new_State(s,0);
+      else
+	cumul_new_state[s] = cumul_new_state[s-1] + new_State(s,0);
+      std::cout << "cumul_new_state["<<s<<"] = " << cumul_new_state[s] << std::endl;
+    }
+  //
   int s         = 0;
   double choose = 0.;
   std::vector< Eigen::Matrix< double, Dim, 1 > > samples(n);
@@ -134,16 +146,25 @@ int main(int argc, char const *argv[])
       //
       choose = uniform( generator );
       //
-      if ( choose < new_State(0,0) )
-	s = 0;
-      else if ( choose < new_State(0,0)+new_State(1,0) && choose >= new_State(0,0) )
-	s = 1;
-      else if ( choose < new_State(0,0)+new_State(1,0)+new_State(2,0) && choose >= new_State(0,0)+new_State(1,0) )
-	s = 2;
-      else if ( choose < new_State(0,0)+new_State(1,0)+new_State(2,0)+new_State(3,0) && choose >= new_State(0,0)+new_State(1,0)+new_State(2,0) )
-	s = 3;
-      else if ( choose >= new_State(0,0)+new_State(1,0)+new_State(2,0)+new_State(3,0) )
-	s = 4;
+      if ( false )
+	{
+	  if ( choose < new_State(0,0) )
+	    s = 0;
+	  else if ( choose < new_State(0,0)+new_State(1,0) && choose >= new_State(0,0) )
+	    s = 1;
+	  else if ( choose < new_State(0,0)+new_State(1,0)+new_State(2,0) && choose >= new_State(0,0)+new_State(1,0) )
+	    s = 2;
+	  else if ( choose < new_State(0,0)+new_State(1,0)+new_State(2,0)+new_State(3,0) && choose >= new_State(0,0)+new_State(1,0)+new_State(2,0) )
+	    s = 3;
+	  else if ( choose >= new_State(0,0)+new_State(1,0)+new_State(2,0)+new_State(3,0) )
+	    s = 4;
+	}
+      else
+	{
+	  s = 0;
+	  while ( choose > cumul_new_state[s] && s < S )
+	    s++;
+	}
       //std::cout << "choose["<<s<<"]: " << choose << std::endl;
       //
       //
