@@ -157,12 +157,32 @@ According to this definition of the basis, we can write any arbitrary tensor: $\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Topological spaces}
 
-Topological spaces are, mathematically, a general space. The goal of  topologies is to classify the equivalence of shapes. If we can build a continuous application $f : X \rightarrow Y$ between two topologies $X$ and $Y$, and the inverse $f^{-1}$ of the application $f$ exists and is continuous, then $f$ is called an homeomorphism and the two spaces, $X$ and $Y$, are homeomorphic.
+Topological spaces are, mathematically, a general space. The goal of topologies is to classify the equivalence of shapes. Shapes stays the same under deformation. Topology generalize the notion of distance into a notion of proximity. \\
+If we can build a continuous application $f : X \rightarrow Y$ between two topologies $X$ and $Y$, and the inverse $f^{-1}$ of the application $f$ exists and is continuous, then $f$ is called an homeomorphism and the two spaces, $X$ and $Y$, are homeomorphic.
 We tend to work with metric spaces that are subsets of manifold that are subsets of topological spaces. In this section we are going to describe manifold that can be seen locally as a vector space and global as a topology.
 
-\paragraph{Definition}{Let $X$ be a set. A topological space, $\mathcal{T}$, is a set of subset $U_{i}$ of $X$. $X$ and $\varnothing$ are in $\mathcal{T}$. The intersections and unions of sets $U_{i}$ are in $\mathcal{T}$.
+\paragraph{Definition}{Let $X$ be a set. A topological space, $\mathcal{T}$, is a set of subset $U_{i}$ of $X$. $X$ and $\varnothing$ are in $\mathcal{T}$. The intersections and unions of sets $U_{i}$ are in $\mathcal{T}$. The Topology is said connected if it contains only $\varnothing$ and $X$.\\
+}
 
-  If the union of all the subset is converses $X$, $\cup_{i} U_{i} = X$, the family $\{U_{i} \}$ is called a covering of $X$.
+If the union of all the subset converses $X$, $\cup_{i} U_{i} = X$, the family $\{U_{i} \}$ is called a covering of $X$.
+
+\paragraph{Definition}{A subset $A$ of a topological space $(X,\mathcal{T})$ is called a {\it neighbourhood} of $x \in X$ if and only if it exists an open $U$ such as $x \in U \subset A$. \\
+}
+
+\paragraph{Definition -- Hausdorff Space}{We say a topological space $X$ is a Hausdorff space ($T_{2}$-space) if for two disctinct points $x$ and $y$ of $X$, their respective neighbourhood sets, $U$ and $V$, are distinct. This property must be respected for all combinaisons of pairs or points in $X$.\\
+}
+
+This is the weakest separation axiom, and will consider all our spaces as Hausdorff spaces.
+
+\paragraph{Definition}{A system of open sets $\mathcal{B}$ of a topological space $(X,\mathcal{T})$ is called a basis if and only if all the opens of $\mathcal{T}$ can be written as a an union of sets from $\mathcal{B}$. $X$ being an open set, $X = \cup_{U \subset \mathcal{B}}U$, $\mathcal{B}$ covers $X$.}
+
+\paragraph{Example}{A basis on an Euclidian space $\mathbb{R}^{n}$ can be build from a system of open balls $\{\mathcal{B}_{x_{i}}\}$, where $\mathcal{B}_{x_{i}} = \{x \in \mathbb{R}^{n}, \exists \varepsilon \in \mathbb{R}^{n} such~as~ \|x-x_{i}\| < \varepsilon \}$. The notion of distance in an Euclidian space is $\|x\| = \sqrt{\sum_{j=1}^{n} x_{j}^{2}}$.\\
+
+  If we restrict $n=1$, the Euclidian space is a lign, we can divide the lign into $m$ non-overlapping segments (open balls) centered on $x_{i}$. The coordinates of $x$ inside each open is $(x'_{1}, x'_{2}, \dots,x'_{m})$ and the length $\|x\| = \sqrt{(x'_{1}-x_{1})^{2} + (x'_{2}-x_{2})^{2} + \dots + (x'_{m}-x_{m})^{2}}$.\\
+}
+
+\paragraph{Product of topologies}{Let $X$ and $Y$ topological spaces, $X \times Y$ their cartesian product, such as the set of all ordered pairs $(x,y)$, with $x\in X$ and $y\in Y$, belong to $X\times Y$. The sets of forms $U\times V$, such that $U\subset X$ and $V\subset V$, forms a basis of the product of topologies $X \times Y$. }
+
 For $x,~y,~z \in X$, we define a metric as the symmetric application $d : X \times X \rightarrow \mathbb{R}$ and $d(x,y) = d(y,x)$ such that $d(x,x) \ge 0$ and $d(x,y) + d(y,z) \ge d(x,z)$. A topological space $\mathcal{T}$ with a metric $d$ is a metric topological space. The subset of the topological space are the usual open ({\it i.e.} the open balls) $U_{i} = \{ x \in \mathcal{T} / \forall y \in U_{i} ~~ d(x,y) < \varepsilon \}$.
   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
