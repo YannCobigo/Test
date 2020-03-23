@@ -99,7 +99,7 @@ namespace NeuroBayes
     void lambda_regulation_( std::map< int /*group*/, std::vector< double > >& );
     // Thermodynamic free energy
     bool check_convergence_( const std::list< double >&, const double, 
-			     const int, const int ) const;
+			     const int, const int , const int ) const;
     // Cumulative centered normal cumulative distribution function
     // https://en.wikipedia.org/wiki/Error_function
     double Normal_CFD_( const double value ) const
@@ -1087,8 +1087,8 @@ namespace NeuroBayes
 	std::list< double > F_values;
 	int
 	  n  = 0, it = 0,
-	  N  = 20,         // N regulate the EM loop to be sure converge smootly
-	  NN = 1000;       // failed convergence criterias
+	  min_it = 20,         // N regulate the EM loop to be sure converge smootly
+	  max_it = 500;   // failed convergence criterias
 	//
 	double 
 	  learning_rate_  = ( D_r < 3 ? 1.e-02 : 1.e-03 ),
@@ -1102,7 +1102,7 @@ namespace NeuroBayes
 	  }
 	
 	//
-	while( check_convergence_(F_values, convergence_, it++, N) /*&& it < NN*/ )
+	while( check_convergence_(F_values, convergence_, it++, min_it, max_it) )
 	  {
 	    if( !isnan(F) )
 	      F_old = F;
@@ -1511,13 +1511,14 @@ namespace NeuroBayes
     BmleLoadCSV< D_r, D_f >::check_convergence_( const std::list< double >& F_val, 
 						 const double Convergence, 
 						 const int    Iteration, 
-						 const int    Window_size ) const
+						 const int    Window_size,
+						 const int    Max_iteration ) const
     {    
       try
 	{
 	  //
 	  // Check we have enough iterations
-	  if ( Window_size < Iteration )
+	  if ( Iteration > Window_size && Iteration < Max_iteration )
 	    {
 	      //
 	      // mean
@@ -1549,6 +1550,9 @@ namespace NeuroBayes
 	      //
 	      return ( stability < Convergence ? false : true );
 	    }
+	  //
+	  else if ( Iteration > Max_iteration )
+	    return false;
 	  else
 	    return true;
 	}

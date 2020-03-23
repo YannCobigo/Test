@@ -93,18 +93,26 @@ main( const int argc, const char **argv )
 	    // It is the responsability of the user to create the 
 	    // normalized/standardized hierarchical covariate
 	    //
-	    // -h                          : help
-	    // -c   input.csv              : input file
-	    // -m   mask.nii.gz            : mask
-	    // -o   output_dir             : output directory
+	    // -h                                                : help
+	    // -p   PIDN_N_tps_d_dimensions_s_states.nii.gz      : input PIDN to project in the future
+	    // -A   trans_mat_d_dimensions_s_states.nii.gz       : Transition matrix A
+	    // -G   cluster_centers_d_dimensions_s_states.nii.gz : Gaussian centroids
+	    // -V  variance_d_dimensions_s_states.nii.gz         : Gaussian Covariance
+	    // -x   N                                            : Number of projction timepoints in the future
+	    // -m   mask.nii.gz                                  : mask
+	    // -o   output_dir                                   : output directory
 	    //
 	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-						   "./vbhmm -c file.csv -m mask.nii.gz -o output_dir ",
+						   "./vbhmmproj -p pidn.nii -A mat.nii -G gauss.ni -V covariance.nii -x n -m mask.nii.gz -o output_dir ",
 						   ITK_LOCATION );
 
 	  //
 	  // takes the csv file ans the mask
-	  const std::string& filename       = input.getCmdOption("-c");
+	  const std::string& filename       = input.getCmdOption("-p");
+	  const std::string& trans_mat      = input.getCmdOption("-A");
+	  const std::string& Gauss          = input.getCmdOption("-G");
+	  const std::string& covariance     = input.getCmdOption("-V");
+	  const std::string& num_proj       = input.getCmdOption("-x");
 	  const std::string& mask           = input.getCmdOption("-m");
 	  const std::string& output_dir     = input.getCmdOption("-o");
 	  // Demean the age
@@ -126,7 +134,7 @@ main( const int argc, const char **argv )
 		   mess            += "none, demean, normalize, standardize.\n";
 		   mess            += "Trans formation: " + transformation;
 		   mess            += " is unknown.\n";
-		   mess            += " please try ./bmle -h for all options.\n";
+		   mess            += " please try ./vbhmmproj -h for all options.\n";
 		   throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
 							  mess.c_str(),
 							  ITK_LOCATION );
@@ -139,7 +147,7 @@ main( const int argc, const char **argv )
 	      if ( mask.empty() && output_dir.empty() )
 		{
 		  std::string mess = "No mask loaded. A mask must be loaded.\n";
-		  mess += "./vbhmm -c file.csv -m mask.nii.gz -o output_dir";
+		  mess += "./vbhmmproj -p pidn.nii -A mat.nii -G gauss.ni -V covariance.nii -x n -m mask.nii.gz -o output_dir ";
 		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
 							 mess.c_str(),
 							 ITK_LOCATION );
@@ -148,7 +156,7 @@ main( const int argc, const char **argv )
 	      if ( !directory_exists( output_dir ) )
 		{
 		  std::string mess = "The output directory is not correct.\n";
-		  mess += "./vbhmm -c file.csv -m mask.nii.gz -o output_dir";
+		  mess += "./vbhmmproj -p pidn.nii -A mat.nii -G gauss.ni -V covariance.nii -x n -m mask.nii.gz -o output_dir";
 		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
 							 mess.c_str(),
 							 ITK_LOCATION );
@@ -205,7 +213,10 @@ main( const int argc, const char **argv )
 	      // Load the CSV file
 	      // Dim is the number of modalities in the subject's timepoint
 	      // number_of_states is the first guess on the number of states
-	      VB::HMM::SubjectMapping< /*Dim*/ 3, /*number_of_states*/ 5 > subject_mapping( filename, output_dir, time_tran );
+	      VB::HMM::SubjectMapping< /*Dim*/ 3, /*number_of_states*/ 5 > subject_mapping( filename, trans_mat,
+											      Gauss, covariance,
+											      num_proj,
+											      output_dir, time_tran );
 
 
 	      
@@ -307,12 +318,12 @@ main( const int argc, const char **argv )
 	    }
 	  else
 	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-						   "./vbhmm -c file.csv -m mask.nii.gz  -o output_dir ",
+						   "./vbhmmproj -p pidn.nii -A mat.nii -G gauss.ni -V covariance.nii -x n -m mask.nii.gz -o output_dir ",
 						   ITK_LOCATION );
 	}
       else
 	throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-					       "./vbhmm -c file.csv -m mask.nii.gz  -o output_dir ",
+					       "./vbhmmproj -p pidn.nii -A mat.nii -G gauss.ni -V covariance.nii -x n -m mask.nii.gz -o output_dir ",
 					       ITK_LOCATION );
     }
   catch( itk::ExceptionObject & err )

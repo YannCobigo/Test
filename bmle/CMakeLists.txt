@@ -69,20 +69,28 @@ target_link_libraries( bmle -lX11 ${ITK_LIBRARIES} _NeuroBayes_utils )
 
 #
 # project Variational Bayes HMM
-include_directories( ${NeuroBayes_SOURCE_DIR}/VB/HMM )
+include_directories( ${NeuroBayes_SOURCE_DIR}/VB/HMM  ${NeuroBayes_SOURCE_DIR}/noVB/HMM )
 #
 file( GLOB VBHMM_HEADERS_ VB/HMM/*.h )
 file( GLOB VBHMM_SOURCES_ VB/HMM/*.cxx )
+file( GLOB HMM_HEADERS_ noVB/HMM/*.h )
+file( GLOB HMM_SOURCES_ noVB/HMM/*.cxx )
 #
-list( APPEND HEADERS ${VBHMM_HEADERS_} )
-list( APPEND SOURCES ${VBHMM_SOURCES_} )
+list( APPEND HEADERS ${VBHMM_HEADERS_} ${HMM_HEADERS_} )
+list( APPEND SOURCES ${VBHMM_SOURCES_} ${HMM_SOURCES_} )
 #message(STATUS ${SOURCES})
 #
-add_executable( vbhmm     MACOSX_BUNDLE VB/HMM/vbhmm.cpp       ${HEADERS_} ${VBHMM_SOURCES_}  )
-add_executable( vbhmmtest MACOSX_BUNDLE VB/HMM/vbhmm_test.cpp  ${HEADERS_} ${VBHMM_SOURCES_}  )
+add_executable( vbhmm     MACOSX_BUNDLE VB/HMM/vbhmm.cpp            ${HEADERS_} ${VBHMM_SOURCES_}  )
+add_executable( vbhmmproj MACOSX_BUNDLE VB/HMM/vbhmm_projection.cpp ${HEADERS_} ${VBHMM_SOURCES_}  )
+add_executable( vbhmmtest MACOSX_BUNDLE VB/HMM/vbhmm_test.cpp       ${HEADERS_} ${VBHMM_SOURCES_}  )
+add_executable( hmm     MACOSX_BUNDLE noVB/HMM/hmm.cpp       ${HEADERS_} ${HMM_SOURCES_}  )
+add_executable( hmmtest MACOSX_BUNDLE noVB/HMM/hmm_test.cpp  ${HEADERS_} ${HMM_SOURCES_}  )
 # cmake 3.1 target_compile_features(bmle PRIVATE cxx_range_for)
 target_link_libraries( vbhmm     -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+target_link_libraries( vbhmmproj -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
 target_link_libraries( vbhmmtest -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+target_link_libraries( hmm     -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+target_link_libraries( hmmtest -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
 
 
 #

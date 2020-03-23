@@ -19,7 +19,7 @@
 
 //#include "EM.h"
 //#include "VBGaussianMixture.h"
-#include "VBHMM.h"
+#include "HMM.h"
 #include "MakeITKImage.h"
 #include "IO/Load_csv.h"
 //
@@ -34,7 +34,7 @@ int main(int argc, char const *argv[])
 
   //
   // Load the test dataset
-  //NeuroBayes::Load_csv reader("../data/hhm_2d.csv");
+  //NeuroBayes::Load_csv reader("../data/hhm.csv");
   NeuroBayes::Load_csv reader("../data/ADNI_clusters.csv");
   //
   // Size of the sequence can be different for each entry (subject).
@@ -48,7 +48,6 @@ int main(int argc, char const *argv[])
   HMM_intensity.resize( HMM_intensity_age.size() );
   HMM_age.resize( HMM_intensity_age.size() );
   int subject = 0;
-  //
   for ( auto sub : HMM_intensity_age )
     {
       HMM_intensity[subject].resize( HMM_intensity_age[subject].size() );
@@ -68,9 +67,9 @@ int main(int argc, char const *argv[])
 
   //
   //
-  VB::HMM::Hidden_Markov_Model < /*Dim*/ Dim, /*number_of_states*/ S > VBHMM_intensity_age( HMM_intensity, HMM_age );
+  noVB::HMM::Hidden_Markov_Model < /*Dim*/ Dim, /*number_of_states*/ S > HMM_intens_age( HMM_intensity, HMM_age );
   //
-  VBHMM_intensity_age.ExpectationMaximization();
+  HMM_intens_age.ExpectationMaximization();
 
   //
   //

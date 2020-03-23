@@ -10,25 +10,16 @@
 // ITK
 //
 #include <itkImageFileReader.h>
-#include <itkImageFileWriter.h>
 #include <itkSpatialOrientationAdapter.h>
 #include "itkChangeInformationImageFilter.h"
-#include "itkRescaleIntensityImageFilter.h"
 using MaskType       = itk::Image< unsigned char, 3 >;
 using MaskReaderType = itk::ImageFileReader< MaskType >;
-using Image3DType    = itk::Image< double, 3 >;
-using Reader3D       = itk::ImageFileReader< Image3DType >;
-using Writer3D       = itk::ImageFileWriter< Image3DType >;
-using Image4DType    = itk::Image< double, 4 >;
-using Reader4D       = itk::ImageFileReader< Image4DType >;
-using Writer4D       = itk::ImageFileWriter< Image4DType >;
-using FilterType     = itk::RescaleIntensityImageFilter< MaskType, Image3DType >;
 //
 // 
 //
 #include "Thread_dispatching.h"
 #include "Exception.h"
-#include "VBHMM_Subject_mapping.h"
+#include "HMM_Subject_mapping.h"
 //
 //
 // Check the output directory exists
@@ -94,9 +85,9 @@ main( const int argc, const char **argv )
 	    // normalized/standardized hierarchical covariate
 	    //
 	    // -h                          : help
+	    // -X  inv_cov_error.nii.gz    : (prediction) inverse of error cov on parameters
 	    // -c   input.csv              : input file
 	    // -m   mask.nii.gz            : mask
-	    // -o   output_dir             : output directory
 	    //
 	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
 						   "./vbhmm -c file.csv -m mask.nii.gz -o output_dir ",
@@ -107,32 +98,6 @@ main( const int argc, const char **argv )
 	  const std::string& filename       = input.getCmdOption("-c");
 	  const std::string& mask           = input.getCmdOption("-m");
 	  const std::string& output_dir     = input.getCmdOption("-o");
-	  // Demean the age
-	  const std::string& transformation       = input.getCmdOption("-d");
-	  NeuroStat::TimeTransformation time_tran = NeuroStat::TimeTransformation::NONE;
-	  if ( !transformation.empty() )
-	    {
-	      if ( transformation.compare("demean") == 0 )
-		time_tran = NeuroStat::TimeTransformation::DEMEAN;
-	      else if ( transformation.compare("normalize") == 0 )
-		time_tran = NeuroStat::TimeTransformation::NORMALIZE;
-	      else if ( transformation.compare("standardize") == 0 )
-		time_tran = NeuroStat::TimeTransformation::STANDARDIZE;
-	      else if ( transformation.compare("load") == 0 )
-		time_tran = NeuroStat::TimeTransformation::LOAD;
-	      else
-		{
-		  std::string mess  = "The time transformation can be: ";
-		   mess            += "none, demean, normalize, standardize.\n";
-		   mess            += "Trans formation: " + transformation;
-		   mess            += " is unknown.\n";
-		   mess            += " please try ./bmle -h for all options.\n";
-		   throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-							  mess.c_str(),
-							  ITK_LOCATION );
-		}
-	    }
-	  // Slicing the space
 	  //
 	  if ( !filename.empty() )
 	    {
@@ -161,6 +126,16 @@ main( const int argc, const char **argv )
 	      ////////////////////////////
 
 	      //
+	      // Number of THREADS in case of multi-threading
+	      // this program hadles the multi-threading it self
+	      // in no-debug mode
+	      const int THREAD_NUM = 24;
+
+	      //
+	      // Load the CSV file
+	      noVB::HMM::SubjectMapping< /*Dim*/ 2, /*number_of_states*/ 2 > subject_mapping( filename, output_dir );
+
+	      //
 	      // Expecttion Maximization
 	      //
 
@@ -182,33 +157,7 @@ main( const int argc, const char **argv )
 	      itk::ImageRegionIterator< MaskType >
 		imageIterator_mask( reader_mask_->GetOutput(), region ),
 		imageIterator_progress( reader_mask_->GetOutput(), region );
-	      //
-	      // Saving the mask as double precision
-	      FilterType::Pointer filter = FilterType::New();
-	      filter->SetOutputMinimum( 0. );
-	      filter->SetOutputMaximum( 1. );
-	      filter->SetInput( reader_mask_->GetOutput() );
-	      //
-	      std::string output_mask_name = output_dir + "/mask_double_precision.nii.gz";
-	      Writer3D::Pointer writer = Writer3D::New();
-	      writer->SetInput( filter->GetOutput() );
-	      writer->SetFileName( output_mask_name.c_str() );
-	      writer->Update();
- 
 
-	      //
-	      // Number of THREADS in case of multi-threading
-	      // this program hadles the multi-threading it self
-	      // in no-debug mode
-	      const int THREAD_NUM = 4;
-	      //
-	      // Load the CSV file
-	      // Dim is the number of modalities in the subject's timepoint
-	      // number_of_states is the first guess on the number of states
-	      VB::HMM::SubjectMapping< /*Dim*/ 3, /*number_of_states*/ 5 > subject_mapping( filename, output_dir, time_tran );
-
-
-	      
 	      //
 	      // Task progress: elapse time
 	      using  ms         = std::chrono::milliseconds;
@@ -239,13 +188,13 @@ main( const int argc, const char **argv )
 #else
 		      // Please do not remove the bracket!!
 		      // vertex
-		      if ( idx[0] > 76 - 1  && idx[0] < 76 + 1 && 
-			   idx[1] > 78 - 1  && idx[1] < 78 + 1 &&
-			   idx[2] > 35 - 1  && idx[2] < 35 + 1 )
-//		      // ALL
-//		      if ( idx[0] > 5 && idx[0] < 110 && 
-//			   idx[1] > 5 && idx[1] < 140 &&
-//			   idx[2] > 5 && idx[2] < 110 )
+//		      if ( idx[0] > 92 - 2  && idx[0] < 92 + 2 && 
+//			   idx[1] > 94 - 2  && idx[1] < 94 + 2 &&
+//			   idx[2] > 63 - 2  && idx[2] < 63 + 2 )
+		      // ALL
+		      if ( idx[0] > 5 && idx[0] < 110 && 
+			   idx[1] > 5 && idx[1] < 140 &&
+			   idx[2] > 5 && idx[2] < 110 )
 //		      // Octan 1
 //		      if ( idx[0] > 5 && idx[0] < 60  & 
 //			   idx[1] > 5 && idx[1] < 70  &&
@@ -307,12 +256,12 @@ main( const int argc, const char **argv )
 	    }
 	  else
 	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-						   "./vbhmm -c file.csv -m mask.nii.gz  -o output_dir ",
+						   "./vbhmm -c file.csv -m mask.nii.gz >",
 						   ITK_LOCATION );
 	}
       else
 	throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-					       "./vbhmm -c file.csv -m mask.nii.gz  -o output_dir ",
+					       "./vbhmm -c file.csv -m mask.nii.gz >",
 					       ITK_LOCATION );
     }
   catch( itk::ExceptionObject & err )

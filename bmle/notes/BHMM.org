@@ -1,45 +1,52 @@
 
 * Tasks
-  
-* Expectation-Minimization
-** Expectation
-*** VP_qsi
-    - [X] Algorithm alpha-beta :: 
-	 The algorithm has been corrected. Beta seems still having some 
-	 questions ...
-*** VP_qdch
-    The Dirichlet expectation step is very simple and does not need its 
-    own function. It should be done the same time as the Maximization 
-    step.
-*** VP_qgau
-    If we don't knoe the natural initialization of the hyperparameters
-    we should probably initialize the parameters by optimization of the 
-    cost function.
-    The calcultion seems fine.
-    - [ ] Gaussian :: 
-      - [ ] beta_0_ :: find out the initialization.
-      - [ ] mu_0 :: is initialized with zero position function. 
-		    It would be better to initialize the function with a
-		    k-means cluster.
-    - [ ] Wishart ::
-      - [ ] nu_0_ :: find out the initialization.
-      - [ ] S_0_inv_:: find out the initialization.
-** Minimization
-*** VP_qsi
-    The function is empty.
-*** VP_qdch
-    - [ ] To Check ::
-      - [ ] Posterior Pi and A :: I renormailzed the posterior probabilities
-	   Should we do that? If we do that, should we normalize the lower bound 
-	   too?
-*** VP_qgau
-    - [X] ln_posterior_N :: 
-	 It seems corrected.
-    - [ ] diff_ln_Z :: 
-    - [ ] F_qgau_ :: 
 
-** Lower bound
-*** VP_qsi
-*** VP_qdch
-    The lower bond seems fine. 
-*** VP_qgau
+* Expectation-Minimization
+** Variational Bayes EM
+*** Expectation
+**** VP_qsi
+     - [X] Algorithm alpha-beta :: 
+	  The algorithm has been corrected. Beta seems still having some 
+	  questions ...
+**** VP_qdch
+     The Dirichlet expectation step is very simple and does not need its 
+     own function. It should be done the same time as the Maximization 
+     step.
+**** VP_qgau
+     If we don't know the natural initialization of the hyperparameters
+     we should probably initialize the parameters by optimization of the 
+     cost function.
+     The calcultion seems fine.
+     - [ ] Gaussian :: 
+       - [ ] beta_0_ :: find out the initialization.
+       - [ ] mu_0 :: is initialized with zero position function. 
+		     It would be better to initialize the function with a
+		     k-means cluster.
+     - [ ] Wishart ::
+       - [ ] nu_0_ :: find out the initialization.
+       - [ ] S_0_inv_:: find out the initialization.
+*** Minimization
+**** VP_qsi
+     The function is empty.
+**** VP_qdch
+     - [ ] To Check ::
+       - [ ] Posterior Pi and A :: I renormailzed the posterior probabilities
+	    Should we do that? If we do that, should we normalize the lower bound 
+	    too?
+**** VP_qgau
+     - [X] ln_posterior_N :: 
+	  It seems corrected.
+     - [ ] diff_ln_Z :: 
+     - [ ] F_qgau_ :: 
+
+*** Lower bound
+**** VP_qsi
+**** VP_qdch
+     The lower bound seems fine. 
+**** VP_qgau
+
+** EM for the non variational
+*** Initialization 
+**** qsi
+     ss_[i][t] it seems to be a matrix ... how to initialize? Do we real need it?
+

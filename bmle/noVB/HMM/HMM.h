@@ -1,5 +1,5 @@
-#ifndef VBHiddenMarkovModel_H
-#define VBHiddenMarkovModel_H
+#ifndef HiddenMarkovModel_H
+#define HiddenMarkovModel_H
 //
 //
 //
@@ -25,11 +25,11 @@
 #include <itkOrientImageFilter.h>
 #include <itkSpatialOrientation.h>
 //
-#include "VBPosterior.h"
+#include "Posterior.h"
 //
 //
 //
-namespace VB
+namespace noVB
 {
   namespace HMM
   {
@@ -61,16 +61,8 @@ namespace VB
 
       //
       // Accessors
-      // lower bound
-      inline const double                  get_lower_bound()          const {return F_;};
-      const Eigen::Matrix< double, S, 1 >& get_first_states()           const {return qdch_->get_pi();};
-      const Eigen::Matrix< double, S, S >& get_transition_matrix()      const {return qdch_->get_A();};
-      //
-      const std::vector< Eigen::Matrix< double, Dim, 1 > >&                get_mu()  const {return qgau_->get_mu();};
-      const std::vector< Eigen::Matrix< double, Dim, Dim > >&              get_var() const {return qgau_->get_var();};
-      const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_N()   const {return qgau_->get_N();};
+      // posterior probabilities
 
-      
       //
       // Functions
       // main algorithn
@@ -93,14 +85,14 @@ namespace VB
       //
       // variational posteriors and hyper parameters
       //rm      Var_post variational_posteriors_;
-      std::shared_ptr< VB::HMM::VP_qsi <Dim,S> > qsi_;
-      std::shared_ptr< VB::HMM::VP_qdch<Dim,S> > qdch_;
-      std::shared_ptr< VB::HMM::VP_qgau<Dim,S> > qgau_;
+      std::shared_ptr< noVB::HMM::P_qsi <Dim,S> > qsi_;
+      std::shared_ptr< noVB::HMM::P_qdch<Dim,S> > qdch_;
+      std::shared_ptr< noVB::HMM::P_qgau<Dim,S> > qgau_;
 
       //
       // log marginal likelihood lower bound
-      double F_{-1.e-36};
-      std::list< double > F_history_;
+      double L_{-1.e-36};
+      std::list< double > L_history_;
     };
 
     //
@@ -113,19 +105,11 @@ namespace VB
     {
       //
       //
-      qsi_  = std::make_shared< VB::HMM::VP_qsi <Dim,S> >( Y_ );
-      qdch_ = std::make_shared< VB::HMM::VP_qdch<Dim,S> >( qsi_, Y_ );
-      qgau_ = std::make_shared< VB::HMM::VP_qgau<Dim,S> >( qsi_, Y_ );
+      qsi_  = std::make_shared< noVB::HMM::P_qsi <Dim,S> >( Y_ );
+      qdch_ = std::make_shared< noVB::HMM::P_qdch<Dim,S> >( qsi_, Y_ );
+      qgau_ = std::make_shared< noVB::HMM::P_qgau<Dim,S> >( qsi_, Y_, Age_ );
       // set dependencies
       qsi_->set(qdch_,qgau_);
-      qdch_->set(qsi_);
-      qgau_->set(qsi_,qdch_);
-      // Initialization
-      qsi_->Expectation();
-      qdch_->Expectation();
-      qgau_->Expectation();
-      // Lower bound history
-      F_history_.push_back( F_ );
     }
     //
     //
@@ -134,39 +118,68 @@ namespace VB
       Hidden_Markov_Model< Dim, S >::ExpectationMaximization()
       {
 	double
-	  dF    =  1.e06,
-	  F_old = -1.e-40;
+	  dL    =  1.e06,
+	  L_old = -1.e-40;
 	int iteration = 0;
-	while ( fabs(dF) > 1.e-6 )
+
+	//
+	// Access the states
+	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_         = qsi_->get_s();
+	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_ln_gamma_  = qgau_->get_ln_gamma();
+	const                           Eigen::Matrix < double, S , 1 >     &_pi_        = qdch_->get_pi();
+	const                           Eigen::Matrix < double, S , S >     &_A_         = qdch_->get_A();
+	//
+	while ( fabs(dL) > 1.e-10 )
 	  {
 	    std::cout << "Begining iteration: " << ++iteration << std::endl;
 	    //
-	    // M step
-	    qsi_->Maximization();
-	    qdch_->Maximization();
-	    qgau_->Maximization();
-	    //
 	    // E step
+	    // Update of the state probability
 	    qsi_->Expectation();
 	    qdch_->Expectation();
 	    qgau_->Expectation();
-
+	    //
+	    // M step
+	    // Update of the transition and emission probabilities
+	    qsi_->Maximization();
+	    qdch_->Maximization();
+	    qgau_->Maximization();
+	    
+	    //
+	    // Build the posterior probability
+	    L_old = L_;
+	    L_ = 0;
+	    for ( int i = 0 ; i < n_ ; i++ )
+	      {
+		//
+		// First state
+		for ( int s = 0 ; s < S ; s++ ) 
+		  L_ += _s_[i][0](s,0) * log( _pi_(s,0) );
+		//
+		// Transition and gaussian states
+		int Ti = Y_[i].size();
+		for ( int t = 0 ; t < Ti ; t++ )
+		  for ( int s = 0 ; s < S ; s++ )
+		    {
+		      // transition state
+		      if ( t > 0 )
+			for ( int ss = 0 ; ss < S ; ss++ )
+			  L_ += _s_[i][t-1](s,0) * log( _A_(s,ss) ) * _s_[i][t](ss,0);
+		      // Gaussian state
+		      L_ += _s_[i][t](s,0) * _ln_gamma_[i][t](s,0);
+		    }
+	      }
+			
 	    //
 	    //
-	    F_old = F_;
-	    // Formaula (4.29)
-	    F_    = 0.;
-	    F_   += qsi_->get_F();
-	    F_   += qdch_->get_F();
-	    F_   += qgau_->get_F();
-	    //
-	    dF    = F_ - F_old;
-	    F_history_.push_back( F_ );
+	    dL    = L_ - L_old;
+	    L_history_.push_back( L_ );
 	    //
 	    //
+	    std::cout << "#################" << std::endl;
 	    std::cout << "Ending iteration: " << iteration << std::endl;
-	    std::cout << "Lower bound: " << F_  << std::endl;
-	    std::cout << "Delta Lower bound: " << dF  << std::endl;
+	    std::cout << "Lower bound: " << L_  << std::endl;
+	    std::cout << "Delta Lower bound: " << dL  << std::endl;
 	  }
       }
   }
