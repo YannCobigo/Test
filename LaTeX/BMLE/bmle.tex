@@ -22,6 +22,7 @@
 %% The amssymb package provides various useful mathematical symbols
 \usepackage{tikz}
 \usepackage{amsmath,amsfonts,amsthm,multicol,bm} % Math packages
+\usepackage{mathtools, cuted}
 %\usepackage{dsfont} % mathds{1}
 %\usepackage{widetext} % 
 \usepackage{listings}
@@ -120,7 +121,7 @@ We considere the rate of atrophy as being a polynomial function $r$. Each unit o
 After $t$ unit of time, the volume is $V(t) = V_{0}\exp(t \times \ln(1-r))$.\\
 
 
-At a maturity stage of life we considere the Total Intracranial volume (TIV) as being constant and the gray matter fully devloped \ToDo{ref which age?}. After this maturity age gray and white matter decreases in volume, then cerebrospinal fluid (CSF) volume increases: $V_{TIV} = V_{gm} + V_{wm} + V_{csf} = n_{gm}V_{TIV} + n_{wm}V_{TIV} + n_{csf}V_{TIV}$ where $V_{TIV}$ represent the TIV, $V_{gm}$ and $n_{gm}$ the gray matter volume and proportion of the TIV, $V_{wm}$ and $n_{wm}$ the white matter volume and proportion of the TIV, and $V_{csf}$ and $n_{csf}$ the CSF volume and proportion of the TIV. 
+At a maturity stage of life we considere the Total Intracranial volume (TIV) as being constant and the gray matter fully devloped \ToDo{ref which age?}. After this maturity age gray and white matter decreases in volume, then cerebrospinal fluid (CSF) volume increases: $V_{TIV} = V_{gm} + V_{wm} + V_{csf} = n_{gm}V_{TIV} + n_{wm}V_{TIV} + n_{csf}V_{TIV}$ where $V_{TIV}$ represents the TIV, $V_{gm}$ and $n_{gm}$ the gray matter volume and proportion of the TIV, $V_{wm}$ and $n_{wm}$ the white matter volume and proportion of the TIV, and $V_{csf}$ and $n_{csf}$ the CSF volume and proportion of the TIV. 
 
 \paragraph{$V_{0}$ problematics}{The first probelmatic brought with a model like $V(t) = V_{0}(1 - r(t))^{t}$ is we don't know what represents $V_{0}$ or when $t=t_{0}$ has to be considered. We can considere a cannonical age when the skull is supposed to have reached the threasholding age, then the gray matter is $V(t=t_{0}) = V_{0} = n_{gm}TIV$. Another possibility is to create a temaplate targetting a mean age $t = <age>$ (the best would be close to the oldest age of subjects not seek, 40 years old for instance). At the voxel level we can state $V_{0,i} = \alpha_{i}V_{T,i}$, where $V_{0,i}$ is the normalized, modulated subject's gray matter intensity in the voxel $i$, $V_{T,i}$ represents the template intensity at the voxel $i$, $\alpha_{i}$ represents the proportionality coefficient between the subject and the template at the voxel level. Then the model can be written:
 
@@ -663,7 +664,327 @@ Thus, at first we applied the symmetric diffeomorphic registration for longitudi
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discussion}
+\section{Trials}
+
+In parallel with improvements in our understanding of the mechanisms of neurodegeneration. Although brain and spinal cord volume loss observed with MRI cannot be equated with atrophy, because the latter implies pathologically proven and irreversible tissue loss, changes in these MRI measures are associated with atrophy and the level of disability in MS. \\
+Many trials of disease-​modifying therapies for MS have included brain atrophy as an outcome measure. Most early studies of interferon-$\beta$ and glatiramer acetate did not include preplanned brain volume measures as secondary MRI outcomes. Those that did include a sound comparison of brain volume changes between intervention arms or between intervention and placebo arms produced mixed results. In several trials, particularly the trial of intramuscular IFN$\beta$1a in RRMS, negative results were at least partly attributed to a pseudoatrophy effect, caused by brain volume loss linked to the presumed treatment-​associated resolution of inflammatory activity and oedema. A post-hoc analysis of grey matter and white matter atrophy during the 2 years of the trial confirmed this finding and indicated that pseudoatrophy of {\bf white matter} contributed most to the observed effect. The same effect has been described in observational studies of patients taking natalizumab or IFN$\beta$, although more research is needed to confirm these findings. Trials of natalizumab provided a clear demonstration of pseudoatrophy. In the AFFIRM trial, brain volume decreases among patients who received natalizumab were larger in the first year than among patients who received placebo, but the observation was reversed in the second year. Subsequent clinical trials of newer drugs have all incorporated brain volume measures as secondary or tertiary outcomes, and results have been positive overall, although studies are not readily comparable. Of note, in studies of powerful anti-​inflammatory drugs against active comparators, the trial drugs have been superior at decreasing accrual of atrophy, indicating that the pseudoatrophy effect can be overcome by the beneficial effects of anti-​inflammatory drugs on neurodegeneration in MS.\\
+Strategies to minimize the effect of pseudoatrophy on clinical measures include, but are not restricted to, obtaining baseline measurements once the anti-inflammatory effect is well established (for example, re-baseline with MRI at 6 or 12 months after treatment initiation).
+
+\begin{enumerate}
+\item We recommend the use of whole brain atrophy over a minimum period of 12 months as a secondary end point in clinical trials in MS and even as a primary outcome measure in trials in the progressive forms of MS to show the effects of the drug on the neurodegenerative component of the disease.
+\item {\bf Ongoing and forthcoming trials are expected to include grey matter volume loss as an outcome measure, as atrophy in the grey matter compartment is more substantial and more clinically relevant than atrophy in the white matter and is likely to be affected less by pseudoatrophy}; however, data on pseudoatrophy remain discordant and we recommend further research to clarify the contribution of grey matter atrophy.
+\item Pseudoatrophy effects mostly occur within the first 6-12 months from treatment initiation with any anti-inflammatory therapy, so we recommend re-baseline MRI at 6-12 months after initiation of any therapy to mitigate the impact of pseudoatrophy on outcome measures.
+\item Associations between treatment effects on brain volume and disability have been demonstrated in clinical trials and indicated by evidence at the individual level, but we recommend further research to confirm these associations before brain volume can be considered for use as a treatment-monitoring tool.
+\end{enumerate}
+
+\paragraph{Pseudoatrophy}{As discussed above, studies of the correlation between inflammatory disease activity (new T2 and/or gadolinium enhancing lesions) and brain volume have shown that inflammation can cause a transient increase in brain volume. This increase can dramatically resolve following treatment with steroids or other disease-modifying drugs, and the resultant reduction in brain volume can be erroneously interpreted as atrophy}
+
+%
+% Mechanisms of action of disease-modifying agents and brain volume changes in multiple sclerosis.
+% https://www.ncbi.nlm.nih.gov/pubmed/18606968?dopt=Abstract
+%
+% Impact of inflammation on brain volume in multiple sclerosis
+% https://www.ncbi.nlm.nih.gov/pubmed/22232347?dopt=Abstract
+%
+% https://www.ncbi.nlm.nih.gov/pubmed/26238463?dopt=Abstract
+% Effect of intramuscular interferon beta-1a on gray matter atrophy in relapsing-remitting multiple sclerosis: A retrospective analysis
+%
+% Early brain pseudoatrophy while on natalizumab therapy is due to white matter volume changes
+% https://www.ncbi.nlm.nih.gov/pubmed/23319072?dopt=Abstract
+%
+% https://www.ncbi.nlm.nih.gov/pubmed/26935253?dopt=Abstract
+% Brain Volume Loss During the First Year of Interferon-Beta Treatment in Multiple Sclerosis: Baseline Inflammation and Regional Brain Volume Dynamics
+%
+% Predictive value of early brain atrophy on response in patients treated with interferon β
+% https://www.ncbi.nlm.nih.gov/pubmed/26185778?dopt=Abstract
+%
+% A pseudoatrophy effect has been held responsible for the lack of net impact of natalizumab on brain volume outcomes in 2-year trials, but no data are available beyond 24 months.
+% https://www.nature.com/articles/s41582-020-0314-x
+%
+% Lifespan normative data on rates of brain volume changes (2019)
+% https://www.ncbi.nlm.nih.gov/pubmed/31207467?dopt=Abstract
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Power and sample size}
+
+We want to know how many subjects should be selected to participate into an experiment testing the effect of a new drug. The null hypothese, $H_{0}$, is the drug has no effect. To reject $H_{0}$, we calculate the {\it t-score}, $t_{e}$, of the experiment equation~(\ref{eq:experimental_t_score}). If $t_{e} > t_{\alpha}$, $H_{0}$ is rejected. 
+
+\begin{equation}
+  t_{e} = \frac{D - \gamma}{\sigma / \sqrt{n}}
+  \label{eq:experimental_t_score}
+\end{equation}
+
+In our situation, we consider two timepoints. The patient $i$ has his observables taken the first timepoint before the treatment $D_{i,b}$ and after the treament at the second timepoint $D_{i,a}$. For the patient $i$, we measure the effect of the treatment by $D_{i} = D_{i,a} - D_{i,b}$. For $n$ subjects, we calculate the average of the treatment effect as $D = (1/n)\sum_{i} D_{i}$ and the variance as $\sigma^{2} = \sum_{i} (D_{i} - D)^{2} / (n-1)$. This means $H_{0}$ will be rejected if $D \approx \gamma = 0$. In this situation, We position the experiment in a two sided {\it t-statistics}, and $t_{\alpha = 0.05} = 1.960$ if we have an infinity of patients. However, after thirty patients, the score does not change much.
+
+\paragraph{Power}{We are looking for a way to know how many subjects should be recruted to reach a specific power $B$, {\it e.g.} 80\% or 90\%, and a requiered effect $\theta$ (postulated effect). We are calculating the probability of $H_{0}$ to be rejected given $H_{1}$ is true with an effect $\theta$, equation~(\ref{eq:Power}). 
+
+  \begin{equation}
+    \begin{array}{rcl}
+      B(\theta) & = & P\left( H_{0} = 0 | H_{1} = 1 \right)  = P\left( t_{e} > t_{\alpha} | \mu = \theta \right) \\
+      & = & P\left( \frac{D - 0}{\sigma / \sqrt{n}} > t_{\alpha} | \mu = \theta \right) = P\left( \frac{D - \theta + \theta - 0}{\sigma / \sqrt{n}} > t_{\alpha} | \mu = \theta \right) \\
+      & = & P\left( \frac{D - \theta}{\sigma / \sqrt{n}} > t_{\alpha} - \frac{\theta}{\sigma / \sqrt{n}} | \mu = \theta \right) \\
+      & = & 1 - P\left( \frac{D - \theta}{\sigma / \sqrt{n}} < t_{\alpha} - \frac{\theta}{\sigma / \sqrt{n}} | \mu = \theta \right) \approx 1 - \Phi \left( t_{\alpha} - \frac{\theta}{\sigma / \sqrt{n}} \right)\\
+    \end{array}
+    \label{eq:Power}
+  \end{equation}
+
+  The approximation in the last line of the power equation~(\ref{eq:Power}) is possible considering $(D - \theta) / (\sigma / \sqrt{n}) \sim \mathcal{N}(0,1)$. And $\Phi$ is the cumulative Gaussian function. If we consider a power of 90\%: $1 - \Phi(Z_{\beta}) = 0.9$. Then $\Phi(Z_{\beta}) = 0.1 \Leftrightarrow Z_{0.1} = -1.28$. The {\bf \it sample size} is given equation~(\ref{eq:sample_size}). For example, we are looking for a 90\% power of having an effect $\theta$ on $t_{\alpha = 0.05} = 1.960$ gives us: $\sqrt{n} = (1.960+1.280) \times \sigma / \theta$.
+
+  \begin{equation}
+    \sqrt{n} = \frac{\sigma}{\theta} (t_{\alpha} - Z_{\beta})
+    \label{eq:sample_size}
+  \end{equation}
+}
+
+\paragraph{Volume as toy example}{We consider $V_{1}$ the volume before treatment, $V_{2}$ after treatment and $V_{3}$ no treatment. $D_{2} = V_{1} - V_{2}$ and $D_{3} = V_{1} - V_{3}$ are the effects for each arms. We would like to evaluate $D_{23} = ((D_{3} = 0.6) - (D_{2} = 0.5)) / D_{3} \sim 20\%$. $V_{i} = \sum_{j} v_{ij}$ the volume of the brain $i$ over the $j$ voxels. Then $D_{23} = \sum_{j} (v_{2} - v_{3})_{j} / \sum_{j}v_{3j}$.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Optimizing the design of clinical trials where the outcome is a rate. Can estimating a baseline rate in a run-in period increase efficiency?}
+
+In many randomized controlled clinical trials the primary outcome is a rate rather than an absolute level. For example, in Alzheimer's disease a characteristic of the disease is that whole brain volumes decrease year on year. Typically, the rate of loss is around 2\% per year and studies of more than 1 year's duration show virtually no overlap between rates of loss (atrophy) in AD patients and healthy controls. A drug that is successful in reducing disease progression might be expected to reduce the mean rate of atrophy in treated patients. Hence, the rate of brain loss is a natural outcome measure to use in a randomized controlled clinical trial in AD.\\
+Where the outcome in a clinical trial is a rate, the analogous baseline measure for incorporation in an analysis of variance model is a baseline rate. This involves separating the total follow-up period into two periods. In the first {\bf run-in} period all patients would be given the same treatment to facilitate calculation of a baseline atrophy rate. In the second {\bf on-treatment} period the patients would be randomized to two or more treatment groups. Commonly, it will be most appropriate for patients to receive placebo in the run-in period, but in some situations it may be more appropriate for them all to receive either no treatment or an active treatment in this period. An example of such a design: a two-group randomized controlled trial with a 6-month run-in, followed by an 18-month period on randomized treatment, is illustrated in figure~\ref{fig:Run_in}.
+
+\begin{figure}[h]
+  \includegraphics[scale=0.5, angle=0]{images/Run-in_run.png}
+  \label{fig:Run_in}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Sample size calculation for randomized controlled trials analysed using linear mixed models}
+
+A general formulation for a linear mixed model is $Y|u \sim \mathcal{N}\left[ X\beta + Zu ; R\right]$ with $u \sim \mathcal{N}[0;G]$. This implies, marginally, that $Y \sim \mathcal{N}\left[ X\beta ; \Sigma\right]$ with $\Sigma = R + ZGZ^{T}$. Here $Y$ is the vector of outcome variables, $X$ is the design matrix, $\beta$ is the vector of fixed effects and $\Sigma$ is the variance-covariance matrix for the residuals. If a linear mixed model is to be used to analyse a randomized controlled trial then one of the elements of $\beta$ will correspond to a treatment effect. In order to carry out sample size calculations for such a trial it is necessary to specify both a postulated value for the estimated treatment effect and its anticipated standard error. Provided that there is a postulated fixed value for the variance-covariance matrix (which we will henceforth denote by $\Sigma$) then standard formulae for the contrasts yielding the parameter estimates (including the treatment effect) and the variance of these parameter estimates are given by $\hat{\beta} = (X^{T}\Sigma^{-1}X)^{-1}X^{T}\Sigma^{-1}Y$ and $V(\hat{\beta}) = (X^{T}\Sigma^{-1}X)^{-1}$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Linear mixed models for randomized trials with a baseline measure of the outcome}
+
+We consider a conventional two-group randomized controlled trial. Suppose $Y_{i0}$ an $Y_{i1}$ outcomes measured at follow-up and baseline for subject $i$ with randomization group indicated by $g_{i}$ , taking values 0 and 1.
+
+\begin{equation*}
+  \left(
+  \begin{array}{c}
+    Y_{i0} \\
+    Y_{i1}
+  \end{array}
+  \right) \sim \mathcal{N} \left[ X\beta | \Sigma \right]= \mathcal{N} \left[
+    \left(
+    \begin{array}{ccc}
+      1 & 0 & 0 \\
+      0 & 1 & g_{i}
+    \end{array}
+    \right)
+    \left(
+    \begin{array}{c}
+      \alpha_{0} \\
+      \alpha_{1} \\
+      \gamma
+    \end{array}
+    \right) |
+    \left(
+    \begin{array}{cc}
+      \sigma_{1}^{2} & \sigma_{12} \\
+      \sigma_{12}   & \sigma_{2}^{2}
+    \end{array}
+    \right)
+  \right]
+\end{equation*}
+
+Provided that $\sigma_{1,2}^{2} > \sigma_{12}$, that implies that $\sigma_{1} = \sigma_{2}$. Then equation the model can be re-expressed as a linear mixed model as follows:
+
+\begin{strip}
+\begin{equation*}
+  \left(
+  \begin{array}{c}
+    Y_{i0} \\
+    Y_{i1}
+  \end{array}
+  \right) \sim \mathcal{N} \left[ X\beta + Zu| R \right]= \mathcal{N} \left[
+    \left(
+    \begin{array}{ccc}
+      1 & 0 & 0 \\
+      0 & 1 & g_{i}
+    \end{array}
+    \right)
+    \left(
+    \begin{array}{c}
+      \alpha_{0} \\
+      \alpha_{1} \\
+      \gamma
+    \end{array}
+    \right) + \left(
+    \begin{array}{cc}
+      1 & 0 \\
+      0 & 1
+    \end{array}
+    \right)\left(
+    \begin{array}{c}
+      u_{i}  \\
+      u_{i} 
+    \end{array}
+    \right)|
+    \left(
+    \begin{array}{cc}
+      \sigma_{1}^{2}-\sigma_{12} & 0 \\
+      0                        & \sigma_{2}^{2}-\sigma_{12}
+    \end{array}
+    \right)
+  \right]
+\end{equation*}
+\end{strip}
+
+We can verify that $\Sigma = R + ZGZ^{T}$. The random effects $u_{i} \sim \mathcal{N}[0; G = \sigma_{12}]$ allow for the correlation between observations on the same subject in the two periods while the inclusion of the interaction between treatment and period, without a main effect of treatment, ensures that the treatment is only allowed to influence outcome at follow-up.
+
+\subsubsection{Allowing for dropouts}
+
+\subsubsection{Example 1: designs with three evenly spaced time points analysed with a standard random slopes model and assuming no dropouts}
+
+To illustrate the methodology, first consider designs where measurements of outcome are made at baseline and at two evenly spaced subsequent visits. In our initial exposition, we use only the two changes between consecutive visits to estimate treatment effects. We do this because the exposition and resultant formulae are readily interpretable and because in many settings the additional gain in precision obtained by adjusting for baseline is small. Next Section, we show how baseline measures can be incorporated, and the impact that this has on the results.
+
+\paragraph{Conventional designs}{First, consider a conventional design in which subjects ($i$) are randomized to two groups ($g_{i}$ = 0,1) of equal size and a continuous outcome is measured at baseline ($Y_{i0}$ at time $t_{0} = 0$) and two evenly spaced follow-up times ($Y_{i1}$, $Y_{i2}$ at $t_{1} = t$ and $t_{2} = 2t$, respectively). Assuming that the effect of treatment is to modify the rate of change a simple model for the data is
+
+\begin{equation*}
+  Y_{ij}|a_{i}, b_{i} \sim \mathcal{N} \left[
+    \left(
+    \begin{array}{ccc}
+      1 & t_{j} & t_{j}g_{i}
+    \end{array}
+    \right)
+    \left(
+    \begin{array}{c}
+      \alpha \\
+      \beta \\
+      \gamma
+    \end{array}
+    \right) +     \left(
+    \begin{array}{cc}
+      1 & t_{j}
+    \end{array}
+    \right)
+    \left(
+    \begin{array}{c}
+      a_{i} \\
+      b_{i}
+    \end{array}
+    \right) ; \sigma^{2}
+    \right]
+\end{equation*}
+
+with the random effects define with:
+
+\begin{equation*}
+  \left(
+  \begin{array}{c}
+    a_{i} \\
+    b_{i}
+  \end{array}
+  \right) \sim \mathcal{N} \left[
+      \left(
+  \begin{array}{c}
+    0 \\
+    0
+  \end{array}
+  \right) ;  \left(
+  \begin{array}{cc}
+    \sigma_{a}^{2} & \sigma_{ab} \\
+    \sigma_{ab} & \sigma_{b}^{2}
+  \end{array}
+  \right) 
+    \right]
+\end{equation*}
+
+Consideration of only the changes between successive visits, $C_{ij} = Y_{ij} - Y_{i(j-1)}$ reduces the number of parameters that need to be specified in a sample size calculation as
+
+\begin{equation*}
+  \left(
+  \begin{array}{c}
+    C_{i1} \\
+    C_{i2}
+  \end{array}
+  \right) \sim \mathcal{N} \left[
+      \left(
+  \begin{array}{cc}
+    t & tg_{i} \\
+    t & tg_{i}
+  \end{array}
+  \right)\left(
+  \begin{array}{c}
+    \beta \\
+    \gamma
+  \end{array}
+  \right) + \left(
+  \begin{array}{c}
+    t  \\
+    t 
+  \end{array}
+  \right)\left(
+  \begin{array}{c}
+    b_i
+  \end{array}
+  \right) ;  \left(
+  \begin{array}{cc}
+    2\sigma^{2} & -\sigma^{2} \\
+    -\sigma^{2} & 2\sigma^{2}
+  \end{array}
+  \right) 
+    \right]
+\end{equation*}
+
+To get the covariance matrix we use the formula for a sequence $X_{1}, \ldots, X_{n}$ of random variables in real-valued, and constants $a_{1},\ldots ,a_{n}$, we have
+
+\begin{equation*}
+  \sigma ^{2}\left( \sum _{i=1}^{n}a_{i}X_{i} \right) = \sum _{i=1}^{n}a_{i}^{2}\sigma ^{2}(X_{i})+2\sum _{i,j\,:\,i<j}a_{i}a_{j}\operatorname {cov} (X_{i},X_{j})
+\end{equation*}
+
+In our situation we have $a_{1} = 1$ and $a_{2} = -1$. Solving $\hat{\beta} = (X^{T}\Sigma^{-1}X)^{-1}X^{T}\Sigma^{-1}Y$ and $V(\hat{\beta}) = (X^{T}\Sigma^{-1}X)^{-1}$ for this model as used to analyse data from a hypothetical two-person trial where $g_{1} = 0$ and $g_{2} = 1$ gives $\hat{\gamma} = [(C_{22} + C_{21}) -(C_{12} + C_{11})]/(2t)$ and $V(\hat{\gamma}) = 2\sigma_{b}^{2} + \sigma^{2}/t^{2}$. Here, as is intuitive, the treatment effect is just the difference in the sum of the two changes between the two subjects. As the follow-up time increases, the variance of the treatment difference declines to an asymptote defined by the between-subject variance in atrophy rates.}
+
+\paragraph{Run-in designs}{Now suppose that subjects are only randomized at the second of the three visits. Assuming the same within-subject covariance structure, as the previouse paragraph, a model for the consecutive changes that forces a common slope ($\delta$) in the pre-randomization periods, but allows different slopes in the post-randomization periods ($\beta$ and $\beta+\gamma$, respectively) is
+
+  \begin{equation*}
+    \left(
+    \begin{array}{c}
+      C_{i1} \\
+      C_{i2}
+    \end{array}
+    \right) \sim \mathcal{N}\left[ \left(
+      \begin{array}{ccc}
+        t & 0 & 0 \\
+        0 & t & tg_{i}
+      \end{array}
+      \right) \left(
+      \begin{array}{c}
+        \delta \\
+        \beta \\
+        \gamma
+      \end{array}
+      \right) + \left(
+      \begin{array}{c}
+        t \\
+        t
+      \end{array}
+      \right) \left(
+      \begin{array}{c}
+        b_{i}
+      \end{array}
+      \right) ; \left(
+  \begin{array}{cc}
+    2\sigma^{2} & -\sigma^{2} \\
+    -\sigma^{2} & 2\sigma^{2}
+  \end{array}
+  \right) \right]
+  \end{equation*}
+
+  In practice, in order to perform an analysis that yields identical results to an analysis of covariance, it might be advisable to allow the variance of the changes in the two periods to differ. However, for the purposes of carrying out sample size calculations, and in the absence of data, it is reasonable to assume that these variances are the same. Solving $\hat{\beta} = (X^{T}\Sigma^{-1}X)^{-1}X^{T}\Sigma^{-1}Y$ and $V(\hat{\beta}) = (X^{T}\Sigma^{-1}X)^{-1}$ this model gives the following formulae for the estimated treatment effect and its variance: $\hat{\gamma} = ((C_{22} - C_{12})-r(C_{21} - C_{11}))/t$ and
+
+  $$
+  V(\hat{\gamma}) = \left( \frac{\sigma^{2}}{t^{2}} + 2\sigma_{b}^{2} \right)(1-r),~~where~r = \frac{t^{2}\sigma_{b}^{2} - 2\sigma^{2}}{t^{2}\sigma_{b}^{2} + 2\sigma^{2}} 
+  $$
+
+Here the treatment effect is the difference in rates in the second period corrected for any difference in baseline rates where the extent of the correction is determined by the correlation between the rates in the two periods ($r$). In contrast to a conventional design the efficiency of the run-in design is not bounded by an asymptote as the time interval between visits increases.
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{discussion}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Article}
