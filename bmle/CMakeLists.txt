@@ -66,6 +66,21 @@ add_executable( bmle MACOSX_BUNDLE BMLE/bmle.cpp  ${HEADERS_} ${BMLE_SOURCES_}  
 # cmake 3.1 target_compile_features(bmle PRIVATE cxx_range_for)
 target_link_libraries( bmle -lX11 ${ITK_LIBRARIES} _NeuroBayes_utils )
 
+#
+# project mle
+include_directories( ${NeuroBayes_SOURCE_DIR}/mle )
+#
+file( GLOB BMLE_HEADERS_ mle/*.h )
+file( GLOB BMLE_SOURCES_ mle/*.cxx )
+#
+list( APPEND HEADERS ${MLE_HEADERS_} )
+list( APPEND SOURCES ${MLE_SOURCES_} )
+#message(STATUS ${SOURCES})
+#
+add_executable( mle MACOSX_BUNDLE mle/mle.cpp  ${HEADERS_} ${BMLE_SOURCES_}  )
+# cmake 3.1 target_compile_features(bmle PRIVATE cxx_range_for)
+target_link_libraries( mle -lX11 ${ITK_LIBRARIES} _NeuroBayes_utils )
+
 
 #
 # project Variational Bayes HMM
