@@ -75,6 +75,10 @@ namespace VB
       //virtual ~VariationalPosterior(){};
       virtual void Expectation()  = 0;
       virtual void Maximization() = 0;
+
+    protected:
+      //
+      const bool _print_{false};
     };
     //
     //
@@ -481,11 +485,15 @@ namespace VB
 	for ( int ss = 0 ; ss < S ; ss++ )
 	  posterior_A_(s,ss) = exp( gsl_sf_psi(posterior_alpha_A_(s,ss)) - gsl_sf_psi(sum_post_alpha_A(s,0)) );
       //
-      std::cout << "posterior_alpha_pi_ = \n" << posterior_alpha_pi_ << std::endl;
-      std::cout << "posterior_alpha_A_ = \n" << posterior_alpha_A_ << std::endl;
-      //
-      std::cout << "posterior_pi_ = \n" << posterior_pi_ << std::endl;
-      std::cout << "posterior_A_ = \n" << posterior_A_ << std::endl;
+      if ( VariationalPosterior<Dim,S>::_print_ )
+	{
+	  //
+	  std::cout << "posterior_alpha_pi_ = \n" << posterior_alpha_pi_ << std::endl;
+	  std::cout << "posterior_alpha_A_ = \n" << posterior_alpha_A_ << std::endl;
+	  //
+	  std::cout << "posterior_pi_ = \n" << posterior_pi_ << std::endl;
+	  std::cout << "posterior_A_ = \n" << posterior_A_ << std::endl;
+	}
     }
     //
     //
@@ -557,11 +565,14 @@ namespace VB
 	  }
 	//
 	//
-	std::cout << "posterior Pi and A" << std::endl;
-	std::cout << "posterior_pi_\n" << posterior_pi_ << std::endl;
-	std::cout << "posterior_A_\n" << posterior_A_ << std::endl;
-	//std::cout << "posterior_A_ col wise\n" << posterior_A_.colwise().sum() << std::endl;
-	std::cout << "posterior_A_ row wise\n" << posterior_A_.rowwise().sum() << std::endl;
+	if ( VariationalPosterior<Dim,S>::_print_ )
+	  {
+	    std::cout << "posterior Pi and A" << std::endl;
+	    std::cout << "posterior_pi_\n" << posterior_pi_ << std::endl;
+	    std::cout << "posterior_A_\n" << posterior_A_ << std::endl;
+	    //std::cout << "posterior_A_ col wise\n" << posterior_A_.colwise().sum() << std::endl;
+	    std::cout << "posterior_A_ row wise\n" << posterior_A_.rowwise().sum() << std::endl;
+	  }
 	
 	// 
 	//
@@ -816,13 +827,16 @@ namespace VB
 	    S_mean_inv_[s] += beta_0_ * delta_(s,0) * diff_mus * diff_mus.transpose() / beta_[s];
 	    S_mean_inv_[s] += W_mean_inv[s];
 	    //
-	    variance_mu_0_[s] = nu_[s] * S_mean_inv_[s];
+	    variance_mu_0_[s] = S_mean_inv_[s] / nu_[s];
 
 	    //
 	    //std::cout << "mu_mean_[" << s << "]\n" << mu_mean_[s] << std::endl;
-	    std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
-	    std::cout << "Sigma_[" << s << "]\n" <<  variance_mu_0_[s] << std::endl;
-	    std::cout << "S_[" << s << "]\n" << nu_[s] * S_mean_inv_[s].inverse() << std::endl;
+	    if ( VariationalPosterior<Dim,S>::_print_ )
+	      {
+		std::cout << "mu_0_mean_[" << s << "]\n" << mu_0_mean_[s] << std::endl;
+		std::cout << "Covariance_[" << s << "]\n" <<  variance_mu_0_[s] << std::endl;
+		std::cout << "S_[" << s << "]\n" << nu_[s] * S_mean_inv_[s].inverse() << std::endl;
+	      }
 	  }
       }
     //
@@ -908,8 +922,9 @@ namespace VB
 		    posteriror_N_[i][t](s,0)    = exp( ln_posteriror_N[i][t](s,0) );
 		  }
 		//
-		std::cout << "posteriror_N_[" << i << "][" << t << "] \n" 
-			  << posteriror_N_[i][t] << std::endl;
+		if ( VariationalPosterior<Dim,S>::_print_ )
+		  std::cout << "posteriror_N_[" << i << "][" << t << "] \n" 
+			    << posteriror_N_[i][t] << std::endl;
 	      }
 	  }
 	//

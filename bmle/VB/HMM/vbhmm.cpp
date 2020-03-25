@@ -200,12 +200,12 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 4;
+	      const int THREAD_NUM = 12;
 	      //
 	      // Load the CSV file
 	      // Dim is the number of modalities in the subject's timepoint
 	      // number_of_states is the first guess on the number of states
-	      VB::HMM::SubjectMapping< /*Dim*/ 3, /*number_of_states*/ 5 > subject_mapping( filename, output_dir, time_tran );
+	      VB::HMM::SubjectMapping< /*Dim*/ 1, /*number_of_states*/ 5 > subject_mapping( filename, output_dir, time_tran );
 
 
 	      
@@ -239,13 +239,13 @@ main( const int argc, const char **argv )
 #else
 		      // Please do not remove the bracket!!
 		      // vertex
-		      if ( idx[0] > 76 - 1  && idx[0] < 76 + 1 && 
-			   idx[1] > 78 - 1  && idx[1] < 78 + 1 &&
-			   idx[2] > 35 - 1  && idx[2] < 35 + 1 )
+//		      if ( idx[0] > 76 - 1  && idx[0] < 76 + 1 && 
+//			   idx[1] > 78 - 1  && idx[1] < 78 + 1 &&
+//			   idx[2] > 35 - 1  && idx[2] < 35 + 1 )
 //		      // ALL
-//		      if ( idx[0] > 5 && idx[0] < 110 && 
-//			   idx[1] > 5 && idx[1] < 140 &&
-//			   idx[2] > 5 && idx[2] < 110 )
+		      if ( idx[0] > 5 && idx[0] < 110 && 
+			   idx[1] > 5 && idx[1] < 140 &&
+			   idx[2] > 5 && idx[2] < 110 )
 //		      // Octan 1
 //		      if ( idx[0] > 5 && idx[0] < 60  & 
 //			   idx[1] > 5 && idx[1] < 70  &&

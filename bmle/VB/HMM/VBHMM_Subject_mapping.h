@@ -148,7 +148,7 @@ namespace VB
       // Number of time the projection is going to be done
       double            number_projection_;
       // number of iteration used to sample the projected image
-      long int          number_sampling_iteration_{10000};
+      long int          number_sampling_iteration_{100000};
       
       //
       // Records
@@ -761,7 +761,7 @@ namespace VB
 		  Reader4D::IndexType idx4d = {Idx[0], Idx[1], Idx[2], mat_index};
 		  A(s,ss) = A_->GetOutput()->GetPixel( idx4d );
 		}
-	    std::cout << "A = \n" << A << std::endl;
+	    //std::cout << "A = \n" << A << std::endl;
 
 	    //
 	    // Get the gaussian centroid and the gussian covariance
@@ -800,7 +800,7 @@ namespace VB
 	    for ( int tp = 0 ; tp < number_projection_ ; tp++ )
 	      ppi = ppi.transpose() * A;
 	    ppi /= ppi.sum();
-	    std::cout << "ppi = \n" << ppi<< std::endl;
+	    //std::cout << "ppi = \n" << ppi<< std::endl;
 	    // create an array of cunulative probabilities
 	    for ( int s = 0 ; s < Num_States ; s++ )
 	      {
@@ -835,8 +835,8 @@ namespace VB
 	    for ( auto vec : samples )
 	      proj_var += (vec - projection) * (vec - projection).transpose();
 	    proj_var /= static_cast<double>( number_sampling_iteration_ - 1 );
-	    std::cout << "projection = \n" << projection << std::endl;
-	    std::cout << "proj_var = \n"   << proj_var << std::endl;
+	    //std::cout << "projection = \n" << projection << std::endl;
+	    //std::cout << "proj_var = \n"   << proj_var << std::endl;
 
 		    
 	    //

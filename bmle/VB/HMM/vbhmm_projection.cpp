@@ -103,7 +103,7 @@ main( const int argc, const char **argv )
 	    // -o   output_dir                                   : output directory
 	    //
 	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-						   "./vbhmmproj -p pidn.nii -A mat.nii -G gauss.ni -V covariance.nii -x n -m mask.nii.gz -o output_dir ",
+						   "./vbhmmproj -p pidn.nii -A mat.nii -G gauss.nii -V covariance.nii -x n -m mask.nii.gz -o output_dir ",
 						   ITK_LOCATION );
 
 	  //
@@ -208,15 +208,15 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 4;
+	      const int THREAD_NUM = 24;
 	      //
 	      // Load the CSV file
 	      // Dim is the number of modalities in the subject's timepoint
 	      // number_of_states is the first guess on the number of states
-	      VB::HMM::SubjectMapping< /*Dim*/ 3, /*number_of_states*/ 5 > subject_mapping( filename, trans_mat,
-											      Gauss, covariance,
-											      num_proj,
-											      output_dir, time_tran );
+	      VB::HMM::SubjectMapping< /*Dim*/ 2, /*number_of_states*/ 5 > subject_mapping( filename, trans_mat,
+											    Gauss, covariance,
+											    num_proj,
+											    output_dir, time_tran );
 
 
 	      
@@ -250,9 +250,9 @@ main( const int argc, const char **argv )
 #else
 		      // Please do not remove the bracket!!
 		      // vertex
-		      if ( idx[0] > 76 - 1  && idx[0] < 76 + 1 && 
-			   idx[1] > 78 - 1  && idx[1] < 78 + 1 &&
-			   idx[2] > 35 - 1  && idx[2] < 35 + 1 )
+//		      if ( idx[0] > 76 - 1  && idx[0] < 76 + 1 && 
+//			   idx[1] > 78 - 1  && idx[1] < 78 + 1 &&
+//			   idx[2] > 35 - 1  && idx[2] < 35 + 1 )
 //		      // ALL
 //		      if ( idx[0] > 5 && idx[0] < 110 && 
 //			   idx[1] > 5 && idx[1] < 140 &&
@@ -269,10 +269,10 @@ main( const int argc, const char **argv )
 //		      if ( idx[0] > 5 && idx[0] < 60  && 
 //			   idx[1] >= 70 && idx[1] < 140 &&
 //			   idx[2] > 2 && idx[2] < 60 )
-//		      // Octan 4
-//		      if ( idx[0] >= 60 && idx[0] < 110 && 
-//			   idx[1] >= 70 && idx[1] < 140 &&
-//			   idx[2] > 2 && idx[2] < 60 )
+		      // Octan 4
+		      if ( idx[0] >= 60 && idx[0] < 110 && 
+			   idx[1] >= 70 && idx[1] < 140 &&
+			   idx[2] > 2 && idx[2] < 60 )
 //		      // Octan 5
 //		      if ( idx[0] > 5 && idx[0] < 60 && 
 //			   idx[1] > 5 && idx[1] < 70 &&

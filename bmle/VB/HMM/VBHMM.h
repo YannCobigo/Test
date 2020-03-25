@@ -101,6 +101,10 @@ namespace VB
       // log marginal likelihood lower bound
       double F_{-1.e-36};
       std::list< double > F_history_;
+      
+      //
+      // Print out
+      const bool _print_{false};
     };
 
     //
@@ -137,9 +141,10 @@ namespace VB
 	  dF    =  1.e06,
 	  F_old = -1.e-40;
 	int iteration = 0;
-	while ( fabs(dF) > 1.e-6 )
+	while ( fabs(dF) > 1.e-8 )
 	  {
-	    std::cout << "Begining iteration: " << ++iteration << std::endl;
+	    if ( _print_ )
+	      std::cout << "Begining iteration: " << ++iteration << std::endl;
 	    //
 	    // M step
 	    qsi_->Maximization();
@@ -164,9 +169,12 @@ namespace VB
 	    F_history_.push_back( F_ );
 	    //
 	    //
-	    std::cout << "Ending iteration: " << iteration << std::endl;
-	    std::cout << "Lower bound: " << F_  << std::endl;
-	    std::cout << "Delta Lower bound: " << dF  << std::endl;
+	    if ( _print_ )
+	      {
+		std::cout << "Ending iteration: " << iteration << std::endl;
+		std::cout << "Lower bound: " << F_  << std::endl;
+		std::cout << "Delta Lower bound: " << dF  << std::endl;
+	      }
 	  }
       }
   }

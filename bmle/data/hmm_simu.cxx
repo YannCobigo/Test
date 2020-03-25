@@ -31,7 +31,7 @@ gaussian( const Eigen::Matrix< double, Dim, 1 >&   Y,
 int main(int argc, char const *argv[])
 {
   //
-  const int Dim = 4;
+  const int Dim = 3;
   const int S   = 3;
   const int n   = 100;
   //
@@ -45,7 +45,7 @@ int main(int argc, char const *argv[])
       gauss_sd[s].resize( Dim );
       for ( int d = 0 ; d < Dim ; d++ )
 	gauss_sd[s][d] = std::normal_distribution< double >( static_cast< double >( (s+1) * (d+1) ),
-							     1.0 );
+							     0.5 );
     }
   //
   std::uniform_real_distribution< double > uniform(0.0,1.0);
