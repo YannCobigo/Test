@@ -95,38 +95,118 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 \section{Mathematical preliminaries}
 
-In this section we are lying bases on fondamental mathematics principals. Those fondations are not proven and serve as a base for the understanding of the rest of this report. For the ost part, we will use the Einstein summing convetion.\\
-We consider a map $f: X \rightarrow Y$ as an homomorphism if the algebraic structure of the set $X$, {\it e.g.} addition or multiplication, is preseved under the mapping $f$. For example $f$ is an homomorphism if $\forall a,b \in X: f(ab) = f(a)f(b)$. The mapping $f$ is an isomorphism if it is a bijective homomorphism. A map is said to be continous if the inverse image of an open set on $Y$ is an open set on $X$.
+In this section we are laying bases on fundamental mathematical principals. Those foundations are not proven and serve as basis to understand the rest of this report. For the most part, we will use the Einstein summing convention, meaning repeating indices represent a sum.\\
+We consider a map $f: X \rightarrow Y$ as an homomorphism if the algebraic structure of the set $X$, {\it e.g.} addition or multiplication, is preserved under the mapping $f$. For example $f$ is an homomorphism if $\forall a,b \in X: f(ab) = f(a)f(b)$ on $Y$. The mapping $f$ is an isomorphism if it is a bijective homomorphism. A map is said to be continuous if the inverse image of an open set $f(U)$ on $Y$ is an open set on $X$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Vector spaces}
 
-A vetor space $V$ is define on a corp $\mathbb{K}$ ({\it i.e.} a field), the elements of the vector space are vectors defined on the field $\mathbb{K}$. A vector space has a structure of a group. In addition, we have the addition of vectors and the multiplication with a scalar of $\mathbb{K}$. Let $\{e_{\mu}\}$ a set of vectors on the field $\mathbb{K}$ linearly independent if the only solution of the equation $x^{\mu}e_{\mu} = 0$ is $x^{\mu} = 0$ for any $\mu$. A set of linearly independ set of vectors is a basis of $V$. Any element $\bm{v}$ of $V$ can be written in an unique way:
+A vector space $V$ is defined on a corp $\mathbb{K}$ ({\it i.e.} a field), the elements of the vector space are vectors defined on the field $\mathbb{K}$. A vector space has a structure of a group. In addition, we have the addition of vectors and the multiplication with a scalar of $\mathbb{K}$. Let $\{e_{\mu}\}$ a set of vectors on $V$ linearly independent if the only solution of the equation $x^{\mu}e_{\mu} = 0$ is $x^{\mu} = 0$ for any $\mu$. A set of linearly independent vectors is a basis of $V$. Any element $\bm{v}$ of $V$ can be written in an unique way:
 
 $$
 v = v^{\mu}e_{\mu},~~~v^{\mu} \in \mathbb{K}
 $$
 
-The linear map is an example of homomorphism that preserves the vector addition and the scalar multiplication. Let $\bm{v}$ and $\bm{w}$ two vectors of the vector space $V$ and $f : V \rightarrow W$ a linear map between the vector spaces $V$ and $W$. Then for all $a$ and $b$ in the field $\mathbb{K}$, $f(a\bm{v} + b\bm{w}) = af(\bm{v}) + bf(\bm{w})$. The linear map on the vector space is an extention of the linear application on the field $\mathbb{K}$. The image, $Img~f$, of the map is define as $f(V) \subset W$. and the kernel, $Ker~f$, is defined as $\{ \bm{v} \in V / f(\bm{v}) = \bm{0}\}$. \\
-Let $f : V \rightarrow W$ a linear map and $\bm{v} = v^{\mu} e_{\mu}$ a vector of $V$ defined of the basis $e_{\mu}$. We defined the dual space, $V^{*}$, through the mapp $f(\bm{v}) = v^{\mu} f(e_{\mu})$. The dual basis become $f(e_{\mu})$ if, for each $\mu$ the $f(e_{\mu})$ is defined. We introduce $e^{\mu} = f(e_{\mu})$ it can be completly specified by: $e^{\mu}e_{\nu} = \delta_{~\nu}^{\mu}$.
+The linear map is an example of homomorphism that preserves the vector addition and the scalar multiplication. Let $\bm{v}$ and $\bm{w}$ two vectors of the vector space $V$ and $f : V \rightarrow W$ a linear map between the vector spaces $V$ and $W$. Then for all $a$ and $b$ in the field $\mathbb{K}$, $f(a\bm{v} + b\bm{w}) = af(\bm{v}) + bf(\bm{w})$. The linear map on the vector space is an extension of the linear application on the field $\mathbb{K}$. The image, $Img~f$, of the map is define as $f(V) \subset W$. and the kernel, $Ker~f$, is defined as $\{ \bm{v} \in V / f(\bm{v}) = \bm{0}\}$. The kernel $Ker~f$ is never empty because $f(\bm{0}) = \bm{0}$. \\
+Let $f : V \rightarrow W$ a linear map and $\bm{v} = v^{\mu} e_{\mu}$ a vector of $V$ defined of the basis $e_{\mu}$. We defined the dual space, $V^{*}$, through the map $f(\bm{v}) = v^{\mu} f(e_{\mu})$. The dual basis become $f(e_{\mu})$ if, for each $\mu$ the $f(e_{\mu})$ is defined. We introduce $e^{\nu} = f(e_{\mu})$ it can be completely specified by: $e^{\nu}e_{\mu} = \delta_{~\mu}^{\nu}$. $f$ is a dual vector $f = f_{\nu}e^{\nu}$. The action of the dual vector $f$ on a vector $\bm{v}$ is the inner product:
+
+$$
+f(\bm{v}) = v^{\mu} f(e_{\mu}) = v^{\mu} f_{\nu}e^{\nu}(e_{\mu}) = v^{\mu} f_{\mu}
+$$
+
+The dual vector is a linear object that maps a vector to a scalar. We usually use the notation $<,> : V^{*} \times V \rightarrow \mathbb{K}$. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Tensors}
+\subsection{Tensors and Tensor product space}
+
+A tensor is a multi-linear map from multiple cartesian product vector spaces to the corp $\mathbb{K}$: $\otimes : V_{1} \times V_{2} \times \cdots \times V_{n} \times V_{1}^{*} \times V_{2}^{*} \times \cdots \times V_{m}^{*} \rightarrow \mathbb{K}$. A tensor is a generalization of the linear map, that can map several vectors and dual vectors to a scalar. For example, for $(\alpha, \beta) \in V^{*} \times V^{*}$:
+
+\begin{eqnarray*}
+\begin{array}{rcl}
+  \otimes : V \times V & \rightarrow & \mathbb{K} \\
+  \alpha \otimes \beta(\bm{v},\bm{w}) & \rightarrow & <\alpha, \bm{v}><\beta, \bm{w}>
+\end{array}
+\end{eqnarray*}
+
+Tensors are their own vector space. We can demonstrate the vector addition and the scalar multiplication rules. As any vecor space, we can build the basis vectors. In the case of $\otimes : V_{1} \times V_{2} \rightarrow \mathbb{K}$ the basis vectors can be written:
+
+\begin{eqnarray*}
+  \left( 
+  \begin{array}{cccc}
+    e^{0} \otimes e^{0} & e^{0} \otimes e^{1} & \cdots & e^{0} \otimes e^{n} \\ 
+    e^{1} \otimes e^{0} & e^{1} \otimes e^{1} & \cdots & e^{1} \otimes e^{n} \\
+    \vdots &&& \\
+    e^{n} \otimes e^{0} & e^{n} \otimes e^{1} & \cdots & e^{n} \otimes e^{n} \\ 
+  \end{array}
+  \right)
+\end{eqnarray*}
+
+According to this definition of the basis, we can write any arbitrary tensor: $\alpha \otimes \beta = T_{\mu\nu}e^{\mu} \otimes e^{\nu}$. As an example, we can take two arbetrary vectors $(\bm{v}, \bm{w}) \in V \times V$ and one arbitrary dual vector $\bm{u} \in V^{*}$, where $\bm{v} = v^{\mu}e_{mu}$, $\bm{w} = w^{\nu}e_{nu}$ and $\bm{u} = u_{\gamma}e^{\gamma}$. And project them into $e^{1} \otimes e^{5}\otimes e_{12}$, then:
+
+\begin{eqnarray*}
+  \begin{array}{rcl}
+    T_{1,5}^{~~12}e^{1} \otimes e^{5}\otimes e_{12}(\bm{v}, \bm{w}, \bm{u}) & = & T_{1,5}^{~~12} <e^{1},v^{\mu}e_{\mu}><e^{5},w^{\nu}e_{\nu}><e_{12},u_{\gamma}e^{\gamma}> \\
+    & = & T_{1,5}^{~~12} v^{\mu}w^{\nu} \delta_{\mu}^{1} \delta_{\nu}^{5} \delta_{12}^{\gamma} \\
+    & = & T_{1,5}^{~~12} v^{1}w^{5}u_{12} \in \mathbb{K}
+  \end{array}
+\end{eqnarray*}
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Topological spaces}
 
-Topological spaces are, mathematicaly, a general space. The goal of  topologies is to classify the equivalence of shapes. If we can build a continuous application $f : X \rightarrow Y$ between two topologies $X$ and $Y$, and the inverse $f^{-1}$ of the application $f$ exists and is continous. Then $f$ is called an homeomorphism and the two spaces, $X$ and $Y$, are homeomorphic.
-We tend to work with metric spaces that are subset of manifold that are subset of topological spaces. In this section we are going to describe manifold that can be seen locally as a vector space and globaly as a topology.
+Topological spaces are, mathematically, a general space. The goal of topologies is to classify the equivalence of shapes. Shapes stays the same under deformation. Topology generalize the notion of distance into a notion of proximity. \\
+If we can build a continuous application $f : X \rightarrow Y$ between two topologies $X$ and $Y$, and the inverse $f^{-1}$ of the application $f$ exists and is continuous, then $f$ is called an homeomorphism and the two spaces, $X$ and $Y$, are homeomorphic.
+We tend to work with metric spaces that are subsets of manifold that are subsets of topological spaces. In this section we are going to describe manifold that can be seen locally as a vector space and global as a topology.
 
-\paragraph{Definition}{Let $X$ be a set. A topological space, $\mathcal{T}$, is a set of subset $U_{i}$ of $X$. $X$ and $\varnothing$ are in $\mathcal{T}$. The intersections and unions of sets $U_{i}$ are in $mathcal{T}$.
+\paragraph{Definition}{Let $X$ be a set. A topological space, $\mathcal{T}$, is a set of subset $U_{i}$ of $X$. $X$ and $\varnothing$ are in $\mathcal{T}$. The intersections and unions of sets $U_{i}$ are in $\mathcal{T}$. The Topology is said connected if it contains only $\varnothing$ and $X$.\\
+}
 
-If the union of all the subset is coverses $X$, $\cup_{i} U_{i} = X$. The family $\{U_{i} \}$ is called a covering of $X$.
+If the union of all the subset converses $X$, $\cup_{i} U_{i} = X$, the family $\{U_{i} \}$ is called a covering of $X$.
+
+\paragraph{Definition}{A subset $A$ of a topological space $(X,\mathcal{T})$ is called a {\it neighbourhood} of $x \in X$ if and only if it exists an open $U$ such as $x \in U \subset A$. \\
+}
+
+\paragraph{Definition -- Hausdorff Space}{We say a topological space $X$ is a Hausdorff space ($T_{2}$-space) if for two disctinct points $x$ and $y$ of $X$, their respective neighbourhood sets, $U$ and $V$, are distinct. This property must be respected for all combinaisons of pairs or points in $X$.\\
+}
+
+This is the weakest separation axiom, and will consider all our spaces as Hausdorff spaces.
+
+\paragraph{Definition}{A system of open sets $\mathcal{B}$ of a topological space $(X,\mathcal{T})$ is called a basis if and only if all the opens of $\mathcal{T}$ can be written as a an union of sets from $\mathcal{B}$. $X$ being an open set, $X = \cup_{U \subset \mathcal{B}}U$, $\mathcal{B}$ covers $X$.}
+
+\paragraph{Example}{A basis on an Euclidian space $\mathbb{R}^{n}$ can be build from a system of open balls $\{\mathcal{B}_{x_{i}}\}$, where $\mathcal{B}_{x_{i}} = \{x \in \mathbb{R}^{n}, \exists \varepsilon \in \mathbb{R}^{n} such~as~ \|x-x_{i}\| < \varepsilon \}$. The notion of distance in an Euclidian space is $\|x\| = \sqrt{\sum_{j=1}^{n} x_{j}^{2}}$.\\
+
+  If we restrict $n=1$, the Euclidian space is a lign, we can divide the lign into $m$ non-overlapping segments (open balls) centered on $x_{i}$. The coordinates of $x$ inside each open is $(x'_{1}, x'_{2}, \dots,x'_{m})$ and the length $\|x\| = \sqrt{(x'_{1}-x_{1})^{2} + (x'_{2}-x_{2})^{2} + \dots + (x'_{m}-x_{m})^{2}}$.\\
+}
+
+\paragraph{Product of topologies}{Let $X$ and $Y$ topological spaces, $X \times Y$ their cartesian product, such as the set of all ordered pairs $(x,y)$, with $x\in X$ and $y\in Y$, belong to $X\times Y$. The sets of forms $U\times V$, such that $U\subset X$ and $V\subset V$, forms a basis of the product of topologies $X \times Y$. }
+
 For $x,~y,~z \in X$, we define a metric as the symmetric application $d : X \times X \rightarrow \mathbb{R}$ and $d(x,y) = d(y,x)$ such that $d(x,x) \ge 0$ and $d(x,y) + d(y,z) \ge d(x,z)$. A topological space $\mathcal{T}$ with a metric $d$ is a metric topological space. The subset of the topological space are the usual open ({\it i.e.} the open balls) $U_{i} = \{ x \in \mathcal{T} / \forall y \in U_{i} ~~ d(x,y) < \varepsilon \}$.
   
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Manifolds}
 
+A manifold $\mathcal{M}$ is a topological space that is locally homeomorphic to a subset of $\mathbb{R}^{d}$, not necessarly globaly. We usually consider the open ball $U_{i}$ homeomorphic to $\mathbb{R}^{d}$ through the mapping $\gamma_{i}$. We call a chart $\{U_{i}, \gamma_{i}\}$, and $\gamma_{i}$ represents a special set of coordinates $\{x_{\gamma_{i}}^{\mu}\}$. If the maniflod is not globaly homeomorphic to $\mathbb{R}^{d}$, then several sets of coordinates will need to be built. It can happen that overlaping open balls ofer different coordinates for the points in the intersection of the balls.
 
+\paragraph{Definition}{A manifold $\mathcal{M}$ is a differentiable manifold, if it is provided with a family $\{U_{i}, \gamma_{i}\}$ covering the manifold. And given $U_{i}$ and $U_{j}$ such that $U_{i} \cap U_{j} \ne \varnothing$, the mapping $\psi = \gamma_{i} \circ \gamma_{j}^{-1}$, from $\gamma_{i}(U_{i} \cap U_{j})$ and $\gamma_{j}(U_{i} \cap U_{j})$, is $C^{\infty}$.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Tangent space on a manifold}
+
+We are going to define two important mapping on the manifold: the curves and functions. A curve $c: (a,b) \in \mathbb{R} \rightarrow \mathcal{M}$ is a mapping from an open $(a,b)$ of the real line to the manifold $\mathcal{M}$. The open $(a,b)$ can represent the entire real line. A function $f: U_{i} \in \mathcal{M} \rightarrow \mathbb{R}$ is a smooth mapping ($C^{\infty}$) from the open $U_{i}$ of $\mathcal{M}$ to the real line.\\
+Now that we defined our special mapping, we are going to introduce the notion of derivative on the manifold.
+
+\begin{eqnarray*}
+\begin{array}{rcl}
+  \frac{df}{dt} |_{p} & = & \frac{d}{dt}|_{t = t_{0}} (f \circ c) = \frac{d}{dt}|_{t = t_{0}} (f \circ \gamma^{-1} \circ \gamma \circ c)\\
+  & = &  \left(\frac{d(\gamma \circ c)}{dt}|_{t = t_{0}}\right)^{\mu}\frac{\partial (f \circ \gamma^{-1})}{\partial x^{\mu}}|_{\gamma(p) = x_{0}^{\mu}} = \dot{x}^{\mu}\frac{\partial f }{\partial x^{\mu}}|_{p}\\
+\end{array}
+\end{eqnarray*}
+
+The derivative of $f$ is equivalent to apply the operator $\dot{x}^{\mu}\partial / \partial x^{\mu}$ on $f$ at the point $p$. This operator represents the tangent vector to $\mathcal{M}$ at $p = c(t_{0})$ along the direction given by the curve $c$. All the tangent vectors at $p$ form the tangent space, $T_{p}\mathcal{M}$, of $\mathcal{M}$ ant $p$. The basis vector of $T_{p}\mathcal{M}$ are $e_{\mu} = \partial / \partial x^{\mu}$. And any vector $\bm{v}$ in $T_{p}\mathcal{M}$ can be writtent $\bm{v} = v^{\mu} e_{\mu}$. \\
+%[change coordinates 151/509]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -641,6 +721,100 @@ Where $\chi(t, \tau) = g(g^{-1}(t), \tau)$
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Green functions}
+
+A Green's function is a solution to an inhomogenous differential equation with a ``driving term'' given by a delta function. It is used as a convenient method for solving more complicated inhomogenous differential equations. Mathematically, it is the kernel of an integral operator that represents the inverse of a differential operator. Physically, it is the response of a system when a unit point source is applied to the system. In this section we show how these two apparently different interpretations are actually the same. \\
+In a more general setting, we want to solve the inhomogeous differential equation $\mathcal{L} \psi = f$, where the solution is formally given by: $\psi = \mathcal{L}^{-1} f$. The inverse of a differential operator is an intergral operator we write:
+
+$$
+\psi(\bm{r}_{1}) = \int G(\bm{r}_{1}, \bm{r}_{2}) f(\bm{r}_{2}) \, d\nu
+$$
+
+The Green function $G(\bm{r}_{1}, \bm{r}_{2})$ is refered as the kernel of the integral operator. By considering the Green's function $G(\bm{r}_{1}, \bm{r}_{2})$ is solution to the Green's function eqaution $\mathcal{L} G(\bm{r}_{1}, \bm{r}_{2}) = \delta(\bm{r}_{1} - \bm{r}_{2})$, as we just introduiced before. We can see that:
+
+$$
+\mathcal{L} \psi = \int \mathcal{L} G(\bm{r}_{1}, \bm{r}_{2}) f(\bm{r}_{2}) \, d\nu = f
+$$
+
+The original inhomogeneous differential equation. The idea is any source can be decomposed on a superposition of ponctual sources.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Motivation observation}
+
+Considering for a moment, the Laplace equation in spherical coordinates, of a function $\psi$ depending only of the radius $\bm{r}$.
+
+$$
+\frac{1}{r^{d-1}}\frac{\partial}{\partial r} \left(r^{d-1} \frac{\partial \psi}{\partial r} \right) = 0  \Leftrightarrow for~d>2,~~\psi = \frac{c}{2-d}r^{2-d}.
+$$
+
+Where $c$ is a constant. In the three dimensions case, we have a singularity when $r \rightarrow 0$ the potential tends to infinity. Let's consider a very small volume volume tending to the space around the the position zero:
+
+\begin{equation}
+  \begin{array}{rcl}
+    <\mathcal{L} \psi, h > & = & \int_{r\rightarrow 0} d^{3}\bm{r} \, \Delta \frac{c}{r} \times h(r) \sim h(0)  \times c \int_{r\rightarrow 0} d^{3}\bm{r} \, \Delta \frac{1}{r} \\
+    & \sim &  h(0)  \times c \oint_{r\rightarrow 0} d\bm{S} \cdot \bm{\nabla} \frac{1}{r} \sim - h(0)  \times c \frac{4\pi\varepsilon^{2}}{\varepsilon^{2}} \\
+  \end{array}
+\end{equation}
+
+We can observe $\mathcal{L} \psi$ bhave like a Dirac distribution. We write $\mathcal{L} G(\bm{r}_{1}, \bm{r}_{2}) = \delta(\bm{r}_{1} - \bm{r}_{2})$ where $\bm{r}_{1}$ is the postion of the source and $ \bm{r}_{2}$ is the position where the field is measured. The solution of this equation is the Green function
+
+
+\begin{equation}
+G(\bm{r}_{1}, \bm{r}_{2}) = -\frac{1}{4\pi}\frac{1}{|\bm{r}_{1} - \bm{r}_{2}|}.
+\label{eq:Green_Function_laplace}
+\end{equation}
+
+
+In our example, $d=2$, does not have any solution. In this particular case, we build a small disk around the point charge. In Topology, we can detect this point charge with a lasso we pulled: this is the {\it Homotopy}.\\
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Solution of the Laplace and Poisson equation}
+
+In this section we are going to find the second identity of Green and solve the Poisson equation. Let's start by using the theorem of the divergence on a field $\bm{A}$ in a volume $V$ surrounded by a closed surface $S$.
+
+$$
+\int_{V} \bm{\nabla} \cdot \bm{A} \, d\nu = \oint_{S} \bm{A} \cdot d\bm{S}
+$$
+
+At this point, to make the Laplace, or Poisson, equation appeared, we write the field $\bm{A} = \varphi \bm{\nabla} \psi$. the theorem of the divergence can be written:
+
+$$
+\int_{V} \bm{\nabla}\varphi \cdot \bm{\nabla} \psi + \varphi \Delta \psi\, d\nu = \oint_{S}\varphi \bm{\nabla} \psi \cdot d\bm{S}
+$$
+
+Since we arbitrary defined the field $\bm{A}$ with the gradient of $\psi$. We could instead define $\bm{A}$ with the gradient of $\varphi$. Doing so, we make the difference between the two expressions and get Green's second identity:
+
+\begin{equation}
+  \int_{V} \varphi \Delta \psi - \psi \Delta \varphi \, d\nu = \oint_{S} \left( \varphi \bm{\nabla} \psi  - \psi \bm{\nabla} \varphi \right) \cdot d\bm{S}
+  \label{eq:Green_S_second_identity}
+\end{equation}
+
+In the situation of solving the Poisson equation, $\Delta \psi(\bm{r}_{1}) = - \frac{\rho(\bm{r}_{2})}{\varepsilon_{0}}$, we consider $\varphi = G(\bm{r}_{1}, \bm{r}_{2})$ and $\Delta G(\bm{r}_{1}, \bm{r}_{2}) = \delta(\bm{r}_{1} - \bm{r}_{2})$. And replacing these expression in the Green's secod identity, eq.~(\ref{eq:Green_S_second_identity}) we have:
+
+\begin{equation}
+  \begin{array}{rcl}
+    \psi(\bm{r}_{1}) & = & - \int_{V} G(\bm{r}_{1}, \bm{r}_{2}) \frac{\rho(\bm{r}_{2})}{\varepsilon_{0}} \, d^{3}\bm{r}_{2} \\
+    & - & \oint_{S} \left(  G(\bm{r}_{1}, \bm{r}_{2})  \bm{\nabla} \psi(\bm{r}_{2})  - \psi(\bm{r}_{2}) \bm{\nabla} G(\bm{r}_{1}, \bm{r}_{2}) \right) \cdot d\bm{S}
+  \end{array}
+\end{equation}
+
+If the volume tend to the infinity the surface term vanishing and the comparing the Comlomb potential to the integral we deduce the Green function has the same form as eq.~(\ref{eq:Green_Function_laplace}).
+
+\begin{equation}
+  \psi(\bm{r}_{1}) = \int_{V} \frac{\rho(\bm{r}_{2})}{4\pi\varepsilon_{0} |\bm{r}_{1} - \bm{r}_{2}|} \, d^{3}\bm{r}_{2}
+  \label{eq:Coulomb_potential}
+\end{equation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{References}
 %% References with bibTeX database:
 \bibliographystyle{Bibliography/elsarticle-num}
