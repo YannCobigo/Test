@@ -33,8 +33,10 @@ using MaskType4D = itk::Image< unsigned char, 4 >;
 //
 #include "Exception.h"
 #include "MakeITKImage.h"
-#include "Tools.h"
 #include "mle_subject.h"
+// Tools
+#include "Tools.h"
+//#include "Algorithms/Raphson.h"
 //
 //
 //
@@ -45,7 +47,7 @@ namespace NeuroBayes
    * \brief 
    * 
    */
-  template< int D_r, int D_f >
+  template< class Optimizer, int D_r, int D_f >
     class MleLoadCSV
   {
   public:
@@ -59,6 +61,7 @@ namespace NeuroBayes
     /** Destructor */
     virtual ~MleLoadCSV() {};
 
+    Optimizer optim;
 
     //
     // This function will load all the patients images into a 4D image.
@@ -213,8 +216,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f >
-    MleLoadCSV< D_r, D_f >::MleLoadCSV( const std::string& CSV_file,
+  template< class Optimizer, int D_r, int D_f >
+    MleLoadCSV< Optimizer, D_r, D_f >::MleLoadCSV( const std::string& CSV_file,
 					  const std::string& Output_dir,
 					  // Age Dns: demean, normalize, standardize
 					  const NeuroStat::TimeTransformation Dns,
@@ -284,7 +287,7 @@ namespace NeuroBayes
 //	      {
 //		std::cout << PIDN << " " << group << std::endl;
 //		groups_.insert( group );
-//		group_pind_[ group ][PIDN] = MleSubject< D_r, D_f >( PIDN, group, Output_dir );
+//		group_pind_[ group ][PIDN] = MleSubject< Optimizer, D_r, D_f >( PIDN, group, Output_dir );
 //		group_num_subjects_[ group ]++;
 //		num_subjects_++;
 //	      }
@@ -619,8 +622,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f > void
-    MleLoadCSV< D_r, D_f >::build_groups_design_matrices()
+  template< class Optimizer, int D_r, int D_f > void
+    MleLoadCSV< Optimizer, D_r, D_f >::build_groups_design_matrices()
   {
     try
       {
@@ -984,8 +987,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f > void
-    MleLoadCSV< D_r, D_f >::Expectation_Maximization( MaskType::IndexType Idx )
+  template< class Optimizer, int D_r, int D_f > void
+    MleLoadCSV< Optimizer, D_r, D_f >::Expectation_Maximization( MaskType::IndexType Idx )
   {
     try
       {
@@ -1386,8 +1389,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f > void
-    MleLoadCSV< D_r, D_f >::Prediction( MaskType::IndexType Idx )
+  template< class Optimizer, int D_r, int D_f > void
+    MleLoadCSV< Optimizer, D_r, D_f >::Prediction( MaskType::IndexType Idx )
   {
     try
       {
@@ -1409,8 +1412,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f > double
-    MleLoadCSV< D_r, D_f >::F_( const Eigen::MatrixXd& Augmented_Y,
+  template< class Optimizer, int D_r, int D_f > double
+    MleLoadCSV< Optimizer, D_r, D_f >::F_( const Eigen::MatrixXd& Augmented_Y,
 				 const Eigen::MatrixXd& Inv_Cov_eps,
 				 const Eigen::MatrixXd& Eta_theta_Y,
 				 const Eigen::MatrixXd& Cov_theta_Y ) const
@@ -1473,8 +1476,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f > void
-    MleLoadCSV< D_r, D_f >::lambda_regulation_( std::map< int /*group*/, std::vector< double > >& Lambda ) 
+  template< class Optimizer, int D_r, int D_f > void
+    MleLoadCSV< Optimizer, D_r, D_f >::lambda_regulation_( std::map< int /*group*/, std::vector< double > >& Lambda ) 
     {    
       try
 	{
@@ -1499,8 +1502,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f > bool
-    MleLoadCSV< D_r, D_f >::check_convergence_( const std::list< double >& F_val, 
+  template< class Optimizer, int D_r, int D_f > bool
+    MleLoadCSV< Optimizer, D_r, D_f >::check_convergence_( const std::list< double >& F_val, 
 						 const double Convergence, 
 						 const int    Iteration, 
 						 const int    Window_size,
@@ -1557,8 +1560,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f > void
-    MleLoadCSV< D_r, D_f >::write_subjects_solutions( )
+  template< class Optimizer, int D_r, int D_f > void
+    MleLoadCSV< Optimizer, D_r, D_f >::write_subjects_solutions( )
   {
     try
       {

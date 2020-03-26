@@ -18,8 +18,11 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 #include "Thread_dispatching.h"
 #include "Exception.h"
 #include "mle_load_csv.h"
-#include "Tools.h"
 #include "IO/Command_line.h"
+// Tools
+#include "Tools.h"
+#include "Algorithms/Raphson.h"
+#include "Optimizers/Maximum_likelihood.h"
 //
 //
 //
@@ -238,9 +241,10 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Load the CSV file
-	      NeuroBayes::MleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
-									    time_tran, 
-									    inv_cov_error );
+	      NeuroBayes::MleLoadCSV< NeuroBayes::Raphson,
+				      0, 0 /*D_f*/> subject_mapping( filename, output_dir,
+								     time_tran, 
+								     inv_cov_error );
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();
 

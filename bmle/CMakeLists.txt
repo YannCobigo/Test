@@ -39,7 +39,9 @@ include(${ITK_USE_FILE})
 # Utils
 file( GLOB HEADERS_       utils/*.h )
 file( GLOB HEADERS_       utils/IO/*.h )
-file( GLOB UTILS_SOURCES_ utils/*.cxx  )
+file( GLOB HEADERS_       utils/Algorithms/*.h )
+file( GLOB HEADERS_       utils/Optimizers/*.h )
+file( GLOB UTILS_SOURCES_ utils/*.cxx utils/Algorithms/*.cxx  )
 #
 list( APPEND HEADERS ${HEADERS_}  )
 list( APPEND SOURCES ${UTILS_SOURCES_} )
