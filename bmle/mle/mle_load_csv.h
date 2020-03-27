@@ -33,8 +33,10 @@ using MaskType4D = itk::Image< unsigned char, 4 >;
 //
 #include "Exception.h"
 #include "MakeITKImage.h"
-#include "Tools.h"
 #include "mle_subject.h"
+// Tools
+#include "Tools.h"
+//#include "Algorithms/Raphson.h"
 //
 //
 //
@@ -45,7 +47,7 @@ namespace NeuroBayes
    * \brief 
    * 
    */
-  template< int DimY, int D_f >
+  template< class Optimizer, int DimY, int D_f >
     class MleLoadCSV
   {
   public:
@@ -62,6 +64,7 @@ namespace NeuroBayes
     /** Destructor */
     virtual ~MleLoadCSV(){};
 
+    Optimizer optim;
 
     //
     // This function will load all the patients images into a 4D image.
@@ -196,13 +199,13 @@ namespace NeuroBayes
   //
   //
   //
-  template< int DimY, int D_f >
-    MleLoadCSV< DimY, D_f >::MleLoadCSV( const std::string& CSV_file,
-					const std::string& Input_dir,
-					const std::string& Output_dir,
-					// Age Dns: demean, normalize, standardize
-					const NeuroStat::TimeTransformation Dns,
-					const std::string& Inv_cov_error):
+  template< class Optimizer, int DimY, int D_f >
+    MleLoadCSV< Optimizer, DimY, D_f >::MleLoadCSV( const std::string& CSV_file,
+						    const std::string& Input_dir,
+						    const std::string& Output_dir,
+						    // Age Dns: demean, normalize, standardize
+						    const NeuroStat::TimeTransformation Dns,
+						    const std::string& Inv_cov_error):
     csv_file_{ CSV_file.c_str() }, input_dir_{ Input_dir }, output_dir_{ Output_dir }
   {
     try
@@ -554,7 +557,6 @@ namespace NeuroBayes
 							   ITK_LOCATION );
 		  }
 		}
-
 	      
 	      //
 	      //
@@ -563,8 +565,6 @@ namespace NeuroBayes
 	      break;
 	    }
 	  }
-
-	//
       }
     catch( itk::ExceptionObject & err )
       {
@@ -575,15 +575,15 @@ namespace NeuroBayes
   //
   //
   //
-  template< int DimY, int D_f > void
-    MleLoadCSV< DimY, D_f >::build_groups_design_matrices()
+  template< class Optimizer, int DimY, int D_f > void
+    MleLoadCSV< Optimizer, DimY, D_f >::build_groups_design_matrices()
   {
     try
       {
 	//
 	// Build X1 and X2 design matrices
 	//
-
+	
 	//
 	//
 	int
@@ -642,7 +642,7 @@ namespace NeuroBayes
 	    }
 	//
 	//
-	if ( false )
+	if ( true )
 	  {
 	    std::cout << X_ << std::endl;
 	    std::cout << Z_ << std::endl;
@@ -691,11 +691,11 @@ namespace NeuroBayes
   //
   //
   //
-  template< int DimY, int D_f > void
-    MleLoadCSV< DimY, D_f >::Expectation_Maximization( MaskType::IndexType Idx )
-  {
-    try
-      {
+  template< class Optimizer, int DimY, int D_f > void
+    MleLoadCSV< Optimizer, DimY, D_f >::Expectation_Maximization( MaskType::IndexType Idx )
+    {
+      try
+	{
 //	//
 //	// Measure
 //	//
@@ -1052,18 +1052,18 @@ namespace NeuroBayes
 //	Prediction_inverse_error_l2_.set_val( pos_pred_inv_error, Idx, 
 //					      inv_Cov_eps(index_pred_inv_error,
 //							  index_pred_inv_error) );
-      }
-    catch( itk::ExceptionObject & err )
-      {
-	std::cerr << err << std::endl;
-	exit( -1 );
-      }
-  }
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  exit( -1 );
+	}
+    }
   //
   //
   //
-  template< int DimY, int D_f > void
-    MleLoadCSV< DimY, D_f >::write_subjects_solutions( )
+  template< class Optimizer, int DimY, int D_f > void
+    MleLoadCSV< Optimizer, DimY, D_f >::write_subjects_solutions( )
   {
     try
       {
