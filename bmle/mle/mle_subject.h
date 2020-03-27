@@ -50,7 +50,7 @@ namespace NeuroBayes
    * D_f: number of fixed degres of the model.
    * 
    */
-  template< int D_r, int D_f >
+  template< int DimY, int D_f >
     class MleSubject
   {
     //
@@ -76,9 +76,8 @@ namespace NeuroBayes
     inline const std::map< int, Reader3D::Pointer >&
       get_age_images() const { return age_ITK_images_ ;}
     //
-    const Eigen::MatrixXd& get_random_matrix() const {return X_1_rand_;}
-    const Eigen::MatrixXd& get_fixed_matrix() const {return X_1_fixed_;}
-    const Eigen::MatrixXd& get_X2_matrix() const {return X_2_;}
+    const Eigen::MatrixXd& get_random_matrix() const {return Z_;}
+    const Eigen::MatrixXd& get_fixed_matrix() const {return X_;}
 
     //
     // Write the fitted solution to the output image pointer
@@ -158,18 +157,15 @@ namespace NeuroBayes
 
     //
     // Level 1
-    // Random matrix
-    Eigen::MatrixXd X_1_rand_;
-    // Fixed matrix
-    Eigen::MatrixXd X_1_fixed_;
-    // Second level design matrix, Matrix of covariates
-    Eigen::MatrixXd X_2_;
+    // fixed matrix
+    Eigen::MatrixXd X_;
+    // random matrix
+    Eigen::MatrixXd Z_;
     //
-    // Prediction
-    // Posterior parameters
-    Eigen::Matrix< double, D_r, 1 >    theta_y_;
+    // parameters
+    Eigen::MatrixXd u_;
     // Posterior covariance
-    Eigen::Matrix< double, D_r, D_r >  cov_theta_y_;
+    Eigen::MatrixXd sigma_u_;
     //
     // Random effect results
     NeuroBayes::NeuroBayesMakeITKImage Random_effect_ITK_model_;
@@ -185,88 +181,67 @@ namespace NeuroBayes
   //
   //
   //
-  template < int D_r, int D_f >
-    NeuroBayes::MleSubject< D_r, D_f >::MleSubject( const std::string Pidn,
-						      const int Group,
-						      const std::string& Output_dir ):
+  template < int DimY, int D_f >
+    NeuroBayes::MleSubject< DimY, D_f >::MleSubject( const std::string Pidn,
+						     const int Group,
+						     const std::string& Output_dir ):
     PIDN_{Pidn}, group_{Group}, output_dir_{Output_dir}
-  {
-    /* 
-       g(t, \theta_{i}^{(1)}) = \sum_{d=1}^{D+1} \theta_{i,d}^{(1)} t^{d-1}
-    */
-  }
+  { }
   //
   //
   //
-  template < int D_r, int D_f > void
-    NeuroBayes::MleSubject< D_r, D_f >::build_design_matrices( const double Age_mean )
+  template < int DimY, int D_f > void
+    NeuroBayes::MleSubject< DimY, D_f >::build_design_matrices( const double Age_mean )
     {
       try
 	{
-//	  std::cout << "DEMEAN AGE: " << Age_mean << std::endl;
-//	  C1_ = Age_mean;
-//	  //
-//	  // Design matrix level 1
-//	  //
-//
-//	  //
-//	  //
-//	  int num_lignes    = age_images_.size();
-//	  //
-//	  X_1_rand_.resize(  num_lignes, D_r );
-//	  X_1_fixed_.resize( num_lignes, D_f );
-//	  X_1_rand_  = Eigen::MatrixXd::Zero( num_lignes, D_r );
-//	  X_1_fixed_ = Eigen::MatrixXd::Zero( num_lignes, D_f );
-//	  // record ages
-//	  std::vector< double > ages;
-//	  for ( auto age : age_images_ )
-//	    ages.push_back( age.first );
-//	  // random part of the design matrix
-//	  for ( int l = 0 ; l < num_lignes ; l++ )
-//	    {
-//	      for ( int c = 0 ; c <  D_r ; c++ )
-//		X_1_rand_(l,c) = pow( ages[l] - Age_mean, c );
-//	      // fixed part of the design matrix
-//	      for ( int c = 0 ; c <  D_f ; c++ )
-//		X_1_fixed_(l,c) = pow( ages[l] - Age_mean, D_r + c );
-//	    }
-//
-//	  std::cout << "Random and fixed design matrices:" << std::endl;
-//	  std::cout << X_1_rand_ << std::endl;
-//	  std::cout << X_1_fixed_ << std::endl;
-//	  std::cout << std::endl;
-//	
-//	  //
-//	  // Design matrix level 2
-//	  //
-//
-//	
-//	  //
-//	  // Initialize the covariate matrix
-//	  // and the random parameters
-//	  std::map< int, std::list< double > >::const_iterator age_cov_it = age_covariates_.begin();
-//	  //
-//	  X_2_.resize( D_r, ((*age_cov_it).second.size() + 1) * D_r );
-//	  X_2_ = Eigen::MatrixXd::Zero( D_r, ((*age_cov_it).second.size() + 1)* D_r  );
-//	  //
-//	  //
-//	  int line = 0;
-//	  int col  = 0;
-//	  X_2_.block< D_r, D_r >( 0, 0 ) = Eigen::MatrixXd::Identity( D_r, D_r );
-//	  // covariates
-//	  for ( auto cov : (*age_cov_it).second )
-//	    X_2_.block< D_r, D_r >( 0, ++col * D_r ) = cov * Eigen::MatrixXd::Identity( D_r, D_r );
-//      
-//	  std::cout << X_2_ << std::endl;
+	  std::cout << "DEMEAN AGE: " << Age_mean << std::endl;
+	  C1_ = Age_mean;
+	  //
+	  // Design matrix level 1
+	  //
+
+	  //
+	  // Initialize the covariate matrix and the random parameters
+	  std::map< int, std::list< double > >::const_iterator age_cov_it = age_covariates_.begin();
+	  //
+	  X_.resize( time_points_, D_f );
+	  X_ = Eigen::MatrixXd::Zero( time_points_, D_f );
+	  //
+	  Z_.resize(  time_points_ , D_f + (*age_cov_it).second.size() );
+	  Z_ = Eigen::MatrixXd::Zero( time_points_ , D_f + (*age_cov_it).second.size() );
+	  // record ages
+	  std::vector< double > ages;
+	  for ( auto age : age_images_ )
+	    ages.push_back( age.first );
+	  // random part of the design matrix
+	  for ( int l = 0 ; l < time_points_ ; l++ )
+	    for ( int c = 0 ; c <  D_f ; c++ )
+	      X_(l,c) = Z_(l,c) = pow( ages[l] - Age_mean, c );
+	  //
+	  // covariates
+	  int line = 0;
+	  for ( age_cov_it = age_covariates_.begin() ;
+		age_cov_it != age_covariates_.end() ; age_cov_it++ )
+	    {
+	      int col  = 0;
+	      for ( auto cov : (*age_cov_it).second )
+		Z_(line, D_f + col++) = cov;
+	      line++;
+	    }
+	  //
+	  std::cout << "Random and fixed design matrices:" << std::endl;
+	  std::cout << X_ << std::endl;
+	  std::cout << Z_ << std::endl;
 //
 //	  //
 //	  // Prediction
 //	  //
 //	
 //	  // Posterior parameters
-//	  theta_y_ = Eigen::Matrix< double, D_r, 1 >::Zero( D_r );
+//	  theta_y_ = Eigen::Matrix< double, DimY, 1 >::Zero( DimY );
 //	  // Posterior covariance
-//	  cov_theta_y_ = Eigen::Matrix< double, D_r, D_r >::Zero( D_r, D_r );
+//	  cov_theta_y_ = Eigen::Matrix< double, DimY, DimY >::Zero( DimY, DimY );
 	}
       catch( itk::ExceptionObject & err )
 	{
@@ -279,79 +254,62 @@ namespace NeuroBayes
   // C1: min           mu (mean)
   // C2: (max -min)    sigma (standard dev)
   //
-  template < int D_r, int D_f > void
-    NeuroBayes::MleSubject< D_r, D_f >::build_design_matrices( const double C1,
+  template < int DimY, int D_f > void
+    NeuroBayes::MleSubject< DimY, D_f >::build_design_matrices( const double C1,
 								const double C2 )
     {
       try
 	{
-//	  std::cout 
-//	    << "NORM/STD: (" << C1 << "," << C2 << ")." << std::endl;
-//	  //
-//	  C1_ = C1;
-//	  C2_ = C2;
-//	  //
-//	  // Design matrix level 1
-//	  //
-//
-//	  //
-//	  //
-//	  int num_lignes    = age_images_.size();
-//	  //
-//	  X_1_rand_.resize(  num_lignes, D_r );
-//	  X_1_fixed_.resize( num_lignes, D_f );
-//	  X_1_rand_  = Eigen::MatrixXd::Zero( num_lignes, D_r );
-//	  X_1_fixed_ = Eigen::MatrixXd::Zero( num_lignes, D_f );
-//	  // record ages
-//	  std::vector< double > ages;
-//	  for ( auto age : age_images_ )
-//	    ages.push_back( age.first );
-//	  // random part of the design matrix
-//	  for ( int l = 0 ; l < num_lignes ; l++ )
-//	    {
-//	      for ( int c = 0 ; c <  D_r ; c++ )
-//		X_1_rand_(l,c) = pow( (ages[l] - C1) / C2, c );
-//	      // fixed part of the design matrix
-//	      for ( int c = 0 ; c <  D_f ; c++ )
-//		X_1_fixed_(l,c) = pow( (ages[l] - C1) / C2, D_r + c );
-//	    }
-//
-//	  std::cout << "Random and fixed design matrices:" << std::endl;
-//	  std::cout << X_1_rand_ << std::endl;
-//	  std::cout << X_1_fixed_ << std::endl;
-//	  std::cout << std::endl;
-//	
-//	  //
-//	  // Design matrix level 2
-//	  //
-//
-//	
-//	  //
-//	  // Initialize the covariate matrix
-//	  // and the random parameters
-//	  std::map< int, std::list< double > >::const_iterator age_cov_it = age_covariates_.begin();
-//	  //
-//	  X_2_.resize( D_r, ((*age_cov_it).second.size() + 1) * D_r );
-//	  X_2_ = Eigen::MatrixXd::Zero( D_r, ((*age_cov_it).second.size() + 1)* D_r  );
-//	  //
-//	  //
-//	  int line = 0;
-//	  int col  = 0;
-//	  X_2_.block< D_r, D_r >( 0, 0 ) = Eigen::MatrixXd::Identity( D_r, D_r );
-//	  // covariates
-//	  for ( auto cov : (*age_cov_it).second )
-//	    X_2_.block< D_r, D_r >( 0, ++col * D_r ) = cov * Eigen::MatrixXd::Identity( D_r, D_r );
-//      
-//	  std::cout << X_2_ << std::endl;
+	  std::cout 
+	    << "NORM/STD: (" << C1 << "," << C2 << ")." << std::endl;
+	  //
+	  C1_ = C1;
+	  C2_ = C2;
+	  //
+	  // Design matrix level 1
+	  //
+
+	  //
+	  // Initialize the covariate matrix and the random parameters
+	  std::map< int, std::list< double > >::const_iterator age_cov_it = age_covariates_.begin();
+	  //
+	  X_.resize( time_points_, D_f );
+	  X_ = Eigen::MatrixXd::Zero( time_points_, D_f );
+	  //
+	  Z_.resize(  time_points_ , D_f + (*age_cov_it).second.size() );
+	  Z_ = Eigen::MatrixXd::Zero( time_points_ , D_f + (*age_cov_it).second.size() );
+	  // record ages
+	  std::vector< double > ages;
+	  for ( auto age : age_images_ )
+	    ages.push_back( age.first );
+	  // random part of the design matrix
+	  for ( int l = 0 ; l < time_points_ ; l++ )
+	    for ( int c = 0 ; c <  D_f ; c++ )
+	      X_(l,c) = Z_(l,c) = pow( (ages[l] - C1) / C2, c );
+	  //
+	  // covariates
+	  int line = 0;
+	  for ( age_cov_it = age_covariates_.begin() ;
+		age_cov_it != age_covariates_.end() ; age_cov_it++ )
+	    {
+	      int col  = 0;
+	      for ( auto cov : (*age_cov_it).second )
+		Z_(line, D_f + col++) = cov;
+	      line++;
+	    }
+	  //
+	  std::cout << "Random and fixed design matrices:" << std::endl;
+	  std::cout << X_ << std::endl;
+	  std::cout << Z_ << std::endl;
 //
 //	  //
 //	  // Prediction
 //	  //
 //	
 //	  // Posterior parameters
-//	  theta_y_ = Eigen::Matrix< double, D_r, 1 >::Zero( D_r );
+//	  theta_y_ = Eigen::Matrix< double, DimY, 1 >::Zero( DimY );
 //	  // Posterior covariance
-//	  cov_theta_y_ = Eigen::Matrix< double, D_r, D_r >::Zero( D_r, D_r );
+//	  cov_theta_y_ = Eigen::Matrix< double, DimY, DimY >::Zero( DimY, DimY );
 	}
       catch( itk::ExceptionObject & err )
 	{
@@ -362,54 +320,54 @@ namespace NeuroBayes
   //
   //
   //
-  template < int D_r, int D_f > void
-    NeuroBayes::MleSubject< D_r, D_f >::add_tp( const int                  Age,
+  template < int DimY, int D_f > void
+    NeuroBayes::MleSubject< DimY, D_f >::add_tp( const int                  Age,
 						 const std::list< double >& Covariates,
 						 const std::string&         Image )
     {
       try
 	{
-//	  if ( age_covariates_.find( Age ) == age_covariates_.end() )
-//	    {
-//	      age_covariates_[ Age ] = Covariates;
-//	      age_images_[ Age ]     = Image;
-//	      //
-//	      // load the ITK images
-//	      if ( file_exists(Image) )
-//		{
-//		  //
-//		  // load the image ITK pointer
-//		  auto image_ptr = itk::ImageIOFactory::CreateImageIO( Image.c_str(),
-//								       itk::ImageIOFactory::ReadMode );
-//		  image_ptr->SetFileName( Image );
-//		  image_ptr->ReadImageInformation();
-//		  // Read the ITK image
-//		  age_ITK_images_[ Age ] = Reader3D::New();
-//		  age_ITK_images_[ Age ]->SetFileName( image_ptr->GetFileName() );
-//		  age_ITK_images_[ Age ]->Update();
-//		  // create the result image, only one time
-//		  if ( age_ITK_images_.size() < 2 )
-//		    create_theta_images();
-//		}
-//	      else
-//		{
-//		  std::string mess = "Image " + Image + " does not exists.";
-//		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//							 mess.c_str(),
-//							 ITK_LOCATION );
-//		}
-//	      //
-//	      time_points_++;
-//	    }
-//	  else
-//	    {
-//	      std::string mess = "Age " + std::to_string(Age) + " is already entered for the patient ";
-//	      mess += PIDN_ + ".";
-//	      //
-//	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//						     mess.c_str(),
-//						     ITK_LOCATION );
-//	    }
+	  if ( age_covariates_.find( Age ) == age_covariates_.end() )
+	    {
+	      age_covariates_[ Age ] = Covariates;
+	      age_images_[ Age ]     = Image;
+	      //
+	      // load the ITK images
+	      if ( file_exists(Image) )
+		{
+		  //
+		  // load the image ITK pointer
+		  auto image_ptr = itk::ImageIOFactory::CreateImageIO( Image.c_str(),
+								       itk::ImageIOFactory::ReadMode );
+		  image_ptr->SetFileName( Image );
+		  image_ptr->ReadImageInformation();
+		  // Read the ITK image
+		  age_ITK_images_[ Age ] = Reader3D::New();
+		  age_ITK_images_[ Age ]->SetFileName( image_ptr->GetFileName() );
+		  age_ITK_images_[ Age ]->Update();
+		  // create the result image, only one time
+		  if ( age_ITK_images_.size() < 2 )
+		    create_theta_images();
+		}
+	      else
+		{
+		  std::string mess = "Image " + Image + " does not exists.";
+		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							 mess.c_str(),
+							 ITK_LOCATION );
+		}
+	      //
+	      time_points_++;
+	    }
+	  else
+	    {
+	      std::string mess = "Age " + std::to_string(Age) + " is already entered for the patient ";
+	      mess += PIDN_ + ".";
+	      //
+	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						     mess.c_str(),
+						     ITK_LOCATION );
+	    }
 	}
       catch( itk::ExceptionObject & err )
 	{
@@ -420,8 +378,8 @@ namespace NeuroBayes
   //
   //
   //
-  template < int D_r, int D_f > void
-    NeuroBayes::MleSubject< D_r, D_f >::set_fit( const MaskType::IndexType Idx, 
+  template < int DimY, int D_f > void
+    NeuroBayes::MleSubject< DimY, D_f >::set_fit( const MaskType::IndexType Idx, 
 						  const Eigen::MatrixXd Model_fit, 
 						  const Eigen::MatrixXd Cov_fit )
     {
@@ -430,13 +388,13 @@ namespace NeuroBayes
 //      //
 //      // copy Eigen Matrix information into a vector
 //      // We only record the diagonal sup of the covariance.
-//      std::vector< double > model( D_r ), cov( D_r * (D_r + 1) / 2 );
+//      std::vector< double > model( DimY ), cov( DimY * (DimY + 1) / 2 );
 //      int current_mat_coeff = 0;
-//      for ( int d ; d < D_r ; d++ )
+//      for ( int d ; d < DimY ; d++ )
 //	{
 //	  model[d] = Model_fit(d,0);
 //	  Random_effect_ITK_model_.set_val( d, Idx, Model_fit(d,0) );
-//	  for ( int c = d ; c < D_r ; c++)
+//	  for ( int c = d ; c < DimY ; c++)
 //	    {
 //	      cov[d]  = Cov_fit(d,c);
 //	      Random_effect_ITK_variance_.set_val( current_mat_coeff++, Idx, Cov_fit(d,c) );
@@ -446,15 +404,15 @@ namespace NeuroBayes
   //
   //
   //
-  template < int D_r, int D_f > void
-    NeuroBayes::MleSubject< D_r, D_f >::create_theta_images()
+  template < int DimY, int D_f > void
+    NeuroBayes::MleSubject< DimY, D_f >::create_theta_images()
     {
 //      //std::cout << "We create output only one time" << std::endl;
 //      // Model output
 //      std::string output_model = output_dir_ + "/" + "model_" 
 //	+ PIDN_ + "_" + std::to_string( group_ )
 //	+ ".nii.gz";
-//      Random_effect_ITK_model_ = NeuroBayes::NeuroBayesMakeITKImage( D_r,
+//      Random_effect_ITK_model_ = NeuroBayes::NeuroBayesMakeITKImage( DimY,
 //								     output_model,
 //								     age_ITK_images_.begin()->second);
 //      // Variance output
@@ -466,15 +424,15 @@ namespace NeuroBayes
 //      std::string output_var = output_dir_ + "/" + "var_" 
 //	+ PIDN_ + "_" + std::to_string( group_ )
 //	+ ".nii.gz";
-//      Random_effect_ITK_variance_ = NeuroBayes::NeuroBayesMakeITKImage( D_r * (D_r + 1) / 2 /*we make sure it is a int*/,
+//      Random_effect_ITK_variance_ = NeuroBayes::NeuroBayesMakeITKImage( DimY * (DimY + 1) / 2 /*we make sure it is a int*/,
 //									output_var,
 //									age_ITK_images_.begin()->second );
     }
   //
   //
   //
-  template < int D_r, int D_f > void
-    NeuroBayes::MleSubject< D_r, D_f >::write_solution()
+  template < int DimY, int D_f > void
+    NeuroBayes::MleSubject< DimY, D_f >::write_solution()
     {
       if ( prediction_ )
 	{
@@ -490,8 +448,8 @@ namespace NeuroBayes
   //
   //
   //
-  template < int D_r, int D_f > void
-    NeuroBayes::MleSubject< D_r, D_f >::print() const
+  template < int DimY, int D_f > void
+    NeuroBayes::MleSubject< DimY, D_f >::print() const
     {
 //      std::cout << "PIDN: " << PIDN_ << std::endl;
 //      std::cout << "Group: " << group_ << std::endl;
@@ -520,8 +478,8 @@ namespace NeuroBayes
   //
   //
   //
-  template < int D_r, int D_f > void
-    NeuroBayes::MleSubject< D_r, D_f >::load_model_matrices() 
+  template < int DimY, int D_f > void
+    NeuroBayes::MleSubject< DimY, D_f >::load_model_matrices() 
     {
       try
 	{
@@ -558,7 +516,7 @@ namespace NeuroBayes
 //	    + PIDN_ + "_" + std::to_string( group_ )
 //	    + ".nii.gz";
 //	  if ( access( output_model.c_str(), F_OK ) != -1 )
-//	    Random_effect_ITK_model_ = NeuroBayes::NeuroBayesMakeITKImage( D_r, output_model );
+//	    Random_effect_ITK_model_ = NeuroBayes::NeuroBayesMakeITKImage( DimY, output_model );
 //	  else
 //	    {
 //	      std::string mess = "The posterior parameters have not been generated for ";
@@ -581,7 +539,7 @@ namespace NeuroBayes
 //	    + PIDN_ + "_" + std::to_string( group_ )
 //	    + ".nii.gz";
 //	  if ( access( output_var.c_str(), F_OK ) != -1 )
-//	    Random_effect_ITK_variance_ = NeuroBayes::NeuroBayesMakeITKImage( D_r * (D_r + 1) / 2, output_var );
+//	    Random_effect_ITK_variance_ = NeuroBayes::NeuroBayesMakeITKImage( DimY * (DimY + 1) / 2, output_var );
 //	  else
 //	    {
 //	      std::string mess = "The posterior parameters have not been generated for ";
@@ -602,8 +560,8 @@ namespace NeuroBayes
   //
   //
   //
-  template < int D_r, int D_f > void
-    NeuroBayes::MleSubject< D_r, D_f >::prediction( const MaskType::IndexType Idx, 
+  template < int DimY, int D_f > void
+    NeuroBayes::MleSubject< DimY, D_f >::prediction( const MaskType::IndexType Idx, 
 						     const double Inv_C_eps )
     {
       try
@@ -617,12 +575,12 @@ namespace NeuroBayes
 //	  //
 //	  // Load the posterior maps
 //	  int current_mat_coeff = 0;
-//	  for ( int d ; d < D_r ; d++ )
+//	  for ( int d ; d < DimY ; d++ )
 //	    {
 //	      // Parameters
 //	      theta_y_(d,0) = Random_effect_ITK_model_.get_val( d, Idx );
 //	      // Covariance
-//	      for ( int c = d ; c < D_r ; c++)
+//	      for ( int c = d ; c < DimY ; c++)
 //		cov_theta_y_(d,c) = cov_theta_y_(c,d) = 
 //		  Random_effect_ITK_variance_.get_val( current_mat_coeff++, Idx );
 //	    }
@@ -634,7 +592,7 @@ namespace NeuroBayes
 //	    {
 //	      //
 //	      // Design
-//	      Eigen::Matrix< double, D_r, 1 > x = X_1_rand_.row(tp).transpose();
+//	      Eigen::Matrix< double, DimY, 1 > x = X_1_rand_.row(tp).transpose();
 //	      double age_statistic = 0.;
 //	      if ( C2_ != 0.)
 //		// Normalization or standardization

@@ -85,6 +85,7 @@ main( const int argc, const char **argv )
 	      help += "-h                          : help\n";
 	      help += "-X   inv_cov_error.nii.gz   : (prediction) inverse of error cov on parameters\n";
 	      help += "-c   input.csv              : input file\n";
+	      help += "-i   input_dir              : input directory\n";
 	      help += "-o   output_dir             : output directory\n";
 	      help += "-m   mask.nii.gz            : mask\n";
 	      help += "-d   statistics             : statistics = {demean,normalize,standardize,load}\n";
@@ -104,6 +105,7 @@ main( const int argc, const char **argv )
 	  const std::string& filename       = input.getCmdOption("-c");
 	  const std::string& mask           = input.getCmdOption("-m");
 	  const std::string& output_dir     = input.getCmdOption("-o");
+	  const std::string& input_dir      = input.getCmdOption("-1");
 	  // Demean the age
 	  const std::string& transformation       = input.getCmdOption("-d");
 	  NeuroStat::TimeTransformation time_tran = NeuroStat::TimeTransformation::NONE;
@@ -238,7 +240,8 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Load the CSV file
-	      NeuroBayes::MleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
+	      NeuroBayes::MleLoadCSV< 1 /*DimY*/, 2 /*D_f*/> subject_mapping( filename, 
+									    input_dir, output_dir,
 									    time_tran, 
 									    inv_cov_error );
 	      // create the 4D iamge with all the images
@@ -297,19 +300,19 @@ main( const int argc, const char **argv )
 #else
 		      // Please do not remove the bracket!!
 //		      // vertex
-//		      if ( idx[0] > 92 - 5  && idx[0] < 92 + 5 && 
-//			   idx[1] > 94 - 5  && idx[1] < 94 + 5 &&
-//			   idx[2] > 63 - 5  && idx[2] < 63 + 5 )
+		      if ( idx[0] > 92 - 1  && idx[0] < 92 + 1 && 
+			   idx[1] > 94 - 1  && idx[1] < 94 + 1 &&
+			   idx[2] > 63 - 1  && idx[2] < 63 + 1 )
 //		      // ALL
 //		      if ( idx[0] > 5 && idx[0] < 110 && 
 //			   idx[1] > 5 && idx[1] < 140 &&
 //			   idx[2] > 5 && idx[2] < 110 )
 //		      // Window w
-		      if ( idx[0] >= windows[window][0][0] && idx[0] < windows[window][0][1] && 
-			   idx[1] >= windows[window][1][0] && idx[1] < windows[window][1][1] &&
-			   idx[2] >= windows[window][2][0] && idx[2] < windows[window][2][1] )
+//		      if ( idx[0] >= windows[window][0][0] && idx[0] < windows[window][0][1] && 
+//			   idx[1] >= windows[window][1][0] && idx[1] < windows[window][1][1] &&
+//			   idx[2] >= windows[window][2][0] && idx[2] < windows[window][2][1] )
 			{
-			  pool.enqueue( std::ref(subject_mapping), idx );
+			  // pool.enqueue( std::ref(subject_mapping), idx );
 			}
 #endif
 		    }

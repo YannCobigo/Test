@@ -45,19 +45,22 @@ namespace NeuroBayes
    * \brief 
    * 
    */
-  template< int D_r, int D_f >
+  template< int DimY, int D_f >
     class MleLoadCSV
   {
   public:
     /** Constructor. */
-    explicit MleLoadCSV( const std::string&, const std::string&, 
-			  // Age Dns: demean, normalize, standardize
-			  const NeuroStat::TimeTransformation,
-			  // Prediction
-			  const std::string& );
+    explicit MleLoadCSV( // dataset 
+			const std::string&, 
+			// input and output dir
+			const std::string&, const std::string&, 
+			 // Age Dns: demean, normalize, standardize
+			 const NeuroStat::TimeTransformation,
+			 // Prediction
+			 const std::string& );
     
     /** Destructor */
-    virtual ~MleLoadCSV() {};
+    virtual ~MleLoadCSV(){};
 
 
     //
@@ -65,8 +68,6 @@ namespace NeuroBayes
     void build_groups_design_matrices();
     // Expectation maximization algorithm
     void Expectation_Maximization( MaskType::IndexType );
-    // Prediction algorithm
-    void Prediction( MaskType::IndexType );
     // Write the output
     void write_subjects_solutions( );
     // multi-threading
@@ -76,7 +77,6 @@ namespace NeuroBayes
 	{
 	  std::cout << "Prediction treatment for parameters: " 
 		    << idx;
-	  Prediction( idx );
 	}
       else
 	{
@@ -92,14 +92,6 @@ namespace NeuroBayes
     // Functions
     //
 
-    // Thermodynamic free energy
-    double F_( const Eigen::MatrixXd& , const Eigen::MatrixXd& ,
-	       const Eigen::MatrixXd& , const Eigen::MatrixXd& ) const;
-    // Thermodynamic free energy
-    void lambda_regulation_( std::map< int /*group*/, std::vector< double > >& );
-    // Thermodynamic free energy
-    bool check_convergence_( const std::list< double >&, const double, 
-			     const int, const int , const int ) const;
     // Cumulative centered normal cumulative distribution function
     // https://en.wikipedia.org/wiki/Error_function
     double Normal_CFD_( const double value ) const
@@ -116,6 +108,8 @@ namespace NeuroBayes
     //
     // CSV file
     std::ifstream csv_file_;
+    // input directory
+    std::string   input_dir_;
     // output directory
     std::string   output_dir_;
     // Statistic transformation of ages
@@ -123,7 +117,7 @@ namespace NeuroBayes
     //
     // Arrange pidns into groups
     std::set< int > groups_;
-//    std::vector< std::map< std::string /*pidn*/, MleSubject< D_r, D_f > > > group_pind_{10};
+    std::vector< std::map< std::string /*pidn*/, MleSubject< DimY, D_f > > > group_pind_{10};
     // Number of subjects per group
     std::vector< int > group_num_subjects_{0,0,0,0,0,0,0,0,0,0};
     //
@@ -145,19 +139,17 @@ namespace NeuroBayes
     // Design matrices
     //
 
-    // X1
-    Eigen::MatrixXd X1_;
-    // X2
-    Eigen::MatrixXd X2_;
-    // X augmented
+    // X
     Eigen::MatrixXd X_;
+    // Z
+    Eigen::MatrixXd Z_;
 
     //
     // Covariance base matrices
     //
 
     // Base matrices
-    // 1 /*C_eps_1_base*/+ D_r /*C_eps_2_base*/+ 1 /*fixed effect*/
+    // 1 /*C_eps_1_base*/+ DimY /*C_eps_2_base*/+ 1 /*fixed effect*/
     std::map< int /*group*/, std::vector< Eigen::MatrixXd > > Q_k_;
     // Covariance matrix theta level two
     Eigen::MatrixXd C_theta_;
@@ -170,11 +162,6 @@ namespace NeuroBayes
     Eigen::MatrixXd constrast_;
     Eigen::MatrixXd constrast_l2_;
 
-    //
-    // Prediction matrices
-    // Inverse covariance error
-    // C_{epsilon}^{-1}
-    Reader4DType::Pointer Prediction_inverse_error_;
     
     //
     // Records
@@ -205,410 +192,379 @@ namespace NeuroBayes
     // 
     // R-square
     NeuroBayes::NeuroBayesMakeITKImage R_sqr_l2_;
-    //
-    // Output for prediction
-    // model output for Inverse covariance error
-    NeuroBayes::NeuroBayesMakeITKImage Prediction_inverse_error_l2_;
   };
   //
   //
   //
-  template< int D_r, int D_f >
-    MleLoadCSV< D_r, D_f >::MleLoadCSV( const std::string& CSV_file,
-					  const std::string& Output_dir,
-					  // Age Dns: demean, normalize, standardize
-					  const NeuroStat::TimeTransformation Dns,
-					  const std::string& Inv_cov_error):
-    csv_file_{ CSV_file.c_str() }, output_dir_{ Output_dir }
+  template< int DimY, int D_f >
+    MleLoadCSV< DimY, D_f >::MleLoadCSV( const std::string& CSV_file,
+					const std::string& Input_dir,
+					const std::string& Output_dir,
+					// Age Dns: demean, normalize, standardize
+					const NeuroStat::TimeTransformation Dns,
+					const std::string& Inv_cov_error):
+    csv_file_{ CSV_file.c_str() }, input_dir_{ Input_dir }, output_dir_{ Output_dir }
   {
     try
       {
-//	//
-//	//
-//	double 
-//	  mean_age = 0.;
-//	int
-//	  max_age  = 0,
-//	  min_age  = 70000;
-//	std::list< int > age_stat;
-//	std::string line;
-//	//skip the first line
-//	std::getline(csv_file_, line);
-//	//
-//	// then loop
-//	while( std::getline(csv_file_, line) )
-//	  {
-//	    std::stringstream  lineStream( line );
-//	    std::string        cell;
-//	    std::cout << "ligne: " << line << std::endl;
-//
-//	    //
-//	    // Get the PIDN
-//	    std::getline(lineStream, cell, ',');
-//	    const std::string PIDN = cell;
-//	    // Get the group
-//	    std::getline(lineStream, cell, ',');
-//	    const int group = std::stoi( cell );
-//	    if ( group == 0 )
-//	      //
-//	      // The groups must be labeled 1, 2, 3, ...
-//	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//				   "Select another group name than 0 (e.g. 1, 2, ...). 0 is reserved.",
-//				   ITK_LOCATION );
-//	    // Get the age
-//	    std::getline(lineStream, cell, ',');
-//	    int age = std::stoi( cell );
-//	    age_stat.push_back(age);
-//	    mean_age += static_cast< double >( age );
-//	    if ( age < min_age )
-//	      min_age = age;
-//	    if ( age > max_age )
-//	      max_age = age;
-//	    // Get the image
-//	    std::string image;
-//	    std::getline(lineStream, image, ',');
-//	    // Covariates
-//	    std::list< double > covariates;
-//	    while( std::getline(lineStream, cell, ',') )
-//	      covariates.push_back( std::stof(cell) );
-//	    num_covariates_ = covariates.size();
-//
-//	    //
-//	    // check we have less than 10 groups
-//	    if( group > 10 )
-//	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//				   "The CSV file should have less than 10 gourps.",
-//				   ITK_LOCATION );
-//	    // If the PIDN does not yet exist
-//	    if ( group_pind_[ group ].find( PIDN ) == group_pind_[ group ].end() )
-//	      {
-//		std::cout << PIDN << " " << group << std::endl;
-//		groups_.insert( group );
-//		group_pind_[ group ][PIDN] = MleSubject< D_r, D_f >( PIDN, group, Output_dir );
-//		group_num_subjects_[ group ]++;
-//		num_subjects_++;
-//	      }
-//	    //
-//	    group_pind_[ group ][ PIDN ].add_tp( age, covariates, image );
-//	    num_3D_images_++;
-//	  }
-//	//
-//
-//	// 
-//	// Design Matrix for every subject
-//	//
-//
-//	//
-//	// mean age
-//	mean_age /= static_cast< double >( num_3D_images_ );
-//	//
-//	Y_.resize( num_3D_images_ );
-//	int sub_image{0};
-//	age_statistics_tranformation_ = Output_dir + "/age_transformation.txt";
-//	//
-//	switch ( Dns )
-//	  {
-//	  case NeuroStat::TimeTransformation::NONE:
-//	  case NeuroStat::TimeTransformation::DEMEAN:
-//	    {
-//	      std::cout 
-//		<< "Age will be demeaned with mean age: " 
-//		<< mean_age << " or 0 infunction of the option you have chosen.\n"
-//		<< std::endl;
-//	      // record the transformation
-//	      std::ofstream fout( age_statistics_tranformation_ );
-//	      fout << Dns << " " 
-//		   << ( Dns == NeuroStat::TimeTransformation::NONE ? 0 : mean_age )
-//		   << std::endl;
-//	      fout.close();
-//	      //
-//	      for ( auto g : groups_ )
-//		for ( auto& s : group_pind_[g] )
-//		  {
-//		    //
-//		    s.second.build_design_matrices( (Dns == NeuroStat::TimeTransformation::NONE ? 
-//						     0 : mean_age) );
-//		    // Create the vector of 3D measurements image
-//		    for ( auto image : s.second.get_age_images() )
-//		      Y_[ sub_image++ ] = image.second;
-//		  }
-//	      //
-//	      break;
-//	    }
-//	  case NeuroStat::TimeTransformation::NORMALIZE:
-//	    {
-//	      std::cout 
-//		<< "Age will be normalized between: (" 
-//		<< min_age << "," 
-//		<< max_age << ").\n" 
-//		<< std::endl;
-//	      //
-//	      double 
-//		C1 = static_cast< double >(min_age),
-//		C2 = static_cast< double >(max_age - min_age);
-//	      //
-//	      switch ( D_r )
-//		{
-//		case 2:
-//		  {
-//		    Eigen::Matrix< double, 2, 2 > M;
-//		    M << 1., -C1/C2, 0., 1./C2;
-//		    std::cout 
-//		      <<  "C1 = min_age = " << min_age
-//		      <<  ", C2 = (max_age - min_age) = " << max_age - min_age
-//		      <<  ". change of variable is u = (t-C1)/C2. \n"
-//		      <<  "y = a0 + a1xt + epsilon\n"
-//		      <<  "  = b0 + b2xu + epsilon\n"
-//		      <<  "a = M x b. Where M = \n"
-//		      <<  M
-//		      << std::endl;
-//		    //
-//		    break;
-//		  }
-//		case 3:
-//		  {
-//		    Eigen::Matrix< double, 3, 3 > M;
-//		    M << 1., -C1/C2, C1*C1/C2/C2, 0., 1./C2, -2*C1/C2/C2, 0., 0., 1./C2/C2;
-//		    std::cout 
-//		      <<  "C1 = min_age = " << min_age
-//		      <<  ", C2 = (max_age - min_age) = " << max_age - min_age
-//		      <<  ". change of variable is u = (t-C1)/C2. \n"
-//		      <<  "y = a0 + a1xt + a1xt^2 + epsilon\n"
-//		      <<  "  = b0 + b2xu + b2xu^2 + epsilon\n"
-//		      <<  "a = M x b. Where M = \n"
-//		      <<  M
-//		      << std::endl;
-//		    //
-//		    break;
-//		  }
-//		default:
-//		  {
-//		    std::string mess = "Case D_r is 4 or more, has not yet been developped.";
-//		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//							   mess.c_str(),
-//							   ITK_LOCATION );
-//		  }
-//		}
-//	      // record the transformation
-//	      std::ofstream fout( age_statistics_tranformation_ );
-//	      fout << Dns << " " 
-//		   << C1 << " " << C2
-//		   << std::endl;
-//	      fout.close();
-//	      //
-//	      for ( auto g : groups_ )
-//		for ( auto& s : group_pind_[g] )
-//		  {
-//		    s.second.build_design_matrices( C1, C2 );
-//		    // Create the vector of 3D measurements image
-//		    for ( auto image : s.second.get_age_images() )
-//		      Y_[ sub_image++ ] = image.second;
-//		  }
-//	      //
-//	      break;
-//	    }
-//	  case NeuroStat::TimeTransformation::STANDARDIZE:
-//	    {
-//	      //
-//	      // Standard deviation
-//	      double accum = 0.0;
-//	      std::for_each ( std::begin( age_stat ), std::end( age_stat ), 
-//			      [&](const double d) {accum += (d - mean_age) * (d - mean_age);} );
-//	      //
-//	      double stdev = sqrt( accum / static_cast< double >(age_stat.size()-1) );
-//	      //
-//	      //
-//	      std::cout 
-//		<< "Age will be standardized with: (mu = " 
-//		<< mean_age << ", std = " 
-//		<< stdev << ").\n" 
-//		<< std::endl;
-//	      //
-//	      double 
-//		C1 = mean_age,
-//		C2 = stdev;
-//	      //
-//	      switch ( D_r )
-//		{
-//		case 2:
-//		  {
-//		    Eigen::Matrix< double, 2, 2 > M;
-//		    M << 1., -C1/C2, 0., 1./C2;
-//		    std::cout 
-//		      <<  "C1 = mu = " << C1
-//		      <<  ", C2 = stdev = " << stdev
-//		      <<  ". change of variable is u = (t-C1)/C2. \n"
-//		      <<  "y = a0 + a1xt + epsilon\n"
-//		      <<  "  = b0 + b2xu + epsilon\n"
-//		      <<  "a = M x b. Where M = \n"
-//		      <<  M
-//		      << std::endl;
-//		    //
-//		    break;
-//		  }
-//		case 3:
-//		  {
-//		    Eigen::Matrix< double, 3, 3 > M;
-//		    M << 1., -C1/C2, C1*C1/C2/C2, 0., 1./C2, -2*C1/C2/C2, 0., 0., 1./C2/C2;
-//		    std::cout 
-//		      <<  "C1 = mu = " << C1
-//		      <<  ", C2 = stdev = " << stdev
-//		      <<  ". change of variable is u = (t-C1)/C2. \n"
-//		      <<  "y = a0 + a1xt + a1xt^2 + epsilon\n"
-//		      <<  "  = b0 + b2xu + b2xu^2 + epsilon\n"
-//		      <<  "a = M x b. Where M = \n"
-//		      <<  M
-//		      << std::endl;
-//		    //
-//		    break;
-//		  }
-//		default:
-//		  {
-//		    std::string mess = "Case D_r is 4 or more, has not yet been developped.";
-//		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//							   mess.c_str(),
-//							   ITK_LOCATION );
-//		  }
-//		}
-//	      // record the transformation
-//	      std::ofstream fout( age_statistics_tranformation_ );
-//	      fout << Dns << " " 
-//		   << C1 << " " << C2
-//		   << std::endl;
-//	      fout.close();
-//	      //
-//	      for ( auto g : groups_ )
-//		for ( auto& s : group_pind_[g] )
-//		  {
-//		    s.second.build_design_matrices( C1, C2 );
-//		    // Create the vector of 3D measurements image
-//		    for ( auto image : s.second.get_age_images() )
-//		      Y_[ sub_image++ ] = image.second;
-//		  }
-//	      //
-//	      break;
-//	    }
-//	  case NeuroStat::TimeTransformation::LOAD:
-//	    {
-//	      // record the transformation
-//	      std::ifstream fin( age_statistics_tranformation_ );
-//	      std::stringstream stat_string;
-//	      // Check the file exist
-//	      if ( fin )
-//		stat_string << fin.rdbuf();
-//	      else
-//		{
-//		  std::string mess = "The statistic transformation file does not exist.\n";
-//		  mess += "Please, check on: " + age_statistics_tranformation_;
-//		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//							 mess.c_str(),
-//							 ITK_LOCATION );
-//		}
-//	      //
-//	      std::string str_time_transfo;
-//	      int time_transfo = 0;
-//	      //
-//	      stat_string >> str_time_transfo;
-//	      time_transfo = std::stoi( str_time_transfo );
-//	      std::cout << "Transforamtion: " << time_transfo << std::endl;
-//	      //
-//	      //
-//	      switch ( time_transfo )
-//		{
-//		case NeuroStat::TimeTransformation::NONE:
-//		case NeuroStat::TimeTransformation::DEMEAN:
-//		  {
-//		    //
-//		    std::string    str_C1;
-//		    stat_string >> str_C1;
-//		    //
-//		    double             C1 = std::stod( str_C1 );
-//		    std::cout << "C1 " << C1 << std::endl;
-//		    //
-//		    for ( auto g : groups_ )
-//		      for ( auto& s : group_pind_[g] )
-//			{
-//			  s.second.build_design_matrices( C1 );
-//			  // Create the vector of 3D measurements image
-//			  for ( auto image : s.second.get_age_images() )
-//			    Y_[ sub_image++ ] = image.second;
-//			}
-//		    //
-//		    break;
-//		  }
-//		case NeuroStat::TimeTransformation::NORMALIZE:
-//		case NeuroStat::TimeTransformation::STANDARDIZE:
-//		  {
-//		    std::string 
-//		      str_C1,
-//		      str_C2;
-//		    stat_string >> str_C1 >> str_C2;
-//		    //
-//		    double          
-//		      C1 = std::stod( str_C1 ),
-//		      C2 = std::stod( str_C2 );
-//		    std::cout << "C1 " << C1 << std::endl;
-//		    std::cout << "C2 " << C2 << std::endl;
-//		    //
-//		    for ( auto g : groups_ )
-//		      for ( auto& s : group_pind_[g] )
-//			{
-//			  s.second.build_design_matrices( C1, C2 );
-//			  // Create the vector of 3D measurements image
-//			  for ( auto image : s.second.get_age_images() )
-//			    Y_[ sub_image++ ] = image.second;
-//			}
-//		    //
-//		    break;
-//		  }
-//		default:
-//		  {
-//		    std::string mess = "The statistic transformation requiered is unknown.\n";
-//		    mess += "Please, check on: " + age_statistics_tranformation_;
-//		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//							   mess.c_str(),
-//							   ITK_LOCATION );
-//		  }
-//		}
-//
-//	      
-//	      //
-//	      //
-//	      fin.close();
-//	      //
-//	      break;
-//	    }
-//	  }
-//
-//	//
-//	// Prediction
-//	if ( access( Inv_cov_error.c_str(), F_OK ) != -1 )
-//	  {
-//	    //
-//	    // switch into prediction mode
-//	    prediction_ = true;
-//	    std::cout << "Prediction map calculation using:" << std::endl;
-//	    std::cout << "\t - " << Inv_cov_error  << std::endl;
-//
-//	    //
-//	    // Posterior 
-//	    //auto image_ptr = itk::ImageIOFactory::CreateImageIO( Post_theta.c_str(),
-//	    //						       itk::ImageIOFactory::ReadMode );
-//	    //image_ptr->SetFileName( Post_theta );
-//	    //image_ptr->ReadImageInformation();
-//	    //
-//	    Prediction_inverse_error_ = Reader4DType::New();
-//	    Prediction_inverse_error_->SetFileName( Inv_cov_error );
-//	    Prediction_inverse_error_->Update();
-//	    
-//	    //
-//	    // load the posterior maps already processed
-//	    for ( auto g : groups_ )
-//	      for ( auto& s : group_pind_[g] )
-//		s.second.load_model_matrices();
-//	  }
-//	else
-//	  std::cout << "Posterior map calculation" << std::endl;
+	//
+	//
+	double 
+	  mean_age = 0.;
+	int
+	  max_age  = 0,
+	  min_age  = 70000;
+	std::list< int > age_stat;
+	std::string line;
+	//skip the first line
+	std::getline(csv_file_, line);
+	//
+	// then loop
+	while( std::getline(csv_file_, line) )
+	  {
+	    std::stringstream  lineStream( line );
+	    std::string        cell;
+	    std::cout << "ligne: " << line << std::endl;
+
+	    //
+	    // Get the PIDN
+	    std::getline(lineStream, cell, ',');
+	    const std::string PIDN = cell;
+	    // Get the group
+	    std::getline(lineStream, cell, ',');
+	    const int group = std::stoi( cell );
+	    if ( group == 0 )
+	      //
+	      // The groups must be labeled 1, 2, 3, ...
+	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+				   "Select another group name than 0 (e.g. 1, 2, ...). 0 is reserved.",
+				   ITK_LOCATION );
+	    // Get the age
+	    std::getline(lineStream, cell, ',');
+	    int age = std::stoi( cell );
+	    age_stat.push_back(age);
+	    mean_age += static_cast< double >( age );
+	    if ( age < min_age )
+	      min_age = age;
+	    if ( age > max_age )
+	      max_age = age;
+	    // Get the image
+	    std::string image;
+	    std::getline(lineStream, image, ',');
+	    // Covariates
+	    std::list< double > covariates;
+	    while( std::getline(lineStream, cell, ',') )
+	      covariates.push_back( std::stof(cell) );
+	    num_covariates_ = covariates.size();
+
+	    //
+	    // check we have less than 10 groups
+	    if( group > 10 )
+	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+				   "The CSV file should have less than 10 gourps.",
+				   ITK_LOCATION );
+	    // If the PIDN does not yet exist
+	    if ( group_pind_[ group ].find( PIDN ) == group_pind_[ group ].end() )
+	      {
+		std::cout << PIDN << " " << group << std::endl;
+		groups_.insert( group );
+		group_pind_[ group ][PIDN] = MleSubject< DimY, D_f >( PIDN, group, Output_dir );
+		group_num_subjects_[ group ]++;
+		num_subjects_++;
+	      }
+	    //
+	    group_pind_[ group ][ PIDN ].add_tp( age, covariates, image );
+	    num_3D_images_++;
+	  }
+	//
+
+	// 
+	// Design Matrix for every subject
+	//
+
+	//
+	// mean age
+	mean_age /= static_cast< double >( num_3D_images_ );
+	//
+	Y_.resize( num_3D_images_ );
+	int sub_image{0};
+	age_statistics_tranformation_ = Output_dir + "/age_transformation.txt";
+	//
+	switch ( Dns )
+	  {
+	  case NeuroStat::TimeTransformation::NONE:
+	  case NeuroStat::TimeTransformation::DEMEAN:
+	    {
+	      std::cout 
+		<< "Age will be demeaned with mean age: " 
+		<< mean_age << " or 0 infunction of the option you have chosen.\n"
+		<< std::endl;
+	      // record the transformation
+	      std::ofstream fout( age_statistics_tranformation_ );
+	      fout << Dns << " " 
+		   << ( Dns == NeuroStat::TimeTransformation::NONE ? 0 : mean_age )
+		   << std::endl;
+	      fout.close();
+	      //
+	      for ( auto g : groups_ )
+		for ( auto& s : group_pind_[g] )
+		  {
+		    //
+		    s.second.build_design_matrices( (Dns == NeuroStat::TimeTransformation::NONE ? 
+						     0 : mean_age) );
+		    // Create the vector of 3D measurements image
+		    for ( auto image : s.second.get_age_images() )
+		      Y_[ sub_image++ ] = image.second;
+		  }
+	      //
+	      break;
+	    }
+	  case NeuroStat::TimeTransformation::NORMALIZE:
+	    {
+	      std::cout 
+		<< "Age will be normalized between: (" 
+		<< min_age << "," 
+		<< max_age << ").\n" 
+		<< std::endl;
+	      //
+	      double 
+		C1 = static_cast< double >(min_age),
+		C2 = static_cast< double >(max_age - min_age);
+	      //
+	      switch ( D_f )
+		{
+		case 2:
+		  {
+		    Eigen::Matrix< double, 2, 2 > M;
+		    M << 1., -C1/C2, 0., 1./C2;
+		    std::cout 
+		      <<  "C1 = min_age = " << min_age
+		      <<  ", C2 = (max_age - min_age) = " << max_age - min_age
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + epsilon\n"
+		      <<  "  = b0 + b2xu + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		case 3:
+		  {
+		    Eigen::Matrix< double, 3, 3 > M;
+		    M << 1., -C1/C2, C1*C1/C2/C2, 0., 1./C2, -2*C1/C2/C2, 0., 0., 1./C2/C2;
+		    std::cout 
+		      <<  "C1 = min_age = " << min_age
+		      <<  ", C2 = (max_age - min_age) = " << max_age - min_age
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + a1xt^2 + epsilon\n"
+		      <<  "  = b0 + b2xu + b2xu^2 + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		default:
+		  {
+		    std::string mess = "Case D_f is 4 or more, has not yet been developped.";
+		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							   mess.c_str(),
+							   ITK_LOCATION );
+		  }
+		}
+	      // record the transformation
+	      std::ofstream fout( age_statistics_tranformation_ );
+	      fout << Dns << " " 
+		   << C1 << " " << C2
+		   << std::endl;
+	      fout.close();
+	      //
+	      for ( auto g : groups_ )
+		for ( auto& s : group_pind_[g] )
+		  {
+		    s.second.build_design_matrices( C1, C2 );
+		    // Create the vector of 3D measurements image
+		    for ( auto image : s.second.get_age_images() )
+		      Y_[ sub_image++ ] = image.second;
+		  }
+	      //
+	      break;
+	    }
+	  case NeuroStat::TimeTransformation::STANDARDIZE:
+	    {
+	      //
+	      // Standard deviation
+	      double accum = 0.0;
+	      std::for_each ( std::begin( age_stat ), std::end( age_stat ), 
+			      [&](const double d) {accum += (d - mean_age) * (d - mean_age);} );
+	      //
+	      double stdev = sqrt( accum / static_cast< double >(age_stat.size()-1) );
+	      //
+	      //
+	      std::cout 
+		<< "Age will be standardized with: (mu = " 
+		<< mean_age << ", std = " 
+		<< stdev << ").\n" 
+		<< std::endl;
+	      //
+	      double 
+		C1 = mean_age,
+		C2 = stdev;
+	      //
+	      switch ( DimY )
+		{
+		case 2:
+		  {
+		    Eigen::Matrix< double, 2, 2 > M;
+		    M << 1., -C1/C2, 0., 1./C2;
+		    std::cout 
+		      <<  "C1 = mu = " << C1
+		      <<  ", C2 = stdev = " << stdev
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + epsilon\n"
+		      <<  "  = b0 + b2xu + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		case 3:
+		  {
+		    Eigen::Matrix< double, 3, 3 > M;
+		    M << 1., -C1/C2, C1*C1/C2/C2, 0., 1./C2, -2*C1/C2/C2, 0., 0., 1./C2/C2;
+		    std::cout 
+		      <<  "C1 = mu = " << C1
+		      <<  ", C2 = stdev = " << stdev
+		      <<  ". change of variable is u = (t-C1)/C2. \n"
+		      <<  "y = a0 + a1xt + a1xt^2 + epsilon\n"
+		      <<  "  = b0 + b2xu + b2xu^2 + epsilon\n"
+		      <<  "a = M x b. Where M = \n"
+		      <<  M
+		      << std::endl;
+		    //
+		    break;
+		  }
+		default:
+		  {
+		    std::string mess = "Case DimY is 4 or more, has not yet been developped.";
+		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							   mess.c_str(),
+							   ITK_LOCATION );
+		  }
+		}
+	      // record the transformation
+	      std::ofstream fout( age_statistics_tranformation_ );
+	      fout << Dns << " " 
+		   << C1 << " " << C2
+		   << std::endl;
+	      fout.close();
+	      //
+	      for ( auto g : groups_ )
+		for ( auto& s : group_pind_[g] )
+		  {
+		    s.second.build_design_matrices( C1, C2 );
+		    // Create the vector of 3D measurements image
+		    for ( auto image : s.second.get_age_images() )
+		      Y_[ sub_image++ ] = image.second;
+		  }
+	      //
+	      break;
+	    }
+	  case NeuroStat::TimeTransformation::LOAD:
+	    {
+	      // record the transformation
+	      std::ifstream fin( age_statistics_tranformation_ );
+	      std::stringstream stat_string;
+	      // Check the file exist
+	      if ( fin )
+		stat_string << fin.rdbuf();
+	      else
+		{
+		  std::string mess = "The statistic transformation file does not exist.\n";
+		  mess += "Please, check on: " + age_statistics_tranformation_;
+		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							 mess.c_str(),
+							 ITK_LOCATION );
+		}
+	      //
+	      std::string str_time_transfo;
+	      int time_transfo = 0;
+	      //
+	      stat_string >> str_time_transfo;
+	      time_transfo = std::stoi( str_time_transfo );
+	      std::cout << "Transforamtion: " << time_transfo << std::endl;
+	      //
+	      //
+	      switch ( time_transfo )
+		{
+		case NeuroStat::TimeTransformation::NONE:
+		case NeuroStat::TimeTransformation::DEMEAN:
+		  {
+		    //
+		    std::string    str_C1;
+		    stat_string >> str_C1;
+		    //
+		    double             C1 = std::stod( str_C1 );
+		    std::cout << "C1 " << C1 << std::endl;
+		    //
+		    for ( auto g : groups_ )
+		      for ( auto& s : group_pind_[g] )
+			{
+			  s.second.build_design_matrices( C1 );
+			  // Create the vector of 3D measurements image
+			  for ( auto image : s.second.get_age_images() )
+			    Y_[ sub_image++ ] = image.second;
+			}
+		    //
+		    break;
+		  }
+		case NeuroStat::TimeTransformation::NORMALIZE:
+		case NeuroStat::TimeTransformation::STANDARDIZE:
+		  {
+		    std::string 
+		      str_C1,
+		      str_C2;
+		    stat_string >> str_C1 >> str_C2;
+		    //
+		    double          
+		      C1 = std::stod( str_C1 ),
+		      C2 = std::stod( str_C2 );
+		    std::cout << "C1 " << C1 << std::endl;
+		    std::cout << "C2 " << C2 << std::endl;
+		    //
+		    for ( auto g : groups_ )
+		      for ( auto& s : group_pind_[g] )
+			{
+			  s.second.build_design_matrices( C1, C2 );
+			  // Create the vector of 3D measurements image
+			  for ( auto image : s.second.get_age_images() )
+			    Y_[ sub_image++ ] = image.second;
+			}
+		    //
+		    break;
+		  }
+		default:
+		  {
+		    std::string mess = "The statistic transformation requiered is unknown.\n";
+		    mess += "Please, check on: " + age_statistics_tranformation_;
+		    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							   mess.c_str(),
+							   ITK_LOCATION );
+		  }
+		}
+
+	      
+	      //
+	      //
+	      fin.close();
+	      //
+	      break;
+	    }
+	  }
+
+	//
       }
     catch( itk::ExceptionObject & err )
       {
@@ -619,329 +575,80 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f > void
-    MleLoadCSV< D_r, D_f >::build_groups_design_matrices()
+  template< int DimY, int D_f > void
+    MleLoadCSV< DimY, D_f >::build_groups_design_matrices()
   {
     try
       {
-//	//
-//	// Build X1 and X2 design matrices
-//	//
-//
-//	//
-//	//
-//	int
-//	  X1_lines = num_3D_images_,
-//	  X1_cols  = num_subjects_ * D_r + groups_.size() * D_f,
-//	  X2_lines = num_subjects_ * D_r + groups_.size() * D_f ,
-//	  X2_cols  = groups_.size() * ( D_r * (num_covariates_ + 1) + D_f );
-//	//
-//	X1_ = Eigen::MatrixXd::Zero( X1_lines, X1_cols );
-//	X2_ = Eigen::MatrixXd::Zero( X2_lines, X2_cols );
-//	//
-//	int line_x1 = 0, col_x1 = 0;
-//	int line_x2 = 0, col_x2 = 0;
-//	int current_gr = ( *groups_.begin() ), increme_dist_x1 = 0, increme_dist_x2 = 0;
-//	for ( auto g : groups_ )
-//	  for ( auto subject : group_pind_[g] )
-//	    {
-//	      //
-//	      // we change group
-//	      if ( current_gr != g )
-//		{
-//		  // Add the ID matrix for the fixed parameters
-//		  X2_.block( line_x2, D_r * (num_covariates_ + 1) + increme_dist_x2,
-//			     D_f, D_f ) = Eigen::MatrixXd::Identity( D_f, D_f );
-//		  line_x2 += D_f;
-//		  //
-//		  increme_dist_x1 += group_num_subjects_[current_gr] * D_r + D_f;
-//		  increme_dist_x2 += D_r * (num_covariates_ + 1) + D_f;
-//		  col_x1          += D_f;
-//		  current_gr       = g;
-//		}
-//	      //
-//	      // X1 design
-//	      int
-//		sub_line_x1 = subject.second.get_random_matrix().rows(),
-//		sub_col_x1  = subject.second.get_random_matrix().cols(),
-//		sub_line_x1_fixed = subject.second.get_fixed_matrix().rows(),
-//		sub_col_x1_fixed  = subject.second.get_fixed_matrix().cols();
-//	      X1_.block( line_x1, col_x1, sub_line_x1, sub_col_x1 ) = subject.second.get_random_matrix();
-//	      X1_.block( line_x1, increme_dist_x1 + group_num_subjects_[g]  * D_r,
-//			 sub_line_x1_fixed, sub_col_x1_fixed ) = subject.second.get_fixed_matrix();
-//	      //
-//	      line_x1 += sub_line_x1;
-//	      col_x1  += sub_col_x1;
-//	      //
-//	      // X2 design
-//	      int
-//		sub_line_x2 = subject.second.get_X2_matrix().rows(),
-//		sub_col_x2  = subject.second.get_X2_matrix().cols();
-//	      X2_.block( line_x2, increme_dist_x2, sub_line_x2, sub_col_x2 ) = subject.second.get_X2_matrix();
-//	      //
-//	      line_x2 += sub_line_x2;
-//	    }
-//	// And the last Id matrix of the X2 design
-//	X2_.block( line_x2, D_r * (num_covariates_ + 1) + increme_dist_x2,
-//		   D_f, D_f ) = Eigen::MatrixXd::Identity( D_f, D_f );
-//	//
-//	//
-//	if ( false )
-//	  {
-//	    std::cout << X1_ << std::endl;
-//	    std::cout << X2_ << std::endl;
-//	  }
-//
-//	//
-//	// Build X augmented
-//	//
-//
-//	//
-//	// Before keeping going, we check the X1_cols == X2_lines
-//	if ( X1_cols != X2_lines )
-//	  {
-//	    std::string mess = std::string("Number of lines first design (X1) must be equal to the ");
-//	    mess += std::string("number of columns second design (X2).");
-//	    //
-//	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//				 mess.c_str(),
-//				 ITK_LOCATION );
-//	  }
-//	
-//	//
-//	//
-//	int
-//	  X_lines = X1_cols + X2_cols + X1_lines,
-//	  X_cols  = X1_cols + X2_cols;
-//	//
-//	X_ = Eigen::MatrixXd::Zero( X_lines, X_cols );
-//	// lines 
-//	X_.block( 0, 0, X1_lines, X1_cols )                 = X1_;
-//	X_.block( X1_lines, 0, X1_cols, X1_cols )           = Eigen::MatrixXd::Identity( X1_cols, X1_cols );
-//	X_.block( X1_lines + X1_cols, 0, X2_cols, X1_cols ) = Eigen::MatrixXd::Zero( X2_cols, X1_cols );
-//	// Columns
-//	X_.block( 0, X1_cols, X1_lines, X2_cols )                 = X1_ * X2_;
-//	X_.block( X1_lines, X1_cols, X1_cols, X2_cols )           = Eigen::MatrixXd::Zero( X1_cols, X2_cols );
-//	X_.block( X1_lines + X1_cols, X1_cols, X2_cols, X2_cols ) = Eigen::MatrixXd::Identity( X2_cols, X2_cols );
-//	//
-//	if ( false )
-//	  {
-//	    std::cout << "Augmented model:" << std::endl;
-//	    std::cout << X_ << std::endl;
-//	  }
-//
-//	//
-//	// Building the covariance base matrices & covariante matrices
-//	//
-//
-//	//
-//	// Based matrix for a subject
-//	// D_r qi matrices (D_r x D_r)
-//	// 
-//	// | 0           |
-//	// |  0          |
-//	// |    ...      |
-//	// |      1      | ith element
-//	// |        ...  |
-//	// |           0 |
-//	std::vector< Eigen::MatrixXd > q( D_r );
-//	for ( int i = 0 ; i < D_r ; i++ )
-//	  {
-//	    q[i] = Eigen::MatrixXd::Zero( D_r, D_r );
-//	    q[i](i,i) = 1.;
-//	  }
-//
-//	//
-//	// Based matrix per group
-//	std::map< int, std::vector< Eigen::MatrixXd > > Q_group;
-//	for ( auto g : groups_ )
-//	  {
-//	    //
-//	    // For each group we create D_r based matrix + 1 matrix for fixed effects over
-//	    // D_r dimensions
-//	    if ( Q_group.find( g ) == Q_group.end() )
-//		Q_group[g] = std::vector< Eigen::MatrixXd >( D_r + 1 );
-//	    // fixed effect matrix
-//	    Q_group[g][D_r] = Eigen::MatrixXd::Zero( group_num_subjects_[g] * D_r + D_f,
-//						     group_num_subjects_[g] * D_r + D_f );
-//	    // We create each D_r dimensions
-//	    for ( int d = 0 ; d < D_r ; d++ )
-//	      {
-//		Q_group[g][d] = Eigen::MatrixXd::Zero( group_num_subjects_[g] * D_r + D_f,
-//						       group_num_subjects_[g] * D_r + D_f );
-//		//
-//		int linco = 0;
-//		for ( int s = 0 ; s < group_num_subjects_[g] ; s++ )
-//		  {
-//		    Q_group[g][d].block( linco, linco, D_r, D_r ) = q[d];
-//		    linco += D_r;
-//		  }
-//		// Add the fixed effect
-//		Q_group[g][D_r].block( linco, linco,
-//				       D_f, D_f ) = Eigen::MatrixXd::Identity( D_f, D_f );
-//		if ( false )
-//		  {
-//		    std::cout << "Q_group[" << g << "][" << d << "] = \n"
-//			      << Q_group[g][d] << std::endl;
-//		    std::cout << "Fixed part: " << std::endl;
-//		    std::cout << "Q_group[" << g << "][D_r] = \n"
-//			      << Q_group[g][D_r] << std::endl;
-//		  }
-//	      }
-//	  }
-//
-//	
-//	//
-//	// Building the starting block covariance matrix
-//	// 
-//
-//	//
-//	// Global dimension of the base matrix
-//	int
-//	  C_theta_dim = groups_.size() * ( D_r * (num_covariates_+1) + D_f ) /*C_theta dimension*/,
-//	  Q_k_linco = num_3D_images_ /*C_eps_1_base*/
-//	  + num_subjects_ * D_r + groups_.size() * D_f /*C_eps_2_base*/
-//	  + C_theta_dim;
-//	int C_eps_num_block_diag = 2 + groups_.size() * (D_r+D_f);
-//	int linco = 0;
-//	//
-//	// C_eps_1_base
-//	Q_k_[0]    = std::vector< Eigen::MatrixXd >( 1 );
-//	Q_k_[0][0] = Eigen::MatrixXd::Zero( Q_k_linco, Q_k_linco );
-//	Q_k_[0][0].block( 0, 0,
-//			  num_3D_images_,  num_3D_images_ ) = Eigen::MatrixXd::Identity(num_3D_images_,
-//											num_3D_images_);
-//	//
-//	// C_eps_2_base and fixed effects
-//	linco = num_3D_images_;
-//	for ( auto g : groups_ )
-//	  {
-//	    // check for a new group
-//	    if ( Q_k_.find( g ) == Q_k_.end() )
-//		Q_k_[g] = std::vector< Eigen::MatrixXd >( D_r + 1 );
-//	    // fixed effect matrix
-//	    Q_k_[g][D_r]  = Eigen::MatrixXd::Zero( Q_k_linco, Q_k_linco );
-//	    int sub_linco = Q_group[g][0].rows();
-//	    for ( int d_r = 0 ; d_r < D_r ; d_r++ )
-//	      {
-//		Q_k_[g][d_r] = Eigen::MatrixXd::Zero( Q_k_linco, Q_k_linco );
-//		Q_k_[g][d_r ].block( linco, linco,
-//				     sub_linco, sub_linco) = Q_group[g][d_r];
-//	      }
-//	    // fixed effects
-//	    Q_k_[g][D_r ].block( linco + sub_linco - D_f, linco + sub_linco - D_f,
-//				 D_f, D_f ) = 1.e-16 * Eigen::MatrixXd::Identity(D_f, D_f);
-//	    //
-//	    linco += sub_linco;
-//	  }
-//	//
-//	// Covariance matrix theta level two
-//	C_theta_ = Eigen::MatrixXd::Zero( Q_k_linco, Q_k_linco );
-//	C_theta_.block( linco, linco,
-//			C_theta_dim,  C_theta_dim ) = 1.e+16 * Eigen::MatrixXd::Identity( C_theta_dim,
-//											  C_theta_dim );
-//	//
-//	//
-//	if ( false )
-//	  {
-//	    std::cout << "Q_k_[0][0] = \n"
-//		      << Q_k_[0][0] << "\n\n\n"
-//		      << std::endl;
-//	    for ( auto g : groups_ )
-//	      for ( int k = 0 ; k <  D_r + 1 ; k++ )
-//		std::cout << "Q_k_[" << g << "][" << k << "] = \n"
-//			  << Q_k_[g][k] << "\n\n\n"
-//			  << std::endl;
-//	    std::cout << "C_theta_ = \n"
-//		      << C_theta_ << "\n\n\n"
-//		      << std::endl;
-//	  }
-//
-//	//
-//	//
-//	if ( X_.rows() != Q_k_linco )
-//	  {
-//	    //std::cout << "[X_] = " << X_.rows() << "x" << X_.cols() << std::endl;
-//	    //std::cout << "[Q_k_] = " << Q_k_linco << "x" << Q_k_linco << std::endl;
-//	    std::string mess = std::string("Dimensions of the covriance matrix and ");
-//	    mess += std::string("design matrix must comply:");
-//	    //
-//	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-//				 mess.c_str(),
-//				 ITK_LOCATION );
-//	  }
-//
-//	
-//	//
-//	// Build the contrast matrix
-//	//
-//
-//	//
-//	// We build the weight of the cohort and the global contrasts
-//	int
-//	  swap_row = 0,
-//	  previouse_grp_size = 0;
-//	//
-//	Eigen::MatrixXd G                = - Eigen::MatrixXd::Identity( groups_.size(), groups_.size() );
-//	Eigen::MatrixXd all_contrasts    =   Eigen::MatrixXd::Zero( groups_.size(), groups_.size() * groups_.size() );
-//	Eigen::MatrixXd all_contrasts_l2 =   Eigen::MatrixXd::Zero( groups_.size(), groups_.size() * groups_.size() );
-//	Eigen::MatrixXd cohort           =   Eigen::MatrixXd::Zero( num_subjects_, groups_.size() );
-//	// First line is Ones
-//	G.block(0,0,1,groups_.size()) =   Eigen::MatrixXd::Ones( 1, groups_.size() );
-//	//
-//	for ( auto g : groups_ )
-//	  {
-//	    Eigen::MatrixXd tempo_G = G;
-//	    tempo_G.row(swap_row).swap( tempo_G.row(0) );
-//	    all_contrasts.block( 0, 0 + groups_.size() * swap_row,
-//				 groups_.size(), groups_.size() ) = tempo_G;
-//	    
-//	    cohort.block( previouse_grp_size , swap_row, group_num_subjects_[ g ], 1 ) =
-//	      Eigen::MatrixXd::Ones( group_num_subjects_[ g ], 1 ) / group_num_subjects_[ g ];
-//	    previouse_grp_size += group_num_subjects_[ g ];
-//	    
-//	    //
-//	    //
-//	    swap_row++;
-//	  }
-//	// Copy the constrast for the level 2
-//	all_contrasts_l2 = all_contrasts;
-//	//
-//	std::cout << "all_contrast For each of the parameters: \n" << all_contrasts << std::endl << std::endl;
-//	//
-//	// Cohort distribution
-//	// All contrasts between groups
-//	Eigen::MatrixXd all_cont_grps = Eigen::MatrixXd::Zero( num_subjects_,
-//							       groups_.size() * groups_.size() );
-//	//
-//	int
-//	  current_row = 0,
-//	  past_rows   = 0;
-//	//
-//	for ( auto g : groups_ )
-//	  {
-//	    for ( int c = 0 ; c < all_contrasts.cols() ; c++ )
-//	      all_cont_grps.block( past_rows, c,
-//				   group_num_subjects_[ g ], 1 ) =
-//		all_contrasts( current_row, c ) * Eigen::MatrixXd::Ones( group_num_subjects_[ g ], 1 ) / group_num_subjects_[ g ];
-//	    // next row
-//	    past_rows += group_num_subjects_[ g ];
-//	    current_row++;
-//	  }
-//	//
-//	// Global contrast
-//	Eigen::MatrixXd Id_Dr = Eigen::MatrixXd::Identity( D_r, D_r );
-//	//  
-//	constrast_    = Eigen::kroneckerProduct( all_cont_grps, Id_Dr );
-//	constrast_l2_ = Eigen::kroneckerProduct( all_contrasts_l2, 
-//						 Eigen::MatrixXd::Identity( D_r * (num_covariates_+1),
-//									    D_r * (num_covariates_+1) ) );
-//	//
-//	if ( true )
-//	  {
-//	    std::cout << "constrast_ \n" << constrast_  << std::endl;
-//	    std::cout << "constrast_l2 \n" << constrast_l2_  << std::endl;
-//	  }
+	//
+	// Build X1 and X2 design matrices
+	//
+
+	//
+	//
+	int
+	  // X
+	  X_lines = DimY * num_3D_images_,
+	  X_cols  = D_f,
+	  // Z
+	  Z_lines = DimY * num_3D_images_,
+	  Z_cols  = group_num_subjects_[1] * ( D_f + num_covariates_ );
+	//
+	X_ = Eigen::MatrixXd::Zero( X_lines, X_cols );
+	Z_ = Eigen::MatrixXd::Zero( Z_lines, Z_cols );
+	
+	std::cout 
+	  << "DimY " << DimY
+	  << "\n D_f " << D_f
+	  << "\n num_3D_images: " << num_3D_images_
+	  << "\n groups_.size() " << group_num_subjects_[1]
+	  << "\n num_covariates_ " <<  num_covariates_
+	  << "\n X = [" << X_.rows() << ", " << X_.cols() << "]"
+	  << "\n Z = [" << Z_.rows() << ", " << Z_.cols() << "]"
+	  << std::endl;
+	//
+	int line_x = 0, col_x = 0;
+	int line_z = 0, col_z = 0;
+	int current_gr = ( *groups_.begin() ), increme_dist_x1 = 0, increme_dist_x2 = 0;
+	for ( auto g : groups_ )
+	  for ( auto subject : group_pind_[g] )
+	    {
+	      //
+	      // we change group
+	      if ( current_gr != g )
+		{
+		  //// Add the ID matrix for the fixed parameters
+		  ////X2_.block( line_z, DimY * (num_covariates_ + 1) + increme_dist_x2,
+		  ////	     D_f, D_f ) = Eigen::MatrixXd::Identity( D_f, D_f );
+		  //line_z += D_f;
+		  ////
+		  //increme_dist_x1 += group_num_subjects_[current_gr] * DimY + D_f;
+		  //increme_dist_x2 += DimY * (num_covariates_ + 1) + D_f;
+		  //current_gr       = g;
+		}
+	      //
+	      // X and Z designs
+	      int
+		sub_line_x = subject.second.get_fixed_matrix().rows(),
+		sub_col_x  = subject.second.get_fixed_matrix().cols(),
+		sub_line_z = subject.second.get_random_matrix().rows(),
+		sub_col_z  = subject.second.get_random_matrix().cols();
+	      X_.block( line_x, col_x, sub_line_x, sub_col_x ) = subject.second.get_fixed_matrix();
+	      Z_.block( line_z, col_z, sub_line_z, sub_col_z ) = subject.second.get_random_matrix();
+	      //
+	      line_x += sub_line_x;
+	      line_z += sub_line_z;
+	      col_z  += sub_col_z;
+	    }
+	//
+	//
+	if ( false )
+	  {
+	    std::cout << X_ << std::endl;
+	    std::cout << Z_ << std::endl;
+	  }
+
+
 //	//
 //	// Contrast output
 //	std::string
@@ -984,8 +691,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f > void
-    MleLoadCSV< D_r, D_f >::Expectation_Maximization( MaskType::IndexType Idx )
+  template< int DimY, int D_f > void
+    MleLoadCSV< DimY, D_f >::Expectation_Maximization( MaskType::IndexType Idx )
   {
     try
       {
@@ -1018,7 +725,7 @@ namespace NeuroBayes
 //	
 //	//
 //	// Hyper-parameters
-//	// 1 /*C_eps_1*/+ groups_.size * D_r /*C_eps_2*/+ 1 /*fixed effect*/
+//	// 1 /*C_eps_1*/+ groups_.size * DimY /*C_eps_2*/+ 1 /*fixed effect*/
 //	std::map< int /*group*/, std::vector< double > > lambda_k;
 //	// C_eps_1 lambda
 //	lambda_k[0]    = std::vector< double >( 1 );
@@ -1027,15 +734,15 @@ namespace NeuroBayes
 //	for ( auto g : groups_ )
 //	  {
 //	    if ( lambda_k.find( g ) == lambda_k.end() )
-//	      lambda_k[g] = std::vector< double >( D_r + (D_f > 0  ? 1 : 0) );
+//	      lambda_k[g] = std::vector< double >( DimY + (D_f > 0  ? 1 : 0) );
 //	    //
-//	    for ( int d_r = 0 ; d_r < D_r ; d_r++ )
+//	    for ( int d_r = 0 ; d_r < DimY ; d_r++ )
 //	      {
 //		lambda_k[g][d_r] = 1.e-03;//.02;
 //	      }
 //	    // fixed effects
 //	    if ( D_f > 0 )
-//	      lambda_k[g][D_r ] = 0.; // Always enforce this value to be 0
+//	      lambda_k[g][DimY ] = 0.; // Always enforce this value to be 0
 //	  }
 //
 //	//
@@ -1044,7 +751,7 @@ namespace NeuroBayes
 //	Eigen::MatrixXd Cov_eps = C_theta_;
 //	Cov_eps +=  exp( lambda_k[0][0] ) * Q_k_[0][0];
 //	for ( auto g : groups_ )
-//	  for ( int k = 0 ; k < D_r + (D_f > 0  ? 1 : 0) ; k++ )
+//	  for ( int k = 0 ; k < DimY + (D_f > 0  ? 1 : 0) ; k++ )
 //	    {
 //	      Cov_eps +=  exp( lambda_k[g][k] ) * Q_k_[g][k];
 //	      //std::cout << "lambda_k__[" << g << "][" << k << "] = " << lambda_k[g][k] << std::endl;
@@ -1083,8 +790,8 @@ namespace NeuroBayes
 //	  max_it = 500;   // failed convergence criterias
 //	//
 //	double 
-//	  learning_rate_  = ( D_r < 3 ? 1.e-02 : 1.e-03 ),
-//	  convergence_    = ( D_r < 3 ? 1.e-05 : 1.e-04 );
+//	  learning_rate_  = ( DimY < 3 ? 1.e-02 : 1.e-03 ),
+//	  convergence_    = ( DimY < 3 ? 1.e-05 : 1.e-04 );
 //	std::list< double > best_convergence;
 //	//
 //	// Fisher strategy
@@ -1110,7 +817,7 @@ namespace NeuroBayes
 //
 //	    //
 //	    // Maximization step
-//	    int hyper_dim = D_r + (D_f > 0  ? 1 : 0);
+//	    int hyper_dim = DimY + (D_f > 0  ? 1 : 0);
 //	    Eigen::MatrixXd P  = inv_Cov_eps - inv_Cov_eps * X_ * cov_theta_Y * X_.transpose() * inv_Cov_eps;
 //	    // Fisher Information matrix
 //	    Eigen::MatrixXd H = Eigen::MatrixXd::Zero( groups_.size() * hyper_dim + 1,
@@ -1137,7 +844,7 @@ namespace NeuroBayes
 //		    grad(i + count_group * hyper_dim + 1,0) *= - exp(lambda_k[g][i]) * 0.5;
 //		    //std::cout << "Q_k_g_[" << g << "][" << i << "] = \n" << Q_k_[g][i] << std::endl;
 //		    if ( Fisher_H )
-//		      for ( int j = 0 ; j < D_r + (D_f > 0  ? 1 : 0); j++ )
+//		      for ( int j = 0 ; j < DimY + (D_f > 0  ? 1 : 0); j++ )
 //			H( i + count_group * hyper_dim + 1, j + count_group * hyper_dim + 1 ) = 
 //			  exp(lambda_k[g][i] + lambda_k[g][j]) * ( P*Q_k_[g][i]*P*Q_k_[g][j] ).trace() * 0.5;
 //		  }
@@ -1179,7 +886,7 @@ namespace NeuroBayes
 //		    //std::cout << "lambda_k[" << g << "][" << k << "] = " << lambda_k[g][k] << " " << exp(lambda_k[g][k])<< std::endl;
 //		  }
 //		if ( D_f > 0 )
-//		  lambda_k[g][D_r] = 0.;
+//		  lambda_k[g][DimY] = 0.;
 //		//
 //		count_group++;
 //	      }
@@ -1323,10 +1030,10 @@ namespace NeuroBayes
 //	  for ( auto subject : group_pind_[g] )
 //	    {
 //	      subject.second.set_fit( Idx,
-//				      parameters.block( increme_subject, 0, D_r, 1 ),
+//				      parameters.block( increme_subject, 0, DimY, 1 ),
 //				      param_cov.block( increme_subject, increme_subject, 
-//						       D_r, D_r ) );
-//	      increme_subject += D_r;
+//						       DimY, DimY ) );
+//	      increme_subject += DimY;
 //	    }
 //	
 //	//std::cout << eta_theta_Y_2_eps_Y_dim << " " << eta_theta_Y_2_theta_Y_dim << std::endl;
@@ -1339,37 +1046,6 @@ namespace NeuroBayes
 //	//std::cout  << std::endl;
 //	//std::cout << cov_theta_Y << std::endl;
 //
-//	//
-//	// Prediction output
-//	// Inverse covariance error
-//	int 
-//	  index_pred_inv_error = 0,
-//	  pos_pred_inv_error   = 0;
-//	// C_eps_1_base: all images have the same error
-//	// we only save the first one
-//	Prediction_inverse_error_l2_.set_val( pos_pred_inv_error++, Idx, 
-//					      inv_Cov_eps(index_pred_inv_error,
-//							  index_pred_inv_error) );
-//	index_pred_inv_error += num_3D_images_;
-//	// C_eps_2: just the first subject covariates for each groups
-//	// Others subjects have the same covariance
-//	for ( auto g : groups_ )
-//	  {
-//	    // Dr
-//	    // We save only he D_r first parameters
-//	    // Others are the same
-//	    for ( int dr = 0 ; dr < D_r ; dr++ )
-//	      Prediction_inverse_error_l2_.set_val( pos_pred_inv_error++, Idx, 
-//						    inv_Cov_eps(index_pred_inv_error+dr,
-//								index_pred_inv_error+dr) );
-//	    // Df
-//	    if ( D_f > 0 )
-//	      for ( int df = 0 ; df < D_f ; df++ )
-//		Prediction_inverse_error_l2_.set_val( pos_pred_inv_error++, Idx, 
-//						      inv_Cov_eps(index_pred_inv_error+D_r+df,
-//								  index_pred_inv_error+D_r+df) );
-//	    //
-//	    index_pred_inv_error += group_num_subjects_[g]*D_r + D_f;
 //	  }
 //	// C_theta_2
 //	// all must be 1.e+16
@@ -1386,184 +1062,11 @@ namespace NeuroBayes
   //
   //
   //
-  template< int D_r, int D_f > void
-    MleLoadCSV< D_r, D_f >::Prediction( MaskType::IndexType Idx )
+  template< int DimY, int D_f > void
+    MleLoadCSV< DimY, D_f >::write_subjects_solutions( )
   {
     try
       {
-//	//
-//	// Inverse covariance value:
-//	MaskType4D::IndexType Idx_inv_cov = { Idx[0], Idx[1], Idx[2], 0 };
-//
-//	for ( auto g : groups_ )
-//	  for ( auto s : group_pind_[g] )
-//	    s.second.prediction( Idx,
-//				 Prediction_inverse_error_->GetOutput()->GetPixel(Idx_inv_cov) );
-      }
-    catch( itk::ExceptionObject & err )
-      {
-	std::cerr << err << std::endl;
-	exit( -1 );
-      }
-  }
-  //
-  //
-  //
-  template< int D_r, int D_f > double
-    MleLoadCSV< D_r, D_f >::F_( const Eigen::MatrixXd& Augmented_Y,
-				 const Eigen::MatrixXd& Inv_Cov_eps,
-				 const Eigen::MatrixXd& Eta_theta_Y,
-				 const Eigen::MatrixXd& Cov_theta_Y ) const
-  {
-    try
-      {
-//	//
-//	// residual
-//	Eigen::MatrixXd r = Augmented_Y - X_ * Eta_theta_Y;
-//	//std::cout << "residual = " << r.norm() << std::endl;
-//
-//	//
-//	// Terms of free energy
-//	//
-//
-//	//
-//	// log of determinants
-//	double F_1 = 0, F_4 = 0 ;
-//	//
-//	for ( int linco = 0 ; linco < Inv_Cov_eps.rows() ; linco++ )
-//	  F_1 += log( Inv_Cov_eps(linco,linco) );
-//	// 
-//	// using cholesky decomposition
-//	int Cov_theta_Y_rows = Cov_theta_Y.rows();
-//	if ( true )
-//	  {
-//	    // ln |A| = 2 * sum_i ln(L_ii); where A=LL^{T}
-//	    // compute the Cholesky decomposition of A
-//	    Eigen::LLT< Eigen::MatrixXd > lltOf( Cov_theta_Y ); 
-//	    // retrieve factor L in the decomposition
-//	    Eigen::MatrixXd Lchol = lltOf.matrixL();
-//	    for ( int linco = 0 ; linco < Cov_theta_Y_rows ; linco++ )
-//	      {
-//		//std::cout << "Lchol(linco,linco) " << Lchol(linco,linco) << " ** log " << log( Lchol(linco,linco) )<< std::endl;
-//		F_4 += (Lchol(linco,linco) < 1.e-32 ? -73.: log( Lchol(linco,linco) ));
-//	      }
-//	    //
-//	    F_4 *= 2.;
-//	  }
-//	else
-//	  F_4 = NeuroBayes::ln_determinant( Cov_theta_Y );
-//	
-//	double
-//	  F_2 = - (r.transpose() * Inv_Cov_eps * r).trace(), // tr added for compilation reason
-//	  F_3 = - ( Cov_theta_Y * X_.transpose() * Inv_Cov_eps * X_ ).trace();
-//	//std::cout << "mark_F1," << F_1 << "," << F_2 << "," << F_3 << "," << F_4  << "," << F_1 + F_2 + F_3 + F_4 << std::endl;
-//	//std::cout << "Inv_Cov_eps = " << Inv_Cov_eps << std::endl;
-//	//
-//	//
-//	//std::cout << "F = " << ( F_1 + F_2 + F_3 + F_4 ) * 0.5 << std::endl;
-//	return ( F_1 + F_2 + F_3 + F_4 ) * 0.5;
-//	//return F_2 * 0.5;
-      }
-    catch( itk::ExceptionObject & err )
-      {
-	std::cerr << err << std::endl;
-	exit( -1 );
-      }
-  }
-  //
-  //
-  //
-  template< int D_r, int D_f > void
-    MleLoadCSV< D_r, D_f >::lambda_regulation_( std::map< int /*group*/, std::vector< double > >& Lambda ) 
-    {    
-      try
-	{
-//	  for ( auto g : Lambda )
-//	    for ( auto& lambda_k_g_k : Lambda[g.first] )
-//	      {
-//		if ( lambda_k_g_k > 4. )
-//		  lambda_k_g_k = 1.e-03;
-//		//
-//		//std::cout << "lambda_k[" << g.first << "] = " 
-//		//	  << lambda_k_g_k << " " 
-//		//	  << exp(lambda_k_g_k)<< std::endl;
-//		//
-//	      }
-	}
-      catch( itk::ExceptionObject & err )
-	{
-	  std::cerr << err << std::endl;
-	  exit( -1 );
-	}
-    }
-  //
-  //
-  //
-  template< int D_r, int D_f > bool
-    MleLoadCSV< D_r, D_f >::check_convergence_( const std::list< double >& F_val, 
-						 const double Convergence, 
-						 const int    Iteration, 
-						 const int    Window_size,
-						 const int    Max_iteration ) const
-    {    
-      try
-	{
-//	  //
-//	  // Check we have enough iterations
-//	  if ( Iteration > Window_size && Iteration < Max_iteration )
-//	    {
-//	      //
-//	      // mean
-//	      double mean = 0.;
-//	      std::list<double> window_values;
-//	      std::list<double>::const_reverse_iterator rit = F_val.rbegin();
-//	      for ( int i = 0 ; i < Window_size ; i++ )
-//		{
-//		  mean += *(rit);
-//		  window_values.push_back( *(rit++) );
-//		}
-//	      //
-//	      mean /= static_cast< double >( Window_size );
-//	      //
-//	      // Standard deviation
-//	      double accum = 0.0;
-//	      std::for_each ( std::begin( window_values ), std::end( window_values ), 
-//			      [&](const double d) {accum += (d - mean) * (d - mean);} );
-//	      //
-//	      //double stdev = sqrt(accum / (F_val.size()-1));
-//	      double var       = accum / static_cast< double >(Window_size-1);
-//	      double stability = fabs( sqrt(var) / mean );
-//	      ////
-//	      //std::cout << "Convergence," << mean << "," << var << "," 
-//	      //		<< stability << "," 
-//	      //		<< std::endl;
-//
-//	      //
-//	      //
-//	      return ( stability < Convergence ? false : true );
-//	    }
-//	  //
-//	  else if ( Iteration > Max_iteration )
-//	    return false;
-//	  else
-	    return true;
-	}
-      catch( itk::ExceptionObject & err )
-	{
-	  std::cerr << err << std::endl;
-	  exit( -1 );
-	}
-    }
-  //
-  //
-  //
-  template< int D_r, int D_f > void
-    MleLoadCSV< D_r, D_f >::write_subjects_solutions( )
-  {
-    try
-      {
-//	if ( !prediction_ )
-//	  {
 //	    //
 //	    std::cout << "Global solutions" << std::endl;
 //	    // level 1
@@ -1584,7 +1087,6 @@ namespace NeuroBayes
 //	    R_sqr_l2_.write();
 //	    // Output for prediction
 //	    Prediction_inverse_error_l2_.write();
-//	  }
 //	//
 //	//
 //	std::cout << "Subjects solutions" << std::endl;
