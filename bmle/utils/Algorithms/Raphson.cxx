@@ -3,11 +3,6 @@
 //
 //
 //
-NeuroBayes::Raphson::Raphson()
-{}
-//
-//
-//
 void
 NeuroBayes::Raphson::update()
 {}

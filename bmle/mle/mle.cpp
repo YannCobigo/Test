@@ -243,8 +243,9 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Load the CSV file
-	      NeuroBayes::MleLoadCSV< NeuroBayes::Raphson,
-				      1 /*DimY*/, 2 /*D_f*/ > subject_mapping( filename, 
+	      using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Raphson, 2 /*DimY*/ >;
+	      NeuroBayes::MleLoadCSV< Optimization,
+				      2 /*DimY*/, 2 /*D_f*/ > subject_mapping( filename, 
 									       input_dir, output_dir,
 									       time_tran, 
 									       inv_cov_error );
@@ -316,7 +317,7 @@ main( const int argc, const char **argv )
 //			   idx[1] >= windows[window][1][0] && idx[1] < windows[window][1][1] &&
 //			   idx[2] >= windows[window][2][0] && idx[2] < windows[window][2][1] )
 			{
-			  // pool.enqueue( std::ref(subject_mapping), idx );
+			  pool.enqueue( std::ref(subject_mapping), idx );
 			}
 #endif
 		    }

@@ -17,11 +17,21 @@ namespace NeuroBayes
   {
   public:
     /** Constructor. */
-    Raphson();
+    Raphson(){};
     
     //
     //
     virtual void update();
+
+    //
+    //
+  private:
+    // Parameters
+    Eigen::MatrixXd beta_;
+    // Hessian
+    Eigen::MatrixXd H_;
+    // Gradiant
+    Eigen::MatrixXd nabla_;
   };
 }
 #endif
