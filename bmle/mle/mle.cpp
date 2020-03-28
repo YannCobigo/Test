@@ -243,12 +243,13 @@ main( const int argc, const char **argv )
 
 	      //
 	      // Load the CSV file
-	      using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Raphson, 2 /*DimY*/ >;
+	      const int DimY = 2;
+	      using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Raphson, DimY >;
 	      NeuroBayes::MleLoadCSV< Optimization,
-				      2 /*DimY*/, 2 /*D_f*/ > subject_mapping( filename, 
-									       input_dir, output_dir,
-									       time_tran, 
-									       inv_cov_error );
+				      DimY, 2 /*D_f*/ > subject_mapping( filename, 
+									 input_dir, output_dir,
+									 time_tran, 
+									 inv_cov_error );
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();
 

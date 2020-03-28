@@ -36,7 +36,6 @@ using MaskType4D = itk::Image< unsigned char, 4 >;
 #include "mle_subject.h"
 // Tools
 #include "Tools.h"
-//#include "Algorithms/Raphson.h"
 //
 //
 //
@@ -64,7 +63,7 @@ namespace NeuroBayes
     /** Destructor */
     virtual ~MleLoadCSV(){};
 
-    Optimizer optim;
+    Optimizer optim_;
 
     //
     // This function will load all the patients images into a 4D image.
@@ -146,16 +145,6 @@ namespace NeuroBayes
     Eigen::MatrixXd X_;
     // Z
     Eigen::MatrixXd Z_;
-
-    //
-    // Covariance base matrices
-    //
-
-    // Base matrices
-    // 1 /*C_eps_1_base*/+ DimY /*C_eps_2_base*/+ 1 /*fixed effect*/
-    std::map< int /*group*/, std::vector< Eigen::MatrixXd > > Q_k_;
-    // Covariance matrix theta level two
-    Eigen::MatrixXd C_theta_;
 
     //
     // Constrast matrix
@@ -586,13 +575,15 @@ namespace NeuroBayes
 	
 	//
 	//
+	// Number of random parameters
+	int D_r = D_f + num_covariates_;
 	int
 	  // X
-	  X_lines = DimY * num_3D_images_,
+	  X_lines = num_3D_images_,
 	  X_cols  = D_f,
 	  // Z
-	  Z_lines = DimY * num_3D_images_,
-	  Z_cols  = group_num_subjects_[1] * ( D_f + num_covariates_ );
+	  Z_lines = num_3D_images_,
+	  Z_cols  = group_num_subjects_[1] * D_r;
 	//
 	X_ = Eigen::MatrixXd::Zero( X_lines, X_cols );
 	Z_ = Eigen::MatrixXd::Zero( Z_lines, Z_cols );
@@ -632,13 +623,18 @@ namespace NeuroBayes
 	    }
 	//
 	//
-	if ( false )
+	if ( true )
 	  {
 	    std::cout << "Design matrices X and Z" << std::endl;
 	    std::cout << X_ << std::endl;
 	    std::cout << Z_ << std::endl;
 	  }
 
+
+	//
+	// Init the Covariance matrix
+	optim_.init_covariance( num_3D_images_, group_pind_[1].size(), D_r, X_, Z_ );
+	
 
 //	//
 //	// Contrast output
