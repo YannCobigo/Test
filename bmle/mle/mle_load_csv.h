@@ -68,24 +68,16 @@ namespace NeuroBayes
     //
     // This function will load all the patients images into a 4D image.
     void build_groups_design_matrices();
-    // Expectation maximization algorithm
-    void Expectation_Maximization( MaskType::IndexType );
+    // Optimizarion scheme
+    void optimization( MaskType::IndexType );
     // Write the output
     void write_subjects_solutions( );
     // multi-threading
     void operator ()( const MaskType::IndexType idx )
     {
-      if ( prediction_ )
-	{
-	  std::cout << "Prediction treatment for parameters: " 
-		    << idx;
-	}
-      else
-	{
-	  std::cout << "treatment for parameters: " 
-		    << idx;
-	  Expectation_Maximization( idx );
-	}
+      std::cout << "treatment for parameters: " 
+		<< idx;
+      optimization( idx );
     };
 
 
@@ -103,10 +95,6 @@ namespace NeuroBayes
     // Members
     //
     
-    //
-    // Prediction calculation
-    bool prediction_{false};
-
     //
     // CSV file
     std::ifstream csv_file_;
@@ -679,24 +667,31 @@ namespace NeuroBayes
   //
   //
   template< class Optimizer, int DimY, int D_f > void
-    MleLoadCSV< Optimizer, DimY, D_f >::Expectation_Maximization( MaskType::IndexType Idx )
+    MleLoadCSV< Optimizer, DimY, D_f >::optimization( MaskType::IndexType Idx )
     {
       try
 	{
-	//
-	// Measure
-	//
-	std::cout << Idx << std::endl;
-	
-	//
-	// measured data Y
-	Eigen::MatrixXd Y = Eigen::MatrixXd::Zero( num_3D_images_, 1 );
-	// First lines are set to the measure
-	for ( int img = 0 ; img < num_3D_images_ ; img++ )
-	  Y( img, 0 ) = Y_[ img ]->GetOutput()->GetPixel( Idx );
-	//
-	if ( true )
-	  std::cout << "response: " << Y.rows() << "\n" << Y << std::endl;
+	  //
+	  // Measure
+	  //
+	  std::cout << Idx << std::endl;
+	  
+	  //
+	  // measured data Y
+	  Eigen::MatrixXd Y = Eigen::MatrixXd::Zero( num_3D_images_, 1 );
+	  // First lines are set to the measure
+	  for ( int img = 0 ; img < num_3D_images_ ; img++ )
+	    Y( img, 0 ) = Y_[ img ]->GetOutput()->GetPixel( Idx );
+	  //
+	  if ( false )
+	    std::cout << "response: " << Y.rows() << "\n" << Y << std::endl;
+	  //
+	  optim_.set_response( Y );
+
+	  //
+	  // Optimization
+	  while( !optim_.converged() )
+	    optim_.update();
 	}
       catch( itk::ExceptionObject & err )
 	{

@@ -17,7 +17,8 @@ namespace NeuroBayes
   class Optimizer
   {
   public:
-    virtual void update() = 0;
+    virtual void update()     = 0;
+    virtual bool converged()  = 0;
   };
 }
 #endif
