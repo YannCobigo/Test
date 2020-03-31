@@ -63,7 +63,7 @@ namespace NeuroBayes
     Eigen::MatrixXd beta_;
     Eigen::MatrixXd beta_hat_;
     // convergence criteria
-    double epsilon_{1.e-02};
+    double epsilon_{1.e-10};
 
     //
     // Covariance parameters
@@ -138,8 +138,8 @@ namespace NeuroBayes
       n_ = N / DimY;
       //
       beta_hat_ = beta_ = Eigen::MatrixXd::Zero( X.cols(), 1);
-      kappa_    = Eigen::MatrixXd::Zero( DimY*(DimY+1)/2 + D_r+(D_r+1)/2, 1);
-      
+      kappa_    = Eigen::MatrixXd::Zero( DimY*(DimY+1)/2 + D_r*(D_r+1)/2, 1);
+
 
       //
       // Covariance: Kronecker R_ x In_
@@ -188,7 +188,7 @@ namespace NeuroBayes
 
       //
       //
-      if ( true )
+      if ( false )
 	{
 	  //
 	  // R
@@ -246,12 +246,19 @@ namespace NeuroBayes
 	      for ( auto ssigdot : Sigdot_mapping_ )
 		{
 		  SigSigSig = SigSig * ssigdot;
-		  H(ii,jj)  = - 4 * SigSigSig.trace();
-		  H(ii,jj) += 6 * (XbetaMinusY.transpose() * SigSigSig * Sigma_inv * XbetaMinusY)(0,0);
+		  H(ii,jj)    = - 4 * SigSigSig.trace();
+		  H(ii,jj++) += 6 * (XbetaMinusY.transpose() * SigSigSig * Sigma_inv * XbetaMinusY)(0,0);
 		}
 	      //
 	      ii++; 
-	      jj++;
+	    }
+	  //
+	  if ( false )
+	    {
+	      std::cout
+		<< "grad_L = " << grad_L
+		<< "\n H = " << H 
+		<< std::endl;
 	    }
 
 
