@@ -31,6 +31,9 @@ namespace NeuroBayes
     //
     //
   private:
+    //
+    double learning_rate_{1.e-02};
+
     // Parameters
     Eigen::MatrixXd kappa_;
     // Gradiant

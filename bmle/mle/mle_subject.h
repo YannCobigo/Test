@@ -123,7 +123,7 @@ namespace NeuroBayes
     double 
       C1_{0.},
       C2_{0.};
-
+    int D_r_{D_f};  
 
     //
     // Subject parameters
@@ -146,10 +146,6 @@ namespace NeuroBayes
     //
     // Number of time points
     int time_points_{0};
-
-    //
-    // Prediction
-    bool prediction_{false};
 
     //
     // Model parameters
@@ -331,6 +327,7 @@ namespace NeuroBayes
 	    {
 	      age_covariates_[ Age ] = Covariates;
 	      age_images_[ Age ]     = Image;
+	      D_r_ = D_f + Covariates.size();
 	      //
 	      // load the ITK images
 	      if ( file_exists(Image) )
@@ -383,23 +380,23 @@ namespace NeuroBayes
 						  const Eigen::MatrixXd Model_fit, 
 						  const Eigen::MatrixXd Cov_fit )
     {
-//      //
-//      // ToDo: I would like to write the goodness of the score (r-square ...)
-//      //
-//      // copy Eigen Matrix information into a vector
-//      // We only record the diagonal sup of the covariance.
-//      std::vector< double > model( DimY ), cov( DimY * (DimY + 1) / 2 );
-//      int current_mat_coeff = 0;
-//      for ( int d ; d < DimY ; d++ )
-//	{
-//	  model[d] = Model_fit(d,0);
-//	  Random_effect_ITK_model_.set_val( d, Idx, Model_fit(d,0) );
-//	  for ( int c = d ; c < DimY ; c++)
-//	    {
-//	      cov[d]  = Cov_fit(d,c);
-//	      Random_effect_ITK_variance_.set_val( current_mat_coeff++, Idx, Cov_fit(d,c) );
-//	    }
-//	}
+      //
+      // ToDo: I would like to write the goodness of the score (r-square ...)
+      //
+      // copy Eigen Matrix information into a vector
+      // We only record the diagonal sup of the covariance.
+      //std::vector< double > model( DimY ), cov( DimY * (DimY + 1) / 2 );
+      int current_mat_coeff = 0;
+      for ( int d ; d < D_r_ ; d++ )
+	{
+	  //model[d] = Model_fit(d,0);
+	  Random_effect_ITK_model_.set_val( d, Idx, Model_fit(d,0) );
+	  for ( int c = d ; c < D_r_ ; c++)
+	    {
+	      //cov[d]  = Cov_fit(d,c);
+	      Random_effect_ITK_variance_.set_val( current_mat_coeff++, Idx, Cov_fit(d,c) );
+	    }
+	}
     }
   //
   //
@@ -407,26 +404,26 @@ namespace NeuroBayes
   template < int DimY, int D_f > void
     NeuroBayes::MleSubject< DimY, D_f >::create_theta_images()
     {
-//      //std::cout << "We create output only one time" << std::endl;
-//      // Model output
-//      std::string output_model = output_dir_ + "/" + "model_" 
-//	+ PIDN_ + "_" + std::to_string( group_ )
-//	+ ".nii.gz";
-//      Random_effect_ITK_model_ = NeuroBayes::NeuroBayesMakeITKImage( DimY,
-//								     output_model,
-//								     age_ITK_images_.begin()->second);
-//      // Variance output
-//      // We only record the diagonal sup elements
-//      //
-//      // | 1 2 3 |
-//      // | . 4 5 |
-//      // | . . 6 |
-//      std::string output_var = output_dir_ + "/" + "var_" 
-//	+ PIDN_ + "_" + std::to_string( group_ )
-//	+ ".nii.gz";
-//      Random_effect_ITK_variance_ = NeuroBayes::NeuroBayesMakeITKImage( DimY * (DimY + 1) / 2 /*we make sure it is a int*/,
-//									output_var,
-//									age_ITK_images_.begin()->second );
+      //std::cout << "We create output only one time" << std::endl;
+      // Model output
+      std::string output_model = output_dir_ + "/" + "mle_" 
+	+ PIDN_ + "_" + std::to_string( group_ )
+	+ ".nii.gz";
+      Random_effect_ITK_model_ = NeuroBayes::NeuroBayesMakeITKImage( D_r_,
+								     output_model,
+								     age_ITK_images_.begin()->second);
+      // Variance output
+      // We only record the diagonal sup elements
+      //
+      // | 1 2 3 |
+      // | . 4 5 |
+      // | . . 6 |
+      std::string output_var = output_dir_ + "/" + "mle_var_" 
+	+ PIDN_ + "_" + std::to_string( group_ )
+	+ ".nii.gz";
+      Random_effect_ITK_variance_ = NeuroBayes::NeuroBayesMakeITKImage( D_r_ * (D_r_ + 1) / 2,
+									output_var,
+									age_ITK_images_.begin()->second );
     }
   //
   //
@@ -434,16 +431,8 @@ namespace NeuroBayes
   template < int DimY, int D_f > void
     NeuroBayes::MleSubject< DimY, D_f >::write_solution()
     {
-      if ( prediction_ )
-	{
-	  Probability_prediction_map_.write();
-	  Error_prediction_map_.write();
-	}
-      else
-	{
-	  Random_effect_ITK_model_.write();
-	  Random_effect_ITK_variance_.write();
-	}
+      Random_effect_ITK_model_.write();
+      Random_effect_ITK_variance_.write();
     }
   //
   //

@@ -63,8 +63,6 @@ namespace NeuroBayes
     /** Destructor */
     virtual ~MleLoadCSV(){};
 
-    Optimizer optim_;
-
     //
     // This function will load all the patients images into a 4D image.
     void build_groups_design_matrices();
@@ -94,6 +92,10 @@ namespace NeuroBayes
     //
     // Members
     //
+
+    //
+    // Dimension of the random effects
+    int D_r_{D_f};
     
     //
     // CSV file
@@ -158,17 +160,15 @@ namespace NeuroBayes
     // Posterior t-maps
     NeuroBayes::NeuroBayesMakeITKImage post_T_maps_;
     // Posterior groups parameters
-    NeuroBayes::NeuroBayesMakeITKImage post_groups_param_;
+    NeuroBayes::NeuroBayesMakeITKImage groups_param_;
     //
     // level 2
     // Posterior Probability Maps
     NeuroBayes::NeuroBayesMakeITKImage PPM_l2_;
     // Posterior t-maps
     NeuroBayes::NeuroBayesMakeITKImage post_T_maps_l2_;
-    // Posterior groups parameters
-    NeuroBayes::NeuroBayesMakeITKImage post_groups_param_l2_;
     // Posterior groups variance
-    NeuroBayes::NeuroBayesMakeITKImage post_groups_cov_l2_;
+    NeuroBayes::NeuroBayesMakeITKImage groups_cov_;
     // 
     // R-square
     NeuroBayes::NeuroBayesMakeITKImage R_sqr_l2_;
@@ -564,14 +564,14 @@ namespace NeuroBayes
 	//
 	//
 	// Number of random parameters
-	int D_r = D_f + num_covariates_;
+	D_r_ = D_f + num_covariates_;
 	int
 	  // X
 	  X_lines = num_3D_images_,
 	  X_cols  = D_f,
 	  // Z
 	  Z_lines = num_3D_images_,
-	  Z_cols  = group_num_subjects_[1] * D_r;
+	  Z_cols  = group_num_subjects_[1] * D_r_;
 	//
 	X_ = Eigen::MatrixXd::Zero( X_lines, X_cols );
 	Z_ = Eigen::MatrixXd::Zero( Z_lines, Z_cols );
@@ -619,43 +619,33 @@ namespace NeuroBayes
 	  }
 
 
-	//
-	// Init the Covariance matrix
-	optim_.init_covariance( num_3D_images_, group_pind_[1].size(), D_r, X_, Z_ );
-	
 
 //	//
 //	// Contrast output
-//	std::string
+	std::string
 //	  // level 1
 //	  sPPM = output_dir_ + "/" + "PPM.nii.gz",
 //	  sPtM = output_dir_ + "/" + "Posterior_t_maps.nii.gz",
-//	  sPgP = output_dir_ + "/" + "Post_groups_param.nii.gz",
+	  sPgP = output_dir_ + "/" + "mle_groups_param.nii.gz",
 //	  // level 2
 //	  sPPMl2 = output_dir_ + "/" + "PPM_l2.nii.gz",
 //	  sPtMl2 = output_dir_ + "/" + "Posterior_t_maps_l2.nii.gz",
-//	  sPgPl2 = output_dir_ + "/" + "Post_groups_param_l2.nii.gz",
-//	  sPgCl2 = output_dir_ + "/" + "Post_groups_cov_l2.nii.gz",
+	  sPgCl2 = output_dir_ + "/" + "mle_groups_cov.nii.gz";
 //	  // R^{2} level 2
 //	  sR_2   = output_dir_ + "/" + "Post_R_square_l2.nii.gz",
-//	  // Output for prediction
-//	  piel2  = output_dir_ + "/" + "Prediction_inverse_error_l2.nii.gz";
 //	
 //	
 //	// level 1
 //	PPM_               = NeuroBayes::NeuroBayesMakeITKImage( constrast_.cols(), sPPM, Y_[0] );
 //	post_T_maps_       = NeuroBayes::NeuroBayesMakeITKImage( constrast_.cols(), sPtM, Y_[0] );
-//	post_groups_param_ = NeuroBayes::NeuroBayesMakeITKImage( constrast_.cols(), sPgP, Y_[0] );
+	groups_param_ = NeuroBayes::NeuroBayesMakeITKImage( D_f, sPgP, Y_[0] );
 //	// level 2
 //	PPM_l2_               = NeuroBayes::NeuroBayesMakeITKImage( constrast_l2_.cols(), sPPMl2, Y_[0] );
 //	post_T_maps_l2_       = NeuroBayes::NeuroBayesMakeITKImage( constrast_l2_.cols(), sPtMl2, Y_[0] );
-//	post_groups_param_l2_ = NeuroBayes::NeuroBayesMakeITKImage( constrast_l2_.cols(), sPgPl2, Y_[0] );
 //	// we only save the variance for each parameter of each group
-//	post_groups_cov_l2_   = NeuroBayes::NeuroBayesMakeITKImage( constrast_l2_.rows(), sPgCl2, Y_[0] );
+	groups_cov_   = NeuroBayes::NeuroBayesMakeITKImage( D_f*(D_f+1)/2., sPgCl2, Y_[0] );
 //	// r-squared
 //	R_sqr_l2_             = NeuroBayes::NeuroBayesMakeITKImage( 2, sR_2, Y_[0] );
-//	// output for predictive model
-//	Prediction_inverse_error_l2_  = NeuroBayes::NeuroBayesMakeITKImage( C_eps_num_block_diag, piel2, Y_[0] );
       }
     catch( itk::ExceptionObject & err )
       {
@@ -677,6 +667,13 @@ namespace NeuroBayes
 	  std::cout << Idx << std::endl;
 	  
 	  //
+	  // Init the Covariance matrix
+	  Optimizer optim;
+	  optim.init_covariance( num_3D_images_, group_pind_[1].size(), D_r_, 
+				 X_, Z_ );
+
+
+	  //
 	  // measured data Y
 	  Eigen::MatrixXd Y = Eigen::MatrixXd::Zero( num_3D_images_, 1 );
 	  // First lines are set to the measure
@@ -686,12 +683,40 @@ namespace NeuroBayes
 	  if ( false )
 	    std::cout << "response: " << Y.rows() << "\n" << Y << std::endl;
 	  //
-	  optim_.set_response( Y );
+	  optim.set_response( Y );
+
 
 	  //
 	  // Optimization
-	  while( !optim_.converged() )
-	    optim_.update();
+	  while( !optim.converged() )
+	    optim.update();
+
+
+	  //
+	  // Save the data
+	  // Group parameters
+	  const Eigen::MatrixXd& param_cov = optim.get_var_beta();
+	  const Eigen::MatrixXd& u         = optim.get_u();
+	  const Eigen::MatrixXd& u_cov     = optim.get_var_u();
+	  int mat_id = 0;
+	  for ( int r = 0 ; r < D_f ; r++ )
+	    {
+	      groups_param_.set_val( r, Idx, (optim.get_beta())(r,0) );
+	      // covariance
+	      for ( int rr = r ; rr < D_f ; rr++ )
+		groups_cov_.set_val( mat_id++, Idx, param_cov(r,rr) );
+	    }
+	  // 
+	  int increme_subject = 0;
+	  for ( auto g : groups_ )
+	    for ( auto subject : group_pind_[g] )
+	      {
+		subject.second.set_fit( Idx,
+					u.block( increme_subject, 0, D_r_, 1 ),
+					u_cov.block( increme_subject, increme_subject, 
+						     D_r_, D_r_ ) );
+		increme_subject += D_r_;
+	      }
 	}
       catch( itk::ExceptionObject & err )
 	{
@@ -714,25 +739,22 @@ namespace NeuroBayes
 //	    // Posterior t-maps
 //	    post_T_maps_.write();
 //	    // Posterior groups parameters
-//	    post_groups_param_.write();
+	groups_param_.write();
 //	    // level 2
 //	    PPM_l2_.write();
 //	    // Posterior t-maps
 //	    post_T_maps_l2_.write();
 //	    // Posterior groups parameters
-//	    post_groups_param_l2_.write();
 //	    // Posterior groups variance
-//	    post_groups_cov_l2_.write();
+	groups_cov_.write();
 //	    // R-square
 //	    R_sqr_l2_.write();
-//	    // Output for prediction
-//	    Prediction_inverse_error_l2_.write();
-//	//
-//	//
-//	std::cout << "Subjects solutions" << std::endl;
-//	for ( auto g : groups_ )
-//	  for ( auto subject : group_pind_[g] )
-//	    subject.second.write_solution();
+	//
+	//
+	std::cout << "Subjects solutions" << std::endl;
+	for ( auto g : groups_ )
+	  for ( auto subject : group_pind_[g] )
+	    subject.second.write_solution();
       }
     catch( itk::ExceptionObject & err )
       {

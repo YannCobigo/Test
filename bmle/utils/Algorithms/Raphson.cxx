@@ -18,5 +18,7 @@ NeuroBayes::Raphson::set_matrices( const Eigen::MatrixXd& Kappa,
 void
 NeuroBayes::Raphson::update()
 {
-  kappa_ = kappa_ - H_.inverse() * nabla_;
+  learning_rate_   /= 2.;
+  Eigen::MatrixXd d = H_.inverse() * nabla_;
+  kappa_           -= learning_rate_ * d;
 }

@@ -22,6 +22,7 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 // Tools
 #include "Tools.h"
 #include "Algorithms/Raphson.h"
+#include "Algorithms/Gradiant.h"
 #include "Optimizers/Maximum_likelihood.h"
 //
 //
@@ -239,12 +240,13 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 1;
+	      const int THREAD_NUM = 8;
 
 	      //
 	      // Load the CSV file
-	      const int DimY = 2;
+	      const int DimY = 1;
 	      using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Raphson, DimY >;
+	      //using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Gradiant, DimY >;
 	      NeuroBayes::MleLoadCSV< Optimization,
 				      DimY, 2 /*D_f*/ > subject_mapping( filename, 
 									 input_dir, output_dir,
@@ -306,9 +308,9 @@ main( const int argc, const char **argv )
 #else
 		      // Please do not remove the bracket!!
 //		      // vertex
-		      if ( idx[0] > 92 - 1  && idx[0] < 92 + 1 && 
-			   idx[1] > 94 - 1  && idx[1] < 94 + 1 &&
-			   idx[2] > 63 - 1  && idx[2] < 63 + 1 )
+		      if ( idx[0] > 44 - 30  && idx[0] < 44 + 30 && 
+			   idx[1] > 86 - 30  && idx[1] < 86 + 30 &&
+			   idx[2] > 27 - 30  && idx[2] < 27 + 30 )
 //		      // ALL
 //		      if ( idx[0] > 5 && idx[0] < 110 && 
 //			   idx[1] > 5 && idx[1] < 140 &&
