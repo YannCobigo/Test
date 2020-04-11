@@ -34,6 +34,7 @@ namespace NeuroBayes
     void init_covariance( const int, const int,
 			  const int,	     
 			  const Eigen::MatrixXd&, 
+			  const Eigen::MatrixXd&, 
 			  const Eigen::MatrixXd& );
     //
     //
@@ -47,19 +48,26 @@ namespace NeuroBayes
     { return G_ * Z_.transpose() * Sigma_inverse_ * (Y_ - X_ * beta_hat_);}
     const Eigen::MatrixXd  get_var_u() const 
     { 
-      Eigen::MatrixXd P = Sigma_inverse_;
-      P -= Sigma_inverse_*X_*(X_.transpose()*Sigma_inverse_*X_).inverse()*X_.transpose()*Sigma_inverse_;
+      Eigen::MatrixXd P = inverse_def_pos( X_.transpose() * Sigma_inverse_ * X_ );
+      P = Sigma_inverse_ * X_ * P * X_.transpose() * Sigma_inverse_;
+      P = Sigma_inverse_ - P;
+      //
       return G_ * Z_.transpose() * P * Z_ * G_;
     }
     
   private:		  
-    //			  
-    // Algorithm
-    Algo algo_;
+//    //			  
+//    // Algorithm
+//    Algo algo_;
 
     //
     // private functions
-    bool is_positive_def( const Eigen::MatrixXd& ) const;
+    void   init_covariance();
+    bool   is_positive_def( const Eigen::MatrixXd& ) const;
+    double cost_function() const;
+    double cost_function( const Eigen::MatrixXd&, 
+			  const Eigen::MatrixXd&, 
+			  const Eigen::MatrixXd&) const;
 
     //
     // Dim free response elements
@@ -82,12 +90,16 @@ namespace NeuroBayes
 
     //
     // Beta
-    Eigen::MatrixXd beta_;
-    Eigen::MatrixXd beta_hat_;
+    Eigen::MatrixXd                                   beta_hat_;
+    // Cost function
+    std::vector< double >                             L_;
+    std::vector< double >                             delta_L_;
     // convergence criteria
-    double epsilon_{1.e-16};
-    int    num_max_iterations_{1000};
-    int    iteration_{0};
+    double                                            epsilon_{1.e-6};
+    int                                               num_max_iterations_{10};
+    int                                               iteration_{0};
+    int                                               window_{3};
+    bool                                              interupted_{false};
 
     //
     // Covariance parameters
@@ -124,18 +136,9 @@ namespace NeuroBayes
   template< class Algo, int DimY >
   Maximum_likelihood<Algo,DimY>::Maximum_likelihood()
     {
-      // Random symmetric positive definit 
-      Eigen::MatrixXd A = Eigen::MatrixXd::Random( DimY, DimY );
-      r_                = A * A.transpose();
-      // mapping
-      for ( int i = 0 ; i < DimY ; i++ )
-	for ( int j = i ; j < DimY ; j++ )
-	  {
-	    // derivative mapping
-	    Eigen::Matrix< double, DimY, DimY > U = Eigen::Matrix< double, DimY, DimY >::Zero();
-	    U(i,j) = U(j,i) = 1.;
-	    rdot_mapping_.push_back( U );
-	  }
+      //
+      // First cost function
+      delta_L_.push_back( 1.e+03 );
     };
 
   //
@@ -144,30 +147,139 @@ namespace NeuroBayes
     Maximum_likelihood<Algo,DimY>::init_covariance( const int N, const int S,
 						    const int D_r,
 						    const Eigen::MatrixXd& X,
-						    const Eigen::MatrixXd& Z )
+						    const Eigen::MatrixXd& Z,
+						    const Eigen::MatrixXd& Y )
     {
       //
       // Design matrices
       X_            = X;
       Z_            = Z;
+      Y_            = Y;
       D_r_          = D_r;
       num_subjects_ = S;
       // Number of free elements
       n_ = N / DimY;
       //
-      beta_hat_ = beta_ = Eigen::MatrixXd::Zero( X.cols(), 1);
+      beta_hat_ = Eigen::MatrixXd::Zero( X.cols(), 1);
       kappa_    = Eigen::MatrixXd::Zero( DimY*(DimY+1)/2 + D_r*(D_r+1)/2, 1);
 
+      bool reasonable = false;
+      while( !reasonable )
+	{
+	  //
+	  // reset the containers
+	  rdot_mapping_.clear();
+	  Rdot_mapping_.clear();
+	  gdot_mapping_.clear();
+	  Gdot_mapping_.clear();
+	  Sigdot_mapping_.clear();
+
+	  //
+	  // R
+	  // Random symmetric positive definit 
+	  Eigen::MatrixXd A = Eigen::MatrixXd::Random( DimY, DimY );
+	  r_                = A * A.transpose();
+	  // mapping
+	  for ( int i = 0 ; i < DimY ; i++ )
+	    for ( int j = i ; j < DimY ; j++ )
+	      {
+		// derivative mapping
+		Eigen::Matrix< double, DimY, DimY > U = Eigen::Matrix< double, DimY, DimY >::Zero();
+		U(i,j) = U(j,i) = 1.;
+		rdot_mapping_.push_back( U );
+	      }
+	  // Covariance: Kronecker R_ x In_
+	  Eigen::MatrixXd In = Eigen::MatrixXd::Identity( n_, n_ );
+	  R_ = Eigen::kroneckerProduct( In, r_ );
+	  for ( auto rdot : rdot_mapping_ )
+	    {
+	      Rdot_mapping_.push_back( Eigen::kroneckerProduct(In, rdot) );
+	      Sigdot_mapping_.push_back( Eigen::kroneckerProduct(In, rdot) );
+	    }
+	  //
+	  int ii = 0;
+	  for ( int i = 0 ; i < DimY ; i++ )
+	    for ( int j = i ; j < DimY ; j++ )
+	      kappa_(ii++) = r_(i,j);
+	  
+	  
+	  //
+	  // Covariance: Kronecker G_ x In_
+	  Eigen::MatrixXd B = Eigen::MatrixXd::Random( D_r_, D_r_ );
+	  g_                = B * B.transpose();
+	  // mapping
+	  Eigen::MatrixXd Im = Eigen::MatrixXd::Identity( S, S );
+	  for ( int i = 0 ; i < D_r_ ; i++ )
+	    for ( int j = i ; j < D_r_ ; j++ )
+	      {
+		// derivative mapping
+		Eigen::MatrixXd V = Eigen::MatrixXd::Zero(D_r_,D_r_);
+		V(i,j) = V(j,i) = 1.;
+		gdot_mapping_.push_back( V );
+		Gdot_mapping_.push_back( Z * Eigen::kroneckerProduct(Im, V) * Z.transpose() );
+		Sigdot_mapping_.push_back( Z * Eigen::kroneckerProduct(Im, V) * Z.transpose() );
+		//
+		kappa_(ii++) = g_(i,j);
+	      }
+	  //
+	  G_ = Eigen::kroneckerProduct( Im, g_ );
+	  
+	  
+	  //
+	  // Covariance 
+	  Sigma_         = R_ + Z_ * G_ * Z_.transpose();
+	  Sigma_inverse_ = inverse_def_pos( Sigma_ );
+	  // 
+	  beta_hat_      = inverse_def_pos(X_.transpose() * Sigma_inverse_ * X_);
+	  beta_hat_     *= X_.transpose() * Sigma_inverse_ * Y_;
+      
+	  //
+	  //
+	  double L   = cost_function( beta_hat_, Sigma_, Sigma_inverse_ );
+	  if ( L > 0 )
+	    {
+	      reasonable = true;
+	      L_.push_back( L );
+	    }
+	  else
+	    reasonable = false;
+	}
 
       //
+      //
+      if ( false )
+	{
+	  //
+	  // R
+	  for ( auto Rdot : Rdot_mapping_ )
+	    std::cout << "Rdot \n" << Rdot << std::endl;
+	  for ( auto rdot : rdot_mapping_ )
+	    std::cout << "rdot \n" << rdot << std::endl;
+	  // G
+	  for ( auto gdot : gdot_mapping_ )
+	    std::cout << "gdot \n" << gdot << std::endl;
+	  for ( auto Gdot : Gdot_mapping_ )
+	    std::cout << "Gdot \n" << Gdot << std::endl;
+	  // 
+	  std::cout << "R_ \n" << R_ << std::endl;
+	  std::cout << "G_ \n" << G_ << std::endl;
+	  // Sigma
+	  std::cout << "Sigma_ \n" << Sigma_ << std::endl;
+	}
+    };
+
+  //
+  //
+  template< class Algo, int DimY > void
+    Maximum_likelihood<Algo,DimY>::init_covariance()
+    {
+      //
       // Covariance: Kronecker R_ x In_
+      Eigen::MatrixXd A = Eigen::MatrixXd::Random( D_r_, D_r_ );
+      g_                = A * A.transpose();
+      //
       Eigen::MatrixXd In = Eigen::MatrixXd::Identity( n_, n_ );
       R_ = Eigen::kroneckerProduct( In, r_ );
-      for ( auto rdot : rdot_mapping_ )
-	{
-	  Rdot_mapping_.push_back( Eigen::kroneckerProduct(In, rdot) );
-	  Sigdot_mapping_.push_back( Eigen::kroneckerProduct(In, rdot) );
-	}
       //
       int ii = 0;
       for ( int i = 0 ; i < DimY ; i++ )
@@ -180,26 +292,20 @@ namespace NeuroBayes
       Eigen::MatrixXd B = Eigen::MatrixXd::Random( D_r_, D_r_ );
       g_                = B * B.transpose();
       // mapping
-      Eigen::MatrixXd Im = Eigen::MatrixXd::Identity( S, S );
+      Eigen::MatrixXd Im = Eigen::MatrixXd::Identity( num_subjects_, num_subjects_ );
       for ( int i = 0 ; i < D_r_ ; i++ )
 	for ( int j = i ; j < D_r_ ; j++ )
-	  {
-	    // derivative mapping
-	    Eigen::MatrixXd V = Eigen::MatrixXd::Zero(D_r_,D_r_);
-	    V(i,j) = V(j,i) = 1.;
-	    gdot_mapping_.push_back( V );
-	    Gdot_mapping_.push_back( Z * Eigen::kroneckerProduct(Im, V) * Z.transpose() );
-	    Sigdot_mapping_.push_back( Z * Eigen::kroneckerProduct(Im, V) * Z.transpose() );
-	    //
-	    kappa_(ii++) = g_(i,j);
-	  }
+	  kappa_(ii++) = g_(i,j);
       //
       G_ = Eigen::kroneckerProduct( Im, g_ );
 
 
       //
       // Covariance 
-      Sigma_ = R_ + Z_ * G_ * Z_.transpose();
+      Sigma_         = R_ + Z_ * G_ * Z_.transpose();
+      Sigma_inverse_ = inverse_def_pos( Sigma_ );
+      //
+      beta_hat_ = (X_.transpose()*Sigma_inverse_* X_).inverse() * X_.transpose() * Sigma_inverse_ * Y_;
 
 
       //
@@ -233,37 +339,48 @@ namespace NeuroBayes
       try 
 	{
 	  //
+	  //
 	  int number_covariance_param = Sigdot_mapping_.size();
 	  Eigen::MatrixXd 
 	    grad_L      = Eigen::MatrixXd::Zero( number_covariance_param, 1 ),
 	    H           = Eigen::MatrixXd::Zero( number_covariance_param, 
-					       number_covariance_param ),
-	    XbetaMinusY = X_ * beta_hat_ - Y_,
-	    Sigma_inv   = Sigma_.inverse();
+						 number_covariance_param ),
+	    // Xbeta - Y
+	    e           = X_ * beta_hat_ - Y_;
+	  Eigen::MatrixXd new_kappa;
+	  Eigen::MatrixXd 
+	    R             = R_,
+	    G             = G_,          
+	    Sigma         = Sigma_,        
+	    Sigma_inverse = Sigma_inverse_,
+	    //
+	    beta_hat      = beta_hat_;
+
 	  //
 	  Eigen::MatrixXd 
 	    SigSig,
 	    SigSigSig;
 	  
+
 	  //
 	  // Set the gradiant and the Hessian
 	  int ii = 0;
-	  for ( auto sigdot : Sigdot_mapping_ )
+	  for ( auto Sigdot : Sigdot_mapping_ )
 	    {
 	      //
 	      // Compute the gradiant
-	      SigSig = Sigma_inv*sigdot*Sigma_inv;
-	      grad_L(ii,0)  = - 0.5 * ( Sigma_inv * sigdot ).trace();
-	      grad_L(ii,0) +=   0.5 * (XbetaMinusY.transpose() * SigSig * XbetaMinusY)(0,0);
-
+	      SigSig = Sigma_inverse_*Sigdot*Sigma_inverse_;
+	      grad_L(ii,0)  =  ( Sigma_inverse_ * Sigdot ).trace();
+	      grad_L(ii,0) -=  (e.transpose() * SigSig * e)(0,0);
+	      
 	      //
 	      // Compute the Hessian
 	      int jj = 0;
-	      for ( auto ssigdot : Sigdot_mapping_ )
+	      for ( auto Ssigdot : Sigdot_mapping_ )
 		{
-		  SigSigSig = SigSig * ssigdot;
-		  H(ii,jj)    = 0.5 *  SigSigSig.trace();
-		  H(ii,jj++) -= (XbetaMinusY.transpose() * SigSigSig * Sigma_inv * XbetaMinusY)(0,0);
+		  SigSigSig   = SigSig * Ssigdot;
+		  H(ii,jj)    = - 0.5 *  SigSigSig.trace();
+		  H(ii,jj++) += (e.transpose() * SigSigSig * Sigma_inverse_ * e)(0,0);
 		}
 	      //
 	      ii++; 
@@ -277,47 +394,91 @@ namespace NeuroBayes
 		<< std::endl;
 	    }
 
-
 	  //
-	  // Minimization
-	  // Create symmetric pos. def. covariance
-	  bool is_positive = false;
-	  Eigen::MatrixXd new_kappa;
-	  while ( !is_positive )
+	  // Reasonable update
+	  Algo algo_;
+	  iteration_        = 0;
+	  bool   reasonable = false;
+	  double old_L      = 1.+03;
+	  while ( !reasonable )
 	    {
 	      //
-	      // Apply the algorithm
-	      algo_.set_matrices( kappa_, grad_L, H );
-	      algo_.update();
-	      new_kappa = algo_.get_parameters();
+	      // Minimization
+	      // Create symmetric pos. def. covariance
+	      //			  
+	      // Algorithm
+	      bool is_positive = false;
+	      while ( !is_positive )
+		{
+		  //
+		  // Apply the algorithm
+		  algo_.set_matrices( kappa_, grad_L, H );
+		  algo_.update();
+		  new_kappa = algo_.get_parameters();
+		  
+		  //
+		  // Update the matrices
+		  // r and g
+		  ii = 0;
+		  for ( int i = 0 ; i < DimY ; i++ )
+		    for ( int j = i ; j < DimY ; j++ )
+		      r_(i,j) = r_(j,i) = new_kappa(ii++);
+		  for ( int i = 0 ; i < D_r_ ; i++ )
+		    for ( int j = i ; j < D_r_ ; j++ )
+		      g_(i,j) = g_(j,i) = new_kappa(ii++);
+		  // Are r and g pos. def.
+		  is_positive = is_positive_def( r_ ) & is_positive_def( g_ );
+		}
+
 
 	      //
-	      // Update the matrices
-	      // r and g
-	      ii = 0;
-	      for ( int i = 0 ; i < DimY ; i++ )
-		for ( int j = i ; j < DimY ; j++ )
-		  r_(i,j) = r_(j,i) = new_kappa(ii++);
-	      for ( int i = 0 ; i < D_r_ ; i++ )
-		for ( int j = i ; j < D_r_ ; j++ )
-		  g_(i,j) = g_(j,i) = new_kappa(ii++);
-	      // Are r and g pos. def.
-	      is_positive = is_positive_def( r_ ) & is_positive_def( g_ );
+	      // R, G and Sigma
+	      Eigen::MatrixXd 
+		In = Eigen::MatrixXd::Identity( n_, n_ ),
+		Im = Eigen::MatrixXd::Identity( num_subjects_, num_subjects_ );
+	      //
+	      R             = Eigen::kroneckerProduct( In, r_ );
+	      G             = Eigen::kroneckerProduct( Im, g_ );
+	      Sigma         = R + Z_ * G * Z_.transpose();
+	      Sigma_inverse = inverse_def_pos( Sigma_ );
+	      // 
+	      beta_hat      = inverse_def_pos(X_.transpose() * Sigma_inverse * X_);
+	      beta_hat     *= X_.transpose() * Sigma_inverse * Y_;
+
+	      //
+	      //
+	      double L = cost_function( beta_hat, Sigma, Sigma_inverse );
+	      if ( L < 0 )
+		{
+		  reasonable = false;
+		  if ( fabs( L - old_L ) < std::numeric_limits< double >::epsilon() )
+		    {
+		      // get out of the loop
+		      reasonable  = true;
+		      interupted_ = true;
+		    }
+		  else
+		    old_L = L;
+		}
+	      else
+		reasonable = true;
+	      //
+	      //std::cout << "Cost func: " << L << std::endl;
+	      //std::cout << "Learning rate: " << algo_.get_learning_rate() << std::endl;
 	    }
-	  // update kappa
-	  kappa_ = new_kappa;
-
-
+	  
 	  //
-	  // R, G and Sigma
-	  Eigen::MatrixXd 
-	    In = Eigen::MatrixXd::Identity( n_, n_ ),
-	    Im = Eigen::MatrixXd::Identity( num_subjects_, num_subjects_ );
+	  // update 
+	  // kappa
+	  kappa_         = new_kappa;
+	  R_             = R;            
+	  G_             = G;            
+	  Sigma_         = Sigma;        
+	  Sigma_inverse_ = Sigma_inverse;
+	  // 
+	  beta_hat_      = beta_hat;
+	  
 	  //
-	  R_             = Eigen::kroneckerProduct( In, r_ );
-	  G_             = Eigen::kroneckerProduct( Im, g_ );
-	  Sigma_         = R_ + Z_ * G_ * Z_.transpose();
-	  Sigma_inverse_ = Sigma_.inverse();
 	  //
 	  if ( false )
 	    {
@@ -358,24 +519,33 @@ namespace NeuroBayes
       try 
 	{
 	  //
-	  // Update beta_hat
-	  Eigen::MatrixXd sigma_inv = Sigma_.inverse();
-	  beta_hat_ = (X_.transpose() * sigma_inv * X_).inverse() * X_.transpose() * sigma_inv * Y_;
+	  // Cost function
+	  double 
+	    L_prev = L_.back(),
+	    L      = cost_function();
+	  //
 	  if ( false )
 	    std::cout 
-	      << "diff: " << ( (beta_hat_ - beta_).transpose() * (beta_hat_ - beta_) )(0,0)
-	      << "\n beta_: \n" << beta_
-	      << "\n beta_hat_: \n" << beta_hat_
+	      << "L_prev " << L_prev
+	      << " ~ L " << L 
+	      << " ~ (L - L_prev) " << L - L_prev 
 	      << std::endl;
 	  //
-	  if ( ( (beta_hat_ - beta_).transpose() * (beta_hat_ - beta_) )(0,0) < epsilon_ ||
-	       iteration_++ > num_max_iterations_ )
-	    return true;
-	  else
-	    {
-	      beta_ = beta_hat_;
+	  L_.push_back(L);
+	  delta_L_.push_back( fabs(L - L_prev) );
+	  //
+	  //
+	  if ( !interupted_ )
+	    if ( L_.size() > window_ )
+	      if (std::all_of( delta_L_.end() - window_, delta_L_.end(), 
+			       [&](double dl){return dl <  epsilon_;} ))
+		return true;
+	      else
+		return false;
+	    else
 	      return false;
-	    }
+	  else
+	    return true;
 	}
       catch( itk::ExceptionObject & err )
 	{
@@ -414,7 +584,63 @@ namespace NeuroBayes
 	      else
 		return false;
 	    }
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  exit( -1 );
+	}
+    };
+  //
+  //
+  template< class Algo, int DimY > double
+    Maximum_likelihood<Algo,DimY>::cost_function() const 
+    {
+      try 
+	{
+	  //
+	  // L = -2 * ln(P)
+	  double L = ln_determinant( Sigma_ );
+	  L += ( (X_ * beta_hat_ - Y_).transpose() * Sigma_inverse_ * (X_ * beta_hat_ - Y_) )(0,0);
+	  L += Y_.cols() * ln_2_pi;
 
+	  if ( false )
+	    std::cout 
+	      << "e = \n" << X_ * beta_hat_ - Y_ 
+	      << std::endl;
+	    std::cout 
+	      << "L1 = " << ln_determinant( Sigma_ )
+	      << " ~ L2 = " << (X_ * beta_hat_ - Y_).transpose() * Sigma_inverse_ * (X_ * beta_hat_ - Y_)
+	      << std::endl;
+
+	  //
+	  //
+	  return L;
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  exit( -1 );
+	}
+    };
+  //
+  //
+  template< class Algo, int DimY > double
+    Maximum_likelihood<Algo,DimY>::cost_function( const Eigen::MatrixXd& Beta,
+						  const Eigen::MatrixXd& Sigma,
+						  const Eigen::MatrixXd& Sigma_inv  ) const 
+    {
+      try 
+	{
+	  //
+	  // L = -2 * ln(P)
+	  double L = ln_determinant( Sigma );
+	  L += ( (X_ * Beta - Y_).transpose() * Sigma_inv * (X_ * Beta - Y_) )(0,0);
+	  L += Y_.cols() * ln_2_pi;
+
+	  //
+	  //
+	  return L;
 	}
       catch( itk::ExceptionObject & err )
 	{

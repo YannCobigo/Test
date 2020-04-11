@@ -1,5 +1,5 @@
-#ifndef RAPHSON_H
-#define RAPHSON_H
+#ifndef GRADIANT_H
+#define GRADIANT_H
 //
 #include "Algorithm.h"
 
@@ -8,20 +8,21 @@
 //
 namespace NeuroBayes
 {
-  /** \class Raphson
+  /** \class Gradiant
    *
-   * \brief Newton-Raphson algorithm
+   * \brief Newton-Gradiant algorithm
    * 
    */
-  class Raphson : public Algorithm
+  class Gradiant : public Algorithm
   {
   public:
     /** Constructor. */
-    Raphson(){};
+    Gradiant()
+      {learning_rate_ = learning_rate_orig_;};
     
     //
     //
-    virtual       void update();
+    virtual void         update();
     virtual const double get_learning_rate() const {return learning_rate_;};
 
     //
@@ -30,17 +31,18 @@ namespace NeuroBayes
     // Getters
     const Eigen::MatrixXd& get_parameters() const {return kappa_;}
     //
+    void reset(){learning_rate_ = learning_rate_orig_;};
+    //
     //
   private:
     //
-    double learning_rate_{1.e-03};
+    double learning_rate_{0.};
+    double learning_rate_orig_{1.e-03};
 
     // Parameters
     Eigen::MatrixXd kappa_;
     // Gradiant
     Eigen::MatrixXd nabla_;
-    // Hessian
-    Eigen::MatrixXd H_;
   };
 }
 #endif

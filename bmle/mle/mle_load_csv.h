@@ -665,12 +665,6 @@ namespace NeuroBayes
 	  // Measure
 	  //
 	  std::cout << Idx << std::endl;
-	  
-	  //
-	  // Init the Covariance matrix
-	  Optimizer optim;
-	  optim.init_covariance( num_3D_images_, group_pind_[1].size(), D_r_, 
-				 X_, Z_ );
 
 
 	  //
@@ -683,7 +677,10 @@ namespace NeuroBayes
 	  if ( false )
 	    std::cout << "response: " << Y.rows() << "\n" << Y << std::endl;
 	  //
-	  optim.set_response( Y );
+	  // Init the Covariance matrix
+	  Optimizer optim;
+	  optim.init_covariance( num_3D_images_, group_pind_[1].size(), D_r_, 
+				 X_, Z_, Y );
 
 
 	  //
