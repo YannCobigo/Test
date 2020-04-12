@@ -18,6 +18,7 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 #include "Thread_dispatching.h"
 #include "Exception.h"
 #include "mle_load_csv.h"
+#include "mle_run_in.h"
 #include "IO/Command_line.h"
 // Tools
 #include "Tools.h"
@@ -247,11 +248,11 @@ main( const int argc, const char **argv )
 	      const int DimY = 1;
 	      using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Raphson, DimY >;
 	      //using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Gradiant, DimY >;
-	      NeuroBayes::MleLoadCSV< Optimization,
-				      DimY, 2 /*D_f*/ > subject_mapping( filename, 
-									 input_dir, output_dir,
-									 time_tran, 
-									 inv_cov_error );
+	      NeuroBayes::MleRunIn< Optimization,
+				    DimY, 2 /*D_f*/ > subject_mapping( filename, 
+								       input_dir, output_dir,
+								       time_tran, 
+								       inv_cov_error );
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();
 
