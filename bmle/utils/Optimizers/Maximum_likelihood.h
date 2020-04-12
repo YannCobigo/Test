@@ -178,7 +178,7 @@ namespace NeuroBayes
 	  // R
 	  // Random symmetric positive definit 
 	  Eigen::MatrixXd A = Eigen::MatrixXd::Random( DimY, DimY );
-	  r_                = A * A.transpose();
+	  r_                = A * A.transpose() /*+ 1.e+03 * Eigen::MatrixXd::Identity(DimY, DimY)*/;
 	  // mapping
 	  for ( int i = 0 ; i < DimY ; i++ )
 	    for ( int j = i ; j < DimY ; j++ )
@@ -206,7 +206,7 @@ namespace NeuroBayes
 	  //
 	  // Covariance: Kronecker G_ x In_
 	  Eigen::MatrixXd B = Eigen::MatrixXd::Random( D_r_, D_r_ );
-	  g_                = B * B.transpose();
+	  g_                = B * B.transpose() /*+ 1.e+03 * Eigen::MatrixXd::Identity(D_r, D_r)*/;
 	  // mapping
 	  Eigen::MatrixXd Im = Eigen::MatrixXd::Identity( S, S );
 	  for ( int i = 0 ; i < D_r_ ; i++ )
@@ -379,8 +379,8 @@ namespace NeuroBayes
 	      for ( auto Ssigdot : Sigdot_mapping_ )
 		{
 		  SigSigSig   = SigSig * Ssigdot;
-		  H(ii,jj)    = - 0.5 *  SigSigSig.trace();
-		  H(ii,jj++) += (e.transpose() * SigSigSig * Sigma_inverse_ * e)(0,0);
+		  H(ii,jj)    = - SigSigSig.trace();
+		  H(ii,jj++) +=   2 * (e.transpose() * SigSigSig * Sigma_inverse_ * e)(0,0);
 		}
 	      //
 	      ii++; 
@@ -448,10 +448,10 @@ namespace NeuroBayes
 	      //
 	      //
 	      double L = cost_function( beta_hat, Sigma, Sigma_inverse );
-	      if ( L < 0 )
+	      if ( L < 0 || std::isnan(L) )
 		{
 		  reasonable = false;
-		  if ( fabs( L - old_L ) < std::numeric_limits< double >::epsilon() )
+		  if ( algo_.get_learning_rate() < std::numeric_limits< double >::epsilon() )
 		    {
 		      // get out of the loop
 		      reasonable  = true;
@@ -463,8 +463,8 @@ namespace NeuroBayes
 	      else
 		reasonable = true;
 	      //
-	      //std::cout << "Cost func: " << L << std::endl;
-	      //std::cout << "Learning rate: " << algo_.get_learning_rate() << std::endl;
+	      std::cout << "Cost func: " << L << std::endl;
+	      std::cout << "Learning rate: " << algo_.get_learning_rate() << std::endl;
 	    }
 	  
 	  //
@@ -524,7 +524,7 @@ namespace NeuroBayes
 	    L_prev = L_.back(),
 	    L      = cost_function();
 	  //
-	  if ( false )
+	  if ( true )
 	    std::cout 
 	      << "L_prev " << L_prev
 	      << " ~ L " << L 
@@ -605,13 +605,16 @@ namespace NeuroBayes
 	  L += Y_.cols() * ln_2_pi;
 
 	  if ( false )
-	    std::cout 
-	      << "e = \n" << X_ * beta_hat_ - Y_ 
-	      << std::endl;
-	    std::cout 
-	      << "L1 = " << ln_determinant( Sigma_ )
-	      << " ~ L2 = " << (X_ * beta_hat_ - Y_).transpose() * Sigma_inverse_ * (X_ * beta_hat_ - Y_)
-	      << std::endl;
+	    {
+	      //std::cout 
+	      //	<< "e = \n" << X_ * beta_hat_ - Y_ 
+	      //	<< std::endl;
+	      std::cout 
+		<< "exp(L1) = " <<  Sigma_.determinant()
+		<< " L1 = " << ln_determinant( Sigma_ )
+		<< " ~ L2 = " << (X_ * beta_hat_ - Y_).transpose() * Sigma_inverse_ * (X_ * beta_hat_ - Y_)
+		<< std::endl;
+	    }
 
 	  //
 	  //

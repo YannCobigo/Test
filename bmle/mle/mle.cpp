@@ -240,13 +240,13 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 16;
+	      const int THREAD_NUM = 1;
 
 	      //
 	      // Load the CSV file
 	      const int DimY = 1;
-	      //using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Raphson, DimY >;
-	      using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Gradiant, DimY >;
+	      using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Raphson, DimY >;
+	      //using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Gradiant, DimY >;
 	      NeuroBayes::MleLoadCSV< Optimization,
 				      DimY, 2 /*D_f*/ > subject_mapping( filename, 
 									 input_dir, output_dir,
@@ -308,9 +308,9 @@ main( const int argc, const char **argv )
 #else
 		      // Please do not remove the bracket!!
 //		      // vertex
-		      if ( idx[0] > 41 - 30  && idx[0] < 41 + 30 && 
-			   idx[1] > 72 - 30  && idx[1] < 72 + 30 &&
-			   idx[2] > 35 - 30  && idx[2] < 35 + 30 )
+		      if ( idx[0] > 41 - 2  && idx[0] < 41 + 2 && 
+			   idx[1] > 72 - 2  && idx[1] < 72 + 2 &&
+			   idx[2] > 35 - 2  && idx[2] < 35 + 2 )
 //		      // ALL
 //		      if ( idx[0] > 5 && idx[0] < 110 && 
 //			   idx[1] > 5 && idx[1] < 140 &&

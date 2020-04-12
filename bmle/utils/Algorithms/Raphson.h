@@ -33,7 +33,7 @@ namespace NeuroBayes
     //
   private:
     //
-    double learning_rate_{1.e-03};
+    double learning_rate_{1.e-02};
 
     // Parameters
     Eigen::MatrixXd kappa_;
