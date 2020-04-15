@@ -1,5 +1,5 @@
-#ifndef MAXIMUM_LIKELIHOOD_H
-#define MAXIMUM_LIKELIHOOD_H
+#ifndef REML_RUNIN_H
+#define REML_RUNIN_H
 //
 #include "Exception.h"
 #include "Optimizer.h"
@@ -9,17 +9,17 @@
 //
 namespace NeuroBayes
 {
-  /** \class Maximum_likelihood
+  /** \class REML_run_in
    *
-   * \brief Newton-Maximum_likelihood algorithm
+   * \brief Newton-REML_run_in algorithm
    * 
    */
   template< class Algo, int DimY >
-  class Maximum_likelihood : public Optimizer
+  class REML_run_in : public Optimizer
   {
   public:
     /** Constructor. */
-    Maximum_likelihood();
+    REML_run_in();
     
     //
     // Public functions
@@ -95,7 +95,7 @@ namespace NeuroBayes
     std::vector< double >                             L_;
     std::vector< double >                             delta_L_;
     // convergence criteria
-    double                                            epsilon_{1.e-8};
+    double                                            epsilon_{1.e-1};
     int                                               num_max_iterations_{10};
     int                                               iteration_{0};
     int                                               window_{20};
@@ -134,7 +134,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY >
-  Maximum_likelihood<Algo,DimY>::Maximum_likelihood()
+  REML_run_in<Algo,DimY>::REML_run_in()
     {
       //
       // First cost function
@@ -144,11 +144,11 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > void
-    Maximum_likelihood<Algo,DimY>::init_covariance( const int N, const int S,
-						    const int D_r,
-						    const Eigen::MatrixXd& X,
-						    const Eigen::MatrixXd& Z,
-						    const Eigen::MatrixXd& Y )
+    REML_run_in<Algo,DimY>::init_covariance( const int N, const int S,
+					   const int D_r,
+					   const Eigen::MatrixXd& X,
+					   const Eigen::MatrixXd& Z,
+					   const Eigen::MatrixXd& Y )
     {
       //
       // Design matrices
@@ -161,7 +161,7 @@ namespace NeuroBayes
       n_ = N / DimY;
       //
       beta_hat_ = Eigen::MatrixXd::Zero( X.cols(), 1);
-      kappa_    = Eigen::MatrixXd::Zero( DimY*(DimY+1)/2 + D_r*(D_r+1)/2, 1);
+      kappa_    = Eigen::MatrixXd::Zero( 2, 1);
 
       bool reasonable = false;
       while( !reasonable )
@@ -175,22 +175,25 @@ namespace NeuroBayes
 	  Sigdot_mapping_.clear();
 
 	  //
+	  // random generator
+	  std::default_random_engine generator;
+	  std::uniform_real_distribution< double > distribution( 1., 10. );
+
+	  //
 	  // R
 	  // Random symmetric positive definit 
-	  Eigen::MatrixXd A = Eigen::MatrixXd::Random( DimY, DimY );
-	  r_                = A * A.transpose()/* + 1.e+02 * Eigen::MatrixXd::Identity(DimY, DimY)*/;
+	  double a = distribution( generator );
+	  r_       = Eigen::Matrix< double, DimY, DimY >::Zero();
+	  r_ <<
+	     2.*a, -a,
+	    -a,     2.*a;
 	  // mapping
-	  int ii = 0;
-	  for ( int i = 0 ; i < DimY ; i++ )
-	    for ( int j = i ; j < DimY ; j++ )
-	      {
-		// derivative mapping
-		Eigen::Matrix< double, DimY, DimY > U = Eigen::Matrix< double, DimY, DimY >::Zero();
-		U(i,j) = U(j,i) = 1.;
-		rdot_mapping_.push_back( U );
-		//
-		kappa_(ii++) = r_(i,j);
-	      }
+	  // derivative mapping
+	  Eigen::Matrix< double, DimY, DimY > U = Eigen::Matrix< double, DimY, DimY >::Zero();
+	  U <<
+	    2., -1.,
+	    -1., 2.;
+	  rdot_mapping_.push_back( U );
 	  // Covariance: Kronecker R_ x In_
 	  Eigen::MatrixXd In = Eigen::MatrixXd::Identity( n_, n_ );
 	  R_ = Eigen::kroneckerProduct( In, r_ );
@@ -199,26 +202,24 @@ namespace NeuroBayes
 	      Rdot_mapping_.push_back( Eigen::kroneckerProduct(In, rdot) );
 	      Sigdot_mapping_.push_back( Eigen::kroneckerProduct(In, rdot) );
 	    }
+	  //
+	  int ii = 0;
+	  kappa_(ii++) = a;
 	  
 	  
 	  //
 	  // Covariance: Kronecker G_ x In_
-	  Eigen::MatrixXd B = Eigen::MatrixXd::Random( D_r_, D_r_ );
-	  g_                = B * B.transpose()/* + 1.e+02 * Eigen::MatrixXd::Identity(D_r, D_r)*/;
+	  g_ = Eigen::Matrix< double, 1, 1 >::Random();
+	  g_ = g_ * g_;
 	  // mapping
 	  Eigen::MatrixXd Im = Eigen::MatrixXd::Identity( S, S );
-	  for ( int i = 0 ; i < D_r_ ; i++ )
-	    for ( int j = i ; j < D_r_ ; j++ )
-	      {
-		// derivative mapping
-		Eigen::MatrixXd V = Eigen::MatrixXd::Zero(D_r_,D_r_);
-		V(i,j) = V(j,i) = 1.;
-		gdot_mapping_.push_back( V );
-		Gdot_mapping_.push_back( Z * Eigen::kroneckerProduct(Im, V) * Z.transpose() );
-		Sigdot_mapping_.push_back( Z * Eigen::kroneckerProduct(Im, V) * Z.transpose() );
-		//
-		kappa_(ii++) = g_(i,j);
-	      }
+	  // derivative mapping
+	  Eigen::MatrixXd V  = Eigen::Matrix< double, 1, 1 >::Ones();
+	  gdot_mapping_.push_back( V );
+	  Gdot_mapping_.push_back( Z * Eigen::kroneckerProduct(Im, V) * Z.transpose() );
+	  Sigdot_mapping_.push_back( Z * Eigen::kroneckerProduct(Im, V) * Z.transpose() );
+	  //
+	  kappa_(ii++) = g_(0,0);
 	  //
 	  G_ = Eigen::kroneckerProduct( Im, g_ );
 	  
@@ -269,7 +270,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > void
-    Maximum_likelihood<Algo,DimY>::init_covariance()
+    REML_run_in<Algo,DimY>::init_covariance()
     {
       //
       // Covariance: Kronecker R_ x In_
@@ -332,7 +333,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > void
-    Maximum_likelihood<Algo,DimY>::update()
+    REML_run_in<Algo,DimY>::update()
     {
       try 
 	{
@@ -340,9 +341,8 @@ namespace NeuroBayes
 	  //
 	  int number_covariance_param = Sigdot_mapping_.size();
 	  Eigen::MatrixXd 
-	    grad_L      = Eigen::MatrixXd::Zero( number_covariance_param, 1 ),
-	    H           = Eigen::MatrixXd::Zero( number_covariance_param, 
-						 number_covariance_param ),
+	    grad_L      = Eigen::MatrixXd::Zero( 2, 1 ),
+	    H           = Eigen::MatrixXd::Zero( 2, 2 ),
 	    // Xbeta - Y
 	    e           = X_ * beta_hat_ - Y_;
 	  Eigen::MatrixXd new_kappa;
@@ -357,9 +357,9 @@ namespace NeuroBayes
 	  //
 	  Eigen::MatrixXd 
 	    SigSig,
-	    SigSigSig;
+	    SigSigSig,
+	    XTSigX_inv = X_ * inverse_def_pos(X_.transpose() * Sigma_inverse_ * X_) * X_.transpose();
 	  
-
 	  //
 	  // Set the gradiant and the Hessian
 	  int ii = 0;
@@ -370,7 +370,9 @@ namespace NeuroBayes
 	      SigSig = Sigma_inverse_*Sigdot*Sigma_inverse_;
 	      grad_L(ii,0)  =  ( Sigma_inverse_ * Sigdot ).trace();
 	      grad_L(ii,0) -=  (e.transpose() * SigSig * e)(0,0);
-	      
+	      // REML
+	      grad_L(ii,0) -=  (XTSigX_inv * SigSig).trace();
+
 	      //
 	      // Compute the Hessian
 	      int jj = 0;
@@ -378,7 +380,11 @@ namespace NeuroBayes
 		{
 		  SigSigSig   = SigSig * Ssigdot;
 		  H(ii,jj)    = - SigSigSig.trace();
-		  H(ii,jj++) +=   2 * (e.transpose() * SigSigSig * Sigma_inverse_ * e)(0,0);
+		  H(ii,jj) +=   2 * (e.transpose() * SigSigSig * Sigma_inverse_ * e)(0,0);
+	      	  // REML
+		  H(ii,jj) +=   2 * (XTSigX_inv * SigSigSig * Sigma_inverse_).trace();
+	      	  H(ii,jj) -=   (XTSigX_inv * Sigdot * XTSigX_inv * Sigma_inverse_ * Ssigdot * Sigma_inverse_).trace();
+	      	  jj++;
 		}
 	      //
 	      ii++; 
@@ -417,13 +423,10 @@ namespace NeuroBayes
 		  //
 		  // Update the matrices
 		  // r and g
-		  ii = 0;
-		  for ( int i = 0 ; i < DimY ; i++ )
-		    for ( int j = i ; j < DimY ; j++ )
-		      r_(i,j) = r_(j,i) = new_kappa(ii++);
-		  for ( int i = 0 ; i < D_r_ ; i++ )
-		    for ( int j = i ; j < D_r_ ; j++ )
-		      g_(i,j) = g_(j,i) = new_kappa(ii++);
+		  r_ <<
+		    2.*new_kappa(0), -new_kappa(0),
+		    -new_kappa(0),     2.*new_kappa(0);
+		  g_(0,0) = new_kappa(1);
 		  // Are r and g pos. def.
 		  is_positive = is_positive_def( r_ ) & is_positive_def( g_ );
 		}
@@ -468,13 +471,16 @@ namespace NeuroBayes
 	  //
 	  // update 
 	  // kappa
-	  kappa_         = new_kappa;
-	  R_             = R;            
-	  G_             = G;            
-	  Sigma_         = Sigma;        
-	  Sigma_inverse_ = Sigma_inverse;
-	  // 
-	  beta_hat_      = beta_hat;
+	  if( is_positive_def( r_ ) & is_positive_def( g_ ) )
+	    {
+	      kappa_         = new_kappa;
+	      R_             = R;            
+	      G_             = G;            
+	      Sigma_         = Sigma;        
+	      Sigma_inverse_ = Sigma_inverse;
+	      // 
+	      beta_hat_      = beta_hat;
+	    }
 	  
 	  //
 	  //
@@ -520,7 +526,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > bool
-    Maximum_likelihood<Algo,DimY>::converged()
+    REML_run_in<Algo,DimY>::converged()
     {
       try 
 	{
@@ -538,13 +544,15 @@ namespace NeuroBayes
 	      << std::endl;
 	  //
 	  L_.push_back(L);
-	  delta_L_.push_back( fabs(L - L_prev) );
+	  delta_L_.push_back( L - L_prev );
 	  //
 	  //
 	  if ( !interrupted_ )
 	    if ( L_.size() > window_ )
 	      if (std::all_of( delta_L_.end() - window_, delta_L_.end(), 
-			       [&](double dl){return dl <  epsilon_;} ))
+			       [&](double dl){return fabs(dl) <  epsilon_ ;} ) ||
+		  std::any_of( delta_L_.end() - window_, delta_L_.end(),
+			       [&](double dl){return dl >  epsilon_ ;} ))
 		return true;
 	      else
 		return false;
@@ -562,7 +570,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > bool
-    Maximum_likelihood<Algo,DimY>::is_positive_def( const Eigen::MatrixXd& A ) const 
+    REML_run_in<Algo,DimY>::is_positive_def( const Eigen::MatrixXd& A ) const 
     {
       try 
 	{
@@ -600,7 +608,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > double
-    Maximum_likelihood<Algo,DimY>::cost_function() const 
+    REML_run_in<Algo,DimY>::cost_function() const 
     {
       try 
 	{
@@ -635,9 +643,9 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > double
-    Maximum_likelihood<Algo,DimY>::cost_function( const Eigen::MatrixXd& Beta,
-						  const Eigen::MatrixXd& Sigma,
-						  const Eigen::MatrixXd& Sigma_inv  ) const 
+    REML_run_in<Algo,DimY>::cost_function( const Eigen::MatrixXd& Beta,
+					   const Eigen::MatrixXd& Sigma,
+					   const Eigen::MatrixXd& Sigma_inv  ) const 
     {
       try 
 	{

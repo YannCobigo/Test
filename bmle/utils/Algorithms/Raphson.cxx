@@ -19,8 +19,6 @@ void
 NeuroBayes::Raphson::update()
 {
   learning_rate_   *= 0.5;
-//  if ( learning_rate_ < 1.e-05 )
-//    learning_rate_ = 1.;
   //
   Eigen::MatrixXd d = H_.inverse() * nabla_;
   kappa_           += learning_rate_ * d;

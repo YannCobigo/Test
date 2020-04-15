@@ -46,7 +46,7 @@ namespace NeuroBayes
    * \brief 
    * 
    */
-  template< class Optimizer, int DimY, int D_f >
+  template< class Optimizer, class Subject, int DimY, int D_f >
     class MleLoadCSV
   {
   public:
@@ -109,7 +109,7 @@ namespace NeuroBayes
     //
     // Arrange pidns into groups
     std::set< int > groups_;
-    std::vector< std::map< std::string /*pidn*/, MleSubject< DimY, D_f > > > group_pind_{10};
+    std::vector< std::map< std::string /*pidn*/, Subject > > group_pind_{10};
     // Number of subjects per group
     std::vector< int > group_num_subjects_{0,0,0,0,0,0,0,0,0,0};
     //
@@ -176,8 +176,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< class Optimizer, int DimY, int D_f >
-    MleLoadCSV< Optimizer, DimY, D_f >::MleLoadCSV( const std::string& CSV_file,
+  template< class Optimizer, class Subject, int DimY, int D_f >
+    MleLoadCSV< Optimizer, Subject, DimY, D_f >::MleLoadCSV( const std::string& CSV_file,
 						    const std::string& Input_dir,
 						    const std::string& Output_dir,
 						    // Age Dns: demean, normalize, standardize
@@ -248,7 +248,7 @@ namespace NeuroBayes
 	      {
 		std::cout << PIDN << " " << group << std::endl;
 		groups_.insert( group );
-		group_pind_[ group ][PIDN] = MleSubject< DimY, D_f >( PIDN, group, Output_dir );
+		group_pind_[ group ][PIDN] = Subject( PIDN, group, Output_dir );
 		group_num_subjects_[ group ]++;
 		num_subjects_++;
 	      }
@@ -552,8 +552,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< class Optimizer, int DimY, int D_f > void
-    MleLoadCSV< Optimizer, DimY, D_f >::build_groups_design_matrices()
+  template< class Optimizer, class Subject, int DimY, int D_f > void
+    MleLoadCSV< Optimizer, Subject, DimY, D_f >::build_groups_design_matrices()
   {
     try
       {
@@ -656,8 +656,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< class Optimizer, int DimY, int D_f > void
-    MleLoadCSV< Optimizer, DimY, D_f >::optimization( MaskType::IndexType Idx )
+  template< class Optimizer, class Subject, int DimY, int D_f > void
+    MleLoadCSV< Optimizer, Subject, DimY, D_f >::optimization( MaskType::IndexType Idx )
     {
       try
 	{
@@ -686,7 +686,9 @@ namespace NeuroBayes
 	  //
 	  // Optimization
 	  while( !optim.converged() )
-	    optim.update();
+	    {
+	      optim.update();
+	    }
 
 
 	  //
@@ -724,8 +726,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< class Optimizer, int DimY, int D_f > void
-    MleLoadCSV< Optimizer, DimY, D_f >::write_subjects_solutions( )
+  template< class Optimizer, class Subject, int DimY, int D_f > void
+    MleLoadCSV< Optimizer, Subject, DimY, D_f >::write_subjects_solutions( )
   {
     try
       {

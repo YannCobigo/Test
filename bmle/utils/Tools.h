@@ -27,6 +27,14 @@ namespace NeuroStat
 // When we reach numerical limits
 namespace NeuroBayes
 {
+  //
+  // Check a file exist
+  inline bool file_exists ( const std::string& Name )
+  {
+    std::ifstream f( Name.c_str() );
+    return f.good();
+  }
+
 
   //
   // Linear Algebra

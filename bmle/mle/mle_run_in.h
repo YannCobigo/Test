@@ -46,7 +46,7 @@ namespace NeuroBayes
    * \brief 
    * 
    */
-  template< class Optimizer, int DimY, int D_f >
+  template< class Optimizer, class Subject, int DimY, int D_f >
     class MleRunIn
   {
   public:
@@ -109,7 +109,7 @@ namespace NeuroBayes
     //
     // Arrange pidns into groups
     std::set< int > groups_;
-    std::vector< std::map< std::string /*pidn*/, MleSubject< DimY, D_f > > > group_pind_{10};
+    std::vector< std::map< std::string /*pidn*/, Subject > > group_pind_{10};
     // Number of subjects per group
     std::vector< int > group_num_subjects_{0,0,0,0,0,0,0,0,0,0};
     //
@@ -176,8 +176,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< class Optimizer, int DimY, int D_f >
-    MleRunIn< Optimizer, DimY, D_f >::MleRunIn( const std::string& CSV_file,
+  template< class Optimizer, class Subject, int DimY, int D_f >
+    MleRunIn< Optimizer, Subject, DimY, D_f >::MleRunIn( const std::string& CSV_file,
 						    const std::string& Input_dir,
 						    const std::string& Output_dir,
 						    // Age Dns: demean, normalize, standardize
@@ -248,7 +248,7 @@ namespace NeuroBayes
 	      {
 		std::cout << PIDN << " " << group << std::endl;
 		groups_.insert( group );
-		group_pind_[ group ][PIDN] = MleSubject< DimY, D_f >( PIDN, group, Output_dir );
+		group_pind_[ group ][PIDN] = Subject( PIDN, group, Output_dir );
 		group_num_subjects_[ group ]++;
 		num_subjects_++;
 	      }
@@ -552,8 +552,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< class Optimizer, int DimY, int D_f > void
-    MleRunIn< Optimizer, DimY, D_f >::build_groups_design_matrices()
+  template< class Optimizer, class Subject, int DimY, int D_f > void
+    MleRunIn< Optimizer, Subject, DimY, D_f >::build_groups_design_matrices()
   {
     try
       {
@@ -571,7 +571,8 @@ namespace NeuroBayes
 	  X_cols  = D_f,
 	  // Z
 	  Z_lines = num_3D_images_,
-	  Z_cols  = group_num_subjects_[1] * D_r_;
+	  Z_cols  = (group_num_subjects_[1] + group_num_subjects_[2]) * 1;
+	std::cout << "Z_cols : " << Z_cols << std::endl;
 	//
 	X_ = Eigen::MatrixXd::Zero( X_lines, X_cols );
 	Z_ = Eigen::MatrixXd::Zero( Z_lines, Z_cols );
@@ -656,8 +657,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< class Optimizer, int DimY, int D_f > void
-    MleRunIn< Optimizer, DimY, D_f >::optimization( MaskType::IndexType Idx )
+  template< class Optimizer, class Subject, int DimY, int D_f > void
+    MleRunIn< Optimizer, Subject, DimY, D_f >::optimization( MaskType::IndexType Idx )
     {
       try
 	{
@@ -679,7 +680,9 @@ namespace NeuroBayes
 	  //
 	  // Init the Covariance matrix
 	  Optimizer optim;
-	  optim.init_covariance( num_3D_images_, group_pind_[1].size(), D_r_, 
+	  optim.init_covariance( num_3D_images_, 
+				 group_pind_[1].size() + group_pind_[2].size(), 
+				 D_r_, 
 				 X_, Z_, Y );
 
 
@@ -709,10 +712,10 @@ namespace NeuroBayes
 	    for ( auto subject : group_pind_[g] )
 	      {
 		subject.second.set_fit( Idx,
-					u.block( increme_subject, 0, D_r_, 1 ),
+					u.block( increme_subject, 0, 1/*D_r_*/, 1 ),
 					u_cov.block( increme_subject, increme_subject, 
-						     D_r_, D_r_ ) );
-		increme_subject += D_r_;
+						     1/*D_r_*/, 1/*D_r_*/ ) );
+		increme_subject++;;
 	      }
 	}
       catch( itk::ExceptionObject & err )
@@ -724,8 +727,8 @@ namespace NeuroBayes
   //
   //
   //
-  template< class Optimizer, int DimY, int D_f > void
-    MleRunIn< Optimizer, DimY, D_f >::write_subjects_solutions( )
+  template< class Optimizer, class Subject, int DimY, int D_f > void
+    MleRunIn< Optimizer, Subject, DimY, D_f >::write_subjects_solutions( )
   {
     try
       {

@@ -25,6 +25,11 @@ using MaskReaderType = itk::ImageFileReader< MaskType >;
 #include "Algorithms/Raphson.h"
 #include "Algorithms/Gradiant.h"
 #include "Optimizers/Maximum_likelihood.h"
+#include "Optimizers/REML.h"
+#include "Optimizers/ML_run_in.h"
+#include "Optimizers/REML_run_in.h"
+#include "mle_subject.h"
+#include "run_in_subject.h"
 //
 //
 //
@@ -241,18 +246,71 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 1;
+	      const int THREAD_NUM = 16;
+
 
 	      //
 	      // Load the CSV file
-	      const int DimY = 1;
+	      const int DimY = 1; // mle: 1, run-in: 2
+	      const int D_f  = 2; // mle: 2, 3, run-in: 3
+	      //
 	      using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Raphson, DimY >;
 	      //using Optimization = NeuroBayes::Maximum_likelihood< NeuroBayes::Gradiant, DimY >;
-	      NeuroBayes::MleRunIn< Optimization,
-				    DimY, 2 /*D_f*/ > subject_mapping( filename, 
-								       input_dir, output_dir,
-								       time_tran, 
-								       inv_cov_error );
+	      //using Optimization = NeuroBayes::REML< NeuroBayes::Raphson, DimY >;
+	      //using Optimization = NeuroBayes::REML< NeuroBayes::Gradiant, DimY >;
+	      //
+	      // Subjects
+ 	      using Subject = NeuroBayes::MleSubject< DimY, D_f >;
+	      
+	      //
+	      // loaders:
+	      NeuroBayes::MleLoadCSV< Optimization, Subject,
+				      DimY, D_f > subject_mapping( filename, 
+								   input_dir, output_dir,
+								   time_tran, 
+								   inv_cov_error );
+
+
+//	      ///////////////////////////////
+//	      // 
+//	      // MLE on run-in type of Trial
+//	      // 
+//	      // In this example we implement the change maps between two
+//	      // timepoints and the response (input)
+//	      //  * one parameter for the run-in periode (alpha)
+//	      //  * one parameter for the phase II group with no drug (beta)
+//	      //  * one parameter for the phase II group with drug (beta + delta)
+//	      //
+//	      // DimY = 2 : two consecutive acquisition Phase I & II
+//	      // D_f  = 3 : fixed dimention of the number of parameter (alpha, beta, delta)
+//	      //
+//	      ///////////////////////////////
+//	      
+//
+//	      //
+//	      // Load the CSV file
+//	      const int DimY = 2; // mle: 1, run-in: 2
+//	      const int D_f  = 3; // mle: 2, 3, run-in: 3
+//	      //
+//	      //using Optimization = NeuroBayes::REML_run_in< NeuroBayes::Raphson, DimY >;
+//	      //using Optimization = NeuroBayes::REML_run_in< NeuroBayes::Gradiant, DimY >;
+//	      using Optimization = NeuroBayes::ML_run_in< NeuroBayes::Raphson, DimY >;
+//	      //using Optimization = NeuroBayes::ML_run_in< NeuroBayes::Gradiant, DimY >;
+//	      //
+//	      // Subjects Run-in
+// 	      using Subject = NeuroBayes::RunInSubject< DimY, D_f >;
+//	      
+//	      //
+//	      // loaders:
+//	      NeuroBayes::MleRunIn< Optimization, Subject,
+//				    DimY, D_f > subject_mapping( filename, 
+//								 input_dir, output_dir,
+//								 time_tran, 
+//								 inv_cov_error );
+
+
+
+
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();
 

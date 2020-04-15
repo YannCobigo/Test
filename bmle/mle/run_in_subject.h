@@ -1,5 +1,5 @@
-#ifndef MLESUBJECT_H
-#define MLESUBJECT_H
+#ifndef RUNINSUBJECT_H
+#define RUNINSUBJECT_H
 //
 //
 //
@@ -28,8 +28,8 @@
 //
 //
 //
-#include "Exception.h"
 #include "Tools.h"
+#include "Exception.h"
 //
 //
 //
@@ -38,7 +38,7 @@
 //
 namespace NeuroBayes
 {
-  /** \class MleSubject
+  /** \class RunInSubject
    *
    * \brief 
    * D_r: number of random degres of the model.
@@ -46,7 +46,7 @@ namespace NeuroBayes
    * 
    */
   template< int DimY, int D_f >
-    class MleSubject
+    class RunInSubject
   {
     //
     // Some typedef
@@ -56,13 +56,13 @@ namespace NeuroBayes
  
   public:
     /** Constructor. */
-  MleSubject():
+  RunInSubject():
     PIDN_{""}, group_{0} {};
     //
-    explicit MleSubject( const std::string, const int, const std::string& );
+    explicit RunInSubject( const std::string, const int, const std::string& );
     
     /** Destructor */
-    virtual ~MleSubject(){};
+    virtual ~RunInSubject(){};
 
     //
     // Accessors
@@ -173,16 +173,31 @@ namespace NeuroBayes
   //
   //
   template < int DimY, int D_f >
-    NeuroBayes::MleSubject< DimY, D_f >::MleSubject( const std::string Pidn,
-						     const int Group,
-						     const std::string& Output_dir ):
+    NeuroBayes::RunInSubject< DimY, D_f >::RunInSubject( const std::string Pidn,
+							 const int Group,
+							 const std::string& Output_dir ):
     PIDN_{Pidn}, group_{Group}, output_dir_{Output_dir}
-  {}
+  {
+    //
+    // Special case: we want only two groups
+    try
+      {
+	if ( group_ > 2 )
+	  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						 "Run-in is a special case with 2 groups (no-treatment/treatment).",
+						 ITK_LOCATION );
+      }
+    catch( itk::ExceptionObject & err )
+      {
+	std::cerr << err << std::endl;
+	exit( -1 );
+      }
+  }
   //
   //
   //
   template < int DimY, int D_f > void
-    NeuroBayes::MleSubject< DimY, D_f >::build_design_matrices( const double Age_mean )
+    NeuroBayes::RunInSubject< DimY, D_f >::build_design_matrices( const double Age_mean )
     {
       try
 	{
@@ -193,33 +208,42 @@ namespace NeuroBayes
 	  //
 
 	  //
+	  // Check we are in the special case
+	  if ( time_points_ != 2 )
+	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						   "Run-in case has only 2 groups (no-treatment/treatment).",
+						   ITK_LOCATION );
+ 	    
+
+	  //
 	  // Initialize the covariate matrix and the random parameters
 	  std::map< int, std::list< double > >::const_iterator age_cov_it = age_covariates_.begin();
 	  //
-	  X_.resize( time_points_, D_f );
 	  X_ = Eigen::MatrixXd::Zero( time_points_, D_f );
-	  //
-	  Z_.resize(  time_points_ , D_f + (*age_cov_it).second.size() );
-	  Z_ = Eigen::MatrixXd::Zero( time_points_ , D_f + (*age_cov_it).second.size() );
+	  Z_ = Eigen::MatrixXd::Zero( time_points_, 1 );
 	  // record ages
 	  std::vector< double > ages;
 	  for ( auto age : age_images_ )
-	    ages.push_back( age.first );
+	    ages.push_back( age.first - Age_mean );
 	  // random part of the design matrix
-	  for ( int l = 0 ; l < time_points_ ; l++ )
-	    for ( int c = 0 ; c <  D_f ; c++ )
-	      X_(l,c) = Z_(l,c) = pow( ages[l] - Age_mean, c );
-	  //
-	  // covariates
-	  int line = 0;
-	  for ( age_cov_it = age_covariates_.begin() ;
-		age_cov_it != age_covariates_.end() ; age_cov_it++ )
-	    {
-	      int col  = 0;
-	      for ( auto cov : (*age_cov_it).second )
-		Z_(line, D_f + col++) = cov;
-	      line++;
-	    }
+	  // !!! ATTENTION !!! for simulation "gi" is on group 1
+	  X_ << 
+	    ages[0], 0, 0,
+	    0, ages[1], (group_ == 1 ? 1. : 0.) * ages[1];
+	  Z_ <<
+	    ages[0],
+	    ages[1];
+//	  //
+//	  // covariates
+//	  int line = 0;
+//	  for ( age_cov_it = age_covariates_.begin() ;
+//		age_cov_it != age_covariates_.end() ; age_cov_it++ )
+//	    {
+//	      int col  = 0;
+//	      for ( auto cov : (*age_cov_it).second )
+//		Z_(line, D_f + col++) = cov;
+//	      line++;
+//	    }
 	  //
 	  std::cout << "Random and fixed design matrices:" << std::endl;
 	  std::cout << X_ << std::endl;
@@ -237,8 +261,8 @@ namespace NeuroBayes
   // C2: (max -min)    sigma (standard dev)
   //
   template < int DimY, int D_f > void
-    NeuroBayes::MleSubject< DimY, D_f >::build_design_matrices( const double C1,
-								const double C2 )
+    NeuroBayes::RunInSubject< DimY, D_f >::build_design_matrices( const double C1,
+								  const double C2 )
     {
       try
 	{
@@ -251,34 +275,43 @@ namespace NeuroBayes
 	  // Design matrix level 1
 	  //
 
+
+	  //
+	  // Check we are in the special case
+	  if ( time_points_ != 2 )
+	    throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+						   "Run-in case has only 2 groups (no-treatment/treatment).",
+						   ITK_LOCATION );
+
 	  //
 	  // Initialize the covariate matrix and the random parameters
 	  std::map< int, std::list< double > >::const_iterator age_cov_it = age_covariates_.begin();
 	  //
-	  X_.resize( time_points_, D_f );
 	  X_ = Eigen::MatrixXd::Zero( time_points_, D_f );
-	  //
-	  Z_.resize(  time_points_ , D_f + (*age_cov_it).second.size() );
-	  Z_ = Eigen::MatrixXd::Zero( time_points_ , D_f + (*age_cov_it).second.size() );
+	  Z_ = Eigen::MatrixXd::Zero( time_points_, 1 );
 	  // record ages
 	  std::vector< double > ages;
 	  for ( auto age : age_images_ )
-	    ages.push_back( age.first );
+	    ages.push_back( (age.first - C1) / C2 );
 	  // random part of the design matrix
-	  for ( int l = 0 ; l < time_points_ ; l++ )
-	    for ( int c = 0 ; c <  D_f ; c++ )
-	      X_(l,c) = Z_(l,c) = pow( (ages[l] - C1) / C2, c );
-	  //
-	  // covariates
-	  int line = 0;
-	  for ( age_cov_it = age_covariates_.begin() ;
-		age_cov_it != age_covariates_.end() ; age_cov_it++ )
-	    {
-	      int col  = 0;
-	      for ( auto cov : (*age_cov_it).second )
-		Z_(line, D_f + col++) = cov;
-	      line++;
-	    }
+	  // !!! ATTENTION !!! for simulation "gi" is on group 1
+	  X_ << 
+	    ages[0], 0, 0,
+	    0, ages[1], (group_ == 1 ? 1. : 0.) * ages[1];
+	  Z_ <<
+	    ages[0],
+	    ages[1];
+//	  //
+//	  // covariates
+//	  int line = 0;
+//	  for ( age_cov_it = age_covariates_.begin() ;
+//		age_cov_it != age_covariates_.end() ; age_cov_it++ )
+//	    {
+//	      int col  = 0;
+//	      for ( auto cov : (*age_cov_it).second )
+//		Z_(line, D_f + col++) = cov;
+//	      line++;
+//	    }
 	  //
 	  std::cout << "Random and fixed design matrices:" << std::endl;
 	  std::cout << X_ << std::endl;
@@ -294,9 +327,9 @@ namespace NeuroBayes
   //
   //
   template < int DimY, int D_f > void
-    NeuroBayes::MleSubject< DimY, D_f >::add_tp( const int                  Age,
-						 const std::list< double >& Covariates,
-						 const std::string&         Image )
+    NeuroBayes::RunInSubject< DimY, D_f >::add_tp( const int                  Age,
+						   const std::list< double >& Covariates,
+						   const std::string&         Image )
     {
       try
 	{
@@ -353,9 +386,9 @@ namespace NeuroBayes
   //
   //
   template < int DimY, int D_f > void
-    NeuroBayes::MleSubject< DimY, D_f >::set_fit( const MaskType::IndexType Idx, 
-						  const Eigen::MatrixXd Model_fit, 
-						  const Eigen::MatrixXd Cov_fit )
+    NeuroBayes::RunInSubject< DimY, D_f >::set_fit( const MaskType::IndexType Idx, 
+						    const Eigen::MatrixXd Model_fit, 
+						    const Eigen::MatrixXd Cov_fit )
     {
       //
       // ToDo: I would like to write the goodness of the score (r-square ...)
@@ -364,11 +397,11 @@ namespace NeuroBayes
       // We only record the diagonal sup of the covariance.
       //std::vector< double > model( DimY ), cov( DimY * (DimY + 1) / 2 );
       int current_mat_coeff = 0;
-      for ( int d ; d < D_r_ ; d++ )
+      for ( int d ; d < 1/*D_f*/ ; d++ )
 	{
 	  //model[d] = Model_fit(d,0);
 	  Random_effect_ITK_model_.set_val( d, Idx, Model_fit(d,0) );
-	  for ( int c = d ; c < D_r_ ; c++)
+	  for ( int c = d ; c < 1/*D_f*/ ; c++)
 	    {
 	      //cov[d]  = Cov_fit(d,c);
 	      Random_effect_ITK_variance_.set_val( current_mat_coeff++, Idx, Cov_fit(d,c) );
@@ -379,7 +412,7 @@ namespace NeuroBayes
   //
   //
   template < int DimY, int D_f > void
-    NeuroBayes::MleSubject< DimY, D_f >::create_theta_images()
+    NeuroBayes::RunInSubject< DimY, D_f >::create_theta_images()
     {
       //std::cout << "We create output only one time" << std::endl;
       // Model output
@@ -406,7 +439,7 @@ namespace NeuroBayes
   //
   //
   template < int DimY, int D_f > void
-    NeuroBayes::MleSubject< DimY, D_f >::write_solution()
+    NeuroBayes::RunInSubject< DimY, D_f >::write_solution()
     {
       Random_effect_ITK_model_.write();
       Random_effect_ITK_variance_.write();
@@ -415,7 +448,7 @@ namespace NeuroBayes
   //
   //
   template < int DimY, int D_f > void
-    NeuroBayes::MleSubject< DimY, D_f >::print() const
+    NeuroBayes::RunInSubject< DimY, D_f >::print() const
     {
 //      std::cout << "PIDN: " << PIDN_ << std::endl;
 //      std::cout << "Group: " << group_ << std::endl;
@@ -445,7 +478,7 @@ namespace NeuroBayes
   //
   //
   template < int DimY, int D_f > void
-    NeuroBayes::MleSubject< DimY, D_f >::load_model_matrices() 
+    NeuroBayes::RunInSubject< DimY, D_f >::load_model_matrices() 
     {
       try
 	{
@@ -527,8 +560,8 @@ namespace NeuroBayes
   //
   //
   template < int DimY, int D_f > void
-    NeuroBayes::MleSubject< DimY, D_f >::prediction( const MaskType::IndexType Idx, 
-						     const double Inv_C_eps )
+    NeuroBayes::RunInSubject< DimY, D_f >::prediction( const MaskType::IndexType Idx, 
+						       const double Inv_C_eps )
     {
       try
 	{

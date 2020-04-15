@@ -1,5 +1,5 @@
-#ifndef MAXIMUM_LIKELIHOOD_H
-#define MAXIMUM_LIKELIHOOD_H
+#ifndef REML_H
+#define REML_H
 //
 #include "Exception.h"
 #include "Optimizer.h"
@@ -9,17 +9,17 @@
 //
 namespace NeuroBayes
 {
-  /** \class Maximum_likelihood
+  /** \class REML
    *
-   * \brief Newton-Maximum_likelihood algorithm
+   * \brief Newton-REML algorithm
    * 
    */
   template< class Algo, int DimY >
-  class Maximum_likelihood : public Optimizer
+  class REML : public Optimizer
   {
   public:
     /** Constructor. */
-    Maximum_likelihood();
+    REML();
     
     //
     // Public functions
@@ -134,7 +134,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY >
-  Maximum_likelihood<Algo,DimY>::Maximum_likelihood()
+  REML<Algo,DimY>::REML()
     {
       //
       // First cost function
@@ -144,11 +144,11 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > void
-    Maximum_likelihood<Algo,DimY>::init_covariance( const int N, const int S,
-						    const int D_r,
-						    const Eigen::MatrixXd& X,
-						    const Eigen::MatrixXd& Z,
-						    const Eigen::MatrixXd& Y )
+    REML<Algo,DimY>::init_covariance( const int N, const int S,
+				      const int D_r,
+				      const Eigen::MatrixXd& X,
+				      const Eigen::MatrixXd& Z,
+				      const Eigen::MatrixXd& Y )
     {
       //
       // Design matrices
@@ -269,7 +269,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > void
-    Maximum_likelihood<Algo,DimY>::init_covariance()
+    REML<Algo,DimY>::init_covariance()
     {
       //
       // Covariance: Kronecker R_ x In_
@@ -332,7 +332,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > void
-    Maximum_likelihood<Algo,DimY>::update()
+    REML<Algo,DimY>::update()
     {
       try 
 	{
@@ -357,9 +357,10 @@ namespace NeuroBayes
 	  //
 	  Eigen::MatrixXd 
 	    SigSig,
-	    SigSigSig;
+	    SigSigSig,
+	    XTSigX_inv = X_ * inverse_def_pos(X_.transpose() * Sigma_inverse_ * X_) * X_.transpose();
 	  
-
+	  
 	  //
 	  // Set the gradiant and the Hessian
 	  int ii = 0;
@@ -370,16 +371,21 @@ namespace NeuroBayes
 	      SigSig = Sigma_inverse_*Sigdot*Sigma_inverse_;
 	      grad_L(ii,0)  =  ( Sigma_inverse_ * Sigdot ).trace();
 	      grad_L(ii,0) -=  (e.transpose() * SigSig * e)(0,0);
-	      
+	      // REML
+	      grad_L(ii,0) -=  (XTSigX_inv * SigSig).trace();
 	      //
 	      // Compute the Hessian
 	      int jj = 0;
 	      for ( auto Ssigdot : Sigdot_mapping_ )
-		{
-		  SigSigSig   = SigSig * Ssigdot;
-		  H(ii,jj)    = - SigSigSig.trace();
-		  H(ii,jj++) +=   2 * (e.transpose() * SigSigSig * Sigma_inverse_ * e)(0,0);
-		}
+	      	{
+	      	  SigSigSig = SigSig * Ssigdot;
+	      	  H(ii,jj)  = - SigSigSig.trace();
+	      	  H(ii,jj) +=   2 * (e.transpose() * SigSigSig * Sigma_inverse_ * e)(0,0);
+	      	  // REML
+		  H(ii,jj) +=   2 * (XTSigX_inv * SigSigSig * Sigma_inverse_).trace();
+	      	  H(ii,jj) -=   (XTSigX_inv * Sigdot * XTSigX_inv * Sigma_inverse_ * Ssigdot * Sigma_inverse_).trace();
+	      	  jj++;
+	      	}
 	      //
 	      ii++; 
 	    }
@@ -410,9 +416,11 @@ namespace NeuroBayes
 		{
 		  //
 		  // Apply the algorithm
+		  //std::cout << "kappa_ \n" << kappa_ << std::endl;
 		  algo_.set_matrices( kappa_, grad_L, H );
 		  algo_.update();
 		  new_kappa = algo_.get_parameters();
+		  //std::cout << "new_kappa \n" << new_kappa << std::endl;
 		  
 		  //
 		  // Update the matrices
@@ -461,8 +469,8 @@ namespace NeuroBayes
 	      else
 		reasonable = true;
 	      //
-	      //std::cout << "Cost func: " << L << std::endl;
-	      //std::cout << "Learning rate: " << algo_.get_learning_rate() << std::endl;
+	      std::cout << "Cost func: " << L << std::endl;
+	      std::cout << "Learning rate: " << algo_.get_learning_rate() << std::endl;
 	    }
 	  
 	  //
@@ -500,14 +508,14 @@ namespace NeuroBayes
 		<< "Sigma(beta_hat): \n" 
 		<< (X_.transpose() * Sigma_.inverse() * X_).inverse()
 		<< std::endl;
-	      std::cout 
-		<< "u: \n" 
-		<< G_ * Z_.transpose() * Sigma_.inverse() * (Y_ - X_ * beta_hat_)
-		<< std::endl;
-	      std::cout 
-		<< "Sigma(u): \n" 
-		<< "something"
-		<< std::endl;
+//	      std::cout 
+//		<< "u: \n" 
+//		<< G_ * Z_.transpose() * Sigma_.inverse() * (Y_ - X_ * beta_hat_)
+//		<< std::endl;
+//	      std::cout 
+//		<< "Sigma(u): \n" 
+//		<< "something"
+//		<< std::endl;
 	    }
 	}
       catch( itk::ExceptionObject & err )
@@ -520,7 +528,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > bool
-    Maximum_likelihood<Algo,DimY>::converged()
+    REML<Algo,DimY>::converged()
     {
       try 
 	{
@@ -530,7 +538,7 @@ namespace NeuroBayes
 	    L_prev = L_.back(),
 	    L      = cost_function();
 	  //
-	  if ( false )
+	  if ( true )
 	    std::cout 
 	      << "L_prev " << L_prev
 	      << " ~ L " << L 
@@ -562,7 +570,7 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > bool
-    Maximum_likelihood<Algo,DimY>::is_positive_def( const Eigen::MatrixXd& A ) const 
+    REML<Algo,DimY>::is_positive_def( const Eigen::MatrixXd& A ) const 
     {
       try 
 	{
@@ -600,15 +608,22 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > double
-    Maximum_likelihood<Algo,DimY>::cost_function() const 
+    REML<Algo,DimY>::cost_function() const 
     {
       try 
 	{
 	  //
+	  //
+	  int 
+	    n = Y_.cols(),
+	    p = beta_hat_.rows();
+
+	  //
 	  // L = -2 * ln(P)
 	  double L = ln_determinant( Sigma_ );
+	  L += ln_determinant(X_.transpose() * Sigma_inverse_ * X_);
 	  L += ( (X_ * beta_hat_ - Y_).transpose() * Sigma_inverse_ * (X_ * beta_hat_ - Y_) )(0,0);
-	  L += Y_.cols() * ln_2_pi;
+	  L += (n - p) * ln_2_pi;
 
 	  if ( false )
 	    {
@@ -635,17 +650,23 @@ namespace NeuroBayes
   //
   //
   template< class Algo, int DimY > double
-    Maximum_likelihood<Algo,DimY>::cost_function( const Eigen::MatrixXd& Beta,
+    REML<Algo,DimY>::cost_function( const Eigen::MatrixXd& Beta,
 						  const Eigen::MatrixXd& Sigma,
 						  const Eigen::MatrixXd& Sigma_inv  ) const 
     {
       try 
 	{
 	  //
+	  //
+	  int 
+	    n = Y_.cols(),
+	    p = beta_hat_.rows();
+	  //
 	  // L = -2 * ln(P)
 	  double L = ln_determinant( Sigma );
+	  L += ln_determinant(X_.transpose() * Sigma_inv * X_);
 	  L += ( (X_ * Beta - Y_).transpose() * Sigma_inv * (X_ * Beta - Y_) )(0,0);
-	  L += Y_.cols() * ln_2_pi;
+	  L += (n - p) * ln_2_pi;
 
 	  //
 	  //
