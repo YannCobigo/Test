@@ -22,7 +22,7 @@ using MaskReaderType  = itk::ImageFileReader< MaskType >;
 //
 //
 //
-#include "VBGM.h"
+#include "GM.h"
 #include "MakeITKImage.h"
 #include "IO/Command_line.h"
 //
@@ -155,7 +155,7 @@ int main(int argc, char const **argv)
 	      // Expecttion Maximization
 	      //
 	      
-	      VB::GM::VBGaussianMixture < /*Dim*/ 3, /*K_gaussians*/ K > VB_Gaussian_Mixture( X_positions );
+	      noVB::GM::GaussianMixture < /*Dim*/ 3, /*K_gaussians*/ K > VB_Gaussian_Mixture( X_positions );
 	      VB_Gaussian_Mixture.ExpectationMaximization();
 
 
@@ -173,45 +173,45 @@ int main(int argc, char const **argv)
 	      
 	      //
 	      // First select the clusters with some voxels
-	      std::set< int > best_culsters;
-	      for ( int k = 0 ; k < K ; k++ )
-		if ( VB_Gaussian_Mixture.get_pi(k) > 0.01 )
-		  best_culsters.insert(k);
-	      //
-	      std::cout << "The algorithm started with: " << K << " Gaussians.";
-	      std::cout << " And found " << best_culsters.size() << " relevant cluster(s):" << std::endl;
-	      //
-	      for ( auto k =  best_culsters.begin() ; k != best_culsters.end() ; k++ )
-		{
-		  VB_Gaussian_Mixture.get_cluster_statistics(*k);
-		  std::cout << std::endl;
-		}
-
-	      //
-	      //
-	      std::string output_string = output_dir + "/Clusters_probabilities.nii.gz";
-	      NeuroBayes::NeuroBayesMakeITKImage output;
-	      output = NeuroBayes::NeuroBayesMakeITKImage( best_culsters.size(), output_string, reader_image_ );
-	      //
-	      int x = 0;
-	      for ( auto X : X_positions )
-		{
-		  //int idx[3];
-		  //idx[0] = X(0,0);
-		  //idx[1] = X(1,0);
-		  //idx[2] = X(2,0);
-		  int im = 0;
-		  for ( auto k =  best_culsters.begin() ; k != best_culsters.end() ; k++ )
-		    output.set_val( im++, 
-				    {static_cast< long int >( X(0,0) ),
-					static_cast< long int >( X(1,0) ),
-					static_cast< long int >( X(2,0) )}, 
-				    VB_Gaussian_Mixture.get_posterior_probabilities()[*k][x] );
-		  //
-		  ++x;
-		}
-	      //
-	      output.write();
+// diff VB noVB	      std::set< int > best_culsters;
+// diff VB noVB	      for ( int k = 0 ; k < K ; k++ )
+// diff VB noVB		if ( VB_Gaussian_Mixture.get_pi(k) > 0.01 )
+// diff VB noVB		  best_culsters.insert(k);
+// diff VB noVB	      //
+// diff VB noVB	      std::cout << "The algorithm started with: " << K << " Gaussians.";
+// diff VB noVB	      std::cout << " And found " << best_culsters.size() << " relevant cluster(s):" << std::endl;
+// diff VB noVB	      //
+// diff VB noVB	      for ( auto k =  best_culsters.begin() ; k != best_culsters.end() ; k++ )
+// diff VB noVB		{
+// diff VB noVB		  VB_Gaussian_Mixture.get_cluster_statistics(*k);
+// diff VB noVB		  std::cout << std::endl;
+// diff VB noVB		}
+// diff VB noVB
+// diff VB noVB	      //
+// diff VB noVB	      //
+// diff VB noVB	      std::string output_string = output_dir + "/Clusters_probabilities.nii.gz";
+// diff VB noVB	      NeuroBayes::NeuroBayesMakeITKImage output;
+// diff VB noVB	      output = NeuroBayes::NeuroBayesMakeITKImage( best_culsters.size(), output_string, reader_image_ );
+// diff VB noVB	      //
+// diff VB noVB	      int x = 0;
+// diff VB noVB	      for ( auto X : X_positions )
+// diff VB noVB		{
+// diff VB noVB		  //int idx[3];
+// diff VB noVB		  //idx[0] = X(0,0);
+// diff VB noVB		  //idx[1] = X(1,0);
+// diff VB noVB		  //idx[2] = X(2,0);
+// diff VB noVB		  int im = 0;
+// diff VB noVB		  for ( auto k =  best_culsters.begin() ; k != best_culsters.end() ; k++ )
+// diff VB noVB		    output.set_val( im++, 
+// diff VB noVB				    {static_cast< long int >( X(0,0) ),
+// diff VB noVB					static_cast< long int >( X(1,0) ),
+// diff VB noVB					static_cast< long int >( X(2,0) )}, 
+// diff VB noVB				    VB_Gaussian_Mixture.get_posterior_probabilities()[*k][x] );
+// diff VB noVB		  //
+// diff VB noVB		  ++x;
+// diff VB noVB		}
+// diff VB noVB	      //
+// diff VB noVB	      output.write();
 	      std::cout << "All output have been written." << std::endl;
 	    }
 	  else
