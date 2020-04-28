@@ -96,20 +96,41 @@ namespace NeuroBayes
   double ln_determinant( const Eigen::MatrixXd& S )
     {
       //
-      // result
-      double lnSdet = 0;
-      // They are supposed to be squarred matrices
-      int    dim    = S.cols();
-      // Cholesky decomposition
-      Eigen::LLT< Eigen::MatrixXd > lltOf( S );
-      Eigen::MatrixXd L = lltOf.matrixL(); 
       //
-      for ( int u = 0 ; u < dim ; u++ )
-	lnSdet += log( L(u,u) );
+      double result = 0.;
+      //
+      // Check the matrix S is not diagonal
+      if( S.isDiagonal(0.0001) )
+	{
+	  //
+	  // result
+	  double lnSdet = 0;
+	  // They are supposed to be squarred matrices
+	  int    dim    = S.cols();
+	  // Cholesky decomposition
+	  Eigen::LLT< Eigen::MatrixXd > lltOf( S );
+	  Eigen::MatrixXd L = lltOf.matrixL(); 
+	  //
+	  for ( int u = 0 ; u < dim ; u++ )
+	    lnSdet += log( L(u,u) );
+
+	  //
+	  //
+	  result = 2. * lnSdet;
+	}
+      else
+	{
+	  int    size    = S.cols();
+	  double exp_res = 1.;
+	  for ( int i = 0 ; i < size ; i++ )
+	    exp_res *= S(i,i);
+	  //
+	  result = log( exp_res );
+	}
 
       //
       //
-      return 2. * lnSdet;
+      return result;
     }
   //
   //

@@ -112,17 +112,17 @@ namespace VB
 
       //
       // Dirichlet prior
-      double                                          alpha0_{ 1.e-03 }; // 1.e-01
+      double                                          alpha0_{ /*1.e-03*/ 1.e-03 }; // 1.e-01
       double                                          alpha_hat_{0.};
       std::vector< double >                           alpha_;
       //
       // Gaussian-Wishart prior
       // Wishart on the precision
-      double                                           nu0_{Dim * 1.e-04}; // Dim * 1.e-02
+      double                                           nu0_{/*Dim * 1.e-04*/ Dim * 1.e-02}; // Dim * 1.e-02
       std::vector< double >                            nu_;
       Eigen::Matrix< double, Dim, Dim >                W0_;
       // Gaussian
-      double                                           beta0_{1.e-01}; // 1.e+01
+      double                                           beta0_{/*1.e-01*/ 1.e+01}; // 1.e+01
       std::vector< double >                            beta_;
       // Gaussian-Wishart
       std::vector< Eigen::Matrix< double, Dim, 1 > >   m0_;
@@ -299,7 +299,10 @@ namespace VB
 	      {
 		//
 		//
-		//N_[k]      += 1.e-16;
+		// Check N_[k] is not too small
+		if ( N_[k] < epsilon_ )
+		  N_[k] = 1.e-16;
+		//
 		x_mean_[k] /= N_[k];
 
 		//
@@ -315,13 +318,13 @@ namespace VB
 		it_x = data_set_.begin();
 		for ( int x = 0 ; x < data_set_size_ ; x++ )
 		  {
-		    S_[k]  += gamma_[k][x] * (*it_x - x_mean_[k]) * (*it_x - x_mean_[k]).transpose();
+		    S_[k]  += (gamma_[k][x] > epsilon_ ? gamma_[k][x] : epsilon_ ) * (*it_x - x_mean_[k]) * (*it_x - x_mean_[k]).transpose();
 		    ++it_x;
 		  }	  
 		Eigen::Matrix< double, Dim, Dim > 
 		  W_inv    = (x_mean_[k]-m0_[k]) * (x_mean_[k]-m0_[k]).transpose() * beta0_ * N_[k] / (beta_[k]);
 		W_inv     += W0_inv +  S_[k];
-		W_[k]      = W_inv.inverse() /*+ 1.e-16 * Eigen::Matrix< double, Dim, Dim >::Identity()*/;
+		W_[k]      = NeuroBayes::inverse_def_pos( W_inv );
 		S_[k]     /= N_[k];
 	      }
 	    // Parameters reset
@@ -336,10 +339,10 @@ namespace VB
 		//
 		ln_pi_[k]     = digamma(alpha_[k]) - digamma(alpha_hat_);
 		ln_lambda_[k] = psi_D[k] + static_cast< double >(Dim) * ln_2 + ln_W_determinant[k];
-		std::cout << "ln_pi_[k] " <<  ln_pi_[k] << std::endl;
-		std::cout << "psi_D[k] " <<  psi_D[k]<< std::endl;
-		std::cout << "ln_W_determinant[k] " <<  ln_W_determinant[k]<< std::endl;
-		std::cout << "ln_lambda_["<<k<<"] " <<  ln_lambda_[k]<< std::endl;
+		//std::cout << "ln_pi_[k] " <<  ln_pi_[k] << std::endl;
+		//std::cout << "psi_D[k] " <<  psi_D[k]<< std::endl;
+		//std::cout << "ln_W_determinant[k] " <<  ln_W_determinant[k]<< std::endl;
+		//std::cout << "ln_lambda_["<<k<<"] " <<  ln_lambda_[k]<< std::endl;
 	      }
 
 	    //
@@ -356,12 +359,8 @@ namespace VB
 		    // E[ln p(X|Z, μ, Λ)]
 		    double 
    		      L1_part = ln_lambda_[k] - static_cast<double>(Dim)*( ln_2_pi + 1. / beta_[k] );
-		    std::cout << "ln_lambda_["<<k<<"] " << ln_lambda_[k] << std::endl;
-		    std::cout << "L1_part " << L1_part << std::endl;
 		    L1_part  -= nu_[k] * (S_[k]*W_[k]).trace();
-		    std::cout << "L1_part " << L1_part << std::endl;
 		    L1_part  -= nu_[k] * (x_mean_[k]-m_[k]).transpose() * W_[k] * (x_mean_[k]-m_[k]);
-		    std::cout << "L1_part " << L1_part << std::endl;
 		    L1       += N_[k]  * L1_part;
 		    // E[ln p(π)]
 		    L3 += ln_pi_[k];
@@ -389,18 +388,6 @@ namespace VB
 		      }
 		  }
 		//
-		std::cout
-		  << "L1 " << L1
-		  << " ~ L2 " << L2
-		  << " ~ ln_Calpha0 " << ln_Calpha0
-		  << " ~ L3 " << L3
-		  << " ~ L4 " << L4
-		  << " ~ ln_B0 " << ln_B0
-		  << " ~ L5 " << L5
-		  << " ~ L6 " << L6 
-		  << " ~ ln_Calpha " << ln_Calpha 
-		  << " ~ L7 " << L7
-		  << std::endl;
 		variational_lower_bound_  = 0.5*L1 + L2 + ln_Calpha0 + (alpha0_ -1)*L3;
 		variational_lower_bound_ += L4 + static_cast<double>(K)*ln_B0;
 		variational_lower_bound_ -= L5 + L6 + ln_Calpha + L7;
