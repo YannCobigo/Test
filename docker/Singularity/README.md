@@ -11,12 +11,14 @@ The container is built with [Singularity](https://sylabs.io/docs/) (2.6.1-HEAD.9
 * `Eigen3` - 3.3.7 (includes in `/usr/local/include/eigen3`)
 * `CGAL` - 5.0.2 (includes in `/usr/local/src/cgal`)
 
+``` {.bash}
 CUDA_VERSION=10.2
 export CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-${CUDA_VERSION}
 export DPCPP=/usr/local/src/DPCPP/build/install
 
 PATH=${CUDA_TOOLKIT_ROOT_DIR}/bin:${DPCPP}/bin:/usr/local/bin:$PATH 
 LD_LIBRARY_PATH=${CUDA_TOOLKIT_ROOT_DIR}/lib64:${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs:${DPCPP}/lib/:/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH
+```
 
 
 Create a new Singularity image
