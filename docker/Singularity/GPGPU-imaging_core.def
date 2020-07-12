@@ -1,0 +1,226 @@
+BootStrap: docker
+# IIX  10.2 (driver: 440.100)
+# VII  10.1 (driver: 418.113)
+# Matt's 10.0, 9.1
+# Cerebellum 7.5
+#From: nvidia/cuda:10.2-runtime-centos7
+#From: centos:centos7
+From: fedora:30
+IncludeCmd: yes
+
+MAINTAINER Yann Cobigo
+VERSION    v2.0.0
+
+%environment
+	PATH=/usr/local/cuda/bin:${PATH} 
+	LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib64/stubs/:${LD_LIBRARY_PATH} 
+
+%setup
+    echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
+    if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+        echo "Hrmm, this container does not have /bin/sh installed..."
+        exit 1
+    fi
+    mkdir $SINGULARITY_ROOTFS/mnt/neuroimaging/ \
+    	  $SINGULARITY_ROOTFS/mnt/macdata \
+	  $SINGULARITY_ROOTFS/mnt/images \
+	  $SINGULARITY_ROOTFS/mnt/MAC_QC \
+	  $SINGULARITY_ROOTFS/mnt/production \
+	  $SINGULARITY_ROOTFS/mnt/Quarantine \
+	  $SINGULARITY_ROOTFS/mnt/SNC-PACS-GW1 \
+	  $SINGULARITY_ROOTFS/mnt/tempo \
+	  $SINGULARITY_ROOTFS/home/mac \
+	  $SINGULARITY_ROOTFS/netapp \
+	  $SINGULARITY_ROOTFS/netapp/home \
+	  $SINGULARITY_ROOTFS/etc/singularity/ \
+	  $SINGULARITY_ROOTFS/usr/local/lib64/R 
+	  
+    
+
+    #
+    #
+    exit 0
+
+%post
+	#
+	# CUDA	
+	# Versions: https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/
+	# 10.2
+	CUDA=10-2
+	CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.2
+	CUDA_VERSION=10.2.89-1 
+	CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+	# 10.1
+	#CUDA=10-1
+	#CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.1
+	#CUDA_VERSION=10.1.105-1 
+	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+	# 10.0
+	#CUDA=10-0
+	#CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.0
+	#CUDA_VERSION=10.0.130-1 
+	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+	# 9.1
+	#CUDA=9-1
+	#CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-9.1
+	#CUDA_VERSION=9.1.85-1 
+	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+	# 7.5
+	#CUDA=7-5
+	#CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-7.5
+	#CUDA_VERSION=7.5-18
+	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+
+	#
+	#
+	echo "Update the image"
+	dnf update -y && dnf install -y epel-release.noarch && dnf groupinstall -y "Development tools" && dnf makecache fast
+
+
+	#
+	#
+	# CUDA 11.0 (11.0.171)>= 450.36.06
+	# CUDA 10.2 (10.2.89)>= 440.33
+	# CUDA 10.1 (10.1.105)>= 418.39
+	# CUDA 10.0 (10.0.130)>= 410.48
+	# CUDA 9.2 (9.2.88)>= 396.26
+	# CUDA 9.1 (9.1.85)>= 390.46
+	# CUDA 9.0 (9.0.76)>= 384.81
+	#
+	NVIDIA_VISIBLE_DEVICES=all 
+	NVIDIA_DRIVER_CAPABILITIES=compute,utility 
+	NVIDIA_REQUIRE_CUDA="cuda>=10.2 brand=tesla,driver>=440,driver<441"
+	# cuDNN 
+        CUDNN_VERSION=7.4.2.24 
+#	#LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}" 
+#	#
+#	NVIDIA_GPGKEY_SUM="d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5" 
+#	curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
+#	echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict - 
+#	#curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-${CUDA_PKG_VERSION}.x86_64.rpm 
+	rpm -i  https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-${CUDA_VERSION}.x86_64.rpm 
+	echo "exclude=xorg-x11-drv-nvidia*,akmod-nvidia*,kmod-nvidia*,nvidia-driver*,nvidia-settings,nvidia-xconfig,nvidia-persistenced,cuda-nvidia-kmod-common,dkms-nvidia,nvidia-libXNVCtrl" >> /etc/yum.repos.d/cuda.repo 
+	#
+	# cuDNN license: https://developer.nvidia.com/cudnn/license_agreement 
+	CUDNN_DOWNLOAD_SUM=2edfc86a02b50d17e88c478955a332e6a1e8174e7e53a3458b4ea51faf02daa3 
+	curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.4.2/cudnn-10.0-linux-x64-v7.4.2.24.tgz -O 
+	echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.0-linux-x64-v7.4.2.24.tgz" | sha256sum -c -     
+	tar --no-same-owner -xzf cudnn-10.0-linux-x64-v7.4.2.24.tgz -C /usr/local --wildcards 'cuda/lib64/libcudnn.so.*'
+	rm cudnn-10.0-linux-x64-v7.4.2.24.tgz 
+	ldconfig
+	# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a 
+	yum install -y cuda-samples-$CUDA
+	if [ $CUDA == "10-0" ] || [ $CUDA == "10-1" ] ;
+	then
+		yum install -y cuda-compat-$CUDA
+	fi	
+
+
+	#
+	#
+	echo "Basic installation"
+	dnf install  -y  openssl-devel cmake gcc.x86_64 gcc-c++ gcc-gfortran make.x86_64 make-devel.x86_64 git tcsh.x86_64 \
+	    openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 emacs tmux htop  wget tree.x86_64 \
+	    fftw-libs.x86_64 python2-devel.x86_64 \
+	    libuuid.x86_64 libuuid-devel.x86_64 lua.x86_64 lua-devel.x86_64 patch.x86_64 \
+	    yasm.x86_64 yasm-devel.x86_64 \
+	    atlas-devel.x86_64 boost-devel.x86_64 gflags-devel.x86_64 glog-devel.x86_64 hdf5-devel.x86_64 \
+	    openblas.x86_64 openblas-Rblas.x86_64 openblas-devel.x86_64 openblas-openmp.x86_64 openblas-static.x86_64 \
+	    openblas-threads.x86_64 openblas-threads64.x86_64 openblas-serial64.x86_64 openblas-openmp64.x86_64 \
+	    leveldb-devel.x86_64 lmdb-devel.x86_64 opencv-devel.x86_64 protobuf-devel.x86_64 snappy-devel.x86_64 \
+	    xz xz-devel zlib-devel bzip2-devel bzip2-libs.x86_64 dos2unix.x86_64 \
+	    ncurses-devel sqlite-devel libreoffice.x86_64 gwenview.x86_64 \
+	    libpng12.x86_64 libpng-devel mlocate.x86_64  tetex g2clib-devel compat-libf2c-34.x86_64 \
+	    libyaml-devel.x86_64  libyaml.x86_64 yaml-cpp.x86_64 yaml-cpp-devel.x86_64 \
+	    gsl.x86_64 gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 \
+	    gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 \
+	    gmp-devel.x86_64 gmp-static.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
+	    sudo.x86_64 net-tools initscripts nautilus.x86_64 tkinter curl.x86_64 curl-devel \
+	    octave.x86_64 \
+	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
+	    firefox.x86_64 firefox-pkcs11-loader.x86_64 libxml2.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64
+
+
+
+	#
+	#
+	echo "X11 installation"
+	dnf install -y xorg-x11-apps.x86_64 \
+	    xorg-x11-xauth xorg-x11-drivers.x86_64 \
+	    xorg-x11-utils.x86_64 xorg-x11-xinit-session.x86_64
+
+	#
+	#
+	echo "Qt installation"
+	dnf install -y qt-config.x86_64 qt-creator.x86_64 qt-devel.x86_64 \
+	     qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt5-designer.x86_64 \
+	     qt5-qt3d.x86_64 qt5-qt3d-devel.x86_64 qt5-qtbase.x86_64 qt5-qtbase-devel.x86_64 \
+	     qt5-qtbase-examples.x86_64 qt5-qtconfiguration.x86_64 \
+	     qt5-qtconfiguration-devel.x86_64 qt5ct.x86_64 qt5-qtx11extras.x86_64 qt5-qtx11extras-devel.x86_64 \
+	     qt5-qtsvg.x86_64 qt5-qtsvg-devel.x86_64 qt5-qtsvg-examples.x86_64 \
+	     qt5-qtbase-gui.x86_64 qt5-qtsvg.x86_64 qt5-qtsvg-devel.x86_64 qt5-qtsvg-examples.x86_64\
+	     graphviz.x86_64 graphviz-devel.x86_64 graphviz-doc.x86_64 graphviz-gd.x86_64 graphviz-graphs.x86_64 \
+	     graphviz-guile.x86_64 graphviz-python2.x86_64
+
+
+	#
+	#
+	echo "Python installation"
+	dnf install -y  python-pip && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+	#python get-pip.py pip==9.0.2 wheel==0.30.0 setuptools==28.8.0
+	# tensor flow
+	pip install --upgrade pip
+	pip install --upgrade tensorflow-gpu && pip install --upgrade keras
+	pip install --upgrade matplotlib nibabel networkx rdflib sphinx graphviz scipy sklearn progressbar requests
+	pip install --upgrade ipython pandas sympy nose lockfile future simplejson prov statsmodels psutil cython 
+	pip install --upgrade untangle jsonpath-rw bctpy h5py networkx sortedcontainers XlsxWriter pydicom seaborn 
+	pip install --upgrade pyyaml hmmlearn xlrd
+	pip install --upgrade nipype pygraphviz Pillow 
+	#python-igraph 
+
+
+	#
+	#
+	echo "Modified PYTHON libraries"
+	# cd /mnt/tempo/QAP && chmod u+x setup.py && python setup.py build && python setup.py install 
+	# cd /mnt/tempo/ && dnf install -y atom.x86_64.rpm
+	#    && cd /mnt/tempo/dipy && chmod u+x setup.py && python setup.py build && python setup.py install
+	#
+	rm -rf /mnt/tempo/*
+
+       #
+       # R/R-studio
+       echo "R/R-studio"
+       dnf install -y readline-devel pcre-devel  
+       # Requirements during R make --with-recommended-packages
+       # Requirements for Java                    ## R CMD javareconf below
+       dnf install -y java-1.8.0-openjdk-* which  qpdf valgrind
+       # Version of R to build and install
+       export R_VERSION=3.5.1
+       cd /tmp && curl -O https://cloud.r-project.org/src/base/R-3/R-${R_VERSION}.tar.gz
+       cd /tmp && tar -zxf R-${R_VERSION}.tar.gz
+       cd /tmp/R-${R_VERSION} && ./configure --with-readline=yes --enable-memory-profiling --enable-R-shlib && make && make install
+       #      javareconf
+       # R runtime properties
+       mkdir /usr/local/lib64/R/site-library
+       #echo "R_BIOC_VERSION=3.5" >> .Renviron
+       #echo 'options(repos = c(CRAN="https://cloud.r-project.org", BioCsoft="https://bioconductor.org/packages/3.5/bioc", BioCann="https://bioconductor.org/packages/3.5/data/annotation", BioCexp="https://bioconductor.org/packages/3.5/data/experiment", BioCextra="https://bioconductor.org/packages/3.5/extra"))' >> .Rprofile
+       #
+       # R-studio
+       # https://www.rstudio.com/products/rstudio/download-server/
+       cd /tmp && wget https://download1.rstudio.org/rstudio-1.1.456-x86_64.rpm
+       dnf install -y rstudio-1.1.456-x86_64.rpm
+
+
+       #
+       #
+       exit 0
+
+%runscript
+	echo "Arguments received: $*"
+	exec /usr/bin/python "$@"
+
+%test
+	#
+	echo "Sounds OK"	
+	
