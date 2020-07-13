@@ -24,9 +24,11 @@ LD_LIBRARY_PATH=${CUDA_TOOLKIT_ROOT_DIR}/lib64:${CUDA_TOOLKIT_ROOT_DIR}/lib64/st
 DPCPP_TAG=2020-06 #
 ###################
 export DPCPP_HOME=${SRC}/DPCPP
-export DPCPP_BUILD=${DPCPP_HOME}/build
+export DPCPP_NVIDIA=${DPCPP_HOME}/built_NVIDIA
+#export DPCPP_CPU=${DPCPP_HOME}/built_CPU
 mkdir $DPCPP_HOME
-mkdir $DPCPP_BUILD
+mkdir $DPCPP_NVIDIA
+#mkdir $DPCPP_CPU
 cd $DPCPP_HOME
 # prepare the space for the drivers
 mkdir /etc/OpenCL
@@ -35,16 +37,23 @@ mkdir /etc/OpenCL/vendors
 # Installation of the low level machine
 # Instead of installing the low level CPU runtime, it is possible to build and install the Khronos ICD loader, which contains all the symbols required.
 git clone https://github.com/KhronosGroup/OpenCL-Headers /usr/local/include/OpenCL-Headers
-ln -s /usr/local/include/OpenCL-Headers ${DPCPP_BUILD}/OpenCL-Headers
-git clone https://github.com/KhronosGroup/OpenCL-ICD-Loader ${DPCPP_BUILD}/OpenCL-ICD-Loader
+ln -s /usr/local/include/OpenCL-Headers ${DPCPP_NVIDIA}/OpenCL-Headers
+#ln -s /usr/local/include/OpenCL-Headers ${DPCPP_CPU}/OpenCL-Headers
+git clone https://github.com/KhronosGroup/OpenCL-ICD-Loader ${DPCPP_NVIDIA}/OpenCL-ICD-Loader
+#git clone https://github.com/KhronosGroup/OpenCL-ICD-Loader ${DPCPP_CPU}/OpenCL-ICD-Loader
 #OpenCL defines an Installable Client Driver (ICD) mechanism to allow developers to build applications against an Installable Client Driver loader (ICD loader) rather than linking their applications against a specific OpenCL implementation.
-cd ${DPCPP_BUILD}/OpenCL-ICD-Loader
+cd ${DPCPP_NVIDIA}/OpenCL-ICD-Loader
 mkdir build
 cd build
-cmake -D OPENCL_ICD_LOADER_HEADERS_DIR:PATH=${DPCPP_BUILD}/OpenCL-Headers/ ..
+cmake -D OPENCL_ICD_LOADER_HEADERS_DIR:PATH=${DPCPP_NVIDIA}/OpenCL-Headers/ ..
 make
+echo ${DPCPP_NVIDIA}/OpenCL-ICD-Loader/build/test/driver_stub/libOpenCLDriverStub.so > /etc/OpenCL/vendors/test.icd
+#cd ${DPCPP_CPU}/OpenCL-ICD-Loader
+#mkdir build
+#cd build
+#cmake -D OPENCL_ICD_LOADER_HEADERS_DIR:PATH=${DPCPP_CPU}/OpenCL-Headers/ ..
+#make
 # The OpenCL ICD Loader Tests use a "stub" ICD, which must be set up manually. The method to install the "stub" ICD is operating system dependent.
-echo ${DPCPP_BUILD}/OpenCL-ICD-Loader/build/test/driver_stub/libOpenCLDriverStub.so > /etc/OpenCL/vendors/test.icd
 #
 # DPC++
 cd $DPCPP_HOME
@@ -59,9 +68,12 @@ git checkout $DPCPP_TAG
 #    -t -> Build type (debug or release)
 #    -o -> Path to build directory
 #    --cmake-gen -> Set build system type (e.g. --cmake-gen "Unix Makefiles")
-python $DPCPP_HOME/llvm/buildbot/configure.py --system-ocl --no-werror --cuda --shared-libs -t release --cmake-gen "Unix Makefiles" --cmake-opt="-DCMAKE_LIBRARY_PATH=${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs" -o $DPCPP_BUILD
+python $DPCPP_HOME/llvm/buildbot/configure.py --system-ocl --no-werror --cuda --shared-libs -t release --cmake-gen "Unix Makefiles" --cmake-opt="-DCMAKE_LIBRARY_PATH=${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs" -o $DPCPP_NVIDIA
 #python $DPCPP_HOME/llvm/buildbot/compile.py -o $DPCPP_BUILD
-cd $DPCPP_BUILD && make && make install 
+cd $DPCPP_NVIDIA && make && make install 
+#python $DPCPP_HOME/llvm/buildbot/configure.py --system-ocl --no-werror --shared-libs -t release --cmake-gen "Unix Makefiles" -o $DPCPP_CPU
+#python $DPCPP_HOME/llvm/buildbot/compile.py -o $DPCPP_CPU
+#cd $DPCPP_CPU && make && make install 
 
 #########
 # CMake #
