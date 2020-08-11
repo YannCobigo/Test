@@ -24,6 +24,7 @@ VERSION    v2.0.0
     mkdir $SINGULARITY_ROOTFS/mnt/neuroimaging/ \
     	  $SINGULARITY_ROOTFS/mnt/macdata \
 	  $SINGULARITY_ROOTFS/mnt/images \
+	  $SINGULARITY_ROOTFS/mnt/images_test \
 	  $SINGULARITY_ROOTFS/mnt/MAC_QC \
 	  $SINGULARITY_ROOTFS/mnt/production \
 	  $SINGULARITY_ROOTFS/mnt/Quarantine \
@@ -35,6 +36,12 @@ VERSION    v2.0.0
 	  $SINGULARITY_ROOTFS/etc/singularity/ \
 	  $SINGULARITY_ROOTFS/usr/local/lib64/R 
 	  
+    cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
+    cp requirements.txt $SINGULARITY_ROOTFS/etc/singularity/
+    # Customized applications 
+    #cp -r QAP  $SINGULARITY_ROOTFS/mnt/tempo/
+    #cp -r atom.x86_64.rpm  $SINGULARITY_ROOTFS/mnt/tempo/
+    #cp -r dipy $SINGULARITY_ROOTFS/mnt/tempo/
     
 
     #
@@ -121,9 +128,9 @@ VERSION    v2.0.0
 	echo "Basic installation"
 	dnf install  -y  openssl-devel cmake gcc.x86_64 gcc-c++ gcc-gfortran make.x86_64 make-devel.x86_64 git tcsh.x86_64 \
 	    openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 emacs tmux htop  wget tree.x86_64 \
-	    fftw-libs.x86_64 python2-devel.x86_64 \
+	    fftw-libs.x86_64 python2-devel.x86_64  mercurial.x86_64 \
 	    libuuid.x86_64 libuuid-devel.x86_64 lua.x86_64 lua-devel.x86_64 patch.x86_64 \
-	    yasm.x86_64 yasm-devel.x86_64 \
+	    yasm.x86_64 yasm-devel.x86_64 krb5-devel.x86_64 gpgme-devel.x86_64 gmpc-devel.x86_64 libmpc-devel.x86_64 \
 	    atlas-devel.x86_64 boost-devel.x86_64 gflags-devel.x86_64 glog-devel.x86_64 hdf5-devel.x86_64 \
 	    openblas.x86_64 openblas-Rblas.x86_64 openblas-devel.x86_64 openblas-openmp.x86_64 openblas-static.x86_64 \
 	    openblas-threads.x86_64 openblas-threads64.x86_64 openblas-serial64.x86_64 openblas-openmp64.x86_64 \
@@ -138,7 +145,8 @@ VERSION    v2.0.0
 	    sudo.x86_64 net-tools initscripts nautilus.x86_64 tkinter curl.x86_64 curl-devel \
 	    octave.x86_64 \
 	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
-	    firefox.x86_64 firefox-pkcs11-loader.x86_64 libxml2.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64
+	    firefox.x86_64 firefox-pkcs11-loader.x86_64 libxml2.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64 \
+	    gobject-introspection-devel cairo-gobject-devel
 
 
 
@@ -167,16 +175,10 @@ VERSION    v2.0.0
 	#
 	echo "Python installation"
 	dnf install -y  python-pip && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-	#python get-pip.py pip==9.0.2 wheel==0.30.0 setuptools==28.8.0
-	# tensor flow
-	pip install --upgrade pip
-	pip install --upgrade tensorflow-gpu && pip install --upgrade keras
-	pip install --upgrade matplotlib nibabel networkx rdflib sphinx graphviz scipy sklearn progressbar requests
-	pip install --upgrade ipython pandas sympy nose lockfile future simplejson prov statsmodels psutil cython 
-	pip install --upgrade untangle jsonpath-rw bctpy h5py networkx sortedcontainers XlsxWriter pydicom seaborn 
-	pip install --upgrade pyyaml hmmlearn xlrd
-	pip install --upgrade nipype pygraphviz Pillow 
-	#python-igraph 
+	python get-pip.py pip==20.2.1 wheel==0.34.2 setuptools==44.1.1 numpy==1.16.6
+	#pip install --upgrade pip wheel setuptools numpy
+	pip install -r /etc/singularity/requirements.txt
+	#pip install -e git://github.com/nipy/nipype.git#egg=Package 
 
 
 	#

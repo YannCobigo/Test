@@ -38,21 +38,14 @@ mkdir /etc/OpenCL/vendors
 # Instead of installing the low level CPU runtime, it is possible to build and install the Khronos ICD loader, which contains all the symbols required.
 git clone https://github.com/KhronosGroup/OpenCL-Headers /usr/local/include/OpenCL-Headers
 ln -s /usr/local/include/OpenCL-Headers ${DPCPP_NVIDIA}/OpenCL-Headers
-#ln -s /usr/local/include/OpenCL-Headers ${DPCPP_CPU}/OpenCL-Headers
 git clone https://github.com/KhronosGroup/OpenCL-ICD-Loader ${DPCPP_NVIDIA}/OpenCL-ICD-Loader
-#git clone https://github.com/KhronosGroup/OpenCL-ICD-Loader ${DPCPP_CPU}/OpenCL-ICD-Loader
-#OpenCL defines an Installable Client Driver (ICD) mechanism to allow developers to build applications against an Installable Client Driver loader (ICD loader) rather than linking their applications against a specific OpenCL implementation.
+# OpenCL defines an Installable Client Driver (ICD) mechanism to allow developers to build applications against an Installable Client Driver loader (ICD loader) rather than linking their applications against a specific OpenCL implementation.
 cd ${DPCPP_NVIDIA}/OpenCL-ICD-Loader
 mkdir build
 cd build
 cmake -D OPENCL_ICD_LOADER_HEADERS_DIR:PATH=${DPCPP_NVIDIA}/OpenCL-Headers/ ..
 make
 echo ${DPCPP_NVIDIA}/OpenCL-ICD-Loader/build/test/driver_stub/libOpenCLDriverStub.so > /etc/OpenCL/vendors/test.icd
-#cd ${DPCPP_CPU}/OpenCL-ICD-Loader
-#mkdir build
-#cd build
-#cmake -D OPENCL_ICD_LOADER_HEADERS_DIR:PATH=${DPCPP_CPU}/OpenCL-Headers/ ..
-#make
 # The OpenCL ICD Loader Tests use a "stub" ICD, which must be set up manually. The method to install the "stub" ICD is operating system dependent.
 #
 # DPC++
@@ -68,12 +61,41 @@ git checkout $DPCPP_TAG
 #    -t -> Build type (debug or release)
 #    -o -> Path to build directory
 #    --cmake-gen -> Set build system type (e.g. --cmake-gen "Unix Makefiles")
-python $DPCPP_HOME/llvm/buildbot/configure.py --system-ocl --no-werror --cuda --shared-libs -t release --cmake-gen "Unix Makefiles" --cmake-opt="-DCMAKE_LIBRARY_PATH=${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs" -o $DPCPP_NVIDIA
-#python $DPCPP_HOME/llvm/buildbot/compile.py -o $DPCPP_BUILD
-cd $DPCPP_NVIDIA && make && make install 
-#python $DPCPP_HOME/llvm/buildbot/configure.py --system-ocl --no-werror --shared-libs -t release --cmake-gen "Unix Makefiles" -o $DPCPP_CPU
-#python $DPCPP_HOME/llvm/buildbot/compile.py -o $DPCPP_CPU
-#cd $DPCPP_CPU && make && make install 
+#python $DPCPP_HOME/llvm/buildbot/configure.py --system-ocl --no-werror --cuda --shared-libs -t release --cmake-gen "Unix Makefiles" --cmake-opt="-DCMAKE_LIBRARY_PATH=${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs" -o $DPCPP_NVIDIA
+#python $DPCPP_HOME/llvm/buildbot/compile.py -o $DPCPP_NVIDIA
+
+cd $DPCPP_NVIDIA
+#
+cmake -G "Unix Makefiles" \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DLLVM_ENABLE_ASSERTIONS=ON  \
+      -DLLVM_EXTERNAL_XPTI_SOURCE_DIR=${DPCPP_HOME}/llvm/xpti \
+      -DLLVM_EXTERNAL_LIBDEVICE_SOURCE_DIR=/usr/local/src/DPCPP/llvm/libdevice  \
+      -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
+      -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+      -DLLVM_EXTERNAL_PROJECTS="llvm-spirv;sycl;opencl-aot;xpti;libdevice" \
+      -DLLVM_ENABLE_PROJECTS="clang;llvm-spirv;sycl" \
+      -DLLVM_EXTERNAL_SYCL_SOURCE_DIR=${DPCPP_HOME}/llvm/sycl \
+      -DLLVM_EXTERNAL_LLVM_SPIRV_SOURCE_DIR=${DPCPP_HOME}/llvm/llvm-spirv \
+      -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
+      -DLLVM_ENABLE_PROJECTS="clang;llvm-spirv;sycl;opencl-aot;xpti;libdevice;libclc" \
+      -DSYCL_BUILD_PI_CUDA=ON \
+      -DCUDA_CUDA_LIBRARY:FILEPATH=/usr/local/cuda/lib64/stubs/libcuda.so \
+      -DCMAKE_LIBRARY_PATH:FILEPATH=${CUDA_TOOLKIT_ROOT_DIR}/lib64/stubs \
+      -DLLVM_BUILD_TOOLS=ON \
+      -DCMAKE_INSTALL_PREFIX=${DPCPP_NVIDIA}/install \
+      -DSYCL_INCLUDE_TESTS=ON \
+      -DBUILD_SHARED_LIBS=ON \
+      -DOpenCL_INCLUDE_DIR=/usr/local/include/OpenCL-Headers \
+      -DOpenCL_LIBRARY=${DPCPP_NVIDIA}/OpenCL-ICD-Loader/build/libOpenCL.so \
+      -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
+      -DLIBCLC_TARGETS_TO_BUILD="nvptx64--;nvptx64--nvidiacl" \
+      -DSYCL_ENABLE_WERROR=OFF \
+      -DSYCL_ENABLE_XPTI_TRACING=ON \
+      ${DPCPP_HOME}/llvm/llvm
+#
+cmake --build ${DPCPP_NVIDIA} -- deploy-sycl-toolchain deploy-opencl-aot -j 16
+make install
 
 #########
 # CMake #
