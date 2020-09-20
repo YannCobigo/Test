@@ -143,10 +143,14 @@ VERSION    v2.0.0
 	    gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 \
 	    gmp-devel.x86_64 gmp-static.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
 	    sudo.x86_64 net-tools initscripts nautilus.x86_64 tkinter curl.x86_64 curl-devel \
-	    octave.x86_64 \
+	    octave.x86_64 pandoc* \
 	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
 	    firefox.x86_64 firefox-pkcs11-loader.x86_64 libxml2.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64 \
 	    gobject-introspection-devel cairo-gobject-devel
+
+	    #
+	    # LaTeX
+	    yum -y install 'tex(multirow.sty)'  'tex(balance.sty)' 'tex(makecell.sty)'  'tex(stfloats.sty)'  'tex(wrapfig.sty)' 'tex(breakcites.sty)'
 
 
 
