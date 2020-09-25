@@ -167,7 +167,7 @@ sympy==1.5.1
 tables==3.2.2
 tensorboard==2.1.0
 tensorflow-estimator==2.1.0
-tensorflow-gpu==2.1.0
+tensorflow-gpu==2.1.2
 termcolor==1.1.0
 traitlets==4.3.3
 traits==5.2.0
