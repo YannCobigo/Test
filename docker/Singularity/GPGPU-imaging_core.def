@@ -412,11 +412,6 @@ IncludeCmd: yes
 	git clone https://github.com/MRtrix3/mrtrix3.git && cd mrtrix3 && git checkout ${MR_MAJ}.${MR_MIN}.${MR_PATCH}
 	export EIGEN_CFLAGS="-isystem /usr/local/include/eigen3"
 	./configure && ./build  && make install
-	/usr/local/bin/cmake \
-	       -D CMAKE_BUILD_TYPE:STRING=RELEASE \
-		-D BUILD_SHARED_LIBS=ON \
-		-D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
-		-D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make install
 
 
 	#
