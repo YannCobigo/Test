@@ -411,7 +411,7 @@ IncludeCmd: yes
 	ln -s /usr/bin/qmake-qt5 /usr/bin/qmake
 	git clone https://github.com/MRtrix3/mrtrix3.git && cd mrtrix3 && git checkout ${MR_MAJ}.${MR_MIN}.${MR_PATCH}
 	export EIGEN_CFLAGS="-isystem /usr/local/include/eigen3"
-	./configure && ./build  && make install
+	./configure && ./build
 
 
 	#
