@@ -169,7 +169,7 @@ IncludeCmd: yes
 
 	    #
 	    # LaTeX
-	    yum -y install 'tex(multirow.sty)'  'tex(balance.sty)' 'tex(makecell.sty)'  'tex(stfloats.sty)'  'tex(wrapfig.sty)' 'tex(breakcites.sty)'
+	    dnf -y install 'tex(multirow.sty)'  'tex(balance.sty)' 'tex(makecell.sty)'  'tex(stfloats.sty)'  'tex(wrapfig.sty)' 'tex(breakcites.sty)'
 
 
 
@@ -366,7 +366,8 @@ IncludeCmd: yes
         /usr/local/bin/cmake \
        	       -D CMAKE_BUILD_TYPE:STRING=Release \
                -D BUILD_SHARED_LIBS:BOOL=ON \
-               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE ..  && make -j 8 && make install
+               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE  \
+               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make install
         	      
 ##        #######
 ##        # FSL #
