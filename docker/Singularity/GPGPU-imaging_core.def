@@ -25,7 +25,7 @@ BootStrap: docker
 # Cerebellum 7.5
 #From: nvidia/cuda:10.2-runtime-centos7
 #From: centos:centos7
-From: fedora:33
+From: fedora:29
 IncludeCmd: yes
 
 %environment
@@ -124,7 +124,7 @@ IncludeCmd: yes
 #	echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict - 
 #	#curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-${CUDA_PKG_VERSION}.x86_64.rpm 
 	#rpm -i  https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-${CUDA_VERSION}.x86_64.rpm 
-	dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/fedora33/x86_64/cuda-fedora33.repo
+	dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/fedora29/x86_64/cuda-fedora29.repo
 	echo "exclude=xorg-x11-drv-nvidia*,akmod-nvidia*,kmod-nvidia*,nvidia-driver*,nvidia-settings,nvidia-xconfig,nvidia-persistenced,cuda-nvidia-kmod-common,dkms-nvidia,nvidia-libXNVCtrl" >> /etc/yum.repos.d/cuda.repo 
 	#
 	# cuDNN license: https://developer.nvidia.com/cudnn/license_agreement 
