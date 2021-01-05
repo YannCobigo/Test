@@ -99,7 +99,7 @@ IncludeCmd: yes
 	#
 	#
 	echo "Update the image"
-	dnf update -y && dnf install -y epel-release.noarch && dnf groupinstall -y "Development tools" && dnf makecache fast
+	dnf install 'dnf-command(config-manager)' && dnf update -y && dnf install -y epel-release.noarch && dnf groupinstall -y "Development tools" && dnf makecache fast
 
 
 	#
