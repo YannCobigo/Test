@@ -99,7 +99,7 @@ IncludeCmd: yes
 	#
 	#
 	echo "Update the image"
-	dnf install 'dnf-command(config-manager)' && dnf update -y && dnf install -y epel-release.noarch && dnf groupinstall -y "Development tools" && dnf makecache fast
+	dnf install -y 'dnf-command(config-manager)' && dnf update -y && dnf install -y epel-release.noarch && dnf groupinstall -y "Development tools" && dnf makecache fast
 
 
 	#
@@ -123,7 +123,8 @@ IncludeCmd: yes
 #	curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
 #	echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict - 
 #	#curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-${CUDA_PKG_VERSION}.x86_64.rpm 
-	rpm -i  https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-${CUDA_VERSION}.x86_64.rpm 
+	#rpm -i  https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-${CUDA_VERSION}.x86_64.rpm 
+	dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/fedora30/x86_64/cuda-fedora30.repo
 	echo "exclude=xorg-x11-drv-nvidia*,akmod-nvidia*,kmod-nvidia*,nvidia-driver*,nvidia-settings,nvidia-xconfig,nvidia-persistenced,cuda-nvidia-kmod-common,dkms-nvidia,nvidia-libXNVCtrl" >> /etc/yum.repos.d/cuda.repo 
 	#
 	# cuDNN license: https://developer.nvidia.com/cudnn/license_agreement 
@@ -139,8 +140,6 @@ IncludeCmd: yes
 	then
 		dnf install -y cuda-compat-$CUDA
 	fi
-	#
-	dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/fedora30/x86_64/cuda-fedora30.repo
 
 
 	#
