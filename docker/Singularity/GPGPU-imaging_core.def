@@ -165,7 +165,7 @@ IncludeCmd: yes
 	    octave.x86_64 pandoc* motif.x86_64 motif-devel.x86_64 motif-static.x86_64 xlockmore-motif.x86_64 \
 	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
 	    firefox.x86_64 firefox-pkcs11-loader.x86_64 libxml2.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64 libxml++-devel.x86_64 libxml-devel.x86_64\
-	    gobject-introspection-devel cairo-gobject-devel
+	    gobject-introspection-devel cairo-gobject-devel dbus-glib-devel.x86_64
 
 	    #
 	    # LaTeX
@@ -417,7 +417,8 @@ IncludeCmd: yes
 	#
 	#
 	echo "Python installation"
-	dnf install -y  python-pip && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+	dnf install -y  python-pip python3-pip&& curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+	dnf install -y python\*-virtualenv
 	python get-pip.py pip==20.2.1 wheel==0.34.2 setuptools==44.1.1 numpy==1.16.6
 	#pip install --upgrade pip wheel setuptools numpy
 	pip install -r /etc/singularity/requirements.txt
@@ -459,12 +460,8 @@ IncludeCmd: yes
 
        #
        # Deep Learning
-       # tensor flow
-       pip install --upgrade tensorflow-gpu && pip install --upgrade keras
-       pip install torch torchvision
        # TractSeg (https://www.sciencedirect.com/science/article/pii/S1053811918306864)
-       pip install TractSeg
-
+       pip3 install --upgrade https://github.com/MIC-DKFZ/TractSeg/archive/master.zip
        #
        #
        exit 0
