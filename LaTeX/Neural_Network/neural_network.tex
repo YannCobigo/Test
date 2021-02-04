@@ -92,10 +92,10 @@ Fijee \sep electrode \sep PEM \sep CEM
 
 \section{Multilayer perceptron}
 
-We are using the perceptron as an explenatory mecanism introducing the local elements of a deep learning principals. The perceptron can be seen as the firing elements of the neural network, receiving information from sevaral inputs and firing when the amount of stimuli exceed a threshold. The weigths of the perceptron can be optimized using the gradient descent method. This section introduce the gradient descent method and applying different gradient strategies the perceptron fine tunes its parameters.
+We are using the perceptron as an explenatory mecanism introducing the local elements of a deep learning principals. The perceptron can be seen as the firing elements of the neural network, receiving information from sevaral inputs and firing when the amount of stimuli exceed a threshold. When the perceptron fires, the output is 1, and 0 otherwise. This section introduces the gradient descent as a building block for the weights optimization, and other faster strsategies.
 
 \subsection{Perceptrons: the building block}
-In the litterature, the neural network is often refered as {\it multilayer perceptron}. In other words, the neural network is based on layers of "perceptrons". The perceptron was one of the first machine learning algorithm used with computers. It is a supervise algorithm. The principal of classification using perceptron seat on fitting linear model $X^{T}\omega > \theta$, where $\omega$ is a vector of $N$ weights, $X$ is a vector of $N$ predictors and $\theta$ is a threshold. In its generalized linear model writing it becomes the non-linear step function: $f(X) = \phi(X)^{T}\omega \in \{-1,+1\}$, where $\phi$ can be non-linear. $\phi = (1, \phi_{1}, \cdots, \phi_{N})^{T}$ is a vector of $N$ components plus a $1$ which is counter part to the bias weight, corresponding to the threshold. The weights $\omega = (\omega_{0} = \theta, \omega_{1}, \cdots, \omega_{N})^{T}$ is a vector with $N$ weights plus $\omega_{0} = \theta$ associated to the bias. It is convinient to move the unknown in the same vector and write the weights and the bias as $\omega = (\omega_{0}, \omega_{1}, \cdots, \omega_{N})^{T}$, then the predictors become $\phi = (\phi_{0} = 1, \phi_{1}, \cdots, \phi_{N})^{T}$. \\
+In the litterature, the neural network is often refered as {\it multilayer perceptron}. In other words, the neural network is based on layers of "perceptrons". The perceptron was one of the first machine learning algorithm used with computers. It is a supervise algorithm. The principal of classification using perceptron sits on fitting linear model $X^{T}\omega > \theta$, where $\omega$ is a vector of $N$ weights, $X$ is a vector of $N$ predictors and $\theta$ is a threshold. In its generalized linear model writing it becomes the non-linear step function: $f(X) = \phi(X)^{T}\omega \in \{-1,+1\}$, where $\phi$ can be non-linear. $\phi = (1, \phi_{1}, \cdots, \phi_{N})^{T}$ is a vector of $N$ components plus a $1$ which is counter part to the bias weight, corresponding to the threshold. The weights $\omega = (\omega_{0} = \theta, \omega_{1}, \cdots, \omega_{N})^{T}$ is a vector with $N$ weights plus $\omega_{0} = \theta$ associated to the bias. It is convinient to move the unknown in the same vector and write the weights and the bias as $\omega = (\omega_{0}, \omega_{1}, \cdots, \omega_{N})^{T}$, then the predictors become $\phi = (\phi_{0} = 1, \phi_{1}, \cdots, \phi_{N})^{T}$. \\
 The perceptron is a binary classification method, the response of the training model is $t \in \{-1,+1\}$. Observing that {\it perceptron criteria} $t \times \phi(X)^{T}\omega > 0$ is always positive, the minimization is based on minimizing the number miss-classified elements: \\
 
 \begin{equation}
@@ -109,17 +109,17 @@ $$
 \bm{\nabla} E = - \sum_{c \in \mathcal{M}} t_{n} \times \phi(X_{n})
 $$
 
-A semantic clarification needs to be done about the multi-layer perceptron. As mentioned, $f$ is a discontinued step function, whereas neural network use step continuous, or sigmoidal, function like hyperbolic tangent, logistic, \dots In those terms, a neural network is not exactly a multilayer perceptron, but close enough.
+A semantic clarification needs to be done about the multi-layer perceptron. As mentioned, $f$ is a discontinued step function, whereas neural networks use a step continuous, or sigmoidal, function like hyperbolic tangent, logistic, \dots In those terms, a neural network is not exactly a multilayer perceptron, but close enough.
 
 \subsection{Gradient descent cement between blocks}
-The gradient descent is an iterative algorithm that tries to reach a local minimum in the optimization process. It is based on the link between the total differential of a scalar function and the gradient:
+The gradient descent is an iterative optimization algorithm that tries to reach a local minimum of a cost function. It is based on the link between the total differential of a scalar function and the gradient:
 
 $$
 dE = \bm{\nabla}E \cdot \bm{d \omega}
 $$
 
-Selecting $\bm{d\omega} = -\eta \bm{\nabla}E$, where $\eta$ is a positive parameter called the learning rate. The total differential of the cost functuion $E$ can be written: $dE = -\eta \bm{\nabla}E \cdot \bm{\nabla}E < 0$, meaning for each iteration $e$, $\omega^{e+1} = \omega^{e} - \eta \bm{\nabla} E$, the cost function is assured to decrease. 
-Faster results, or memory preserving, were obtained by correcting the weights after each miss-classification, {\it stochastic gradient descent}, or after small batch of miss-classified elements, {\it mini-batch gradient descent}. The same principals are applied to the neural network training.\\
+Selecting $\bm{d\omega} = -\eta \bm{\nabla}E$, where $\eta$ is a positive parameter called the learning rate. The total differential of the cost function $E$ can be written: $dE = -\eta \bm{\nabla}E \cdot \bm{\nabla}E < 0$, meaning for each epoch $e$, $\omega^{e+1} = \omega^{e} - \eta \bm{\nabla} E$, the cost function is assured to decrease. 
+Faster results, or memory preserving, were obtained by correcting the weights after each miss-classification, {\it stochastic gradient descent}, or after small batch of miss-classified elements, {\it mini-batch gradient descent}. \\
 In the next sections we are going to describe the other major optimization algorithms. All of them are derivated from the gradient descent and took their position as a sub-section of the gradient descent. An overview can be found in~\cite{DBLP:Ruder16}.
 
 \subsubsection{Hessian optimization}
@@ -130,7 +130,7 @@ $$
 dE = (\bm{\nabla}E)^{T} \bm{d \omega} + \frac{1}{2!}(\bm{d \omega})^{T}H\bm{d \omega} + \dots
 $$
 
-Minimizing the right hand of the total differential in function of $\bm{d \omega}$, we have $\bm{d \omega} = - H^{-1} \bm{\nabla}E$. Theorically, the Hessian optimization reach the minimum of the cost function fast, because the method holds information about the gradient and how it changes. However, the iteration is controled using smaller steps: $\omega^{e+1} = \omega^{e} - \eta  H^{-1} \bm{\nabla}E$, where $\eta$ is a positive parameter known as the learning rate. Beyond the interesting properties offered by the Hessian optimization, it is costly to use this method. We consider a problem with $n$ weights and biases, the gradient will be calculated over the $n$ weights and biases and the Hessian matrix will be calculated over $n \times n$ weights, then inversed.
+Minimizing the right hand of the total differential in function of $\bm{d \omega}$, we have $\bm{d \omega} = - H^{-1} \bm{\nabla}E$. Theorically, the Hessian optimization reach the minimum of the cost function fast, because the method holds information about the gradient and how it changes. However, in practice, iterations are controled using smaller steps: $\omega^{e+1} = \omega^{e} - \eta  H^{-1} \bm{\nabla}E$, where $\eta$ is a positive parameter known as the learning rate. Beyond the interesting properties offered by the Hessian optimization, it is costly to use this method. We consider a problem with $n$ weights and biases, the gradient will be calculated over the $n$ weights and biases and the Hessian matrix will be calculated over $n \times n$ weights, then inversed.
 
 \subsubsection{Momentum based gradient descent}
 The momentum method was introduced in~[Polyak - 1964]~\footnote{Some methods of speeding up the convergence of iteration methods -- need to create the reference}. The algorithm~(\ref{eq:Momentum}) was proposed to increase the speed of the gradient descent. 
@@ -186,33 +186,35 @@ The weights are updated in a similar way as AdaGrad method.
 [Initialization of weights]
 
 \subsection{Forward propagation, or feed-forward algorithm}
-Instead of relying on one perceptron, we use a layer of $L_{1}$ perceptrons and a bias. Each perceptron of the layer $(l_{1})$ loads all the inputs of the layer $(l_{0})$. The activation $l_{1}$ of the layer $(l_{1})$ is the dot product $a_{l_{1}} = \sum_{(l_{0})} \omega_{l_{1}l_{0}}z_{l_{0}} = \omega_{l_{1}}z^{(l_{0})}$ where the indexes of the layer $(l_{0})$ are $l_{0} = 0, \dots, L_{0}$, of the layer $(l_{1})$ are $l_{1} = 1, \dots, L_{1}$, and $z_{l_{0} = 0} = 1$ is the predictor conter part of the bias and $\omega_{l_{1}l_{0} = 0} = \omega_{l_{1}0}$ is the bias. At each layer, activations can be represented as a vector:
+Dense neural networks are caracterized by a large connections of a neurons of one layer with neurons from the other layers. The Fully connected network is a particular case of the dense neural network. A fully connected neural network is represented on the figure~\ref{fig:Densely_connected_neural_network}. Each neuron, or activation, of a layer is the result of a perceptron, built from all the nerons of the previous layer and the bias, and filtered by an activation function. For simplicity, we discribe first the fully connected network, then we will generalize with the densely connected network.
+
+\subsubsection{Classical view}
+Instead of relying upon one perceptron, we use a layer $(l_{1})$ of $L_{1}$ perceptrons and a bias. The fully connected network connects all the neurons and the bias of a layer $(l_{u})$ to one neuron of the next layer $(l_{u+1})$, then do the same type of connection for all the neurons of the layer $(l_{u+1})$. In practice, each perceptron of the layer $(l_{1})$ loads all the inputs of the layer $(l_{0})$ and the bias. The activation $i$ of the layer $(l_{1})$ is the dot product $a^{(l_{1})}_{i} = \sum_{j=1}^{L_{0}} \omega_{ij}^{(l_{1})} z^{(l_{0})}_{j} + b_{i}^{(l_{1})} = \sum_{j=0}^{L_{0}} \omega_{ij}^{(l_{1})} z^{(l_{0})}_{j}$ where $z^{(l_{0})}_{j = 0} = 1$ is the predictor conter part of the bias and $\omega^{(l_{1})}_{i(j = 0)} = \theta^{(l_{1})}_{i}$ is the bias. At each layer, activations can be represented as a vector:
 
 \begin{eqnarray*}
   \left(
   \begin{array}{c}
-    a_{l_{1}} \\
+    a_{1} \\
     \vdots \\
     a_{L_{1}}
   \end{array}
-  \right) = \left(
+  \right)^{(l_{1})} = \left(
   \begin{array}{cccc}
     \omega_{10} & \omega_{11} & \cdots & \omega_{1L_{0}} \\
     \vdots     &            & \cdots & \vdots \\
     \omega_{L_{1}0} & \omega_{L_{1}1} & \cdots & \omega_{L_{1}L_{0}} \\
   \end{array}
-  \right)  \left(
+  \right)^{(l_{1})}  \left(
   \begin{array}{c}
-    z_{l_{0} = 0} = 1 \\
-    z_{l_{0} = 1} \\
+    z_{0} = 1 \\
+    z_{1} \\
     \vdots \\
     z_{L_{0}} 
   \end{array}
-  \right)
+  \right)^{(l_{0})}
 \end{eqnarray*}
 
-Which can be writen in a compact manner: $\bm{a}^{(l_{1})} = \Omega_{10}\bm{z}^{(l_{0})}$, and the matrix $\Omega_{10}$ is a $L_{1}\times(L_{0}+1)$ weights matrix. The activation function $\bm{z}^{(l_{1})} = (z_{l_{1} = 0} = 1, f(\bm{a}^{(l_{1})}))^{T}$ where $f$ is a smooth non-linear step function. If we have a second inner layer, the total number of weights will be $L_{1}\times(L_{0}+1) + L_{2}\times(L_{1}+1)$. Then for $n$ inner layers, we will have $L = \sum_{i = 1}^{n}L_{i}\times(L_{i-1}+1)$ weights. In this document $(l_{0})$ and $(l_{k})$ will represents, respectively, the input and output layers.\\
-Dense neural networks are caracterized by a full connection of a neurons of one layer with all neurons plus the bias from the previouse layer Fig.~\ref{fig:Densely_connected_neural_network} presents the activation function for each layer. Each neuron, or activation, of a layer is the result of a perceptron, built from all the nerons of the previous layer and the bias, and filtered by an activation function. 
+Which can be writen in a compact manner: $\bm{a}^{(l_{1})} = \Omega_{10}\bm{z}^{(l_{0})}$, and the matrix $\Omega_{10}$ is a $L_{1}\times(L_{0}+1)$ weights matrix. The activation function $\bm{z}^{(l_{1})} = (z_{l_{1} = 0} = 1, f(\bm{a}^{(l_{1})}))^{T}$ where $f$ is a smooth non-linear step function. If we have a second inner layer, the total number of weights will be $L_{1}\times(L_{0}+1) + L_{2}\times(L_{1}+1)$. Then for $m$ inner layers, we will have $L = \sum_{i = 1}^{m}L_{i}\times(L_{i-1}+1)$ weights. In this document $(l_{0})$ and $(l_{\kappa})$ will represents, respectively, the input and output layers.\\
 
 
 \begin{figure}[htbp]
@@ -223,6 +225,34 @@ Dense neural networks are caracterized by a full connection of a neurons of one 
   \label{fig:Densely_connected_neural_network} 
 \end{figure}
 
+
+\subsubsection{Tensorial view}
+
+In this section, we adopt the contravariant writting that rely on tensors. We consider the vector $\bm{a}^{i}$ the activation of the layer $i$. The $j$-th element of the layer $i$ can be written for the image $m$: $a_{m}^{ij} = \omega_{\alpha \beta}^{ij}z_{m}^{\alpha \beta}$. In a more compat way, the forward algorithm is simply written $\bm{a}_{m}^{i} = \omega_{\alpha}^{i}\bm{z}_{m}^{\alpha}$. The layer $i$ is fully connected to $\alpha$ previous layers, and $\beta$ is the position of the $\beta$-th element in the acticvation function vector $\bm{z}^{\alpha}$. The tensor $\omega$ represents the weight connecting any layer $\alpha$ to the layer $i$. It is worth noting the bias for each layer is absorbed in the weight tensor. The repeated indices represent a sum if they are not present from both sides of the equality sign. \\
+The gradient descent update the weights using the derivative of the cost function of the image $m$, $E_{m}$, which can be represented in tensorial writting:
+
+\begin{equation}
+\frac{\partial E_{m}}{\partial \omega_{\mu \nu}^{cd}} = \frac{\partial E_{m}}{\partial a_{m}^{ij}}\frac{\partial a_{m}^{ij}}{\partial \omega_{\mu \nu}^{cd}} = \varepsilon_{ij}^{(m)}\delta_{ci}\delta_{dj}\delta_{\mu \alpha}\delta_{\nu \beta}z_{m}^{\alpha \beta}  = \varepsilon_{cd}^{(m)}z_{m}^{\mu \nu} 
+\end{equation}
+
+In the right end of the equation $\varepsilon_{cd}^{(m)}$ represent the contribution of the error carried by the image $m$ in the $j$-th element of the layer $i$. We use the chain rule to incorporate the image $m$ error, $\varepsilon_{gh}^{(m)}$, brought by the layer $g$ above, and closer to the final layer:
+
+\begin{equation}
+\varepsilon_{cd}^{(m)} = \frac{\partial E_{m}}{\partial a_{m}^{gh}}\frac{\partial a_{m}^{gh}}{\partial a_{m}^{cd}} = \varepsilon_{gh}^{(m)} \omega_{pq}^{gh} f'[a_{m}^{pq}] \delta_{cp} \delta_{dq}
+\end{equation}
+
+By combining the equations we reproduce the same result as the classical view:
+
+\begin{equation}
+\frac{\partial E_{m}}{\partial \omega_{\mu \nu}^{cd}} = \left[ \varepsilon_{gh}^{(m)} \omega_{cd}^{gh} \right] f'[a_{m}^{cd}]  z_{m}^{\mu \nu} 
+\end{equation}
+
+We isolate between brackets the sum over the layers $g$ and the elements $h$. There in no sum over $c$ and $d$, since they are present in both sides of the equality. \\
+The principal is to iteratively connect the error from the image $m$ all the way to the last layer, $\kappa$, where the cost function compare the outcome of the image $m$, $\bm{t}_{m}$, to the its modelization through the network, $\bm{z}_{m}^{\kappa}$, to the layer $\kappa$. The following equation use the Least-Squarre equation to calculate the error $\varepsilon_{\kappa}^{(m)}$ mad by the image $m$ at the last layer $\kappa$.
+
+\begin{equation}
+\varepsilon_{\kappa}^{(m)} = 2\left( \bm{t}_{m} - \bm{z}_{m}^{\kappa}\right)f'[\bm{a}_{m}^{\kappa}]
+\end{equation}
 
 \subsection{Backward propagation of the errors}
 
