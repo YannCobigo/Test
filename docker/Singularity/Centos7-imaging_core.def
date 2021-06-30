@@ -38,6 +38,10 @@ IncludeCmd: yes
         exit 1
     fi
     mkdir $SINGULARITY_ROOTFS/mnt/neuroimaging/ \
+    	  $SINGULARITY_ROOTFS/shared \
+    	  $SINGULARITY_ROOTFS/shared/imaging_core \
+    	  $SINGULARITY_ROOTFS/shared/language \
+    	  $SINGULARITY_ROOTFS/shared/macdata \
     	  $SINGULARITY_ROOTFS/mnt/macdata \
 	  $SINGULARITY_ROOTFS/mnt/images \
 	  $SINGULARITY_ROOTFS/mnt/images_test \

@@ -1,0 +1,132 @@
+#
+# sudo singularity image.create --size `echo "1024 64" | awk -F" " '{print $1*$2}'` Jupyter_1.0.img
+# sudo singularity image.create --size 1024 test.img
+# in to Docker/docker/Singularity/
+# sudo singularity build --writable Jupyter_1.0.img Jupyter.def
+#
+# As a user
+# singularity shell --shell /bin/bash   -B /etc/machine-id:/etc/machine-id  Jupyter_1.0.img
+# export PATH=/opt/anaconda2/5.2.0/bin:$PATH
+# export LD_LIBRARY_PATH=/opt/anaconda2/5.2.0/lib:$LD_LIBRARY_PATH
+# export XDG_RUNTIME_DIR=""
+# jupyter notebook --port 9999 --no-browser
+#
+#
+#
+# to avoid writing a new image:
+# sudo singularity shell --writable  /mnt/coredata/Singularity/Jupyter_1.0.img
+#
+
+BootStrap: docker
+From: centos:7
+IncludeCmd: yes
+
+%setup
+echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
+if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+echo "Hrmm, this container does not have /bin/sh installed..."
+exit 1
+fi
+mkdir $SINGULARITY_ROOTFS/mnt/neuroimaging/ \
+$SINGULARITY_ROOTFS/mnt/macdata \
+$SINGULARITY_ROOTFS/mnt/images \
+$SINGULARITY_ROOTFS/mnt/images_test \
+$SINGULARITY_ROOTFS/mnt/MAC_QC \
+$SINGULARITY_ROOTFS/mnt/production \
+$SINGULARITY_ROOTFS/mnt/Quarantine \
+$SINGULARITY_ROOTFS/mnt/SNC-PACS-GW1 \
+$SINGULARITY_ROOTFS/mnt/tempo \
+$SINGULARITY_ROOTFS/home/mac \
+$SINGULARITY_ROOTFS/netapp \
+$SINGULARITY_ROOTFS/netapp/home \
+$SINGULARITY_ROOTFS//wynopt \
+$SINGULARITY_ROOTFS/etc/singularity/ \
+$SINGULARITY_ROOTFS/usr/local/lib64/R
+
+cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
+
+
+#
+#
+exit 0
+
+%post
+#
+#
+echo "Update the image"
+yum update -y && yum install -y epel-release.noarch && yum groupinstall -y "Development tools" && yum makecache fast
+
+
+#
+#
+echo "Basic installation"
+yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 \
+emacs tmux htop git wget tree.x86_64 cmake gcc.x86_64 gcc-c++ gcc-gfortran \
+fftw-libs-single-3.3.3-8.el7.x86_64 python-devel.x86_64 \
+yasm.x86_64 yasm-devel.x86_64 mercurial.x86_64 \
+tcsh.x86_64 \
+libuuid.x86_64 libuuid-devel.x86_64 lua.x86_64 lua-devel.x86_64 patch.x86_64 \
+atlas-devel.x86_64 boost-devel.x86_64 gflags-devel.x86_64 glog-devel.x86_64 hdf5-devel.x86_64 \
+leveldb-devel.x86_64 lmdb-devel.x86_64 opencv-devel.x86_64 protobuf-devel.x86_64 snappy-devel.x86_64 \
+xz xz-devel zlib-devel bzip2-devel bzip2-libs-1.0.6-13.el7.x86_64 dos2unix.x86_64 \
+openssl-devel ncurses-devel sqlite-devel libreoffice.x86_64 gwenview.x86_64 \
+libpng12.x86_64 libpng-devel mlocate-0.26-5.el7.x86_64  tetex g2clib-devel compat-libf2c-34.x86_64 \
+libyaml-devel.x86_64  libyaml-0.1.4-11.el7_0.x86_64 yaml-cpp.x86_64 yaml-cpp-devel.x86_64 \
+gsl.x86_64 gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 \
+gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 \
+gmp-devel.x86_64 gmp-static.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
+sudo.x86_64 net-tools initscripts nautilus.x86_64 tkinter curl.x86_64 curl-devel \
+octave.x86_64 octave-*.x86_64 \
+libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
+firefox.x86_64 firefox-pkcs11-loader.x86_64
+
+#
+#
+echo "GL installation"
+yum install -y mesa-libGL-devel.x86_64 \
+mesa-libGLU*.i686 mesa-libGLU*.x86_64 \
+mesa-libGLw.x86_64 mesa-libGLw-devel.x86_64 \
+mesa-libOSMesa.x86_64 mesa-libOSMesa-devel.x86_64 \
+mesa-libgbm-devel.x86_64 \
+glew.x86_64 glew-devel.x86_64
+
+#
+#
+echo "X11 installation"
+yum install -y xorg-x11-apps.x86_64 \
+xorg-x11-xauth xorg-x11-drivers.x86_64 \
+xorg-x11-utils.x86_64 xorg-x11-xinit-session.x86_64
+
+#
+#
+echo "Qt installation"
+yum install -y qt-config.x86_64 qt-creator.x86_64 qt-devel.x86_64 \
+qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt5-designer.x86_64 \
+qt5-qt3d.x86_64 qt5-qt3d-devel.x86_64 qt5-qtbase.x86_64 qt5-qtbase-devel.x86_64 \
+qt5-qtbase-examples.x86_64 qt5-qtconfiguration.x86_64 \
+qt5-qtconfiguration-devel.x86_64 qt5ct.x86_64 qt5-qtx11extras.x86_64 qt5-qtx11extras-devel.x86_64 \
+qt5-qtsvg.x86_64 qt5-qtsvg-devel.x86_64 qt5-qtsvg-examples.x86_64 \
+qt5-qtbase-gui.x86_64 qt5-qtsvg.x86_64 qt5-qtsvg-devel.x86_64 qt5-qtsvg-examples.x86_64\
+graphviz.x86_64 graphviz-devel.x86_64 graphviz-doc.x86_64 graphviz-gd.x86_64 graphviz-graphs.x86_64 \
+graphviz-guile.x86_64 graphviz-python.x86_64
+
+rm -rf /mnt/tempo/*
+
+#
+# Anaconda
+wget https://repo.anaconda.com/archive/Anaconda2-5.2.0-Linux-x86_64.sh
+bash Anaconda2-5.2.0-Linux-x86_64.sh -b -p /opt/anaconda2/5.2.0
+#/opt/anaconda3/bin/conda install -c r r-essentials
+
+
+
+#
+#
+exit 0
+
+%runscript
+echo "Arguments received: $*"
+
+%test
+#
+echo "Sounds OK"
