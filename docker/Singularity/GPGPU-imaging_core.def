@@ -9,6 +9,7 @@ BootStrap: docker
 ### Creating with writable and --sandbox directories
 # singularity build --sandbox GPGPU-imaging_core_2.0.0 GPGPU-imaging_core.def
 # singularity run --writable --nv -B /mnt/data/shared:/shared GPGPU-imaging_core_2.0.0
+# singularity shell --writable --nv -B /mnt/data/shared:/shared GPGPU-imaging_core_2.0.0
 #
 ### Move into a unmuttable SIF (Singularity Image Format)
 # singularity build GPGPU-imaging_core_2.0.0.sif GPGPU-imaging_core_2.0.0
@@ -55,7 +56,9 @@ IncludeCmd: yes
 	  $SINGULARITY_ROOTFS/usr/local/lib64/R 
 	  
     cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
-    cp requirements.txt $SINGULARITY_ROOTFS/etc/singularity/
+    cp requirements_P2_2021_06_29.txt $SINGULARITY_ROOTFS/etc/singularity/requirements_P2.txt
+    cp requirements_P3_2021_06_29.txt $SINGULARITY_ROOTFS/etc/singularity/requirements_P3.txt
+
     # Customized applications 
     #cp -r QAP  $SINGULARITY_ROOTFS/mnt/tempo/
     #cp -r atom.x86_64.rpm  $SINGULARITY_ROOTFS/mnt/tempo/
@@ -147,30 +150,37 @@ IncludeCmd: yes
 	echo "Basic installation"
 	dnf install  -y  openssl-devel cmake gcc.x86_64 gcc-c++ gcc-gfortran make.x86_64 make-devel.x86_64 git tcsh.x86_64 \
 	    openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 emacs tmux htop  wget tree.x86_64 \
-	    fftw-libs.x86_64 python2-devel.x86_64  mercurial.x86_64 \
+	    fftw-libs.x86_64 mercurial.x86_64 gdb.x86_64 gdb-headless.x86_64 gdb-heap.x86_64 \
 	    libuuid.x86_64 libuuid-devel.x86_64 lua.x86_64 lua-devel.x86_64 patch.x86_64 \
-	    yasm.x86_64 yasm-devel.x86_64 krb5-devel.x86_64 gpgme-devel.x86_64 gmpc-devel.x86_64 libmpc-devel.x86_64 \
+	    yasm.x86_64 yasm-devel.x86_64 \
 	    atlas-devel.x86_64 boost-devel.x86_64 gflags-devel.x86_64 glog-devel.x86_64 hdf5-devel.x86_64 \
 	    openblas.x86_64 openblas-Rblas.x86_64 openblas-devel.x86_64 openblas-openmp.x86_64 openblas-static.x86_64 \
 	    openblas-threads.x86_64 openblas-threads64.x86_64 openblas-serial64.x86_64 openblas-openmp64.x86_64 \
 	    leveldb-devel.x86_64 lmdb-devel.x86_64 opencv-devel.x86_64 protobuf-devel.x86_64 snappy-devel.x86_64 \
-	    xz xz-devel zlib-devel bzip2-devel bzip2-libs.x86_64 dos2unix.x86_64 blender.x86_64 paraview.x86_64 \
+	    zlib-devel bzip2-devel bzip2-libs.x86_64 dos2unix.x86_64 blender.x86_64 paraview.x86_64 \
 	    ncurses-devel sqlite-devel libreoffice.x86_64 gwenview.x86_64 tetgen.x86_64 tetgen-devel.x86_64 \
-	    libpng12.x86_64 libpng-devel mlocate.x86_64  tetex-* tetex-elsevier g2clib-devel compat-libf2c-34.x86_64 \
+	    libpng12.x86_64 libpng12-devel libpng-devel mlocate.x86_64  flex.x86_64 flex-devel.x86_64 \
+	    tetex-* tetex-elsevier g2clib-devel compat-libf2c-34.x86_64 tbb.x86_64 tbb-devel.x86_64 \
 	    libyaml-devel.x86_64  libyaml.x86_64 yaml-cpp.x86_64 yaml-cpp-devel.x86_64 \
 	    gsl.x86_64 gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 okular.x86_64 \
 	    gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 libmng-devel.x86_64 \
-	    gmp-devel.x86_64 gmp-static.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
-	    sudo.x86_64 net-tools initscripts nautilus.x86_64 tkinter curl.x86_64 curl-devel \
+	    mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
+	    net-tools initscripts nautilus.x86_64 tkinter \
 	    octave.x86_64 pandoc* motif.x86_64 motif-devel.x86_64 motif-static.x86_64 xlockmore-motif.x86_64 \
 	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
 	    firefox.x86_64 firefox-pkcs11-loader.x86_64 libxml2.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64 libxml++-devel.x86_64 libxml-devel.x86_64\
-	    gobject-introspection-devel cairo-gobject-devel dbus-glib-devel.x86_64
-
-	    #
-	    # LaTeX
-	    dnf -y install 'tex(multirow.sty)'  'tex(balance.sty)' 'tex(makecell.sty)'  'tex(stfloats.sty)'  'tex(wrapfig.sty)' 'tex(breakcites.sty)'
-
+	    libXpm.x86_64 libXpm-devel.x86_64 \
+	    mpibash-mpich.x86_64 mpibash-mpich-examples.x86_64 mpibash-openmpi.x86_64 mpibash-openmpi-examples.x86_64 mpich.x86_64 \
+	    mpich-devel.x86_64
+	#
+	# LaTeX
+	dnf -y install 'tex(multirow.sty)'  'tex(balance.sty)' 'tex(makecell.sty)'  'tex(stfloats.sty)'  'tex(wrapfig.sty)' 'tex(breakcites.sty)' 'tex(xstring.sty)' 'tex(moreverb.sty)'
+	#
+	# Python dependances
+	dnf install  -y  python2-devel.x86_64  python3-devel.x86_64 curl.x86_64 curl-devel krb5-devel.x86_64 gmpc-devel.x86_64 \
+	    libmpc-devel.x86_64 gmp-devel.x86_64 gmp-static.x86_64  gobject-introspection-devel cairo-gobject-devel gpgme-devel.x86_64 \
+	    xz xz-devel.x86_64 lzma-devel.x86_64 lzma-libs.x86_64 graphviz.x86_64 graphviz-devel.x86_64 graphviz-doc.x86_64 graphviz-gd.x86_64 \
+	    graphviz-graphs.x86_64 graphviz-guile.x86_64 graphviz-python2.x86_64 dbus-glib-devel.x86_64 
 
 
 	#
@@ -184,14 +194,9 @@ IncludeCmd: yes
 	#
 	echo "Qt installation"
 	dnf install -y qt-config.x86_64 qt-creator.x86_64 qt-devel.x86_64 \
-	     qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt5-designer.x86_64 \
-	     qt5-qt3d.x86_64 qt5-qt3d-devel.x86_64 qt5-qtbase.x86_64 qt5-qtbase-devel.x86_64 \
-	     qt5-qtbase-examples.x86_64 qt5-qtconfiguration.x86_64 \
-	     qt5-qtconfiguration-devel.x86_64 qt5ct.x86_64 qt5-qtx11extras.x86_64 qt5-qtx11extras-devel.x86_64 \
-	     qt5-qtsvg.x86_64 qt5-qtsvg-devel.x86_64 qt5-qtsvg-examples.x86_64 \
-	     qt5-qtbase-gui.x86_64 qt5-qtsvg.x86_64 qt5-qtsvg-devel.x86_64 qt5-qtsvg-examples.x86_64\
-	     graphviz.x86_64 graphviz-devel.x86_64 graphviz-doc.x86_64 graphviz-gd.x86_64 graphviz-graphs.x86_64 \
-	     graphviz-guile.x86_64 graphviz-python2.x86_64
+	     qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64
+	dnf install -y qt5-*.x86_64 qt5-*.noarch 			
+
 	
         #
         # 
@@ -222,6 +227,7 @@ IncludeCmd: yes
         cmake -D OPENCL_ICD_LOADER_HEADERS_DIR:PATH=${DPCPP_NVIDIA}/OpenCL-Headers/ ..
         make
         echo ${DPCPP_NVIDIA}/OpenCL-ICD-Loader/build/test/driver_stub/libOpenCLDriverStub.so > /etc/OpenCL/vendors/test.icd
+	
         #########
         # CMake #
         #########
@@ -238,6 +244,7 @@ IncludeCmd: yes
         -D BUILD_SHARED_LIBS=OFF \
         -D CMAKE_INSTALL_PREFIX=/usr/local/ .. && make -j 8 && make install
         ln -s /usr/local/share/cmake-${CM_MAJ}.${CM_MIN} /usr/local/share/cmake
+	
         #########
         # BOUML #
         #########
@@ -271,7 +278,7 @@ IncludeCmd: yes
         #######
         ITK_MAJ=5
         ITK_MIN=1
-        ITK_PATCH=0
+        ITK_PATCH=2
         #
         cd $SRC
         curl -fsSL https://github.com/InsightSoftwareConsortium/ITK/releases/download/v${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}/InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz -O && \
@@ -305,11 +312,24 @@ IncludeCmd: yes
         # CGAL #
         ########
         CG_MAJ=5
-        CG_MIN=0
-        CG_PATCH=2
+        CG_MIN=2
+        CG_PATCH=1
         #
         cd $SRC
-        git clone https://github.com/CGAL/cgal && cd cgal && git checkout releases/CGAL-${CG_MAJ}.${CG_MIN}.${CG_PATCH}
+        git clone https://github.com/CGAL/cgal && cd cgal && git checkout releases/CGAL-${CG_MAJ}.${CG_MIN}.${CG_PATCH} && mkdir build && cd build
+        /usr/local/bin/cmake \
+               -DCMAKE_BUILD_TYPE=Release \
+       	       -DWITH_examples=true  \
+       	       -DWITH_demos=true  \
+       	       -DBUILD_SHARED_LIBS=ON  \
+       	       -DBUILD_TESTING=ON  \
+       	       -DWITH_CGAL_ImageIO=ON  \
+       	       -DWITH_CGAL_Core=ON  \
+       	       -DWITH_CGAL_Qt5:BOOL=ON  \
+       	       -DWITH_OpenGL:BOOL=ON  \
+       	       -DWITH_ZLIB:BOOL=ON  \
+       	       -DWITH_VTK:BOOL=ON  \
+               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make -j 8 examples && make install
         
         ##########
         # libigl #
@@ -352,51 +372,6 @@ IncludeCmd: yes
                -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
                -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make install
         	      
-        ########
-        # ANTs #
-        ########
-	# no installation with ANTs ... Create a env variabe
-        ANTs_MAJ=2
-        ANTs_MIN=3
-        ANTs_PATCH=5
-        #
-        cd $SRC
-        git clone git://github.com/stnava/ANTs.git && cd ANTs && git checkout v${ANTs_MAJ}.${ANTs_MIN}.${ANTs_PATCH}
-        mkdir build && cd build
-        /usr/local/bin/cmake \
-       	       -D CMAKE_BUILD_TYPE:STRING=Release \
-               -D BUILD_SHARED_LIBS:BOOL=ON \
-               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE  \
-               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 
-        	      
-##        #######
-##        # FSL #
-##        #######
-##        # Missing fslview & fsleyes
-##        cd $SRC
-##	# CifTi
-##        Cif_MAJ=1
-##        Cif_MIN=5
-##        Cif_PATCH=3
-##	git clone https://github.com/Washington-University/CiftiLib.git && cd CiftiLib \
-##	&& git checkout v${Cif_MAJ}.${Cif_MIN}.${Cif_PATCH} && mkdir build && cd build
-##        /usr/local/bin/cmake \
-##       	       -D CMAKE_BUILD_TYPE:STRING=Release \
-##               -D BUILD_SHARED_LIBS:BOOL=ON \
-##	       -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make install
-##	#
-##	wget wget http://ftp.cse.buffalo.edu/pub/Gnome/sources/libxml++/4.9/libxml++-4.9.1.tar.xz &&
-##	#
-##        FSL_MAJ=6
-##        FSL_MIN=0
-##        FSL_PATCH=4
-##        #
-##	ln -s /usr/lib64/libxml++-2.6.so.2 /usr/lib64/libxml++-2.6.so
-##        curl -fsSL https://fsl.fmrib.ox.ac.uk/fsldownloads/fsl-${FSL_MAJ}.${FSL_MIN}.${FSL_PATCH}-sources.tar.gz -O && \
-##        tar zxvf fsl-${FSL_MAJ}.${FSL_MIN}.${FSL_PATCH}-sources.tar.gz && mv fsl fsl-${FSL_MAJ}.${FSL_MIN}.${FSL_PATCH} &&\
-##	ln -s fsl-${FSL_MAJ}.${FSL_MIN}.${FSL_PATCH} fsl && cd fsl && export FSLDIR=$PWD && \
-##        source ${FSLDIR}/etc/fslconf/fsl.sh && ./build  
-
 
 	###########
 	# MRtrix3 #
@@ -417,22 +392,16 @@ IncludeCmd: yes
 	#
 	#
 	echo "Python installation"
-	dnf install -y  python-pip python3-pip&& curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-	dnf install -y python\*-virtualenv
-	python get-pip.py pip==20.2.1 wheel==0.34.2 setuptools==44.1.1 numpy==1.16.6
-	#pip install --upgrade pip wheel setuptools numpy
-	pip install -r /etc/singularity/requirements.txt
-	#pip install -e git://github.com/nipy/nipype.git#egg=Package 
+	dnf install -y  python-pip python3-pip 
+	#dnf install -y python\*-virtualenv
+	#
+	#
+	python2 -m pip install --upgrade pip wheel setuptools numpy
+	python3 -m pip install --upgrade pip wheel setuptools numpy
+	#
+	python2 -m pip install -r /etc/singularity/requirements_P2.txt
+	python3 -m pip install -r /etc/singularity/requirements_P3.txt
 
-
-	#
-	#
-	echo "Modified PYTHON libraries"
-	# cd /mnt/tempo/QAP && chmod u+x setup.py && python setup.py build && python setup.py install 
-	# cd /mnt/tempo/ && dnf install -y atom.x86_64.rpm
-	#    && cd /mnt/tempo/dipy && chmod u+x setup.py && python setup.py build && python setup.py install
-	#
-	rm -rf /mnt/tempo/*
 
        #
        # R/R-studio
@@ -442,33 +411,27 @@ IncludeCmd: yes
        # Requirements for Java                    ## R CMD javareconf below
        dnf install -y java-1.8.0-openjdk-* which  qpdf valgrind
        # Version of R to build and install
-       export R_VERSION=3.5.1
-       cd /tmp && curl -O https://cloud.r-project.org/src/base/R-3/R-${R_VERSION}.tar.gz
+       export R_VERSION=4.0.5
+       cd /tmp && curl -O https://cloud.r-project.org/src/base/R-4/R-${R_VERSION}.tar.gz
        cd /tmp && tar -zxf R-${R_VERSION}.tar.gz
        cd /tmp/R-${R_VERSION} && ./configure --with-readline=yes --enable-memory-profiling --enable-R-shlib && make && make install
        #      javareconf
        # R runtime properties
        mkdir /usr/local/lib64/R/site-library
        #echo "R_BIOC_VERSION=3.5" >> .Renviron
-       #echo 'options(repos = c(CRAN="https://cloud.r-project.org", BioCsoft="https://bioconductor.org/packages/3.5/bioc", BioCann="https://bioconductor.org/packages/3.5/data/annotation", BioCexp="https://bioconductor.org/packages/3.5/data/experiment", BioCextra="https://bioconductor.org/packages/3.5/extra"))' >> .Rprofile
        #
        # R-studio
        # https://www.rstudio.com/products/rstudio/download-server/
-       cd /tmp && wget https://download1.rstudio.org/rstudio-1.1.456-x86_64.rpm
-       dnf install -y rstudio-1.1.456-x86_64.rpm
+       #https://download1.rstudio.org/rstudio-1.1.456-x86_64.rpm
+       cd /tmp && wget https://download1.rstudio.org/desktop/centos8/x86_64/rstudio-1.4.1717-x86_64.rpm
+       dnf install -y rstudio-1.4.1717-x86_64.rpm
 
-
-       #
-       # Deep Learning
-       # TractSeg (https://www.sciencedirect.com/science/article/pii/S1053811918306864)
-       pip3 install --upgrade https://github.com/MIC-DKFZ/TractSeg/archive/master.zip
-       #
-       #
+	
+       rm -rf /mnt/tempo/*
        exit 0
 
 %runscript
 	echo "Arguments received: $*"
-	exec /usr/bin/python "$@"
 
 %test
 	#
