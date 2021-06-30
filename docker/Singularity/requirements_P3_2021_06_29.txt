@@ -28,7 +28,7 @@ chardet==4.0.0
 ci-info==0.2.0
 click==8.0.1
 configparser==5.0.2
-cryptography==3.4.7
+cryptography==3.3.2
 cssselect==1.1.0
 cycler==0.10.0
 Cython==0.29.23
