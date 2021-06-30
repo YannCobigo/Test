@@ -65,10 +65,6 @@ namespace VB
       // Functions
       // main algorithn
       void   ExpectationMaximization();
-      // Multivariate gaussian
-      double gaussian( const Eigen::Matrix< double, Dim, 1 >& , 
-		       const Eigen::Matrix< double, Dim, 1 >& , 
-		       const Eigen::Matrix< double, Dim, Dim >& ) const;
       // Responsability
       double responsability( const double, const double,
 			     const Eigen::Matrix< double, Dim, 1 >&, 
@@ -106,6 +102,7 @@ namespace VB
       //
       // private member function
       //
+      
 
       //
       // Data set
@@ -115,17 +112,17 @@ namespace VB
 
       //
       // Dirichlet prior
-      double                                          alpha0_{ 1.e+0 };
+      double                                          alpha0_{ /*1.e-03*/ 1.e-03 }; // 1.e-01
       double                                          alpha_hat_{0.};
       std::vector< double >                           alpha_;
       //
       // Gaussian-Wishart prior
       // Wishart on the precision
-      double                                           nu0_{Dim * 50.};
+      double                                           nu0_{/*Dim * 1.e-04*/ Dim * 1.e-02}; // Dim * 1.e-02
       std::vector< double >                            nu_;
       Eigen::Matrix< double, Dim, Dim >                W0_;
       // Gaussian
-      double                                           beta0_{1.e-0};
+      double                                           beta0_{/*1.e-01*/ 1.e+01}; // 1.e+01
       std::vector< double >                            beta_;
       // Gaussian-Wishart
       std::vector< Eigen::Matrix< double, Dim, 1 > >   m0_;
@@ -188,7 +185,7 @@ namespace VB
       // Initializarion
       //
       // Creating a Definit positive random matrix
-      W0_  = 1.e-4 /* / nu0_ */ * Eigen::Matrix< double, Dim, Dim >::Identity();
+      W0_  = 1.e+01 /* / nu0_ */ * Eigen::Matrix< double, Dim, Dim >::Identity();
       //std::cout << W0_ << std::endl;
       //
       for ( int k = 0 ; k < K ; k++ )
@@ -302,7 +299,10 @@ namespace VB
 	      {
 		//
 		//
-		//N_[k]      += 1.e-16;
+		// Check N_[k] is not too small
+		if ( N_[k] < epsilon_ )
+		  N_[k] = 1.e-16;
+		//
 		x_mean_[k] /= N_[k];
 
 		//
@@ -318,13 +318,13 @@ namespace VB
 		it_x = data_set_.begin();
 		for ( int x = 0 ; x < data_set_size_ ; x++ )
 		  {
-		    S_[k]  += gamma_[k][x] * (*it_x - x_mean_[k]) * (*it_x - x_mean_[k]).transpose();
+		    S_[k]  += (gamma_[k][x] > epsilon_ ? gamma_[k][x] : epsilon_ ) * (*it_x - x_mean_[k]) * (*it_x - x_mean_[k]).transpose();
 		    ++it_x;
 		  }	  
 		Eigen::Matrix< double, Dim, Dim > 
 		  W_inv    = (x_mean_[k]-m0_[k]) * (x_mean_[k]-m0_[k]).transpose() * beta0_ * N_[k] / (beta_[k]);
 		W_inv     += W0_inv +  S_[k];
-		W_[k]      = W_inv.inverse() /*+ 1.e-16 * Eigen::Matrix< double, Dim, Dim >::Identity()*/;
+		W_[k]      = NeuroBayes::inverse_def_pos( W_inv );
 		S_[k]     /= N_[k];
 	      }
 	    // Parameters reset
@@ -339,6 +339,10 @@ namespace VB
 		//
 		ln_pi_[k]     = digamma(alpha_[k]) - digamma(alpha_hat_);
 		ln_lambda_[k] = psi_D[k] + static_cast< double >(Dim) * ln_2 + ln_W_determinant[k];
+		//std::cout << "ln_pi_[k] " <<  ln_pi_[k] << std::endl;
+		//std::cout << "psi_D[k] " <<  psi_D[k]<< std::endl;
+		//std::cout << "ln_W_determinant[k] " <<  ln_W_determinant[k]<< std::endl;
+		//std::cout << "ln_lambda_["<<k<<"] " <<  ln_lambda_[k]<< std::endl;
 	      }
 
 	    //
@@ -396,7 +400,7 @@ namespace VB
       
 	    //
 	    // count time
-	    if (false)
+	    if (true)
 	      for ( int k = 0 ; k < K ; k++ )
 		{
 		  P += old_N[k] - N_[k];
@@ -439,24 +443,6 @@ namespace VB
 	//std::cout << "Iteration: " << iteration << " delta = " << P
 	//	  << " && difference last iter: " << P - old_P  
 	//	  << std::endl;
-      }
-    //
-    //
-    //
-    template < int Dim, int K > double
-      VBGaussianMixture< Dim, K >::gaussian( const Eigen::Matrix< double, Dim, 1 >&   X, 
-					     const Eigen::Matrix< double, Dim, 1 >&   Mu, 
-					     const Eigen::Matrix< double, Dim, Dim >& Cov ) const
-      {
-	//
-	//
-	double 
-	  arg        = ((X-Mu).transpose() * Cov.inverse() * (X-Mu))(0,0)/2.,
-	  two_pi_dim = 1.;
-	for ( int d = 0 ; d < Dim ; d++ )
-	  two_pi_dim *= 2 * M_PI;
-	//      
-	return exp( - arg ) * sqrt( Cov.determinant() * two_pi_dim); 
       }
     //
     //

@@ -29,35 +29,49 @@ int main(int argc, char const *argv[])
 {
   //
   // model
-  const int Dim = 1;
-  const int S   = 4;
+  const int Dim = 2;
+  const int S   = 5;
 
   //
   // Load the test dataset
-  NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08.csv");
-  // medium 1 2 5
-  //NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_medium5.csv");
-  // 20 cases
-  //NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_short.csv");
-  //two dim NeuroBayes::Load_csv reader("../data/Sim.train.data.seq.len.mu.08_2.csv");
-
+  //NeuroBayes::Load_csv reader("../data/hhm_2d.csv");
+  NeuroBayes::Load_csv reader("../data/hhm_3d.csv");
+  //NeuroBayes::Load_csv reader("../data/ADNI_clusters.csv");
   //
   // Size of the sequence can be different for each entry (subject).
+  std::vector< std::vector< Eigen::Matrix< double, Dim+1, 1 > > >
+    HMM_intensity_age = reader.get_VB_HMM_date< Dim+1 >();
   std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >
-    HMM_intensity = reader.get_VB_HMM_date< Dim >();
+    HMM_intensity;
+  std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >
+    HMM_age;
   //
-  for ( auto sub : HMM_intensity )
+  HMM_intensity.resize( HMM_intensity_age.size() );
+  HMM_age.resize( HMM_intensity_age.size() );
+  int subject = 0;
+  //
+  for ( auto sub : HMM_intensity_age )
     {
-      std::cout << "Subject " << std::endl;
+      HMM_intensity[subject].resize( HMM_intensity_age[subject].size() );
+      HMM_age[subject].resize( HMM_intensity_age[subject].size() );
+      //std::cout << "Subject " << subject << std::endl;
+      int timepoint = 0;
       for ( auto tp : sub )
-	std::cout << tp << std::endl;
+	{
+	  //std::cout << tp << std::endl;
+	  int d = 0;
+	  for ( d = 0 ; d < Dim ; d++ )
+	    HMM_intensity[subject][timepoint](d,0) = tp(d,0);
+	  HMM_age[subject][timepoint++] << tp(d,0);
+	}
+      subject++;
     }
 
   //
   //
-  VB::HMM::Hidden_Markov_Model < /*Dim*/ Dim, /*number_of_states*/ S > VBHMM_intensity( HMM_intensity );
+  VB::HMM::Hidden_Markov_Model < /*Dim*/ Dim, /*number_of_states*/ S > VBHMM_intensity_age( HMM_intensity, HMM_age );
   //
-  VBHMM_intensity.ExpectationMaximization();
+  VBHMM_intensity_age.ExpectationMaximization();
 
   //
   //

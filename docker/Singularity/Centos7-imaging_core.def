@@ -1,5 +1,5 @@
 # Bootstrap definition example for Centos-7 with the latest Open MPI from GitHub master
-# sudo singularity image.create --size 32768 /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
+# sudo singularity image.create --size `echo "1024 128" | awk -F" " '{print $1*$2}'` /mnt/data2/shared/Production/GPGPU-imaging_core_2.0.2.img
 # sudo singularity image.create --size 1024 /mnt/coredata/Singularity/test.img
 # in to Docker/docker/Singularity/
 # sudo singularity build --writable /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img Centos7-imaging_core.def
@@ -81,7 +81,11 @@ IncludeCmd: yes
 	yum install  -y openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 \
 	    emacs tmux htop git wget tree.x86_64 cmake gcc.x86_64 gcc-c++ gcc-gfortran \
 	    fftw-libs-single-3.3.3-8.el7.x86_64 python-devel.x86_64 \
-	    tcsh.x86_64 \
+	    yasm.x86_64 yasm-devel.x86_64 mercurial.x86_64 \
+	    tcsh.x86_64 *openblas*.x86_64 \
+	    libuuid.x86_64 libuuid-devel.x86_64 lua.x86_64 lua-devel.x86_64 patch.x86_64 \
+	    atlas-devel.x86_64 boost-devel.x86_64 gflags-devel.x86_64 glog-devel.x86_64 hdf5-devel.x86_64 \
+	    leveldb-devel.x86_64 lmdb-devel.x86_64 opencv-devel.x86_64 protobuf-devel.x86_64 snappy-devel.x86_64 \
 	    xz xz-devel zlib-devel bzip2-devel bzip2-libs-1.0.6-13.el7.x86_64 dos2unix.x86_64 \
 	    openssl-devel ncurses-devel sqlite-devel libreoffice.x86_64 gwenview.x86_64 \
 	    libpng12.x86_64 libpng-devel mlocate-0.26-5.el7.x86_64  tetex g2clib-devel compat-libf2c-34.x86_64 \
@@ -147,12 +151,6 @@ IncludeCmd: yes
 	       XlsxWriter pydicom seaborn pyyaml hmmlearn xlrd 
 	pip install -e git://github.com/nipy/nipype.git#egg=Package && pip install --upgrade nipype && pip install --upgrade pygraphviz Pillow python-igraph
 
-	#
-	#
-	#echo "Python louvain"
-	#wget --directory-prefix=/mnt/tempo/ https://pypi.python.org/packages/f1/5f/1cd2040382f56b21ef731f09fd7a818ad2bbcd5a8201fd2ebd4ec15297bb/python-louvain-0.3.tar.gz  \
-	#    && cd /mnt/tempo/ && tar -zxvf python-louvain-0.3.tar.gz && cd python-louvain-0.3/ \
-	#    && python setup.py install
 
 	#
 	#

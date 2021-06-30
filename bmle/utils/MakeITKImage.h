@@ -22,6 +22,7 @@
 #include <itkOrientImageFilter.h>
 #include <itkSpatialOrientation.h>
 #include "itkChangeInformationImageFilter.h"
+#include "itkRescaleIntensityImageFilter.h"
 //
 //
 //
@@ -48,6 +49,8 @@ namespace NeuroBayes
     using Reader4D    = itk::ImageFileReader< Image4DType >;
     using Writer4D    = itk::ImageFileWriter< Image4DType >;
     using MaskType    = itk::Image< unsigned char, 3 >;
+    using ReaderMask  = itk::ImageFileReader< MaskType >;
+
         
   public:
     /** Constructor. */

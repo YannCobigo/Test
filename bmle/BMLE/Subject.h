@@ -29,6 +29,7 @@
 //
 //
 #include "Exception.h"
+#include "Tools.h"
 //
 //
 //
@@ -37,12 +38,6 @@
 //
 namespace NeuroBayes
 {
-  inline bool file_exists ( const std::string& name )
-  {
-    std::ifstream f( name.c_str() );
-    return f.good();
-  }
-
   /** \class BmleSubject
    *
    * \brief 

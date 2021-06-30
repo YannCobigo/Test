@@ -9,6 +9,13 @@
 #include <Eigen/Eigen>
 #include <Eigen/Sparse>
 //
+#define ln_2    0.69314718055994529L
+#define ln_2_pi 1.8378770664093453L
+#define ln_pi   1.1447298858494002L
+#define pi_2    6.28318530718L
+#define pi      3.14159265359L
+
+//
 //
 // When we reach numerical limits
 namespace NeuroStat
@@ -20,6 +27,14 @@ namespace NeuroStat
 // When we reach numerical limits
 namespace NeuroBayes
 {
+  //
+  // Check a file exist
+  inline bool file_exists ( const std::string& Name )
+  {
+    std::ifstream f( Name.c_str() );
+    return f.good();
+  }
+
 
   //
   // Linear Algebra
@@ -81,20 +96,102 @@ namespace NeuroBayes
   double ln_determinant( const Eigen::MatrixXd& S )
     {
       //
-      // result
-      double lnSdet = 0;
-      // They are supposed to be squarred matrices
-      int    dim    = S.cols();
-      // Cholesky decomposition
-      Eigen::LLT< Eigen::MatrixXd > lltOf( S );
-      Eigen::MatrixXd L = lltOf.matrixL(); 
       //
-      for ( int u = 0 ; u < dim ; u++ )
-	lnSdet += log( L(u,u) );
+      double result = 0.;
+      //
+      // Check the matrix S is not diagonal
+      if( S.isDiagonal(0.0001) )
+	{
+	  //
+	  // result
+	  double lnSdet = 0;
+	  // They are supposed to be squarred matrices
+	  int    dim    = S.cols();
+	  // Cholesky decomposition
+	  Eigen::LLT< Eigen::MatrixXd > lltOf( S );
+	  Eigen::MatrixXd L = lltOf.matrixL(); 
+	  //
+	  for ( int u = 0 ; u < dim ; u++ )
+	    lnSdet += log( L(u,u) );
+
+	  //
+	  //
+	  result = 2. * lnSdet;
+	}
+      else
+	{
+	  int    size    = S.cols();
+	  double exp_res = 1.;
+	  for ( int i = 0 ; i < size ; i++ )
+	    exp_res *= S(i,i);
+	  //
+	  result = log( exp_res );
+	}
 
       //
       //
-      return 2. * lnSdet;
+      return result;
+    }
+  //
+  //
+  // Logarithm normal (Gaussian)
+  template < int Dim > double
+    log_gaussian( const Eigen::Matrix< double, Dim, 1 >&   Y, 
+		  const Eigen::Matrix< double, Dim, 1 >&   Mu, 
+		  const Eigen::Matrix< double, Dim, Dim >& Precision )
+    {
+      double ln_N = - Dim * ln_2_pi;
+      ln_N += ln_determinant( Precision );
+      ln_N -= ( (Y-Mu).transpose() * Precision * (Y-Mu) )(0,0);
+      //
+      return 0.5*ln_N;
+    }
+  //
+  //  Normal (Gaussian)
+  template < int Dim > double
+    gaussian( const Eigen::Matrix< double, Dim, 1 >&   Y, 
+	      const Eigen::Matrix< double, Dim, 1 >&   Mu, 
+	      const Eigen::Matrix< double, Dim, Dim >& Precision )
+    {
+      double dim_2pi = 1.;
+      for ( int d = 0 ; d < Dim ; d++ )
+	dim_2pi *= pi_2;
+      //
+      double N = sqrt( Precision.determinant() / dim_2pi ) ;
+      N       *= exp( -0.5*((Y-Mu).transpose() * Precision * (Y-Mu))(0,0) );
+      //
+      return N;
+    }
+  //
+  //
+  template < int Dim >
+    Eigen::Matrix< double, Dim, 1 >
+    gaussian_multivariate( const Eigen::Matrix< double, Dim, 1 >&   Mu, 
+			   const Eigen::Matrix< double, Dim, Dim >& Covariance )
+    {
+      // random seed
+      std::random_device rd;
+      std::mt19937                       generator( rd() );
+      std::normal_distribution< double > normal_dist(0.0,1.0);
+      // Vector of multivariate gaussians
+      Eigen::Matrix< double, Dim, 1 > Gaussian_multi_variate;
+      
+      //
+      // Cholesky decomposition
+      Eigen::LLT< Eigen::MatrixXd > lltOf( Covariance );
+      Eigen::MatrixXd L = lltOf.matrixL(); 
+      
+      //
+      // Sampling
+      Eigen::Matrix< double, Dim, 1 > z;
+      for ( int d = 0 ; d < Dim ; d++ )
+	z(d,0) = normal_dist( generator );
+      //
+      Gaussian_multi_variate = Mu + L*z;
+      
+      //
+      //
+      return Gaussian_multi_variate;
     }
 }
 #endif

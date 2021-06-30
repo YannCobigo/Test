@@ -35,7 +35,7 @@ namespace VB
   {
     /** \class Hidden_Markov_Model
      *
-     * \brief  Expaectation-Maximization algorithm
+     * \brief  Expectation-Maximization algorithm
      * 
      * Dim is the number of dimensions
      * input:
@@ -53,15 +53,24 @@ namespace VB
  
     public:
       /** Constructor. */
-      explicit Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& );
+      explicit Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& ,
+				    const std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >& );
     
       /** Destructor */
-      //~Hidden_Markov_Model(){};
+      ~Hidden_Markov_Model(){};
 
       //
       // Accessors
-      // posterior probabilities
+      // lower bound
+      inline const double                  get_lower_bound()          const {return F_;};
+      const Eigen::Matrix< double, S, 1 >& get_first_states()           const {return qdch_->get_pi();};
+      const Eigen::Matrix< double, S, S >& get_transition_matrix()      const {return qdch_->get_A();};
+      //
+      const std::vector< Eigen::Matrix< double, Dim, 1 > >&                get_mu()  const {return qgau_->get_mu();};
+      const std::vector< Eigen::Matrix< double, Dim, Dim > >&              get_var() const {return qgau_->get_var();};
+      const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_N()   const {return qgau_->get_N();};
 
+      
       //
       // Functions
       // main algorithn
@@ -79,6 +88,7 @@ namespace VB
       std::size_t n_{0};
       // Data set
       std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >  Y_; 
+      std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >  Age_; 
 
       //
       // variational posteriors and hyper parameters
@@ -91,24 +101,29 @@ namespace VB
       // log marginal likelihood lower bound
       double F_{-1.e-36};
       std::list< double > F_history_;
+      
+      //
+      // Print out
+      const bool _print_{false};
     };
 
     //
     //
     //
     template < int Dim, int S >
-      Hidden_Markov_Model< Dim, S >::Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Y ):
-      Y_{Y}, n_{Y.size()}
+      Hidden_Markov_Model< Dim, S >::Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Y,
+							  const std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >& Age ):
+      Y_{Y}, Age_{Age}, n_{Y.size()}
     {
       //
       //
       qsi_  = std::make_shared< VB::HMM::VP_qsi <Dim,S> >( Y_ );
-      qdch_ = std::make_shared< VB::HMM::VP_qdch<Dim,S> >( Y_ );
-      qgau_ = std::make_shared< VB::HMM::VP_qgau<Dim,S> >( Y_ );
+      qdch_ = std::make_shared< VB::HMM::VP_qdch<Dim,S> >( qsi_, Y_ );
+      qgau_ = std::make_shared< VB::HMM::VP_qgau<Dim,S> >( qsi_, Y_ );
       // set dependencies
       qsi_->set(qdch_,qgau_);
       qdch_->set(qsi_);
-      qgau_->set(qsi_);
+      qgau_->set(qsi_,qdch_);
       // Initialization
       qsi_->Expectation();
       qdch_->Expectation();
@@ -126,9 +141,10 @@ namespace VB
 	  dF    =  1.e06,
 	  F_old = -1.e-40;
 	int iteration = 0;
-	while ( fabs(dF) > 1.e-6 )
+	while ( fabs(dF) > 1.e-8 )
 	  {
-	    std::cout << "Begining iteration: " << ++iteration << std::endl;
+	    if ( _print_ )
+	      std::cout << "Begining iteration: " << ++iteration << std::endl;
 	    //
 	    // M step
 	    qsi_->Maximization();
@@ -153,9 +169,12 @@ namespace VB
 	    F_history_.push_back( F_ );
 	    //
 	    //
-	    std::cout << "Ending iteration: " << iteration << std::endl;
-	    std::cout << "Lower bound: " << F_  << std::endl;
-	    std::cout << "Delta Lower bound: " << dF  << std::endl;
+	    if ( _print_ )
+	      {
+		std::cout << "Ending iteration: " << iteration << std::endl;
+		std::cout << "Lower bound: " << F_  << std::endl;
+		std::cout << "Delta Lower bound: " << dF  << std::endl;
+	      }
 	  }
       }
   }
