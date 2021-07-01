@@ -417,12 +417,12 @@ IncludeCmd: yes
        # R runtime properties
        mkdir /usr/local/lib64/R/site-library
        #echo "R_BIOC_VERSION=3.5" >> .Renviron
-       #
-       # R-studio
-       # https://www.rstudio.com/products/rstudio/download-server/
-       #https://download1.rstudio.org/rstudio-1.1.456-x86_64.rpm
-       cd /tmp && wget https://download1.rstudio.org/desktop/centos8/x86_64/rstudio-1.4.1717-x86_64.rpm
-       dnf install -y rstudio-1.4.1717-x86_64.rpm
+#       #
+#       # R-studio
+#       # https://www.rstudio.com/products/rstudio/download-server/
+#       #https://download1.rstudio.org/rstudio-1.1.456-x86_64.rpm
+#       cd /tmp && wget https://download1.rstudio.org/desktop/centos8/x86_64/rstudio-1.4.1717-x86_64.rpm
+#       dnf install -y rstudio-1.4.1717-x86_64.rpm
 
 	
        rm -rf /mnt/tempo/*
