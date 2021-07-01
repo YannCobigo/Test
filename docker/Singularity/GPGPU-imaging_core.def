@@ -416,7 +416,6 @@ IncludeCmd: yes
        #      javareconf
        # R runtime properties
        mkdir /usr/local/lib64/R/site-library
-       #echo "R_BIOC_VERSION=3.5" >> .Renviron
        #
        # R-studio
        # https://www.rstudio.com/products/rstudio/download-server/
