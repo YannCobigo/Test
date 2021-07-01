@@ -163,8 +163,7 @@ IncludeCmd: yes
 	    tetex-* tetex-elsevier g2clib-devel compat-libf2c-34.x86_64 tbb.x86_64 tbb-devel.x86_64 \
 	    libyaml-devel.x86_64  libyaml.x86_64 yaml-cpp.x86_64 yaml-cpp-devel.x86_64 \
 	    gsl.x86_64 gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 okular.x86_64 \
-	    gedit.x86_64 gedit-plugins.x86_64 gedit-plugins-data.x86_64 libmng-devel.x86_64 \
-	    mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
+	    libmng-devel.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
 	    net-tools initscripts nautilus.x86_64 tkinter \
 	    octave.x86_64 pandoc* motif.x86_64 motif-devel.x86_64 motif-static.x86_64 xlockmore-motif.x86_64 \
 	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
