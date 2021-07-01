@@ -179,7 +179,7 @@ IncludeCmd: yes
 	# Python dependances
 	dnf install  -y  python2-devel.x86_64  python3-devel.x86_64 curl.x86_64 curl-devel krb5-devel.x86_64 gmpc-devel.x86_64 \
 	    libmpc-devel.x86_64 gmp-devel.x86_64 gmp-static.x86_64  gobject-introspection-devel cairo-gobject-devel gpgme-devel.x86_64 \
-	    xz xz-devel.x86_64 lzma-devel.x86_64 lzma-libs.x86_64 graphviz.x86_64 dbus-glib-devel.x86_64 graphviz-devel.x86_64 #graphviz-doc.x86_64 graphviz-gd.x86_64 graphviz-graphs.x86_64 graphviz-guile.x86_64 graphviz-python2.x86_64 
+	    xz xz-devel.x86_64 lzma-devel.x86_64 lzma-libs.x86_64 dbus-glib-devel.x86_64 graphviz-devel.x86_64 #graphviz-doc.x86_64 graphviz-gd.x86_64 graphviz-graphs.x86_64 graphviz-guile.x86_64 graphviz-python2.x86_64 
 
 
 	#
