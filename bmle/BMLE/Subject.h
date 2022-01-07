@@ -101,6 +101,10 @@ namespace NeuroBayes
     // Process the prediction
     void prediction( const MaskType::IndexType, 
 		     const double );
+    // Process the longitudinal w-score
+    void w_score( const MaskType::IndexType, 
+		  const double,
+		  const NeuroBayes::NeuroBayesMakeITKImage& );
       
 
   private:
@@ -146,6 +150,8 @@ namespace NeuroBayes
     //
     // Prediction
     bool prediction_{false};
+    // W-score
+    bool w_score_{false};
 
     //
     // Model parameters
@@ -175,6 +181,9 @@ namespace NeuroBayes
     NeuroBayes::NeuroBayesMakeITKImage Probability_prediction_map_;
     // error function
     NeuroBayes::NeuroBayesMakeITKImage Error_prediction_map_;
+    //
+    // Longitudinal W-score for each groups
+    NeuroBayes::NeuroBayesMakeITKImage groups_w_map_;
   };
 
   //
@@ -476,6 +485,10 @@ namespace NeuroBayes
 	  Probability_prediction_map_.write();
 	  Error_prediction_map_.write();
 	}
+      else if ( w_score_ )
+	{
+	  groups_w_map_.write();
+	}
       else
 	{
 	  Random_effect_ITK_model_.write();
@@ -607,6 +620,98 @@ namespace NeuroBayes
 	  //std::cout << PIDN_ 
 	  //	    << ", Group: " << group_ 
 	  //	    << ". Number of new time points: " << time_points_ << std::endl;
+
+
+	  //
+	  // Load the posterior maps
+	  int current_mat_coeff = 0;
+	  for ( int d ; d < D_r ; d++ )
+	    {
+	      // Parameters
+	      theta_y_(d,0) = Random_effect_ITK_model_.get_val( d, Idx );
+	      // Covariance
+	      for ( int c = d ; c < D_r ; c++)
+		cov_theta_y_(d,c) = cov_theta_y_(c,d) = 
+		  Random_effect_ITK_variance_.get_val( current_mat_coeff++, Idx );
+	    }
+      
+	  //
+	  // Process the prediction
+	  std::map< int, Reader3D::Pointer >::const_iterator age_img = age_ITK_images_.begin();
+	  for ( int tp = 0 ; tp < time_points_ ; tp++ )
+	    {
+	      //
+	      // Design
+	      Eigen::Matrix< double, D_r, 1 > x = X_1_rand_.row(tp).transpose();
+	      double age_statistic = 0.;
+	      if ( C2_ != 0.)
+		// Normalization or standardization
+		age_statistic = (static_cast<double>(age_img->first) - C1_) / C2_;
+	      else
+		// None or demean
+		age_statistic = static_cast<double>(age_img->first) - C1_;
+	      //
+	      // check the order of ages
+	      if ( age_statistic != x(1,0) )
+		{
+		  std::string mess = "Order of ages is not correct. Expected age: ";
+		  mess += std::to_string( age_img->first ) + " and received age: ";
+		  mess += std::to_string( x(1,0) );
+		  //
+		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+							 mess.c_str(),
+							 ITK_LOCATION );
+		}
+	      // response
+	      double y = static_cast<double>( (age_img++)->second->GetOutput()->GetPixel( Idx ) );
+	      
+	      // variance
+	      double variance  = 1. / Inv_C_eps + (x.transpose() * cov_theta_y_ * x)(0,0);
+	      // Mean value
+	      double mu = (x.transpose() * theta_y_)(0,0);
+	      // argument of the Gaussian
+	      double arg = - 0.5 * (y-mu) * (y-mu) / variance;
+	      //
+	      // record the value
+	      Probability_prediction_map_.set_val( tp, Idx,
+						   exp(arg) * inv_two_pi_squared / sqrt(variance) );
+	      Error_prediction_map_.set_val( tp, Idx,
+					     erf( inv_sqrt_2 * (y-mu) / sqrt(variance) ) );
+ 
+	      //	      std::cout 
+	      //				<< "theta_y_\n" << theta_y_
+	      //		//		<< "\n C_eps_ = " <<  1. / Inv_C_eps
+	      //		//		<< "\n variance_ = " <<  variance
+	      //				<< "\n cov_ = \n" <<  cov_theta_y_
+	      //		<< "\ny  = " <<  y
+	      //		<< "\nmu  = " <<  mu
+	      //		<< std::endl;
+	    }
+
+	  //
+	  // Write in the output image
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  return exit( -1 );
+	}
+    }
+  //
+  //
+  //
+  template < int D_r, int D_f > void
+    NeuroBayes::BmleSubject< D_r, D_f >::w_score( const MaskType::IndexType Idx, 
+						  const double Inv_C_eps,
+						  const NeuroBayes::NeuroBayesMakeITKImage& L2_param )
+    {
+      try
+	{
+	  //std::cout << "In subject: " << Idx << " val inv: " << Inv_C_eps << std::endl;
+	  //std::cout << PIDN_ 
+	  //	    << ", Group: " << group_ 
+	  //	    << ". Number of new time points: " << time_points_ << std::endl;
+	  w_score_ = true;
 
 
 	  //

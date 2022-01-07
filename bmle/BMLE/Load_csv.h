@@ -53,7 +53,9 @@ namespace NeuroBayes
     explicit BmleLoadCSV( const std::string&, const std::string&, 
 			  // Age Dns: demean, normalize, standardize
 			  const NeuroStat::TimeTransformation,
-			  // Prediction
+			  // Prediction or w-score
+			  const std::string&,
+			  // w-score L2 parameters
 			  const std::string& );
     
     /** Destructor */
@@ -67,6 +69,8 @@ namespace NeuroBayes
     void Expectation_Maximization( MaskType::IndexType );
     // Prediction algorithm
     void Prediction( MaskType::IndexType );
+    // Longitudinal W-score algorithm
+    void W_score( MaskType::IndexType );
     // Write the output
     void write_subjects_solutions( );
     // multi-threading
@@ -77,6 +81,12 @@ namespace NeuroBayes
 	  std::cout << "Prediction treatment for parameters: " 
 		    << idx;
 	  Prediction( idx );
+	}
+      else if ( w_score_ )
+	{
+	  std::cout << "Longitudinal W-score treatment for parameters: " 
+		    << idx;
+	  W_score( idx );
 	}
       else
 	{
@@ -112,6 +122,8 @@ namespace NeuroBayes
     //
     // Prediction calculation
     bool prediction_{false};
+    // Longitudinal w-score calculation
+    bool w_score_{false};
 
     //
     // CSV file
@@ -218,7 +230,8 @@ namespace NeuroBayes
 					  const std::string& Output_dir,
 					  // Age Dns: demean, normalize, standardize
 					  const NeuroStat::TimeTransformation Dns,
-					  const std::string& Inv_cov_error):
+					  const std::string& Inv_cov_error,
+					  const std::string& L2_parameters ):
     csv_file_{ CSV_file.c_str() }, output_dir_{ Output_dir }
   {
     try
@@ -582,7 +595,8 @@ namespace NeuroBayes
 
 	//
 	// Prediction
-	if ( access( Inv_cov_error.c_str(), F_OK ) != -1 )
+	if ( access( Inv_cov_error.c_str(), F_OK ) != -1 && 
+	     access( L2_parameters.c_str(), F_OK ) == -1  )
 	  {
 	    //
 	    // switch into prediction mode
@@ -591,12 +605,7 @@ namespace NeuroBayes
 	    std::cout << "\t - " << Inv_cov_error  << std::endl;
 
 	    //
-	    // Posterior 
-	    //auto image_ptr = itk::ImageIOFactory::CreateImageIO( Post_theta.c_str(),
-	    //						       itk::ImageIOFactory::ReadMode );
-	    //image_ptr->SetFileName( Post_theta );
-	    //image_ptr->ReadImageInformation();
-	    //
+	    // Inverse covariance
 	    Prediction_inverse_error_ = Reader4DType::New();
 	    Prediction_inverse_error_->SetFileName( Inv_cov_error );
 	    Prediction_inverse_error_->Update();
@@ -606,6 +615,27 @@ namespace NeuroBayes
 	    for ( auto g : groups_ )
 	      for ( auto& s : group_pind_[g] )
 		s.second.load_model_matrices();
+	  }
+	// w-score
+	else if ( access( Inv_cov_error.c_str(), F_OK ) != -1 && 
+		  access( L2_parameters.c_str(), F_OK ) != -1  )
+	  {
+	    //
+	    // switch into prediction mode
+	    w_score_ = true;
+	    std::cout << "Longitudinal w-score map calculation using:" << std::endl;
+	    std::cout << "\t - " << Inv_cov_error  << std::endl;
+	    std::cout << "\t - " << L2_parameters  << std::endl;
+
+	    //
+	    // Posterior groups parameters
+	    post_groups_param_l2_ = NeuroBayes::NeuroBayesMakeITKImage( L2_parameters );
+
+	    //
+	    // Inverse covariance
+	    Prediction_inverse_error_ = Reader4DType::New();
+	    Prediction_inverse_error_->SetFileName( Inv_cov_error );
+	    Prediction_inverse_error_->Update();
 	  }
 	else
 	  std::cout << "Posterior map calculation" << std::endl;
@@ -915,7 +945,7 @@ namespace NeuroBayes
 	// Copy the constrast for the level 2
 	all_contrasts_l2 = all_contrasts;
 	//
-	std::cout << "all_contrast For each of the parameters: \n" << all_contrasts << std::endl << std::endl;
+	std::cout << "all_contrasts For each of the parameters: \n" << all_contrasts << std::endl << std::endl;
 	//
 	// Cohort distribution
 	// All contrasts between groups
@@ -1417,6 +1447,30 @@ namespace NeuroBayes
   //
   //
   //
+  template< int D_r, int D_f > void
+    BmleLoadCSV< D_r, D_f >::W_score( MaskType::IndexType Idx )
+  {
+    try
+      {
+	//
+	// Inverse covariance value:
+	MaskType4D::IndexType Idx_inv_cov = { Idx[0], Idx[1], Idx[2], 0 };
+
+	for ( auto g : groups_ )
+	  for ( auto s : group_pind_[g] )
+	    s.second.w_score( Idx,
+			      Prediction_inverse_error_->GetOutput()->GetPixel(Idx_inv_cov),
+			      post_groups_param_l2_ );
+      }
+    catch( itk::ExceptionObject & err )
+      {
+	std::cerr << err << std::endl;
+	exit( -1 );
+      }
+  }
+  //
+  //
+  //
   template< int D_r, int D_f > double
     BmleLoadCSV< D_r, D_f >::F_( const Eigen::MatrixXd& Augmented_Y,
 				 const Eigen::MatrixXd& Inv_Cov_eps,
@@ -1570,7 +1624,7 @@ namespace NeuroBayes
   {
     try
       {
-	if ( !prediction_ )
+	if ( !prediction_ && !w_score_ )
 	  {
 	    //
 	    std::cout << "Global solutions" << std::endl;

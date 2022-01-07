@@ -44,6 +44,13 @@ main( const int argc, const char **argv )
       //-> extrema[0] = {0,127}; //X
       //-> extrema[1] = {0,127}; //Y
       //-> extrema[2] = {0,63};  //Z
+      // NODDI through SyN mask: 110x110x68
+      // 96 => 64 + 32 |
+      // 64 => 64 | Global max diviser = 64
+      //-> std::vector< std::vector< int > > extrema(3);
+      //-> extrema[0] = {6,102}; //X
+      //-> extrema[1] = {6,102}; //Y
+      //-> extrema[2] = {3,67};  //Z
 
       //
       // Parse the arguments
@@ -67,33 +74,35 @@ main( const int argc, const char **argv )
 	      // It is the responsability of the user to create the 
 	      // normalized/standardized hierarchical covariate
 	      //
-	      // -h                          : help
-	      // -X   inv_cov_error.nii.gz   : (prediction) inverse of error cov on parameters
-	      // -c   input.csv              : input file
-	      // -m   mask.nii.gz            : mask
-	      // -d   statistics             : statistics = {demean,normalize,standardize,load} 
-	      //                               The later loads a statistics file
-	      // -v   edge_cut               : window = (edge / edge_cut)x(edge / edge_cut)x(edge / edge_cut)
-	      //                               You will have edge_cut x edge_cut x edge_cut windows
-	      //                               Option paired with -w
-	      //                               edge_cut = {1,2,4,8}
-	      // -w   window                 : process a specific window w (c.f. option -v)
-	      //                               window is in {1, ... , edge_cut x edge_cut x edge_cut }
+	      // -h                                : help
+	      // -X   inv_cov_error.nii.gz         : (prediction & w-score) inverse of error cov on parameters
+	      // -L2  Post_groups_param_l2.nii.gz  : (w-score) second levels parameters from groups fit
+	      // -c   input.csv                    : input file
+	      // -m   mask.nii.gz                  : mask
+	      // -d   statistics                   : statistics = {demean,normalize,standardize,load} 
+	      //                                     The later loads a statistics file
+	      // -v   edge_cut                     : window = (edge / edge_cut)x(edge / edge_cut)x(edge / edge_cut)
+	      //                                     You will have edge_cut x edge_cut x edge_cut windows
+	      //                                     Option paired with -w
+	      //                                     edge_cut = {1,2,4,8}
+	      // -w   window                       : process a specific window w (c.f. option -v)
+	      //                                     window is in {1, ... , edge_cut x edge_cut x edge_cut }
 	      //
 	      std::string help = "It is the responsability of the user to create the ";
 	      help += "normalized/standardized hierarchical covariate.\n";
-	      help += "-h                          : help\n";
-	      help += "-X   inv_cov_error.nii.gz   : (prediction) inverse of error cov on parameters\n";
-	      help += "-c   input.csv              : input file\n";
-	      help += "-o   output_dir             : output directory\n";
-	      help += "-m   mask.nii.gz            : mask\n";
-	      help += "-d   statistics             : statistics = {demean,normalize,standardize,load}\n";
-	      help += "                              The later loads a statistics file\n";
-	      help += "-v   edge_cut               : window = (edge / edge_cut)x(edge / edge_cut)x(edge / edge_cut)\n";
-	      help += "                              You will have edge_cut x edge_cut x edge_cut windows\n";
-	      help += "                              Option paired with -w. edge_cut = {1,2,4,8}\n";
-	      help += "-w   window                 : process a specific window w (c.f. option -v)\n";
-	      help += "                              window is in { 1, ... , edge_cut x edge_cut x edge_cut }\n";
+	      help += "-h                               : help\n";
+	      help += "-X   inv_cov_error.nii.gz        : (prediction & w-score) inverse of error cov on parameters";
+	      help += "-L2  Post_groups_param_l2.nii.gz : (w-score) second levels parameters from groups fit";
+	      help += "-c   input.csv                   : input file\n";
+	      help += "-o   output_dir                  : output directory\n";
+	      help += "-m   mask.nii.gz                 : mask\n";
+	      help += "-d   statistics                  : statistics = {demean,normalize,standardize,load}\n";
+	      help += "                                   The later loads a statistics file\n";
+	      help += "-v   edge_cut                    : window = (edge / edge_cut)x(edge / edge_cut)x(edge / edge_cut)\n";
+	      help += "                                   You will have edge_cut x edge_cut x edge_cut windows\n";
+	      help += "                                   Option paired with -w. edge_cut = {1,2,4,8}\n";
+	      help += "-w   window                      : process a specific window w (c.f. option -v)\n";
+	      help += "                                   window is in { 1, ... , edge_cut x edge_cut x edge_cut }\n";
 	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
 						     help.c_str(),
 						     ITK_LOCATION );
@@ -203,6 +212,7 @@ main( const int argc, const char **argv )
 	    }
 	  // Prediction
 	  const std::string& inv_cov_error  = input.getCmdOption("-X");
+	  const std::string& l2_parameters  = input.getCmdOption("-L2");
 	  //
 	  if ( !filename.empty() )
 	    {
@@ -240,7 +250,7 @@ main( const int argc, const char **argv )
 	      // Load the CSV file
 	      NeuroBayes::BmleLoadCSV< 2/*D_r*/, 0 /*D_f*/> subject_mapping( filename, output_dir,
 									     time_tran, 
-									     inv_cov_error );
+									     inv_cov_error, l2_parameters );
 	      // create the 4D iamge with all the images
 	      subject_mapping.build_groups_design_matrices();
 

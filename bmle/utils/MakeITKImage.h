@@ -62,6 +62,8 @@ namespace NeuroBayes
     //
     explicit NeuroBayesMakeITKImage( const long unsigned int ,
 				     const std::string& );
+    //
+    explicit NeuroBayesMakeITKImage( const std::string& );
     
     /**  */
     virtual ~NeuroBayesMakeITKImage(){};

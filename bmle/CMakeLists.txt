@@ -124,14 +124,14 @@ list( APPEND SOURCES ${VBGM_SOURCES_}  ${GM_SOURCES_} )
 #message(STATUS ${SOURCES})
 #
 add_executable( vbgm     MACOSX_BUNDLE   VB/GM/vbgm.cpp       ${HEADERS_} ${VBGM_SOURCES_}  )
-add_executable( vbgmtest MACOSX_BUNDLE   VB/GM/vbgm_test.cpp  ${HEADERS_} ${VBGM_SOURCES_}  )
+#add_executable( vbgmtest MACOSX_BUNDLE   VB/GM/vbgm_test.cpp  ${HEADERS_} ${VBGM_SOURCES_}  )
 add_executable( gm       MACOSX_BUNDLE noVB/GM/gm.cpp         ${HEADERS_} ${GM_SOURCES_}  )
-add_executable( gmtest   MACOSX_BUNDLE noVB/GM/gm_test.cpp    ${HEADERS_} ${GM_SOURCES_}  )
+#add_executable( gmtest   MACOSX_BUNDLE noVB/GM/gm_test.cpp    ${HEADERS_} ${GM_SOURCES_}  )
 # cmake 3.1 target_compile_features(bmle PRIVATE cxx_range_for)
 target_link_libraries( vbgm     -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
-target_link_libraries( vbgmtest -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+#target_link_libraries( vbgmtest -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
 target_link_libraries( gm       -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
-target_link_libraries( gmtest   -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+#target_link_libraries( gmtest   -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
 
 
 #
