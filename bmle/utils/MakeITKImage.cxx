@@ -87,7 +87,7 @@ NeuroBayes::NeuroBayesMakeITKImage::set_val( const std::size_t Image_number,
 //
 double
 NeuroBayes::NeuroBayesMakeITKImage::get_val( const std::size_t Image_number, 
-					     const MaskType::IndexType Idx )
+					     const MaskType::IndexType Idx ) const
 {
   Image4DType::IndexType idx_4d = { Idx[0], Idx[1] , Idx[2],
 				    static_cast< long int >(Image_number) };

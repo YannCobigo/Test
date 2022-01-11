@@ -244,7 +244,7 @@ main( const int argc, const char **argv )
 	      // Number of THREADS in case of multi-threading
 	      // this program hadles the multi-threading it self
 	      // in no-debug mode
-	      const int THREAD_NUM = 24;
+	      const int THREAD_NUM = 16;//24;
 
 	      //
 	      // Load the CSV file

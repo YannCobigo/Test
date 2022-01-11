@@ -629,13 +629,19 @@ namespace NeuroBayes
 
 	    //
 	    // Posterior groups parameters
-	    post_groups_param_l2_ = NeuroBayes::NeuroBayesMakeITKImage( L2_parameters );
+	    //post_groups_param_l2_ = NeuroBayes::NeuroBayesMakeITKImage( L2_parameters );
 
 	    //
 	    // Inverse covariance
 	    Prediction_inverse_error_ = Reader4DType::New();
 	    Prediction_inverse_error_->SetFileName( Inv_cov_error );
 	    Prediction_inverse_error_->Update();
+	    
+	    //
+	    // load the posterior maps already processed
+	    for ( auto g : groups_ )
+	      for ( auto& s : group_pind_[g] )
+		s.second.load_fitted_parameters( L2_parameters, num_covariates_ );
 	  }
 	else
 	  std::cout << "Posterior map calculation" << std::endl;
@@ -1005,7 +1011,8 @@ namespace NeuroBayes
 	// level 2
 	PPM_l2_               = NeuroBayes::NeuroBayesMakeITKImage( constrast_l2_.cols(), sPPMl2, Y_[0] );
 	post_T_maps_l2_       = NeuroBayes::NeuroBayesMakeITKImage( constrast_l2_.cols(), sPtMl2, Y_[0] );
-	post_groups_param_l2_ = NeuroBayes::NeuroBayesMakeITKImage( constrast_l2_.cols(), sPgPl2, Y_[0] );
+	if ( !w_score_ )
+	  post_groups_param_l2_ = NeuroBayes::NeuroBayesMakeITKImage( constrast_l2_.cols(), sPgPl2, Y_[0] );
 	// we only save the variance for each parameter of each group
 	post_groups_cov_l2_   = NeuroBayes::NeuroBayesMakeITKImage( constrast_l2_.rows(), sPgCl2, Y_[0] );
 	// r-squared
@@ -1459,8 +1466,7 @@ namespace NeuroBayes
 	for ( auto g : groups_ )
 	  for ( auto s : group_pind_[g] )
 	    s.second.w_score( Idx,
-			      Prediction_inverse_error_->GetOutput()->GetPixel(Idx_inv_cov),
-			      post_groups_param_l2_ );
+			      Prediction_inverse_error_->GetOutput()->GetPixel(Idx_inv_cov) );
       }
     catch( itk::ExceptionObject & err )
       {

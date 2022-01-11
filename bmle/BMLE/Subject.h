@@ -8,6 +8,7 @@
 #include <math.h>  
 #include <map>
 #include <list>
+#include <memory>
 // Egen
 #include <Eigen/Core>
 #include <Eigen/Eigen>
@@ -101,10 +102,13 @@ namespace NeuroBayes
     // Process the prediction
     void prediction( const MaskType::IndexType, 
 		     const double );
+    //
+    // W-score
+    // load the fitted posterior parameters
+    void load_fitted_parameters( const std::string, const int );
     // Process the longitudinal w-score
     void w_score( const MaskType::IndexType, 
-		  const double,
-		  const NeuroBayes::NeuroBayesMakeITKImage& );
+		  const double );
       
 
   private:
@@ -183,6 +187,17 @@ namespace NeuroBayes
     NeuroBayes::NeuroBayesMakeITKImage Error_prediction_map_;
     //
     // Longitudinal W-score for each groups
+    // L2 posterior fitted parameters
+    NeuroBayes::NeuroBayesMakeITKImage l2_posterior_parameters_map_;
+    // Number of posterior fitted parameters 
+    long unsigned int                  number_fitted_parameters_{0};
+    // Number of covariates
+    int                                number_covariates_{0};
+    // Number of parameters per group in the posterior fitted process
+    int                                number_param_per_group_{0};
+    // Number of groups in the posterior fitted proces
+    int                                number_groups_{0};
+    // w-score
     NeuroBayes::NeuroBayesMakeITKImage groups_w_map_;
   };
 
@@ -480,6 +495,11 @@ namespace NeuroBayes
   template < int D_r, int D_f > void
     NeuroBayes::BmleSubject< D_r, D_f >::write_solution()
     {
+      std::cout 
+	<< "prediction_ " << prediction_
+	<< " w_score_ " << w_score_
+	<< " iamge name: " << groups_w_map_.get_name() 
+	<< std::endl;
       if ( prediction_ )
 	{
 	  Probability_prediction_map_.write();
@@ -687,9 +707,6 @@ namespace NeuroBayes
 	      //		<< "\nmu  = " <<  mu
 	      //		<< std::endl;
 	    }
-
-	  //
-	  // Write in the output image
 	}
       catch( itk::ExceptionObject & err )
 	{
@@ -701,87 +718,116 @@ namespace NeuroBayes
   //
   //
   template < int D_r, int D_f > void
-    NeuroBayes::BmleSubject< D_r, D_f >::w_score( const MaskType::IndexType Idx, 
-						  const double Inv_C_eps,
-						  const NeuroBayes::NeuroBayesMakeITKImage& L2_param )
+    NeuroBayes::BmleSubject< D_r, D_f >::load_fitted_parameters( const std::string L2_param,
+								 const int         Covariates) 
+    {
+      try
+	{
+	  w_score_ = true;
+	  //
+	  l2_posterior_parameters_map_ = NeuroBayes::NeuroBayesMakeITKImage( L2_param );
+	  number_fitted_parameters_    = l2_posterior_parameters_map_.get_number_maps();
+	  number_covariates_           = Covariates;
+	  number_param_per_group_      = D_r * (Covariates+1);
+	  number_groups_               = static_cast<int>( std::sqrt(number_fitted_parameters_ / number_param_per_group_) );
+	  // Image model
+	  std::string output_model = output_dir_ + "/" + "w-score_" 
+	    + PIDN_ + "_" + std::to_string( group_ )
+	    + ".nii.gz";
+	  // Initiate the w-scores based on the background populations
+	  groups_w_map_ = NeuroBayes::NeuroBayesMakeITKImage( number_groups_*time_points_,
+							      output_model,
+							      age_ITK_images_.begin()->second);
+
+	}
+      catch( itk::ExceptionObject & err )
+	{
+	  std::cerr << err << std::endl;
+	  return exit( -1 );
+	}
+    }
+  //
+  //
+  //
+  template < int D_r, int D_f > void
+    NeuroBayes::BmleSubject< D_r, D_f >::w_score( const MaskType::IndexType                 Idx, 
+						  const double                              Inv_C_eps )
     {
       try
 	{
 	  //std::cout << "In subject: " << Idx << " val inv: " << Inv_C_eps << std::endl;
 	  //std::cout << PIDN_ 
 	  //	    << ", Group: " << group_ 
-	  //	    << ". Number of new time points: " << time_points_ << std::endl;
-	  w_score_ = true;
-
+	  //	    << ". Number of new time points: " << time_points_ 
+	  //	    << std::endl;
 
 	  //
-	  // Load the posterior maps
-	  int current_mat_coeff = 0;
-	  for ( int d ; d < D_r ; d++ )
-	    {
-	      // Parameters
-	      theta_y_(d,0) = Random_effect_ITK_model_.get_val( d, Idx );
-	      // Covariance
-	      for ( int c = d ; c < D_r ; c++)
-		cov_theta_y_(d,c) = cov_theta_y_(c,d) = 
-		  Random_effect_ITK_variance_.get_val( current_mat_coeff++, Idx );
-	    }
+	  //std::cout 
+	  //  << "number_fitted_parameters_: "                << number_fitted_parameters_
+	  //  << "   number covariate(s): "     << number_covariates_
+	  //  << "   number group(s): "         << number_groups_
+	  //  << "   number param per group: " << number_param_per_group_
+	  //  << std::endl;
       
 	  //
-	  // Process the prediction
+	  // Vector of parameters
+	  Eigen::MatrixXd beta = Eigen::MatrixXd::Zero( number_param_per_group_, number_groups_ );
+	  // load the fitted parameters for each group
+	  for ( int gr = 0 ; gr < number_groups_ ; gr++ )
+	    for ( int d = 0 ; d < number_param_per_group_ ; d++ )
+	      {
+		const std::size_t img_num = gr * number_groups_ * number_param_per_group_ + d;
+		beta(d,gr) = l2_posterior_parameters_map_.get_val( img_num, Idx );
+	      }
+	  //
+	  //std::cout 
+	  //  << "beta \n" <<  beta
+	  //  << std::endl;
+
+	  //
+	  // Explanatory variable are baseline information and does not depend on the timepoint
+	  // The EV should already be normalized/standardized or demean
+	  Eigen::MatrixXd X = X_1_rand_ * X_2_;
+	  // check The dimensions are fine
+//	  if ( age_statistic != x(1,0) )
+//	    {
+//	      std::string mess = "Order of ages is not correct. Expected age: ";
+//	      mess += std::to_string( age_img->first ) + " and received age: ";
+//	      mess += std::to_string( x(1,0) );
+//	      //
+//	      throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
+//						     mess.c_str(),
+//						     ITK_LOCATION );
+//	    }
+
+
+	  //
+	  // fits
+	  Eigen::MatrixXd Fitted_Y_tp = X * beta;
+	  //std::cout 
+	  //  << "y \n" << Fitted_Y_tp
+	  //  << std::endl;
+	  // Process the w-score
 	  std::map< int, Reader3D::Pointer >::const_iterator age_img = age_ITK_images_.begin();
 	  for ( int tp = 0 ; tp < time_points_ ; tp++ )
 	    {
-	      //
-	      // Design
-	      Eigen::Matrix< double, D_r, 1 > x = X_1_rand_.row(tp).transpose();
-	      double age_statistic = 0.;
-	      if ( C2_ != 0.)
-		// Normalization or standardization
-		age_statistic = (static_cast<double>(age_img->first) - C1_) / C2_;
-	      else
-		// None or demean
-		age_statistic = static_cast<double>(age_img->first) - C1_;
-	      //
-	      // check the order of ages
-	      if ( age_statistic != x(1,0) )
-		{
-		  std::string mess = "Order of ages is not correct. Expected age: ";
-		  mess += std::to_string( age_img->first ) + " and received age: ";
-		  mess += std::to_string( x(1,0) );
-		  //
-		  throw NeuroBayes::NeuroBayesException( __FILE__, __LINE__,
-							 mess.c_str(),
-							 ITK_LOCATION );
-		}
 	      // response
 	      double y = static_cast<double>( (age_img++)->second->GetOutput()->GetPixel( Idx ) );
-	      
-	      // variance
-	      double variance  = 1. / Inv_C_eps + (x.transpose() * cov_theta_y_ * x)(0,0);
-	      // Mean value
-	      double mu = (x.transpose() * theta_y_)(0,0);
-	      // argument of the Gaussian
-	      double arg = - 0.5 * (y-mu) * (y-mu) / variance;
-	      //
-	      // record the value
-	      Probability_prediction_map_.set_val( tp, Idx,
-						   exp(arg) * inv_two_pi_squared / sqrt(variance) );
-	      Error_prediction_map_.set_val( tp, Idx,
-					     erf( inv_sqrt_2 * (y-mu) / sqrt(variance) ) );
- 
-	      //	      std::cout 
-	      //				<< "theta_y_\n" << theta_y_
-	      //		//		<< "\n C_eps_ = " <<  1. / Inv_C_eps
-	      //		//		<< "\n variance_ = " <<  variance
-	      //				<< "\n cov_ = \n" <<  cov_theta_y_
-	      //		<< "\ny  = " <<  y
-	      //		<< "\nmu  = " <<  mu
-	      //		<< std::endl;
+	      // timepoint fit
+	      for ( int gr = 0 ; gr < number_groups_ ; gr++ )
+		{
+		  double w_score = ( y - Fitted_Y_tp(tp,gr) ) * std::sqrt( Inv_C_eps );
+		  groups_w_map_.set_val( gr * time_points_ + tp, 
+					 Idx, w_score );
+		  //std::cout 
+		  //  << "gr: " << gr
+		  //  << " tp: " << tp
+		  //  << " y: " << y
+		  //  << " Fitted_Y_tp: " << Fitted_Y_tp(tp,gr)
+		  //  << " w_score: " << w_score
+		  //  << std::endl;
+		}
 	    }
-
-	  //
-	  // Write in the output image
 	}
       catch( itk::ExceptionObject & err )
 	{
