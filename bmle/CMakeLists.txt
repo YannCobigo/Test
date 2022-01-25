@@ -111,6 +111,32 @@ target_link_libraries( hmmtest -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_uti
 
 
 #
+# project Variational Bayes LGSSM
+include_directories( ${NeuroBayes_SOURCE_DIR}/noVB/LGSSM )
+#
+#file( GLOB VBLGSSM_HEADERS_ VB/LGSSM/*.h )
+#file( GLOB VBLGSSM_SOURCES_ VB/LGSSM/*.cxx )
+file( GLOB LGSSM_HEADERS_ noVB/LGSSM/*.h )
+file( GLOB LGSSM_SOURCES_ noVB/LGSSM/*.cxx )
+#
+list( APPEND HEADERS ${LGSSM_HEADERS_} )
+list( APPEND SOURCES ${LGSSM_SOURCES_} )
+#message(STATUS ${SOURCES})
+#
+#add_executable( vbhmm     MACOSX_BUNDLE VB/LGSSM/vbhmm.cpp            ${HEADERS_} ${VBLGSSM_SOURCES_}  )
+#add_executable( vbhmmproj MACOSX_BUNDLE VB/LGSSM/vbhmm_projection.cpp ${HEADERS_} ${VBLGSSM_SOURCES_}  )
+#add_executable( vbhmmtest MACOSX_BUNDLE VB/LGSSM/vbhmm_test.cpp       ${HEADERS_} ${VBLGSSM_SOURCES_}  )
+add_executable( lgssm     MACOSX_BUNDLE noVB/LGSSM/lgssm.cpp              ${HEADERS_} ${LGSSM_SOURCES_}  )
+add_executable( lgssmtest MACOSX_BUNDLE noVB/LGSSM/lgssm_test.cpp         ${HEADERS_} ${LGSSM_SOURCES_}  )
+# cmake 3.1 target_compile_features(bmle PRIVATE cxx_range_for)
+#target_link_libraries( vbhmm     -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+#target_link_libraries( vbhmmproj -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+#target_link_libraries( vbhmmtest -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+target_link_libraries( lgssm     -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+target_link_libraries( lgssmtest -lX11  -lgsl -lm ${ITK_LIBRARIES} _NeuroBayes_utils )
+
+
+#
 # project Variational Bayes GM
 include_directories( ${NeuroBayes_SOURCE_DIR}/VB/GM )
 #
