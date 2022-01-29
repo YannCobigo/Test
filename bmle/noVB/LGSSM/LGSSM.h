@@ -41,7 +41,7 @@ namespace noVB
      * Dim is the number of dimensions
      * input:
      *   Dim: dimension of the measure
-     *   S: number of state accessible to the Markov Chain
+     *   S: dimension of state accessible to the Markov Chain
      *   n: number of cases (subjects)
      *   Y [p x n]: entry data. the matrix is supposed to be normalized.
      *              p = Dim, 
@@ -125,10 +125,10 @@ namespace noVB
 
 	//
 	// Access the states
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_         = qsi_->get_s();
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_ln_gamma_  = qgau_->get_ln_gamma();
-	const                           Eigen::Matrix < double, S , 1 >     &_pi_        = qdch_->get_pi();
-	const                           Eigen::Matrix < double, S , S >     &_A_         = qdch_->get_A();
+//	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_         = qsi_->get_s();
+//	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_ln_gamma_  = qgau_->get_ln_gamma();
+//	const                           Eigen::Matrix < double, S , 1 >     &_pi_        = qdch_->get_pi();
+//	const                           Eigen::Matrix < double, S , S >     &_A_         = qdch_->get_A();
 	//
 	while ( fabs(dL) > 1.e-10 )
 	  {
@@ -146,30 +146,30 @@ namespace noVB
 	    qdch_->Maximization();
 	    qgau_->Maximization();
 	    
-	    //
-	    // Build the posterior probability
-	    L_old = L_;
-	    L_ = 0;
-	    for ( int i = 0 ; i < n_ ; i++ )
-	      {
-		//
-		// First state
-		for ( int s = 0 ; s < S ; s++ ) 
-		  L_ += _s_[i][0](s,0) * log( _pi_(s,0) );
-		//
-		// Transition and gaussian states
-		int Ti = Y_[i].size();
-		for ( int t = 0 ; t < Ti ; t++ )
-		  for ( int s = 0 ; s < S ; s++ )
-		    {
-		      // transition state
-		      if ( t > 0 )
-			for ( int ss = 0 ; ss < S ; ss++ )
-			  L_ += _s_[i][t-1](s,0) * log( _A_(s,ss) ) * _s_[i][t](ss,0);
-		      // Gaussian state
-		      L_ += _s_[i][t](s,0) * _ln_gamma_[i][t](s,0);
-		    }
-	      }
+//	    //
+//	    // Build the posterior probability
+//	    L_old = L_;
+//	    L_ = 0;
+//	    for ( int i = 0 ; i < n_ ; i++ )
+//	      {
+//		//
+//		// First state
+//		for ( int s = 0 ; s < S ; s++ ) 
+//		  L_ += _s_[i][0](s,0) * log( _pi_(s,0) );
+//		//
+//		// Transition and gaussian states
+//		int Ti = Y_[i].size();
+//		for ( int t = 0 ; t < Ti ; t++ )
+//		  for ( int s = 0 ; s < S ; s++ )
+//		    {
+//		      // transition state
+//		      if ( t > 0 )
+//			for ( int ss = 0 ; ss < S ; ss++ )
+//			  L_ += _s_[i][t-1](s,0) * log( _A_(s,ss) ) * _s_[i][t](ss,0);
+//		      // Gaussian state
+//		      L_ += _s_[i][t](s,0) * _ln_gamma_[i][t](s,0);
+//		    }
+//	      }
 			
 	    //
 	    //

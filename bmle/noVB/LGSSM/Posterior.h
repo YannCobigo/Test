@@ -81,7 +81,10 @@ namespace noVB
     //
     /** \class P_qsi
      *
-     * \brief 
+     * \brief Gaussian posterior probabilities
+     * 
+     * The Gaussian posterior probabilities represent the 
+     * probability density of the transmission probability. 
      * 
      * Parameters:
      * - responsability (gamma): 
@@ -108,8 +111,9 @@ namespace noVB
 
 	//
 	// accessors
-	const        std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_s()  const {return s_;}
-	const        std::vector< std::vector< Eigen::Matrix < double, S , S > > >& get_ss() const {return ss_;}
+	const        std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_s()   const {return s_;}
+	const        std::vector< std::vector< Eigen::Matrix < double, S , S > > >& get_ss()  const {return ss_;}
+	const        std::vector< std::vector< Eigen::Matrix < double, S , S > > >& get_s_s() const {return s_s_;}
 	//
 	void set( std::shared_ptr< noVB::LGSSM::P_qdch<Dim,S> > Qdch,
 		  std::shared_ptr< noVB::LGSSM::P_qgau<Dim,S> > Qgau )
@@ -134,12 +138,27 @@ namespace noVB
 	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > s_;
 	// <s_{i,t-1} x s_{i,t}>
 	std::vector< std::vector< Eigen::Matrix < double, S , S > > > ss_;
+	// <s_{i,t} x s_{i,t}>
+	std::vector< std::vector< Eigen::Matrix < double, S , S > > > s_s_;
 	//
 	// Dynamic programing
 	// Forward:  compute alpha(s_{i,t})
-	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > alpha_i_t_;
+	// alpha = N(s_{t}^{n} | \mu_{t}^{n}, V_{t}^{n})
+	std::vector< std::vector< double > >                            alpha_i_t_;
+	std::vector< std::vector< Eigen::Matrix < double, S , S > > >   alpha_V_i_t_;
+	// scaling
+	std::vector< std::vector< double > >                            c_i_t_;
+	// Kalman gain matrix
+	std::vector< std::vector< Eigen::Matrix < double, S , Dim > > > Kalman_gain_i_t_;
+	std::vector< std::vector< Eigen::Matrix < double, S , S > > >   P_i_t_;
+	std::vector< std::vector< Eigen::Matrix < double, S , S > > >   J_i_t_;
 	// Backward: compute beta(s_{i,t})
-	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > beta_i_t_;
+	std::vector< std::vector< double > >                            beta_i_t_;
+	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >   beta_V_i_t_;
+	//
+	// Transition and covariance matrices
+	Eigen::Matrix< double, S, S > A_;
+	Eigen::Matrix< double, S, S > Gamma_;
       };
     //
     //
@@ -155,8 +174,19 @@ namespace noVB
       //
       s_.resize( n_ );
       ss_.resize( n_ );
+      s_s_.resize( n_ );
+      //
       alpha_i_t_.resize( n_ );
+      alpha_V_i_t_.resize( n_ );
+      //
+      c_i_t_.resize( n_ );
+      //
+      Kalman_gain_i_t_.resize( n_ );
+      P_i_t_.resize( n_ );
+      J_i_t_.resize( n_ );
+      //
       beta_i_t_.resize( n_ );
+      beta_V_i_t_.resize( n_ );  
       //
       for ( int i = 0 ; i < n_ ; i++ )
 	{
@@ -164,20 +194,31 @@ namespace noVB
 	  //
 	  s_[i].resize( Ti );
 	  ss_[i].resize( Ti );
+	  s_s_[i].resize( Ti );
+	  //
 	  alpha_i_t_[i].resize( Ti );
+	  alpha_V_i_t_[i].resize( Ti );
+	  //
+	  c_i_t_[i].resize( Ti );
+	  //
+	  Kalman_gain_i_t_[i].resize( Ti );
+	  P_i_t_[i].resize( Ti );
+	  J_i_t_[i].resize( Ti );
+	  //
 	  beta_i_t_[i].resize( Ti );
+	  beta_V_i_t_[i].resize( Ti );
 	  //
 	  for ( int t = 0 ; t < Ti ; t++ )
 	    {
 	      s_[i][t]         = Eigen::Matrix < double, S , 1 >::Zero();
 	      ss_[i][t]        = Eigen::Matrix < double, S , S >::Zero(); 
-	      alpha_i_t_[i][t] = Eigen::Matrix < double, S , 1 >::Zero();
-	      beta_i_t_[i][t]  = Eigen::Matrix < double, S , 1 >::Zero();
+	      s_s_[i][t]       = Eigen::Matrix < double, S , S >::Zero(); 
+	      alpha_i_t_[i][t] = 0.;
+	      beta_i_t_[i][t]  = 0.;
+	      c_i_t_[i][t]     = 0.;
 	      //
 	      for ( int s = 0 ; s < S ; s++ )
-		{
-		  s_[i][t](s,0)         = uniform( generator );
-		}
+		s_[i][t](s,0) = uniform( generator );
 	      //
 	      s_[i][t] /= s_[i][t].sum();
 	      //std::cout << "s_["<<i<<"]["<<t<<"] = \n" << s_[i][t] << std::endl;
@@ -190,6 +231,9 @@ namespace noVB
 		    ss_[i][t](s, ss) = s_[i][t-1](s,0) * s_[i][t](ss,0);		
 	    }
 	}
+      //
+      A_     = Eigen::Matrix< double, S, S >::Ones() / static_cast< double >(S);
+      Gamma_ = 1.e+01 * Eigen::Matrix< double, S, S >::Identity();
     }
     //
     //
@@ -204,15 +248,15 @@ namespace noVB
 
 	//
 	//
-	const Eigen::Matrix< double, S, 1 >                                 &_pi_ = qdch_->get_pi();
-	const Eigen::Matrix< double, S, S >                                 &_A_  = qdch_->get_A();
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_N_  = qgau_->get_gamma();
+	const std::vector< Eigen::Matrix< double, S, 1 > >& _mu0_ = qdch_->get_mu_0();
+	const std::vector< Eigen::Matrix< double, S, S > >& _V0_  = qdch_->get_V_0();
+	const Eigen::Matrix< double, Dim, S >&   _C_              = qgau_->get_C();
+	const Eigen::Matrix< double, Dim, Dim >& _Sigma_          = qgau_->get_sigma();
 	//
 	for ( int i = 0 ; i < n_ ; i++ )
 	  {
 	    //
 	    int Ti = Y_[i].size();
-	    std::vector< double > scale(Ti,0.);
 
 	    //
 	    // alpha calculation
@@ -221,68 +265,49 @@ namespace noVB
 	    // 
 	    // first elements
 	    // Convension the first alpha is 1. Each elements will be normalized
-	    alpha_i_t_[i][0]  = _N_[i][0].array() * _pi_.array();
-	    scale[0]          = alpha_i_t_[i][0].sum();
-	    alpha_i_t_[i][0] /= scale[0];
+	    //alpha_i_t_[i][0]  = Eigen::Matrix< double, S, 1 >::Ones();//_N_[i][0].array() * _pi_.array(); 
+	    //
+	    Eigen::Matrix< double, Dim, Dim > K_gain_part = _C_*alpha_V_i_t_[i][0]*_C_.transpose() + _Sigma_;
+	    Kalman_gain_i_t_[i][1] = _V0_[i] * _C_.transpose() * K_gain_part.inverse();
+	    //
+	    // parameters of alpha distribution
+	    s_[i][0]  = _mu0_[i];
+	    s_[i][0] += Kalman_gain_i_t_[i][0] * (Y_[i][0] - _C_*_mu0_[i]);
+	    alpha_V_i_t_[i][0]   = Eigen::Matrix< double,S,S>::Identity() - Kalman_gain_i_t_[i][0] * _C_;
+	    alpha_V_i_t_[i][0]  *= _V0_[i];
 	    //std::cout << "alpha_i_t_["<<i<<"][0] \n" << alpha_i_t_[i][0] << std::endl;
 	    // next timepoints
 	    for ( int t = 1 ; t < Ti ; t++ )
 	      {
-		alpha_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
-		Eigen::Matrix < double, S , 1 >
-		  alpha_A = (alpha_i_t_[i][t-1].transpose() * _A_).transpose();
-		alpha_i_t_[i][t] = _N_[i][t].array() * alpha_A.array();
 		//
-		scale[t]          = alpha_i_t_[i][t].sum();
-		alpha_i_t_[i][t] /= scale[t];
-		//std::cout << "alpha_i_t_["<<i<<"]["<<t<<"] \n" << alpha_i_t_[i][t] << std::endl;
+		// Covariance
+		P_i_t_[i][t-1] = A_ * alpha_V_i_t_[i][t-1] * A_.transpose() + Gamma_;
+		// Kalman gain
+		Eigen::Matrix< double, Dim, Dim > K_part = _C_*P_i_t_[i][t-1]*_C_.transpose() + _Sigma_;
+		Kalman_gain_i_t_[i][t] = P_i_t_[i][t-1] * _C_.transpose() * K_part.inverse();
+		// alpha parameters
+		s_[i][t]  = s_[i][t-1];
+		s_[i][t] += Kalman_gain_i_t_[i][t]*(Y_[i][t] - _C_ * s_[i][t-1]);
+		alpha_V_i_t_[i][t]   = Eigen::Matrix< double,S,S>::Identity()-Kalman_gain_i_t_[i][t]*_C_;
+		alpha_V_i_t_[i][t]  *= P_i_t_[i][t-1];
 	      }
 	    //
 	    // Beta calculation
 	    // Convension the last beta is 1.
-	    //beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones() / static_cast<double>( S );
-	    beta_i_t_[i][Ti-1] = Eigen::Matrix < double, S , 1 >::Ones() / scale[Ti-1];
 	    //
-	    for ( int t = Ti-2 ; t >= 0 ; t-- )
+	    for ( int t = Ti-2 ; t >= 1 ; t-- )
 	      {
 		//
-		beta_i_t_[i][t] = Eigen::Matrix< double, S, 1 >::Zero();
-		for ( int s = 0 ; s < S ; s++ )
-		  beta_i_t_[i][t] += _N_[i][t+1](s,0) * beta_i_t_[i][t+1](s,0) * _A_.col(s);
-		beta_i_t_[i][t] /= scale[t];
+		J_i_t_[i][t] = alpha_V_i_t_[i][t] * A_.transpose() * P_i_t_[i][t].inverse();
+		//
+		//->beta_V_i_t_[i][t]  = alpha_V_i_t_[i][t];
+		//->beta_V_i_t_[i][t] += J_i_t_[i][t]*(beta_V_i_t_[i][t+1] - P_i_t_[i][t])*J_i_t_[i][t].transpose();
+		//
+		s_[i][t]    += J_i_t_[i][t] * (s_[i][t+1] - s_[i][Ti-1] );
+		//->ss_[i][t+1]  = J_i_t_[i][t] * beta_V_i_t_[i][t+1] + s_[i][t+1] * s_[i][t].transpose();
+		//->s_s_[i][t]   = beta_V_i_t_[i][t] + s_[i][t] * s_[i][t].transpose();
 		//std::cout << "beta_i_t_["<<i<<"][t+1:"<<t+1<<"] \n" << beta_i_t_[i][t+1] << std::endl;
 		//std::cout << "beta_i_t_["<<i<<"][t:"<<t<<"] \n" << beta_i_t_[i][t] << std::endl;
-	      }
-	    //
-	    // <s_{i,t}> && <s_{i,t-1} x s_{i,t}>
-	    for ( int t = 0 ; t < Ti ; t++ )
-	      {
-		//
-		// <s_{i,t}>
-		s_[i][t]  = alpha_i_t_[i][t].array() * beta_i_t_[i][t].array();
-		s_[i][t] /= s_[i][t].sum();
-		//std::cout << "alpha_i_t_["<<i<<"]["<<t<<"] \n" << alpha_i_t_[i][t] << std::endl;
-		//std::cout << "beta_i_t_["<<i<<"]["<<t<<"] \n" << beta_i_t_[i][t] << std::endl;
-		std::cout << "Expect. s_["<<i<<"]["<<t<<"] \n" << s_[i][t]<< std::endl;
-
-		//
-		//  <s_{i,t-1} x s_{i,t}>
-		if ( t > 0 )
-		  {
-		    //
-		    double norm = 0.;
-		    for ( int s = 0 ; s < S ; s++ )
-		      for ( int ss = 0 ; ss < S ; ss++ )
-			{
-			  ss_[i][t](s,ss)  = alpha_i_t_[i][t-1](s,0)*_A_(s,ss);
-			  ss_[i][t](s,ss) *= _N_[i][t](ss,0)*beta_i_t_[i][t](ss,0);
-			  norm            += ss_[i][t](s,ss);
-			}
-		    //
-		    ss_[i][t] /= norm;
-		    //ss_[i][t] /= s_[i][t].sum();
-		    //std::cout << "ss_["<<i<<"]["<<t<<"] \n" <<  ss_[i][t] << std::endl;
-		  }
 	      }
 	  }// for ( int i = 0 ; i < n_ ; i++ )
       }
@@ -290,15 +315,53 @@ namespace noVB
     //
     template< int Dim, int S > void
       P_qsi<Dim,S>::Maximization()
-      {}
+      {
+	//
+	Eigen::Matrix < double, S , S >	A_part1 = Eigen::Matrix< double, S, S >::Zero();
+	Eigen::Matrix < double, S , S >	A_part2 = Eigen::Matrix< double, S, S >::Zero();
+	//
+	Eigen::Matrix < double, S , S >	Gamma_part = Eigen::Matrix< double, S, S >::Zero();
+	Gamma_ = Eigen::Matrix< double, S, S >::Zero();
+	//
+	for ( int i = 0 ; i < n_ ; i++ )
+	  {
+	    int    Ti     = Y_[i].size();
+	    for ( int t = 1 ; t < Ti ; t++ )
+	      {
+		A_part1 += ss_[i][t];
+		A_part2 += s_s_[i][t-1];
+	      }
+	  }
+	//
+	A_ = A_part1 * A_part2.inverse();
+	//
+	//
+	for ( int i = 0 ; i < n_ ; i++ )
+	  {
+	    int    Ti     = Y_[i].size();
+	    for ( int t = 1 ; t < Ti ; t++ )
+	      {
+		Gamma_part += s_s_[i][t];
+		Gamma_part -= A_ * ss_[i][t].transpose();
+		Gamma_part -= ss_[i][t] * A_.transpose();
+		Gamma_part += A_ * ss_[i][t-1] * A_.transpose();
+	      }
+	    Gamma_part /= static_cast<double>(Ti-1);
+	    Gamma_     += Gamma_part;
+	    Gamma_part  =  Eigen::Matrix< double, S, S >::Zero();
+	  }
+	//
+	std::cout << "A_ = \n" << A_  << std::endl;
+	std::cout << "Gamma_ = \n" << Gamma_  << std::endl;
+      }
     //
     //
     //
     /** \class P_qdch
      *
-     * \brief Dirichlet posterior probabilities
+     * \brief Initial state posterior probability distribution
      * 
-     * The Dirichlet posterior probabilities are set for the initial 
+     * The gaussian posterior probabilities are set for the initial 
      * porbability and the transition matrix.
      *
      * Parameters:
@@ -314,7 +377,7 @@ namespace noVB
 	/** Constructor. */
 	explicit P_qdch(){};
 	/** Constructor. */
-	explicit P_qdch(      std::shared_ptr< noVB::LGSSM::P_qsi<Dim,S> >,
+	explicit P_qdch( std::shared_ptr< noVB::LGSSM::P_qsi<Dim,S> >,
 			 const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& );
     
 	/** Destructor */
@@ -328,8 +391,8 @@ namespace noVB
 
 	//
 	// accessors
-	const Eigen::Matrix< double, S, 1 >& get_pi() const {return posterior_pi_;}
-	const Eigen::Matrix< double, S, S >& get_A()  const {return posterior_A_;}
+	const std::vector< Eigen::Matrix< double, S, 1 > >& get_mu_0() const {return mu_0_;}
+	const std::vector< Eigen::Matrix< double, S, S > >& get_V_0()  const {return V_0_;}
 	
   
       private:
@@ -346,9 +409,8 @@ namespace noVB
 	//
 	// Pi and A distribution
 	// State probability
-	Eigen::Matrix< double, S, 1 > posterior_pi_;
-	// Transition matrix
-	Eigen::Matrix< double, S, S > posterior_A_;
+	std::vector< Eigen::Matrix< double, S, 1 > > mu_0_;
+	std::vector< Eigen::Matrix< double, S, S > > V_0_;
       };
     //
     //
@@ -357,7 +419,15 @@ namespace noVB
 			     const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y ):
       qsi_{Qsi}, Y_{Y}, n_{Y.size()}
     {
-      P_qdch<Dim,S>::Maximization();
+      //P_qdch<Dim,S>::Maximization();
+      mu_0_.resize( n_ );
+      V_0_.resize( n_ );
+      for ( int i = 0 ; i < n_ ; i++ )
+	{
+	  V_0_[i]  = 1.0e+01 * Eigen::Matrix< double, S, S >::Identity();
+//	  mu_0_[i] = NeuroStat::gaussian_multivariate<S>( Eigen::Matrix< double, S, 1 >::Zeros(),
+//							  V_0_ );
+	}
     }
     //
     //
@@ -370,37 +440,21 @@ namespace noVB
       P_qdch<Dim,S>::Maximization()
       {
 	//
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_  = qsi_->get_s();
-	const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_ss_ = qsi_->get_ss();
-	posterior_A_  = Eigen::Matrix< double, S, S >::Zero();
-	posterior_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
+	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_   = qsi_->get_s();
+	const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_ss_  = qsi_->get_ss();
+	const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_s_s_ = qsi_->get_s_s();
 	//
 	//
-	for ( int s = 0 ; s < S ; s++ ) 
+	for ( int i = 0 ; i < n_ ; i++ )
 	  {
-	    for ( int ss = 0 ; ss < S ; ss++ ) 
-	      {
-		double norm = 0.;
-		for ( int i = 0 ; i < n_ ; i++ )
-		  {
-		    int Ti = Y_[i].size();
-		    for ( int t = 1 ; t < Ti ; t++ )
-		      {
-			posterior_A_(s, ss) += _ss_[i][t](s,ss);
-			norm += _s_[i][t-1](s,0);
-		      }
-		    // State probability
-		    if ( s == 0 && ss == 0 )
-		      posterior_pi_ += _s_[i][0];
-		  }
-		//
-		posterior_A_(s, ss) /= norm;
-	      }
+	    mu_0_[i] = _s_[i][0];
+	    V_0_[i]  = _s_s_[i][0] - _s_[i][0] * _s_[i][0].transpose();
 	  }
-	std::cout << "transition matrix: \n" << posterior_A_ << std::endl;
-	//normalize the first state probability
-	posterior_pi_ /= n_;
-	std::cout << "pi_ = \n" << posterior_pi_ << std::endl;
+	//
+	for ( int i = 0 ; i < n_ ; i++ )
+	  std::cout << "mu0_["<<i<<"] = \n" << mu_0_[i] 
+		    << "V_0_["<<i<<"] = \n" << V_0_[i]
+		    << std::endl;
       }
     //
     //
@@ -410,7 +464,7 @@ namespace noVB
      * \brief Gaussian posterior probabilities
      * 
      * The Gaussian posterior probabilities represent the 
-     * probbility density of the emission probability. 
+     * probability density of the emission probability. 
      *
      * Parameters:
      * - 
@@ -438,8 +492,10 @@ namespace noVB
 
 	//
 	// accessors
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_gamma()    const {return gamma_;};
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > >& get_ln_gamma() const {return ln_gamma_;};
+	const Eigen::Matrix< double, Dim, S >&      get_C()         const {return C_;};
+	const Eigen::Matrix< double, Dim, Dim >&    get_sigma()     const {return sigma_;};
+	const std::vector< std::vector< double > >& get_gamma()     const {return gamma_;};
+	const std::vector< std::vector< double > >& get_ln_gamma()  const {return ln_gamma_;};
 	//
 	void set( std::shared_ptr< noVB::LGSSM::P_qsi<Dim,S> >  Qsi,
 		  std::shared_ptr< noVB::LGSSM::P_qdch<Dim,S> > Qdch)
@@ -457,31 +513,33 @@ namespace noVB
 	// Size of the data set
 	std::size_t n_{0};
 
+
 	//
-	//
-	// Gaussian
-	// vectors
-	std::vector< Eigen::Matrix< double, Dim, 1 > >                mu_s_;
-	std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > > mu_s_t_;
+	// Emission distribution
+	// y_{t}^{n} = C x s_{t}^{n} + N(0,Sigma) where precision = Sigma^{-1}
+	Eigen::Matrix< double, Dim, S >                                 C_;
+	// 
+	// Gaussian distribution
 	// vectors/matrices
-	std::vector< Eigen::Matrix< double, Dim, Dim > >              precision_;
+	Eigen::Matrix< double, Dim, Dim >                               sigma_;
 	// responsability
 	// Gamma
-	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > gamma_;
+	std::vector< std::vector< double > >                            gamma_;
 	// log Gamma 
-	std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > ln_gamma_;
+	std::vector< std::vector< double > >                            ln_gamma_;
 
       };
     //
     //
     //
     template< int Dim, int S > 
-      P_qgau<Dim,S>::P_qgau( std::shared_ptr< noVB::LGSSM::P_qsi<Dim,S> >                             Qsi,
+      P_qgau<Dim,S>::P_qgau( std::shared_ptr< noVB::LGSSM::P_qsi<Dim,S> >                           Qsi,
 			     const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y,
 			     const std::vector< std::vector< Eigen::Matrix < double, 1, 1 > > >&    Age ):
       qsi_{Qsi}, Y_{Y}, Age_{Age}, n_{Y.size()}
     {
-      P_qgau<Dim,S>::Maximization();
+      //P_qgau<Dim,S>::Maximization();
+      C_ = Eigen::Matrix< double, Dim, S >::Ones();
     }
     //
     //
@@ -496,63 +554,50 @@ namespace noVB
       {
       //
       //
-      const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_  = qsi_->get_s();
+      const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_   = qsi_->get_s();
+      const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_ss_  = qsi_->get_ss();
+      const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_s_s_ = qsi_->get_s_s();
 
       //
       //
-      mu_s_.resize(S);
-      mu_s_t_.resize(S);
-      precision_.resize(S);
       gamma_.resize(n_);
       ln_gamma_.resize(n_);
       //
-      std::vector< Eigen::Matrix< double, Dim, Dim > > Cov(S);
+      Eigen::Matrix < double, Dim , S >	  C_part1 = Eigen::Matrix< double, Dim, S >::Zero();
+      Eigen::Matrix < double, S , S >	  C_part2 = Eigen::Matrix< double, S, S >::Zero();
+      Eigen::Matrix < double, Dim , Dim > Sigma   = Eigen::Matrix< double, Dim, Dim >::Zero();
+      sigma_ = Eigen::Matrix< double, Dim, Dim >::Zero();
       //
-      for ( int s = 0 ; s < S ; s++ )
+      for ( int i = 0 ; i < n_ ; i++ )
 	{
-	  //
-	  precision_[s] = Eigen::Matrix< double, Dim, Dim >::Identity();
-	  Cov[s]        = Eigen::Matrix< double, Dim, Dim >::Zero();
-	  //
-	  mu_s_[s]      = Eigen::Matrix< double, Dim, 1 >::Zero();
-	  double norm   = 0.;
-	  for ( int i = 0 ; i < n_ ; i++ )
+	  int    Ti     = Y_[i].size();
+	  for ( int t = 0 ; t < Ti ; t++ )
 	    {
-	      int    Ti     = Y_[i].size();
-	      for ( int t = 0 ; t < Ti ; t++ )
-		{
-		  mu_s_[s] += _s_[i][t](s,0) * Y_[i][t];
-		  norm     += _s_[i][t](s,0);
-		}
-	    }
-	  //
-	  mu_s_[s] /= norm;
-	  // Variance
-	  for ( int i = 0 ; i < n_ ; i++ )
-	    {
-	      int    Ti     = Y_[i].size();
-	      for ( int t = 0 ; t < Ti ; t++ )
-		Cov[s] += _s_[i][t](s,0) * (Y_[i][t]-mu_s_[s]) * ((Y_[i][t]-mu_s_[s]).transpose());
-	    }
-	  //
-	  Cov[s] /= norm;
-	  precision_[s] = Cov[s].inverse();
-	  std::cout << "mu_["<<s<<"] = " << mu_s_[s]  << std::endl;
-	  std::cout << "precision_["<<s<<"] = " << precision_[s]  << std::endl;
-	  //
-	  // responsability
-	  for ( int i = 0 ; i < n_ ; i++ )
-	    {
-	      int Ti = Y_[i].size();
-	      gamma_[i].resize(Ti);
-	      ln_gamma_[i].resize(Ti);
-	      for ( int t = 0 ; t < Ti ; t++ )
-		{
-		  gamma_[i][t](s,0)    = NeuroBayes::gaussian<Dim>( Y_[i][t], mu_s_[s], precision_[s] );
-		  ln_gamma_[i][t](s,0) = NeuroBayes::log_gaussian<Dim>( Y_[i][t], mu_s_[s], precision_[s] );
-		}
+	      C_part1 += Y_[i][t] * _s_[i][t].transpose();
+	      C_part2 += _s_s_[i][t];
 	    }
 	}
+      //
+      C_ = C_part1 * C_part2.inverse();
+      //
+      //
+      for ( int i = 0 ; i < n_ ; i++ )
+	{
+	  int    Ti     = Y_[i].size();
+	  for ( int t = 0 ; t < Ti ; t++ )
+	    {
+	      Sigma  = Y_[i][t] * Y_[i][t].transpose();
+	      Sigma -= C_ * _s_[i][t] * Y_[i][t].transpose();
+	      Sigma -= Y_[i][t] * _s_[i][t].transpose() * C_.transpose();
+	      Sigma += C_ * _s_s_[i][t] * C_.transpose();
+	    }
+	  Sigma /= static_cast<double>(Ti);
+	  sigma_ += Sigma; /*/ static_cast<double>(n_)*/
+	}
+      //
+      //
+      std::cout << "C_ = \n" << C_  << std::endl;
+      std::cout << "sigma_ = \n" << sigma_  << std::endl;
       }
   }
 }
