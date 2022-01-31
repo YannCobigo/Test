@@ -146,30 +146,12 @@ namespace noVB
 	    qdch_->Maximization();
 	    qgau_->Maximization();
 	    
-//	    //
-//	    // Build the posterior probability
-//	    L_old = L_;
-//	    L_ = 0;
-//	    for ( int i = 0 ; i < n_ ; i++ )
-//	      {
-//		//
-//		// First state
-//		for ( int s = 0 ; s < S ; s++ ) 
-//		  L_ += _s_[i][0](s,0) * log( _pi_(s,0) );
-//		//
-//		// Transition and gaussian states
-//		int Ti = Y_[i].size();
-//		for ( int t = 0 ; t < Ti ; t++ )
-//		  for ( int s = 0 ; s < S ; s++ )
-//		    {
-//		      // transition state
-//		      if ( t > 0 )
-//			for ( int ss = 0 ; ss < S ; ss++ )
-//			  L_ += _s_[i][t-1](s,0) * log( _A_(s,ss) ) * _s_[i][t](ss,0);
-//		      // Gaussian state
-//		      L_ += _s_[i][t](s,0) * _ln_gamma_[i][t](s,0);
-//		    }
-//	      }
+	    //
+	    // Build the posterior probability
+	    L_old = L_;
+	    L_  = qsi_->get_L();
+	    L_ += qdch_->get_L();
+	    L_ += qgau_->get_L();
 			
 	    //
 	    //
