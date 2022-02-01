@@ -55,7 +55,7 @@ namespace noVB
     public:
       /** Constructor. */
       explicit Linear_Gaussian_State_Space_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& ,
-				    const std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >& );
+						  const std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >& );
     
       /** Destructor */
       ~Linear_Gaussian_State_Space_Model(){};
@@ -125,12 +125,7 @@ namespace noVB
 
 	//
 	// Access the states
-//	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_         = qsi_->get_s();
-//	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_ln_gamma_  = qgau_->get_ln_gamma();
-//	const                           Eigen::Matrix < double, S , 1 >     &_pi_        = qdch_->get_pi();
-//	const                           Eigen::Matrix < double, S , S >     &_A_         = qdch_->get_A();
-	//
-	while ( fabs(dL) > 1.e-10 )
+	while ( /*fabs(dL) > 1.e-10*/ iteration < 100 )
 	  {
 	    std::cout << "Begining iteration: " << ++iteration << std::endl;
 	    //
