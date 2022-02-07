@@ -204,7 +204,7 @@ namespace noVB
 
 	//
 	//
-	const Eigen::Matrix< double, S, 1 >                                 &_pi_ = qdch_->get_pi();
+	const std::vector< Eigen::Matrix< double, S, 1 > >                  &_pi_ = qdch_->get_pi();
 	const Eigen::Matrix< double, S, S >                                 &_A_  = qdch_->get_A();
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_N_  = qgau_->get_gamma();
 	//
@@ -221,7 +221,7 @@ namespace noVB
 	    // 
 	    // first elements
 	    // Convension the first alpha is 1. Each elements will be normalized
-	    alpha_i_t_[i][0]  = _N_[i][0].array() * _pi_.array();
+	    alpha_i_t_[i][0]  = _N_[i][0].array() * _pi_[i].array();
 	    scale[0]          = alpha_i_t_[i][0].sum();
 	    alpha_i_t_[i][0] /= scale[0];
 	    //std::cout << "alpha_i_t_["<<i<<"][0] \n" << alpha_i_t_[i][0] << std::endl;
@@ -314,7 +314,7 @@ namespace noVB
 	/** Constructor. */
 	explicit P_qdch(){};
 	/** Constructor. */
-	explicit P_qdch(      std::shared_ptr< noVB::HMM::P_qsi<Dim,S> >,
+	explicit P_qdch(       std::shared_ptr< noVB::HMM::P_qsi<Dim,S> >,
 			 const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& );
     
 	/** Destructor */
@@ -328,8 +328,8 @@ namespace noVB
 
 	//
 	// accessors
-	const Eigen::Matrix< double, S, 1 >& get_pi() const {return posterior_pi_;}
-	const Eigen::Matrix< double, S, S >& get_A()  const {return posterior_A_;}
+	const std::vector< Eigen::Matrix< double, S, 1 > >& get_pi() const {return posterior_pi_;}
+	const Eigen::Matrix< double, S, S >&                get_A()  const {return posterior_A_;}
 	
   
       private:
@@ -346,9 +346,9 @@ namespace noVB
 	//
 	// Pi and A distribution
 	// State probability
-	Eigen::Matrix< double, S, 1 > posterior_pi_;
+	std::vector< Eigen::Matrix< double, S, 1 > > posterior_pi_;
 	// Transition matrix
-	Eigen::Matrix< double, S, S > posterior_A_;
+	Eigen::Matrix< double, S, S >                posterior_A_;
       };
     //
     //
@@ -357,7 +357,29 @@ namespace noVB
 			     const std::vector< std::vector< Eigen::Matrix < double, Dim , 1 > > >& Y ):
       qsi_{Qsi}, Y_{Y}, n_{Y.size()}
     {
-      P_qdch<Dim,S>::Maximization();
+      //P_qdch<Dim,S>::Maximization();
+      //
+      //
+      posterior_pi_.resize( n_ );
+      //
+      for ( int i = 0 ; i < n_ ; i++ )
+      	{
+	  Eigen::Matrix< double, S, S > temp = 0.01 * Eigen::Matrix< double, S, S >::Random();
+	  temp  = 0.5 * ( temp + temp.transpose() ) + Eigen::Matrix< double, S, S >::Identity();
+	  //
+	  posterior_pi_[i] = NeuroBayes::gaussian_multivariate< S >( Eigen::Matrix< double, S, 1 >::Zero(),
+								     temp );
+	  std::cout << "init posterior_pi_["<<i<<"] = \n" << posterior_pi_[i] << std::endl;
+      	}
+      //
+      // ToDo: create A random stochastic
+      posterior_A_ = Eigen::Matrix< double, S, S >::Random();
+      for ( int s = 0 ; s < S ; s++ )
+	{
+	  double norm = ( posterior_A_.col(s) * posterior_A_.col(s).transpose() )(0,0);
+	  posterior_A_.col(s) / norm;
+	}
+      std::cout << "init A = \n" << posterior_A_ << std::endl;
     }
     //
     //
@@ -373,7 +395,10 @@ namespace noVB
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_  = qsi_->get_s();
 	const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_ss_ = qsi_->get_ss();
 	posterior_A_  = Eigen::Matrix< double, S, S >::Zero();
-	posterior_pi_ = Eigen::Matrix< double, S, 1 >::Zero();
+	//
+	posterior_pi_.resize( n_ );
+	for ( int i = 0 ; i < n_ ; i++ )
+	  posterior_pi_[i] = Eigen::Matrix< double, S, 1 >::Zero();
 	//
 	//
 	for ( int s = 0 ; s < S ; s++ ) 
@@ -391,7 +416,7 @@ namespace noVB
 		      }
 		    // State probability
 		    if ( s == 0 && ss == 0 )
-		      posterior_pi_ += _s_[i][0];
+		      posterior_pi_[i] += _s_[i][0];
 		  }
 		//
 		posterior_A_(s, ss) /= norm;
@@ -399,8 +424,8 @@ namespace noVB
 	  }
 	std::cout << "transition matrix: \n" << posterior_A_ << std::endl;
 	//normalize the first state probability
-	posterior_pi_ /= n_;
-	std::cout << "pi_ = \n" << posterior_pi_ << std::endl;
+	for ( int i = 0 ; i < n_ ; i++ )
+	  std::cout << "pi_["<<i<<"] = \n" << posterior_pi_[i] << std::endl;
       }
     //
     //

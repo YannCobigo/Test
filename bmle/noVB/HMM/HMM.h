@@ -126,7 +126,7 @@ namespace noVB
 	// Access the states
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_         = qsi_->get_s();
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_ln_gamma_  = qgau_->get_ln_gamma();
-	const                           Eigen::Matrix < double, S , 1 >     &_pi_        = qdch_->get_pi();
+	const              std::vector< Eigen::Matrix < double, S , 1 > >   &_pi_        = qdch_->get_pi();
 	const                           Eigen::Matrix < double, S , S >     &_A_         = qdch_->get_A();
 	//
 	while ( fabs(dL) > 1.e-10 )
@@ -154,7 +154,7 @@ namespace noVB
 		//
 		// First state
 		for ( int s = 0 ; s < S ; s++ ) 
-		  L_ += _s_[i][0](s,0) * log( _pi_(s,0) );
+		  L_ += _s_[i][0](s,0) * log( _pi_[i](s,0) );
 		//
 		// Transition and gaussian states
 		int Ti = Y_[i].size();
