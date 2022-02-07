@@ -487,7 +487,6 @@ namespace noVB
 	// Gaussian
 	// vectors
 	std::vector< Eigen::Matrix< double, Dim, 1 > >                mu_s_;
-	std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > > mu_s_t_;
 	// vectors/matrices
 	std::vector< Eigen::Matrix< double, Dim, Dim > >              precision_;
 	// responsability
@@ -506,7 +505,22 @@ namespace noVB
 			     const std::vector< std::vector< Eigen::Matrix < double, 1, 1 > > >&    Age ):
       qsi_{Qsi}, Y_{Y}, Age_{Age}, n_{Y.size()}
     {
-      P_qgau<Dim,S>::Maximization();
+      //P_qgau<Dim,S>::Maximization();
+      for ( int s = 0 ; s < S ; s++ )
+	{
+	  Eigen::Matrix< double, Dim, Dim > sigma = 0.01 * Eigen::Matrix< double, Dim, Dim >::Random();
+	  sigma = 0.5 * ( sigma + sigma.transpose() ) + Eigen::Matrix< double, Dim, Dim >::Identity();
+	  //
+	  precision_[s] = NeuroBayes::inverse_def_pos( sigma );
+	  //
+	  mu_s_[s] = NeuroBayes::gaussian_multivariate< Dim >( Eigen::Matrix< double, Dim, 1 >::Zero(),
+							       sigma );
+	  //
+	  std::cout 
+	    << "init mu_s_["<<s<<"] = \n" << mu_s_[s]
+	    << "\n init precision_["<<s<<"] = \n" << precision_[s]
+	    << std::endl;
+	}
     }
     //
     //
@@ -526,7 +540,6 @@ namespace noVB
       //
       //
       mu_s_.resize(S);
-      mu_s_t_.resize(S);
       precision_.resize(S);
       gamma_.resize(n_);
       ln_gamma_.resize(n_);
