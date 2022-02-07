@@ -211,24 +211,12 @@ namespace noVB
 	      alpha_i_t_[i][t] = 0.;
 	      beta_i_t_[i][t]  = 0.;
 	      c_i_t_[i][t]     = 0.;
-//	      //
-//	      for ( int s = 0 ; s < S ; s++ )
-//		s_[i][t](s,0) = uniform( generator );
-//	      //
-//	      s_[i][t] /= s_[i][t].sum();
-//	      //std::cout << "s_["<<i<<"]["<<t<<"] = \n" << s_[i][t] << std::endl;
-//	      //
-//	      // Simplified cross-states calculation to initialize the
-//	      // stochastic transition matrix
-//	      if ( t > 0 )
-//		for ( int s = 0 ; s < S ; s++ )
-//		  for ( int ss = 0 ; ss < S ; ss++ )
-//		    ss_[i][t](s, ss) = s_[i][t-1](s,0) * s_[i][t](ss,0);		
 	    }
 	}
       //
-      //A_     = Eigen::Matrix< double, S, S >::Identity();
-      Gamma_ = 1.e-01 * Eigen::Matrix< double, S, S >::Identity();
+      Eigen::Matrix< double, S, S > Temp = 0.01 * Eigen::Matrix< double, S, S >::Random();
+      Gamma_ = 0.5 * ( Temp + Temp.transpose() ) + Eigen::Matrix< double, S, S >::Identity();
+      //
       Eigen::Matrix< double, S, 1 > a1 = 
 	NeuroBayes::gaussian_multivariate< S >( Eigen::Matrix< double, S, 1 >::Zero(),
 						Gamma_ );
@@ -250,8 +238,8 @@ namespace noVB
 
 	//
 	//
-	const Eigen::Matrix< double, S, 1 >& _mu0_ = qdch_->get_mu_0();
-	const Eigen::Matrix< double, S, S >& _V0_  = qdch_->get_V_0();
+	const std::vector< Eigen::Matrix< double, S, 1 > >& _mu0_ = qdch_->get_mu_0();
+	const std::vector< Eigen::Matrix< double, S, S > >& _V0_  = qdch_->get_V_0();
 	const Eigen::Matrix< double, Dim, S >&   _C_              = qgau_->get_C();
 	const Eigen::Matrix< double, Dim, Dim >& _Sigma_          = qgau_->get_sigma();
 	//
@@ -270,15 +258,16 @@ namespace noVB
 	    // 
 	    // first elements
 	    // Convension the first alpha is 1. Each elements will be normalized
-	    Eigen::Matrix< double, Dim, Dim > K_gain_part = _C_ * _V0_ * _C_.transpose() + _Sigma_;
-	    Kalman_gain_i_t_[i][0] = _V0_ * _C_.transpose() * NeuroBayes::inverse( K_gain_part );
+	    Eigen::Matrix< double, Dim, Dim > K_gain_part = _C_ * _V0_[i] * _C_.transpose() + _Sigma_;
+	    Kalman_gain_i_t_[i][0]  = _V0_[i] * _C_.transpose();
+	    Kalman_gain_i_t_[i][0] *= NeuroBayes::inverse( K_gain_part );
 	    //
 	    // parameters of alpha distribution
-	    s_[i][0]  = _mu0_;
-	    s_[i][0] += Kalman_gain_i_t_[i][0] * (Y_[i][0] - _C_*_mu0_);
+	    s_[i][0]  = _mu0_[i];
+	    s_[i][0] += Kalman_gain_i_t_[i][0] * (Y_[i][0] - _C_ * _mu0_[i]);
 	    duplicate_s_i_t[i][0] = s_[i][0];
 	    alpha_V_i_t_[i][0]  = Eigen::Matrix< double,S,S>::Identity() - Kalman_gain_i_t_[i][0] * _C_;
-	    alpha_V_i_t_[i][0] *= _V0_;
+	    alpha_V_i_t_[i][0] *= _V0_[i];
 	    //std::cout << "alpha_i_t_["<<i<<"][0] \n" << alpha_i_t_[i][0] << std::endl;
 	    // next timepoints
 	    for ( int t = 1 ; t < Ti ; t++ )
@@ -288,7 +277,8 @@ namespace noVB
 		P_i_t_[i][t-1] = A_ * alpha_V_i_t_[i][t-1] * A_.transpose() + Gamma_;
 		// Kalman gain
 		Eigen::Matrix< double, Dim, Dim > K_part = _C_*P_i_t_[i][t-1]*_C_.transpose() + _Sigma_;
-		Kalman_gain_i_t_[i][t] = P_i_t_[i][t-1] * _C_.transpose() * K_part.inverse();
+		Kalman_gain_i_t_[i][t]  = P_i_t_[i][t-1] * _C_.transpose();
+		Kalman_gain_i_t_[i][t] *= NeuroBayes::inverse( K_part );
 		// alpha parameters
 		s_[i][t]  = A_ * s_[i][t-1];
 		s_[i][t] += Kalman_gain_i_t_[i][t]*(Y_[i][t] - _C_ * A_ * s_[i][t-1]);
@@ -307,7 +297,8 @@ namespace noVB
 	    for ( int t = Ti-2 ; t >= 0 ; t-- )
 	      {
 		//
-		J_i_t_[i][t] = alpha_V_i_t_[i][t] * A_.transpose() * NeuroBayes::inverse( P_i_t_[i][t] );
+		J_i_t_[i][t]  = alpha_V_i_t_[i][t] * A_.transpose();
+		J_i_t_[i][t] *= NeuroBayes::inverse_def_pos( P_i_t_[i][t] );
 		//
 		beta_V_i_t_[i][t]  = alpha_V_i_t_[i][t];
 		beta_V_i_t_[i][t] += J_i_t_[i][t]*(beta_V_i_t_[i][t+1] - P_i_t_[i][t])*J_i_t_[i][t].transpose();
@@ -333,6 +324,14 @@ namespace noVB
 	  << "\n Gamma = \n " <<  Gamma_
 	  << std::endl;
 	//
+	double ln_G = 0.;
+	if ( !NeuroBayes::is_positive_definite(Gamma_) )
+	  ln_G = NeuroBayes::ln_determinant( NeuroBayes::closest_sym_def_pos(Gamma_) );
+	else
+	  ln_G = NeuroBayes::ln_determinant( Gamma_ );
+	//
+	Eigen::Matrix< double, S, S > inv_G = NeuroBayes::inverse( Gamma_ );
+	//
 	for ( int i = 0 ; i < n_ ; i++ )
 	  {
 	    int Ti = Y_[i].size();
@@ -340,7 +339,7 @@ namespace noVB
 	    for ( int t = 1 ; t < Ti ; t++ )
 	      {
 		Eigen::Matrix < double, S , 1 > Diff = s_[i][t] - A_ * s_[i][t-1];
-		L_qsi_part += Diff.transpose() * NeuroBayes::inverse_def_pos( Gamma_ ) * Diff;
+		L_qsi_part += Diff.transpose() * inv_G * Diff;
 		//std::cout
 		//  << "s_["<<i<<"]["<<t<<"] = \n" << s_[i][t]
 		//  << "\n s_["<<i<<"]["<<t-1<<"] = \n" << s_[i][t-1]
@@ -349,12 +348,10 @@ namespace noVB
 		//  << std::endl;
 	      }
 	    //
-	    //L_qsi_ += - 0.5 * ((Ti-1) * log(Gamma_.determinant()) + L_qsi_part );
-	    L_qsi_ += - 0.5 * ((Ti-1) * NeuroBayes::ln_determinant( Gamma_ ) + L_qsi_part );
-	    std::cout << "Expectation: L_qsi_ = " << L_qsi_ << std::endl;
-	    std::cout << "L_qsi_part1 = " << NeuroBayes::ln_determinant( Gamma_ ) << std::endl;
-	    std::cout << "L_qsi_part2 = " << L_qsi_part << std::endl;
+	    L_qsi_ += - 0.5 * ((Ti-1) * ln_G + L_qsi_part );
 	  }
+	std::cout << "Expectation: L_qsi_ = " << L_qsi_ << std::endl;
+	std::cout << "L_qsi_lv_part = " << ln_G << std::endl;
       }
     //
     //
@@ -383,6 +380,8 @@ namespace noVB
 	A_ = A_part1 * NeuroBayes::inverse( A_part2 );
 	//
 	//
+	double scaling = 0;
+	//
 	for ( int i = 0 ; i < n_ ; i++ )
 	  {
 	    Gamma_part =  Eigen::Matrix< double, S, S >::Zero();
@@ -394,11 +393,15 @@ namespace noVB
 		Gamma_part -= ss_[i][t] * A_.transpose();
 		Gamma_part += A_ * s_s_[i][t-1] * A_.transpose();
 	      }
-	    Gamma_part /= static_cast<double>(Ti-1);
-	    Gamma_     += Gamma_part;
+	    scaling += static_cast<double>(Ti-1);
+	    Gamma_  += Gamma_part;
 	  }
 	//
-	Gamma_ /= static_cast<double>( n_ );
+	Gamma_ /= scaling;
+	//
+	// Check if the variance is symetric positive def
+//	if ( NeuroBayes::is_positive_definite( Gamma_ ) )
+//	  Gamma_ = NeuroBayes::closest_sym_def_pos( Gamma_ );
 	//
 	std::cout << "Maximization: A_ = \n" << A_  << std::endl;
 	std::cout << "Maximization: Gamma_ = \n" << Gamma_  << std::endl;
@@ -442,8 +445,8 @@ namespace noVB
 
 	//
 	// accessors
-	const Eigen::Matrix< double, S, 1 >& get_mu_0() const {return mu_0_;}
-	const Eigen::Matrix< double, S, S >& get_V_0()  const {return V_0_;}
+	const std::vector< Eigen::Matrix< double, S, 1 > >& get_mu_0() const {return mu_0_;}
+	const std::vector< Eigen::Matrix< double, S, S > >& get_V_0()  const {return V_0_;}
 	const double                                        get_L()    const {return L_qdch_;}
 	
   
@@ -461,8 +464,8 @@ namespace noVB
 	//
 	// Pi and A distribution
 	// State probability
-	Eigen::Matrix< double, S, 1 >                                   mu_0_;
-	Eigen::Matrix< double, S, S >                                   V_0_;
+	std::vector< Eigen::Matrix< double, S, 1 > >     mu_0_;
+	std::vector< Eigen::Matrix< double, S, S > >     V_0_;
 	//
 	// Cost function
 	double                                                          L_qdch_{1.e-06};
@@ -476,16 +479,17 @@ namespace noVB
     {
       //
       //
-      //mu_0_.resize( n_ );
-      //V_0_.resize( n_ );
+      mu_0_.resize( n_ );
+      V_0_.resize( n_ );
       //
-      //for ( int i = 0 ; i < n_ ; i++ )
-      //	{
-      V_0_  = 1.0e-01 * Eigen::Matrix< double, S, S >::Identity();
-      mu_0_ = NeuroBayes::gaussian_multivariate< S >( Eigen::Matrix< double, S, 1 >::Zero(),
-						      V_0_ );
-      //mu_0_ = Eigen::Matrix< double, S, 1 >::Zero();
-      // 	}
+      for ( int i = 0 ; i < n_ ; i++ )
+      	{
+	  Eigen::Matrix< double, S, S > Temp = 0.01 * Eigen::Matrix< double, S, S >::Random();
+	  V_0_[i]  = 0.5 * ( Temp + Temp.transpose() ) + Eigen::Matrix< double, S, S >::Identity();
+	  //
+	  mu_0_[i] = NeuroBayes::gaussian_multivariate< S >( Eigen::Matrix< double, S, 1 >::Zero(),
+							     V_0_[i] );
+      	}
     }
     //
     //
@@ -500,12 +504,15 @@ namespace noVB
 	//
 	for ( int i = 0 ; i < n_ ; i++ )
 	  {
-	    Eigen::Matrix < double, S , 1 > Diff = _s_[i][0] - mu_0_;
-	    double L_qdch_part = Diff.transpose() * NeuroBayes::inverse_def_pos( V_0_ ) * Diff;
+	    Eigen::Matrix < double, S , 1 > Diff = _s_[i][0] - mu_0_[i];
+	    double L_qdch_part = Diff.transpose() * NeuroBayes::inverse( V_0_[i] ) * Diff;
 	    //
-	    L_qdch_ += - 0.5 * (NeuroBayes::ln_determinant( V_0_ ) + L_qdch_part );
+	    if ( !NeuroBayes::is_positive_definite(V_0_[i]) )
+	      L_qdch_ += - 0.5 * (NeuroBayes::ln_determinant( NeuroBayes::closest_sym_def_pos(V_0_[i]) ) + L_qdch_part );
+	    else
+	      L_qdch_ += - 0.5 * (NeuroBayes::ln_determinant(V_0_[i]) + L_qdch_part );
 	    std::cout << "Expectation: L_qdch_ = " << L_qdch_ << std::endl;
-	    std::cout << "Expectation: L_qdch_part1 = " << NeuroBayes::ln_determinant( V_0_ ) 
+	    std::cout << "Expectation: L_qdch_part1 = " << NeuroBayes::ln_determinant( V_0_[i] ) 
 		      << std::endl;
 	    std::cout << "Expectation: L_qdch_part2 = " << L_qdch_part << std::endl;
 	    
@@ -518,26 +525,24 @@ namespace noVB
       {
 	//
 	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_   = qsi_->get_s();
-	const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_ss_  = qsi_->get_ss();
+	//const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_ss_  = qsi_->get_ss();
 	const std::vector< std::vector< Eigen::Matrix < double, S , S > > > &_s_s_ = qsi_->get_s_s();
 	//
 	//
-	mu_0_ = Eigen::Matrix < double, S , 1 >::Zero();
-	V_0_  = Eigen::Matrix < double, S , S >::Zero();
 	for ( int i = 0 ; i < n_ ; i++ )
 	  {
-	    mu_0_ += _s_[i][0];
-	    V_0_  += _s_s_[i][0] - _s_[i][0] * _s_[i][0].transpose();
+	    mu_0_[i] = _s_[i][0];
+	    V_0_[i]  = _s_s_[i][0] - _s_[i][0] * _s_[i][0].transpose();
+	    std::cout << "Maximization: " << std::endl;
+	    //for ( int i = 0 ; i < n_ ; i++ )
+	    std::cout << "mu0_["<<i<<"] = \n" << mu_0_[i]
+		      << "\n V_0_["<<i<<"] = \n" << V_0_[i]
+		      << std::endl;
+	    //
+	    // Check if the variance is symetric positive def
+	    //if ( NeuroBayes::is_positive_definite( V_0_[i] ) )
+	    //  V_0_[i] = NeuroBayes::closest_sym_def_pos( V_0_[i] );
 	  }
-	//
-	mu_0_ /= static_cast<double>( n_ );
-	V_0_  /= static_cast<double>( n_ );
-	//
-	std::cout << "Maximization: " << std::endl;
-	//for ( int i = 0 ; i < n_ ; i++ )
-	std::cout << "mu0_ = \n" << mu_0_ 
-		  << "\n V_0_ = \n" << V_0_
-		  << std::endl;
       }
     //
     //
@@ -629,13 +634,18 @@ namespace noVB
       //
       //
       //C_     = 1.e-01 * Eigen::Matrix< double, Dim, S >::Ones();
-      sigma_ = 1.e-01 * Eigen::Matrix< double, Dim, Dim >::Identity();
+      Eigen::Matrix< double, Dim, Dim > Temp = 0.01 * Eigen::Matrix< double, Dim, Dim >::Random();
+      sigma_ = 0.5 * ( Temp + Temp.transpose() ) + Eigen::Matrix< double, Dim, Dim >::Identity();
+      //
+      Eigen::Matrix< double, S, S > Temp2 = 0.01 * Eigen::Matrix< double, S, S >::Random();
+      Eigen::Matrix< double, S, S > Temp3 = 0.5 * ( Temp2 + Temp2.transpose() ) + Eigen::Matrix< double, S, S >::Identity();
+      //
       Eigen::Matrix< double, Dim, 1 > c1 = 
 	NeuroBayes::gaussian_multivariate< Dim >( Eigen::Matrix< double, Dim, 1 >::Zero(),
 						  sigma_ );
       Eigen::Matrix< double, S, 1 >   c2 = 
 	NeuroBayes::gaussian_multivariate< S >( Eigen::Matrix< double, S, 1 >::Zero(),
-						1.e-01 * Eigen::Matrix< double, S, S >::Identity() );
+						Temp3 );
       C_ = c1 * c2.transpose();
     }
     //
@@ -650,6 +660,14 @@ namespace noVB
 	//
 	L_qgau_ = 0.;
 	//
+	//
+	double ln_s = 0.;
+	if ( !NeuroBayes::is_positive_definite(sigma_) )
+	  ln_s = NeuroBayes::ln_determinant( NeuroBayes::closest_sym_def_pos(sigma_) );
+	else
+	  ln_s = NeuroBayes::ln_determinant( sigma_ );
+	//
+	Eigen::Matrix< double, Dim, Dim > inv_s =  NeuroBayes::inverse( sigma_ );
 	for ( int i = 0 ; i < n_ ; i++ )
 	  {
 	    int Ti = Y_[i].size();
@@ -657,18 +675,13 @@ namespace noVB
 	    for ( int t = 0 ; t < Ti ; t++ )
 	      {
 		Eigen::Matrix < double, Dim , 1 > Diff = Y_[i][t] - C_ * _s_[i][t];
-		L_qgau_part += Diff.transpose() * NeuroBayes::inverse_def_pos( sigma_ ) * Diff;
+		L_qgau_part += Diff.transpose() * inv_s * Diff;
 	      }
 	    //
-	    //L_qgau_ += - 0.5 * (Ti * log(sigma_.determinant()) + L_qgau_part );
-	    Eigen::Matrix < double, Dim , Dim > stab = 
-	      1.e-03 * Eigen::Matrix < double, Dim , Dim >::Identity();
-	    L_qgau_ += - 0.5 * (Ti * NeuroBayes::ln_determinant( sigma_ ) + L_qgau_part );
-	    std::cout << "Expectation: L_qgau_ = " << L_qgau_ << std::endl;
-	    std::cout << "Expectation: L_qgau_part1 = " << NeuroBayes::ln_determinant( sigma_ ) 
-		      << std::endl;
-	    std::cout << "Expectation: L_qgau_part2 = " << L_qgau_part << std::endl;
+	    L_qgau_ += - 0.5 * (Ti * ln_s + L_qgau_part );
 	  }
+	std::cout << "Expectation: L_qgau_ = " << L_qgau_ << std::endl;
+	std::cout << "Expectation: L_qgau_ln_part = " << ln_s << std::endl;
       }
     //
     //
@@ -704,9 +717,12 @@ namespace noVB
       C_ = C_part1 * NeuroBayes::inverse( C_part2 );
       //
       //
+      double scaling = 0.;
       for ( int i = 0 ; i < n_ ; i++ )
 	{
-	  int    Ti     = Y_[i].size();
+	  int Ti = Y_[i].size();
+	  Sigma  = Eigen::Matrix< double, Dim, Dim >::Zero();
+	  //
 	  for ( int t = 0 ; t < Ti ; t++ )
 	    {
 	      Sigma  = Y_[i][t] * Y_[i][t].transpose();
@@ -719,12 +735,15 @@ namespace noVB
 		<< "\n C * s["<<i<<"]["<<t<<"] = \n " << C_ * _s_[i][t] 
 		<< std::endl;
 	    }
-	  Sigma /= static_cast<double>(Ti);
-	  sigma_ += Sigma; /*/ static_cast<double>(n_)*/
+	  scaling += static_cast<double>(Ti);
+	  sigma_  += Sigma;
 	}
       //
-      sigma_ /= static_cast<double>(n_);
+      sigma_ /= scaling;
       //
+      // Check if the variance is symetric positive def
+//      if ( NeuroBayes::is_positive_definite( sigma_ ) )
+//	sigma_ = NeuroBayes::closest_sym_def_pos( sigma_ );
       //
       std::cout << "Maximization: C_ = \n" << C_  << std::endl;
       std::cout << "Maximization: sigma_ = \n" << sigma_  << std::endl;

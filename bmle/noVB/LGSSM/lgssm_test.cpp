@@ -30,8 +30,8 @@ int main(int argc, char const *argv[])
 {
   //
   // model
-  const int Dim = 2;
-  const int S   = 2;
+  const int Dim = 4;
+  const int S   = 4;
 
   //
   // Load the test dataset
@@ -45,58 +45,59 @@ int main(int argc, char const *argv[])
     LGSSM_intensity;
   std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >
     LGSSM_age;
+//  //
+//  // Simulation
+//  const int N = 100;
+//  LGSSM_intensity.resize( N /*29*/  );
+//  LGSSM_age.resize( N /*29*/ );
+//  //
+//  // 
+//  for ( int n = 0 ; n < N ; n++ )
+//    {
+//      int T = 10;
+//      LGSSM_intensity[n].resize(T);
+//      LGSSM_age[n].resize(T);
+//      for ( int t = 0 ; t < T ; t++ )
+//	{
+//	  Eigen::Matrix< double, S, S > V  = 1.0e-01 * Eigen::Matrix< double, S, S >::Identity();
+//	  Eigen::Matrix< double, S, 1 > mu = 
+//	    NeuroBayes::gaussian_multivariate< S >( (1+n + n*t) * Eigen::Matrix< double, S, 1 >::Ones(),
+//						    V );
+//	  //
+//	  //
+//	  for ( int d = 0 ; d < S ; d++ )
+//	    LGSSM_intensity[n][t](d,0) =  mu(d,0);
+//	  LGSSM_age[n][t] << 0.;
+//	  //
+//	  std::cout << "Real,"<<n<<","<<t<<"," << 1+n + n*t << std::endl;
+//	}
+//    }
   //
-  // Simulation
-  const int N = 10;
-  LGSSM_intensity.resize( N /*29*/  );
-  LGSSM_age.resize( N /*29*/ );
   //
-  // 
-  for ( int n = 0 ; n < N ; n++ )
-    {
-      int T = 1000;
-      LGSSM_intensity[n].resize(T);
-      LGSSM_age[n].resize(T);
-      for ( int t = 0 ; t < T ; t++ )
-	{
-	  Eigen::Matrix< double, S, S > V  = 1.0e-01 * Eigen::Matrix< double, S, S >::Identity();
-	  Eigen::Matrix< double, S, 1 > mu = 
-	    NeuroBayes::gaussian_multivariate< S >( (0.5 + t*n/T) * Eigen::Matrix< double, S, 1 >::Ones(),
-						    V );
-	  //
-	  //
-	  for ( int d = 0 ; d < S ; d++ )
-	    LGSSM_intensity[n][t](d,0) =  mu(d,0);
-	  LGSSM_age[n][t] << 0.;
-	  //
-	  std::cout << "mu["<<n<<"]["<<t<<"] = " << (0.5 + t*n/T) << std::endl;
-	}
-    }
-  //
-  //
-  //LGSSM_intensity[0].resize(5);
-  //LGSSM_intensity[0][0] << 0.0888585,0.239285,0.670569,0.00128727;
-  //LGSSM_intensity[0][1] << 0.00744202,0.0229673,0.969501,8.91496E-05;
-  //LGSSM_intensity[0][2] << 0.00359251,0.0118994,0.984486,2.18637E-05;
-  //LGSSM_intensity[0][3] << 0.00343513,0.0133097,0.983228,2.7527E-05;
-  //LGSSM_intensity[0][4] << 0.0495984,0.055406,0.893359,0.00163616;
-  //LGSSM_intensity[0].resize(5);
-  //LGSSM_intensity[0][0] << 0.157144,0.765944,0.0747845,0.0021276;
-  //LGSSM_intensity[0][1] << 0.00350017,0.987859,0.00854729,9.37015E-05;
-  //LGSSM_intensity[0][2] << 0.00240256,0.987611,0.00993491,5.19396E-05;
-  //LGSSM_intensity[0][3] << 0.00162485,0.868757,0.129544,7.38363E-05;
-  //LGSSM_intensity[0][4] << 0.0303165,0.718971,0.247024,0.00368934;
+  LGSSM_intensity.resize( 3 /*29*/  );
+  LGSSM_intensity[0].resize(5);
+  LGSSM_intensity[0][0] << 0.0888585,0.239285,0.670569,0.00128727;
+  LGSSM_intensity[0][1] << 0.00744202,0.0229673,0.969501,8.91496E-05;
+  LGSSM_intensity[0][2] << 0.00359251,0.0118994,0.984486,2.18637E-05;
+  LGSSM_intensity[0][3] << 0.00343513,0.0133097,0.983228,2.7527E-05;
+  LGSSM_intensity[0][4] << 0.0495984,0.055406,0.893359,0.00163616;
+  LGSSM_intensity[1].resize(5);
+  LGSSM_intensity[1][0] << 0.157144,0.765944,0.0747845,0.0021276;
+  LGSSM_intensity[1][1] << 0.00350017,0.987859,0.00854729,9.37015E-05;
+  LGSSM_intensity[1][2] << 0.00240256,0.987611,0.00993491,5.19396E-05;
+  LGSSM_intensity[1][3] << 0.00162485,0.868757,0.129544,7.38363E-05;
+  LGSSM_intensity[1][4] << 0.0303165,0.718971,0.247024,0.00368934;
 //  LGSSM_intensity[2].resize(1);
 //  LGSSM_intensity[2][0] << 0.00955131,0.718149,0.00343095,0.268869;
 //  LGSSM_intensity[3].resize(1);
 //  LGSSM_intensity[3][0] << 0.324358,0.551575,0.120014,0.00405294;
 //  LGSSM_intensity[4].resize(1);
 //  LGSSM_intensity[4][0] << 0.295926,0.574033,0.126111,0.00392977;
-//  LGSSM_intensity[5].resize(4);
-//  LGSSM_intensity[5][0] << 0.191585,0.720989,0.0847059,0.00272051;
-//  LGSSM_intensity[5][1] << 0.281924,0.54754,0.167426,0.00310993;
-//  LGSSM_intensity[5][2] << 0.238532,0.615785,0.142882,0.00279994;
-//  LGSSM_intensity[5][3] << 0.215355,0.67287,0.109304,0.00247006;
+  LGSSM_intensity[2].resize(4);
+  LGSSM_intensity[2][0] << 0.191585,0.720989,0.0847059,0.00272051;
+  LGSSM_intensity[2][1] << 0.281924,0.54754,0.167426,0.00310993;
+  LGSSM_intensity[2][2] << 0.238532,0.615785,0.142882,0.00279994;
+  LGSSM_intensity[2][3] << 0.215355,0.67287,0.109304,0.00247006;
 //  LGSSM_intensity[6].resize(2);
 //  LGSSM_intensity[6][0] << 0.222687,0.66818,0.105976,0.00315745;
 //  LGSSM_intensity[6][1] << 0.00395141,0.724707,0.271204,0.000137096;

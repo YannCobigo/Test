@@ -42,6 +42,23 @@ namespace NeuroBayes
 
   //
   //
+  //
+  bool is_positive_definite( const Eigen::MatrixXd& Check_pos_def )
+  {
+    //
+    // compute the Cholesky decomposition of Check_Pos_def
+    Eigen::LLT<Eigen::MatrixXd> lltOfA( Check_pos_def );
+    
+    //
+    //
+    if(lltOfA.info() == Eigen::NumericalIssue)
+      return false;
+    else
+      return true;
+  }
+
+  //
+  //
   // Numerical inversion
   Eigen::MatrixXd inverse( const Eigen::MatrixXd& Ill_matrix )
     {
@@ -84,6 +101,124 @@ namespace NeuroBayes
       // Inverse
       //return inverse( fixed_matrix );
       return fixed_matrix.llt().solve(I);
+    }
+  //
+  //
+  // Find the closet symmetric positive definit matrix
+  // from a hill posed compuited covariance matrix
+  // - Replace $X$ with the closest symmetric matrix, $Y = (X+X^{T})/2.
+  // - Take an eigendecomposition $Y = PDP^{T}$, 
+  //   and form the diagonal matrix $D^{+} = max(D,0)$ (elementwise maximum).
+  // - The closest symmetric positive semidefinite matrix to $X$ is $Z = PD^{+}P^{T}$.
+  // - The closest positive definite matrix to $X$ does not exist; 
+  //   any matrix of the form $Z + εI$ is positive definite for $ε > 0$. 
+  //   There is no minimum.
+  Eigen::MatrixXd closest_sym_def_pos_depreciated( const Eigen::MatrixXd& Hill_matrix )
+    {
+      //
+      //
+      int 
+	mat_rows      = Hill_matrix.rows(),
+	mat_cols      = Hill_matrix.cols();
+      //
+      Eigen::MatrixXd I = Eigen::MatrixXd::Identity( mat_rows, mat_cols );
+      Eigen::MatrixXd Y = (Hill_matrix + Hill_matrix.transpose()) / 2.;
+      //
+      Eigen::MatrixXd fixed_matrix = 1.e-06 * I;
+      //
+//      if( mat_rows > 1 )
+//	{
+	  //
+	  Eigen::JacobiSVD<Eigen::MatrixXd> svd( Y, Eigen::ComputeThinU | Eigen::ComputeThinV );
+	  std::cout << "eigen svd=" << svd.singularValues() << std::endl;
+	  Eigen::MatrixXd singular_values = svd.singularValues();
+	  for ( int eigen_val = 0 ; eigen_val < mat_rows ; eigen_val++ )
+	    if ( singular_values(eigen_val,0) < 1.e+03 * std::numeric_limits<double>::min() )
+	      singular_values(eigen_val,0) = 1.e+03 * std::numeric_limits<double>::min();
+	  //
+	  fixed_matrix +=
+	    svd.matrixU()*singular_values.asDiagonal()*svd.matrixV().transpose();
+	  Eigen::MatrixXd diff = fixed_matrix - Hill_matrix;
+	  std::cout << "diff:\n" << diff.array().abs().sum() << std::endl;
+	  std::cout << "Hill_matrix:\n" << Hill_matrix << std::endl;
+	  std::cout << "fixed_matrix:\n" << fixed_matrix << std::endl;
+//	}
+//      else
+//	if ( Hill_matrix(0,0 ) < 0. )
+//	  fixed_matrix = 1.e-06 * I;
+      //
+      // 
+      return fixed_matrix;
+    }
+  //
+  //
+  // Higham NJ. Computing a nearest symmetric positive semidefinite matrix. Linear Algebra and its Applications. 1988 May;103(C):103-118.
+  Eigen::MatrixXd closest_sym_def_pos( const Eigen::MatrixXd& Hill_matrix )
+    {
+      //
+      //
+      const int 
+	mat_rows      = Hill_matrix.rows(),
+	mat_cols      = Hill_matrix.cols();
+      //
+      Eigen::MatrixXd I            = Eigen::MatrixXd::Identity( mat_rows, mat_cols );
+      Eigen::MatrixXd fixed_matrix = Hill_matrix;
+      std::cout << "fixed_matrix \n" << fixed_matrix << std::endl;
+      
+      //
+      //
+      int k = 1;
+      Eigen::MatrixXd delta = Eigen::MatrixXd::Zero( mat_rows, mat_rows );
+      Eigen::MatrixXd wAw   = Eigen::MatrixXd::Zero( mat_rows, mat_rows );
+      Eigen::MatrixXd A     = Eigen::MatrixXd::Zero( mat_rows, mat_rows );
+      Eigen::MatrixXd xk    = Eigen::MatrixXd::Zero( mat_rows, mat_rows );
+      Eigen::MatrixXd w     = I;
+      Eigen::MatrixXd rk    = fixed_matrix;
+      //
+      while( ! is_positive_definite(fixed_matrix) && k < 10 )
+	{
+	  //
+	  // W is the matrix used for the norm (assumed to be Identity matrix here)
+	  // the algorithm should work for any diagonal W
+	  //std::cout << "k: " << k << std::endl;
+	  rk = fixed_matrix - delta;
+	  //std::cout << "rk \n" << rk << std::endl;
+	  for ( int i = 0 ; i < mat_rows ; i++ )
+	    for ( int j = 0 ; j < mat_cols ; j++ )
+	      w(i,j)  = sqrt( I(i,j) );
+	  //std::cout << "w \n" << w << std::endl;
+	  wAw = w * rk * w;
+	  //std::cout << "wAw \n" << wAw << std::endl;
+	  //Eigen::JacobiSVD<Eigen::MatrixXd> svd( wAw, Eigen::ComputeThinU | Eigen::ComputeThinV );
+	  Eigen::EigenSolver< Eigen::MatrixXd > es( wAw );
+	  Eigen::MatrixXd D = es.eigenvalues().real().asDiagonal();
+	  //std::cout << "eigen values = \n" << es.eigenvalues() << std::endl;
+	  for ( int eigen_val = 0 ; eigen_val < mat_rows ; eigen_val++ )
+	    if ( es.eigenvalues().real()[eigen_val] < 1.e+03 * std::numeric_limits<double>::min() )
+	      D(eigen_val,eigen_val) = 1.e+03 * std::numeric_limits<double>::min();
+	  // Reconstruction
+	  Eigen::MatrixXd V = es.eigenvectors().real();
+	  A  = V * D * V.transpose();
+	  //std::cout << "A \n" << A << std::endl;
+	  fixed_matrix = xk = w.inverse() * A * w.inverse();
+	  //std::cout << "xk \n" << xk << std::endl;
+	  //
+	  delta = xk - rk;
+	  //std::cout << "delta \n" << delta << std::endl;
+	  //
+	  //
+	  for ( int i = 0 ; i < mat_rows ; i++ )
+	    for ( int j = 0 ; j < mat_cols ; j++ )
+	      if ( I(i,j) > 0 )
+	    fixed_matrix(i,j) = I(i,j);
+	  //std::cout << "end loop fixed_matrix \n" << fixed_matrix << std::endl;
+	  //
+	  k++;
+	}
+
+      //
+      //
+      return fixed_matrix;
     }
   //
   //
