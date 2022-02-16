@@ -163,7 +163,7 @@ namespace NeuroBayes
       //
       Eigen::MatrixXd I            = Eigen::MatrixXd::Identity( mat_rows, mat_cols );
       Eigen::MatrixXd fixed_matrix = Hill_matrix;
-      std::cout << "fixed_matrix \n" << fixed_matrix << std::endl;
+      //std::cout << "fixed_matrix \n" << fixed_matrix << std::endl;
       
       //
       //
@@ -175,7 +175,7 @@ namespace NeuroBayes
       Eigen::MatrixXd w     = I;
       Eigen::MatrixXd rk    = fixed_matrix;
       //
-      while( ! is_positive_definite(fixed_matrix) && k < 10 )
+      while( /*! is_positive_definite(fixed_matrix) && */ k < 10 )
 	{
 	  //
 	  // W is the matrix used for the norm (assumed to be Identity matrix here)

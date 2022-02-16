@@ -78,7 +78,7 @@ namespace VB
 
     protected:
       //
-      const bool _print_{false};
+      const bool _print_{true};
     };
     //
     //

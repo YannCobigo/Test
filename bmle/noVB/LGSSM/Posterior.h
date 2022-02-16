@@ -289,6 +289,16 @@ namespace noVB
 		std::cout 
 		  << "Filter: s_["<<i<<"]["<<t<<"] = \n" << s_[i][t]
 		  << std::endl;
+		if ( true )
+		  { // CSV output Specific case of the probability distribution
+		    Eigen::Matrix< double,Dim,1> prediction = _C_ * A_ * s_[i][t-1];
+		    prediction /= prediction.sum();
+		    Eigen::Matrix< double,Dim,1> Diff = Y_[i][t] - prediction;
+		    double innovation = ( Diff.transpose() * Diff )(0,0);
+		    std::cout 
+		      << "CSV,"<<i<<","<<t<<"," << innovation
+		      << std::endl;
+		  }
 	      }
 	    //
 	    // Beta calculation
