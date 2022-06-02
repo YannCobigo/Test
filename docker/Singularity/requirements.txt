@@ -55,7 +55,7 @@ graphviz==0.14
 grpcio==1.30.0
 h5py==2.10.0
 hmmlearn==0.2.2
-html5lib==0.999
+html5lib==0.99999999
 husl==4.0.3
 idna==2.10
 imagesize==1.2.0
