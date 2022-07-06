@@ -73,7 +73,7 @@ kiwisolver==1.1.0
 koji==1.25.0
 lifelines==0.19.5
 lockfile==0.12.2
-lxml==4.6.3
+lxml==4.9.1
 Markdown==3.1.1
 MarkupSafe==1.1.1
 matplotlib==2.2.5
