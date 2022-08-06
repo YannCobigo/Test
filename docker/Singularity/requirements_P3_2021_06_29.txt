@@ -227,7 +227,7 @@ traitlets==5.0.5
 traits==6.2.0
 typing==3.7.4.3
 typing-extensions==3.7.4.3
-untangle==1.1.1
+untangle==1.2.1
 urlgrabber==4.1.0
 urllib3==1.26.6
 vtk==9.0.1
