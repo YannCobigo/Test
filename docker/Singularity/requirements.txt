@@ -108,7 +108,7 @@ pluggy==0.8.0
 ply==3.8
 progressbar==2.5
 prompt-toolkit==1.0.18
-protobuf==3.12.2
+protobuf==3.18.3
 prov==1.5.3
 psutil==5.7.0
 ptyprocess==0.6.0
