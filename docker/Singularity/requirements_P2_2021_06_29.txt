@@ -189,7 +189,7 @@ urlgrabber==4.1.0
 urllib3==1.26.6
 wcwidth==0.2.5
 webencodings==0.5.1
-Werkzeug==1.0.1
+Werkzeug==2.2.3
 wrapt==1.12.1
 xlrd==2.0.1
 XlsxWriter==1.4.3
