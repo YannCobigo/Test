@@ -1,72 +1,49 @@
-/**
- * @file myclass.h
- * @brief This file defines the MyClass class.
- */
-
 #ifndef MYCLASS_H
 #define MYCLASS_H
 
+namespace my_namespace {
+
 /**
- * @class MyClass
- * @brief This class represents a simple example class.
+ * @brief This is a brief description of MyClass.
  *
- * The MyClass class provides a basic example of a C++ class with some simple member variables and methods.
+ * This is a more detailed description of MyClass, which can span
+ * multiple lines.
  */
 class MyClass {
 public:
     /**
-     * @brief Constructs a new instance of the MyClass class.
-     *
-     * This constructor initializes the member variables of the MyClass class to their default values.
+     * @brief Default constructor for MyClass.
      */
     MyClass();
 
     /**
-     * @brief Destructs an instance of the MyClass class.
-     *
-     * This destructor frees any resources allocated by the MyClass class.
+     * @brief Destructor for MyClass.
      */
     ~MyClass();
 
     /**
-     * @brief Gets the value of the x member variable.
+     * @brief Add two integers.
      *
-     * This method returns the current value of the x member variable.
+     * This function takes two integers as input and returns their sum.
      *
-     * @return The current value of the x member variable.
+     * @param a First integer.
+     * @param b Second integer.
+     * @return The sum of a and b.
      */
-    int getX() const;
+    int add(int a, int b);
 
     /**
-     * @brief Sets the value of the x member variable.
+     * @brief Subtract two integers.
      *
-     * This method sets the value of the x member variable to the specified value.
+     * This function takes two integers as input and returns their difference.
      *
-     * @param[in] x The new value of the x member variable.
+     * @param a First integer.
+     * @param b Second integer.
+     * @return The difference of a and b.
      */
-    void setX(int x);
-
-    /**
-     * @brief Gets the value of the y member variable.
-     *
-     * This method returns the current value of the y member variable.
-     *
-     * @return The current value of the y member variable.
-     */
-    int getY() const;
-
-    /**
-     * @brief Sets the value of the y member variable.
-     *
-     * This method sets the value of the y member variable to the specified value.
-     *
-     * @param[in] y The new value of the y member variable.
-     */
-    void setY(int y);
-
-private:
-    int x; /**< The x coordinate of the MyClass instance. */
-    int y; /**< The y coordinate of the MyClass instance. */
+    int subtract(int a, int b);
 };
+
+} // end namespace my_namespace
 
 #endif // MYCLASS_H
