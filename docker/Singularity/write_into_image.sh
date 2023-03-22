@@ -226,6 +226,28 @@ mkdir build && cd build
        -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
        -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make install
 
+########
+# ANTs #
+########
+git config --global url."https://".insteadOf git://
+ANTs_MAJ=2
+ANTs_MIN=3
+ANTs_PATCH=5
+#
+cd $SRC
+git clone https://github.com/ANTsX/ANTs && cd ANTs && git checkout v${ANTs_MAJ}.${ANTs_MIN}.${ANTs_PATCH}
+mkdir build && cd build
+/usr/local/bin/cmake \
+       -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+       -D BUILD_SHARED_LIBS=ON \
+       -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+       -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make install
+
+#       -D USE_VTK:BOOL=ON \
+#       -D USE_SYSTEM_VTK:BOOL=ON \
+#       -D VTK_DIR=/usr/local/lib64/cmake/vtk-9.0/ \
+#       -D USE_SYSTEM_ITK:BOOL=ON \
+#       -D ITK_DIR=/usr/local/lib/cmake/ITK-5.1 \
 
 ############
 ## MRtrix3 #
