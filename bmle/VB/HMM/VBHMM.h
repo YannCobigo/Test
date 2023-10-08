@@ -104,7 +104,7 @@ namespace VB
       
       //
       // Print out
-      const bool _print_{false};
+      const bool _print_{true};
     };
 
     //

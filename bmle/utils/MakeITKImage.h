@@ -62,6 +62,8 @@ namespace NeuroBayes
     //
     explicit NeuroBayesMakeITKImage( const long unsigned int ,
 				     const std::string& );
+    //
+    explicit NeuroBayesMakeITKImage( const std::string& );
     
     /**  */
     virtual ~NeuroBayesMakeITKImage(){};
@@ -70,7 +72,11 @@ namespace NeuroBayes
     // Record results
     void   set_val( const std::size_t, const MaskType::IndexType, const double );
     // get results
-    double get_val( const std::size_t, const MaskType::IndexType );
+    inline const long unsigned int get_number_maps() const  {return D_;};
+    // get image name
+    std::string get_name() const {return image_name_;};
+    // get results
+    double get_val( const std::size_t, const MaskType::IndexType ) const;
     // Write value in the image pointer
     void   write();
 

@@ -1,5 +1,5 @@
-#ifndef HiddenMarkovModel_H
-#define HiddenMarkovModel_H
+#ifndef Linear_Gaussian_State_Space_Model_H
+#define Linear_Gaussian_State_Space_Model_H
 //
 //
 //
@@ -31,16 +31,17 @@
 //
 namespace noVB
 {
-  namespace HMM
+  namespace LGSSM
   {
-    /** \class Hidden_Markov_Model
+    /** \class Linear_Gaussian_State_Space_Model
      *
-     * \brief  Expectation-Maximization algorithm
+     * \brief  Expectation-Maximization algorithm for the Linear
+     *         State-Space model.
      * 
      * Dim is the number of dimensions
      * input:
      *   Dim: dimension of the measure
-     *   S: number of state accessible to the Markov Chain
+     *   S: dimension of state accessible to the Markov Chain
      *   n: number of cases (subjects)
      *   Y [p x n]: entry data. the matrix is supposed to be normalized.
      *              p = Dim, 
@@ -48,16 +49,16 @@ namespace noVB
      * 
      */
     template< int Dim, int S >
-      class Hidden_Markov_Model
+      class Linear_Gaussian_State_Space_Model
     {
  
     public:
       /** Constructor. */
-      explicit Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& ,
-				    const std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >& );
+      explicit Linear_Gaussian_State_Space_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& ,
+						  const std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >& );
     
       /** Destructor */
-      ~Hidden_Markov_Model(){};
+      ~Linear_Gaussian_State_Space_Model(){};
 
       //
       // Accessors
@@ -85,9 +86,9 @@ namespace noVB
       //
       // variational posteriors and hyper parameters
       //rm      Var_post variational_posteriors_;
-      std::shared_ptr< noVB::HMM::P_qsi <Dim,S> > qsi_;
-      std::shared_ptr< noVB::HMM::P_qdch<Dim,S> > qdch_;
-      std::shared_ptr< noVB::HMM::P_qgau<Dim,S> > qgau_;
+      std::shared_ptr< noVB::LGSSM::P_qsi <Dim,S> > qsi_;
+      std::shared_ptr< noVB::LGSSM::P_qdch<Dim,S> > qdch_;
+      std::shared_ptr< noVB::LGSSM::P_qgau<Dim,S> > qgau_;
 
       //
       // log marginal likelihood lower bound
@@ -99,15 +100,15 @@ namespace noVB
     //
     //
     template < int Dim, int S >
-      Hidden_Markov_Model< Dim, S >::Hidden_Markov_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Y,
-							  const std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >& Age ):
+      Linear_Gaussian_State_Space_Model< Dim, S >::Linear_Gaussian_State_Space_Model( const std::vector< std::vector< Eigen::Matrix< double, Dim, 1 > > >& Y,
+										      const std::vector< std::vector< Eigen::Matrix< double, 1, 1 > > >& Age ):
       Y_{Y}, Age_{Age}, n_{Y.size()}
     {
       //
       //
-      qsi_  = std::make_shared< noVB::HMM::P_qsi <Dim,S> >( Y_ );
-      qdch_ = std::make_shared< noVB::HMM::P_qdch<Dim,S> >( qsi_, Y_ );
-      qgau_ = std::make_shared< noVB::HMM::P_qgau<Dim,S> >( qsi_, Y_, Age_ );
+      qsi_  = std::make_shared< noVB::LGSSM::P_qsi <Dim,S> >( Y_ );
+      qdch_ = std::make_shared< noVB::LGSSM::P_qdch<Dim,S> >( qsi_, Y_ );
+      qgau_ = std::make_shared< noVB::LGSSM::P_qgau<Dim,S> >( qsi_, Y_, Age_ );
       // set dependencies
       qsi_->set(qdch_,qgau_);
     }
@@ -115,7 +116,7 @@ namespace noVB
     //
     //
     template < int Dim, int S > void
-      Hidden_Markov_Model< Dim, S >::ExpectationMaximization()
+      Linear_Gaussian_State_Space_Model< Dim, S >::ExpectationMaximization()
       {
 	double
 	  dL    =  1.e06,
@@ -124,12 +125,7 @@ namespace noVB
 
 	//
 	// Access the states
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_s_         = qsi_->get_s();
-	const std::vector< std::vector< Eigen::Matrix < double, S , 1 > > > &_ln_gamma_  = qgau_->get_ln_gamma();
-	const              std::vector< Eigen::Matrix < double, S , 1 > >   &_pi_        = qdch_->get_pi();
-	const                           Eigen::Matrix < double, S , S >     &_A_         = qdch_->get_A();
-	//
-	while ( fabs(dL) > 1.e-10 )
+	while ( /*fabs(dL) > 1.e-10*/ iteration < 100 )
 	  {
 	    std::cout << "Begining iteration: " << ++iteration << std::endl;
 	    //
@@ -148,27 +144,9 @@ namespace noVB
 	    //
 	    // Build the posterior probability
 	    L_old = L_;
-	    L_ = 0;
-	    for ( int i = 0 ; i < n_ ; i++ )
-	      {
-		//
-		// First state
-		for ( int s = 0 ; s < S ; s++ ) 
-		  L_ += _s_[i][0](s,0) * log( _pi_[i](s,0) );
-		//
-		// Transition and gaussian states
-		int Ti = Y_[i].size();
-		for ( int t = 0 ; t < Ti ; t++ )
-		  for ( int s = 0 ; s < S ; s++ )
-		    {
-		      // transition state
-		      if ( t > 0 )
-			for ( int ss = 0 ; ss < S ; ss++ )
-			  L_ += _s_[i][t-1](s,0) * log( _A_(s,ss) ) * _s_[i][t](ss,0);
-		      // Gaussian state
-		      L_ += _s_[i][t](s,0) * _ln_gamma_[i][t](s,0);
-		    }
-	      }
+	    L_  = qsi_->get_L();
+	    L_ += qdch_->get_L();
+	    L_ += qgau_->get_L();
 			
 	    //
 	    //

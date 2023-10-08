@@ -58,6 +58,23 @@ NeuroBayes::NeuroBayesMakeITKImage::NeuroBayesMakeITKImage( const long unsigned 
 //
 //
 //
+NeuroBayes::NeuroBayesMakeITKImage::NeuroBayesMakeITKImage( const std::string& Image_name ):
+  image_name_{ Image_name }
+{
+  //
+  // Take the dimension of the first subject image:
+  image_4D_reader_ = Reader4D::New();
+  image_4D_reader_->SetFileName( Image_name );
+  image_4D_reader_->Update();
+  //
+  //
+  Image4DType::SizeType img_size = image_4D_reader_->GetOutput()->GetLargestPossibleRegion().GetSize();
+  D_ = img_size[3];
+  images_.resize( D_ );
+}
+//
+//
+//
 void
 NeuroBayes::NeuroBayesMakeITKImage::set_val( const std::size_t Image_number, 
 					     const MaskType::IndexType Idx, 
@@ -70,7 +87,7 @@ NeuroBayes::NeuroBayesMakeITKImage::set_val( const std::size_t Image_number,
 //
 double
 NeuroBayes::NeuroBayesMakeITKImage::get_val( const std::size_t Image_number, 
-					     const MaskType::IndexType Idx )
+					     const MaskType::IndexType Idx ) const
 {
   Image4DType::IndexType idx_4d = { Idx[0], Idx[1] , Idx[2],
 				    static_cast< long int >(Image_number) };
