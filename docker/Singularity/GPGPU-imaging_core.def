@@ -26,12 +26,8 @@ BootStrap: docker
 # Cerebellum 7.5
 #From: nvidia/cuda:10.2-runtime-centos7
 #From: centos:centos7
-From: fedora:32
+From: fedora:36
 IncludeCmd: yes
-
-%environment
-	PATH=/usr/local/cuda/bin:${PATH} 
-	LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib64/stubs/:${LD_LIBRARY_PATH} 
 
 %setup
     echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
@@ -58,6 +54,7 @@ IncludeCmd: yes
     cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
     #cp requirements_P2_2021_06_29.txt $SINGULARITY_ROOTFS/etc/singularity/requirements_P2.txt
     cp requirements_P3_2022_04_06.txt $SINGULARITY_ROOTFS/etc/singularity/requirements_P3.txt
+    #cp requirements_P3_2023_06_23.txt $SINGULARITY_ROOTFS/etc/singularity/requirements_P3.txt
 
     #
     #
@@ -65,14 +62,30 @@ IncludeCmd: yes
 
 %post
 	#
-	# CUDA	
-	# Versions: https://developer.download.nvidia.com/compute/cuda/repos/fedora32/x86_64/
+	# CUDA
+	# 
+	# Versions: https://developer.download.nvidia.com/compute/cuda/repos/fedora3X/x86_64/
 	# Versions: https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/
-	# 11.1
-	CUDA=11-1
-	CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-11.1
-	CUDA_VERSION=11.1.1-1 
+	# 12.1
+	#CUDA=12-1
+	#CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12-1
+	#CUDA_VERSION=12.1.1-1
+	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+	# 12.0 cuda-12-0-12.0.0-1.x86_64.rpm cuda-12.0.0-1.x86_64.rpm cuda-toolkit-12-0-12.0.0-1.x86_64.rpm
+	CUDA=12-0 
+	CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12.0
+	CUDA_VERSION=12.0.0-1 
 	CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+	# 11.5
+	#CUDA=11-5
+	#CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-11.5
+	#CUDA_VERSION=11.5.2-1 
+	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+	# 11.1
+	#CUDA=11-1
+	#CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-11.1
+	#CUDA_VERSION=11.1.1-1 
+	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
 	# 10.2
 	#CUDA=10-2
 	#CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.2
@@ -102,7 +115,7 @@ IncludeCmd: yes
 	#
 	#
 	echo "Update the image"
-	dnf install -y 'dnf-command(config-manager)' && dnf update -y && dnf install -y epel-release.noarch && dnf groupinstall -y "Development tools" && dnf makecache fast
+	dnf install -y 'dnf-command(config-manager)' && dnf update -y && dnf groupinstall -y "Development tools" && dnf makecache #fast
 
 
 	#
@@ -119,26 +132,22 @@ IncludeCmd: yes
 	NVIDIA_DRIVER_CAPABILITIES=compute,utility 
 	NVIDIA_REQUIRE_CUDA="cuda>=10.2 brand=tesla,driver>=440,driver<441"
 	# cuDNN 
-        CUDNN_VERSION=7.4.2.24 
-#	#LABEL com.nvidia.cudnn.version="${CUDNN_VERSION}" 
-#	#
-#	NVIDIA_GPGKEY_SUM="d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5" 
-#	curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
-#	echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict - 
-#	#curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-${CUDA_PKG_VERSION}.x86_64.rpm 
-	#rpm -i  https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-${CUDA_VERSION}.x86_64.rpm 
-	dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/fedora32/x86_64/cuda-fedora32.repo
+	dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/fedora36/x86_64/cuda-fedora36.repo
 	echo "exclude=xorg-x11-drv-nvidia*,akmod-nvidia*,kmod-nvidia*,nvidia-driver*,nvidia-settings,nvidia-xconfig,nvidia-persistenced,cuda-nvidia-kmod-common,dkms-nvidia,nvidia-libXNVCtrl" >> /etc/yum.repos.d/cuda.repo 
 	#
 	# cuDNN license: https://developer.nvidia.com/cudnn/license_agreement 
-	curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/fedora32/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
+	curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/fedora36/x86_64/D42D0685.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
 	#echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
-	rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.0.5/RHEL8_1-x64/libcudnn8-8.0.5.39-1.cuda11.1.x86_64.rpm
-	rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.0.5/RHEL8_1-x64/libcudnn8-devel-8.0.5.39-1.cuda11.1.x86_64.rpm
-	rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.0.5/RHEL8_1-x64/libcudnn8-samples-8.0.5.39-1.cuda11.1.x86_64.rpm
+	rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.2.4/RHEL8_1-x64/libcudnn8-8.2.4.15-1.cuda11.4.x86_64.rpm
+	rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.2.4/RHEL8_1-x64/libcudnn8-devel-8.2.4.15-1.cuda11.4.x86_64.rpm
+	rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.2.4/RHEL8_1-x64/libcudnn8-samples-8.2.4.15-1.cuda11.4.x86_64.rpm
+	#rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.0.5/RHEL8_1-x64/libcudnn8-8.0.5.39-1.cuda11.1.x86_64.rpm
+	#rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.0.5/RHEL8_1-x64/libcudnn8-devel-8.0.5.39-1.cuda11.1.x86_64.rpm
+	#rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.0.5/RHEL8_1-x64/libcudnn8-samples-8.0.5.39-1.cuda11.1.x86_64.rpm
 	ldconfig
 	# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a 
-	dnf install -y cuda-samples-$CUDA cuda-toolkit-${CUDA}.x86_64
+	# !!!!!!!!!!!!!!!VERY TEMPO!! WE NEED THE SAMPLES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! dnf install -y cuda-samples-$CUDA cuda-toolkit-${CUDA}.x86_64
+	dnf install -y cuda-toolkit-${CUDA}.x86_64
 	if [ $CUDA == "10-0" ] || [ $CUDA == "10-1" ] ;
 	then
 		dnf install -y cuda-compat-$CUDA
@@ -146,12 +155,12 @@ IncludeCmd: yes
 
 
 	#
-	#
+	# 
+	# 
 	echo "Basic installation"
-	# No match: gdb-heap.x86_64 openblas-Rblas.x86_64 flex-devel.x86_64 libxml2.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64 libxml++-devel.x86_64 mercurial.x86_64 gmpc-devel.x86_64
-	dnf install  -y  openssl-devel cmake gcc.x86_64 gcc-c++ gcc-gfortran make.x86_64 make-devel.x86_64 git tcsh.x86_64 \
-	    openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 emacs tmux htop  wget tree.x86_64 \
-	    fftw-libs.x86_64  gdb.x86_64 gdb-headless.x86_64 gstreamer1*.x86_64 libstdc++-static.x86_64 diffutils.x86_64 \
+	# No match: gdb-heap.x86_64 openblas-Rblas.x86_64flex-devel.x86_64 libxml2.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64 libxml++-devel.x86_64 mercurial.x86_64 gmpc-devel.x86_64 findutils*.x86_64 \
+	dnf install  -y  openssl-devel cmake gcc.x86_64 gcc-c++ gcc-gfortran make.x86_64 make-devel.x86_64 git tcsh.x86_64 openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 emacs tmux htop wget tree.x86_64 \
+	    fftw-libs.x86_64  gdb.x86_64 gdb-headless.x86_64 gstreamer1*.x86_64 libstdc++-static.x86_64 diffutils.x86_64 xeyes.x86_64 \
 	    libuuid.x86_64 libuuid-devel.x86_64 lua.x86_64 lua-devel.x86_64 patch.x86_64 \
 	    yasm.x86_64 yasm-devel.x86_64 flex.x86_64 bison.x86_64 swig.x86_64 \
 	    atlas-devel.x86_64 boost-devel.x86_64 gflags-devel.x86_64 glog-devel.x86_64 hdf5-devel.x86_64 \
@@ -161,41 +170,28 @@ IncludeCmd: yes
 	    zlib-devel bzip2-devel bzip2-libs.x86_64 dos2unix.x86_64 blender.x86_64 paraview.x86_64 \
 	    ncurses-devel sqlite-devel libreoffice.x86_64 gwenview.x86_64 tetgen.x86_64 tetgen-devel.x86_64 \
 	    libpng12.x86_64 libpng12-devel libpng-devel libpng15.x86_64 mlocate.x86_64  flex.x86_64 \
-	    tetex-* tetex-elsevier g2clib-devel tbb.x86_64 tbb-devel.x86_64 texlive-tex4ht \
-	    libyaml-devel.x86_64  libyaml.x86_64 yaml-cpp.x86_64 yaml-cpp-devel.x86_64 \
+	    g2clib-devel tbb.x86_64 tbb-devel.x86_64  \
+	    libyaml-devel.x86_64  libyaml.x86_64 yaml-cpp.x86_64 yaml-cpp-devel.x86_64  \
 	    gsl.x86_64 gsl-devel.x86_64 gimp.x86_64 evince.x86_64 bc.x86_64 okular.x86_64 \
-	    libmng-devel.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686 \
-	    net-tools initscripts nautilus.x86_64  \
-	    pandoc.x86_64 pandoc-*.x86_64  R.x86_64 rstudio-desktop.x86_64 \
+	    libmng-devel.x86_64 mpfr.x86_64 mpfr-devel.x86_64  glibc.i686  glm-devel.noarch  \
+	    qwt.x86_64 qwt-devel.x86_64 qwt-qt5.x86_64 qwt-qt5-devel.x86_64 qwtplot3d.x86_64 qwtplot3d-devel.x86_64 qwtplot3d-qt5.x86_64 qwtplot3d-qt5-devel.x86_64 \
+	    net-tools initscripts nautilus.x86_64  netpbm-progs.x86_64 ed.x86_64 gnome-tweaks.noarch \
+	    pandoc.x86_64 pandoc-*.x86_64  R.x86_64 rstudio-desktop.x86_64 R-devel.x86_64  \
 	    octave.x86_64 pandoc* motif.x86_64 motif-devel.x86_64 motif-static.x86_64 xlockmore-motif.x86_64 \
 	    libjpeg-devel libtiff-devel libX11-devel libXt-devel cairo pango-devel libicu-devel texinfo texlive-latex-bin-bin \
 	    firefox.x86_64 firefox-pkcs11-loader.x86_64  \
-	    libXpm.x86_64 libXpm-devel.x86_64 \
-	    mpibash-mpich.x86_64 mpibash-mpich-examples.x86_64 mpibash-openmpi.x86_64 mpibash-openmpi-examples.x86_64 mpich.x86_64 \
-	    mpich-devel.x86_64
-	#
-	# LaTeX
-	dnf -y install 'tex(multirow.sty)'  'tex(balance.sty)' 'tex(makecell.sty)'  'tex(stfloats.sty)'  'tex(wrapfig.sty)' 'tex(breakcites.sty)' 'tex(xstring.sty)' 'tex(moreverb.sty)'
-	#
-	# Python dependances
-	dnf install  -y  python3-devel.x86_64 curl.x86_64 curl-devel krb5-devel.x86_64  \
-	    libmpc-devel.x86_64 gmp-devel.x86_64 gmp-static.x86_64  gobject-introspection-devel cairo-gobject-devel gpgme-devel.x86_64 \
-	    xz xz-devel.x86_64  dbus-daemon.x86_64 dbus-glib-devel.x86_64 graphviz-devel.x86_64 #graphviz-doc.x86_64 graphviz-gd.x86_64 graphviz-graphs.x86_64 graphviz-guile.x86_64 
-
-
-	#
-	#
-	echo "X11 installation"
-	dnf install -y xorg-x11-apps.x86_64 \
-	    xorg-x11-xauth xorg-x11-drivers.x86_64 \
-	    xorg-x11-utils.x86_64 xorg-x11-xinit-session.x86_64
-
-	#
-	#
-	echo "Qt installation"
-	dnf install -y qt-config.x86_64 qt-creator.x86_64 qt-devel.x86_64 \
-	     qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64
-	dnf install -y qt5-*.x86_64 qt5-*.noarch 			
+	    libXpm.x86_64 libXpm-devel.x86_64 libXp.x86_64 libXp-devel.x86_64 \
+	    mpibash-mpich.x86_64 mpibash-mpich-examples.x86_64 mpibash-openmpi.x86_64 mpibash-openmpi-examples.x86_64 mpich.x86_64 mpich-devel.x86_64 \
+	    krb5-auth-dialog.x86_64 krb5-devel.x86_64 krb5-pkinit.x86_64 krb5-server.x86_64 krb5-server-ldap.x86_64 krb5-workstation.x86_64 libcurl-devel.x86_64 \
+	    pygobject2.x86_64 pygobject2-devel.x86_64 pygobject2-doc.x86_64 pygobject2-codegen.x86_64 \
+	    tetex-* tetex-elsevier texlive-tex4ht 'tex(multirow.sty)'  'tex(balance.sty)' 'tex(makecell.sty)'  'tex(stfloats.sty)'  'tex(wrapfig.sty)' \
+	    'tex(breakcites.sty)' 'tex(xstring.sty)' 'tex(moreverb.sty)' \
+	    python3-devel.x86_64 curl.x86_64 curl-devel krb5-devel.x86_64  libmpc-devel.x86_64 gmp-devel.x86_64 gmp-static.x86_64 \
+	    gobject-introspection-devel cairo-gobject-devel gpgme-devel.x86_64 xz xz-devel.x86_64  dbus-daemon.x86_64 dbus-glib-devel.x86_64 graphviz-devel.x86_64 \
+	    graphviz-gd.x86_64 graphviz-graphs.x86_64 graphviz-guile.x86_64 Mayavi.x86_64 Mayavi-doc.x86_64 \
+	    xorg-x11-xauth xorg-x11-drivers.x86_64 xorg-x11-xinit-session.x86_64 xorg-x11-fonts-misc.noarch  \
+	    xorg-x11-xinit-session.x86_64 xorg-x11-fonts-misc.noarch xorg-x11-server-Xvfb.x86_64 \
+	    qt-config.x86_64 qt-creator.x86_64 qt-devel.x86_64  qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt5-*.x86_64 qt5-*.noarch
 
 	
         #
@@ -205,8 +201,6 @@ IncludeCmd: yes
         # NVIDIA CUDA #
         ###############
 	# cp -a /usr/local/cuda/ ${CUDA_TOOLKIT_ROOT_DIR}/
-	#chown cobigo ${CUDA_TOOLKIT_ROOT_DIR}/
-	#chgrp cobigo ${CUDA_TOOLKIT_ROOT_DIR}/
         #rm -rf /usr/local/cuda
         #ln -s ${CUDA_TOOLKIT_ROOT_DIR} /usr/local/cuda
         PATH=${CUDA_TOOLKIT_ROOT_DIR}/bin:/usr/local/bin:$PATH 
@@ -229,7 +223,7 @@ IncludeCmd: yes
         echo ${DPCPP_NVIDIA}/OpenCL-ICD-Loader/build/test/driver_stub/libOpenCLDriverStub.so > /etc/OpenCL/vendors/test.icd
 	
         #########
-        # CMake #
+        # CMake # Duplicate in neurodrive
         #########
         CM_MAJ=3
         CM_MIN=18
@@ -237,48 +231,52 @@ IncludeCmd: yes
         # 
         cd $SRC
         curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3/cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3.tar.gz -O && \
-        tar zxvf cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3.tar.gz && cd cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3 && mkdir build && cd build 
+        tar zxvf cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3.tar.gz && cd cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3 && mkdir build  && cd build 
         #
         cmake \
         -D CMAKE_BUILD_TYPE=Release \
         -D BUILD_SHARED_LIBS=OFF \
-        -D CMAKE_INSTALL_PREFIX=/usr/local/ .. && make -j 8 && make install
+        -D CMAKE_INSTALL_PREFIX=/usr/local/ ..   && make -j 8  && make install 
         ln -s /usr/local/share/cmake-${CM_MAJ}.${CM_MIN} /usr/local/share/cmake
 	
-        #########
-        # BOUML #
-        #########
-        BO_MAJ=7
-        BO_MIN=10
-        BO_PATCH=1
-        #
-        cd $SRC
-        # https://www.bouml.fr/download.html
-        wget http://bouml.free.fr/files/bouml-${BO_MAJ}.${BO_MIN}-CentOS7.x86_64.rpm
-        dnf install -y bouml-${BO_MAJ}.${BO_MIN}-CentOS7.x86_64.rpm
         
-        #######
-        # VTK #
-        #######
-        VTK_MAJ=9
-        VTK_MIN=0
-        VTK_PATCH=1
+        ########
+        # JSON # Duplicate in neurodrive
+        ########
+        JS_MAJ=3
+        JS_MIN=10
+        JS_PATCH=5
         #
         cd $SRC
-        #https://www.vtk.org/files/release/9.0/VTK-9.0.1.tar.gz
-        curl -fsSL https://www.vtk.org/files/release/${VTK_MAJ}.${VTK_MIN}/VTK-${VTK_MAJ}.${VTK_MIN}.${VTK_PATCH}.tar.gz -O && \
-        tar zxvf VTK-${VTK_MAJ}.${VTK_MIN}.${VTK_PATCH}.tar.gz && cd VTK-${VTK_MAJ}.${VTK_MIN}.${VTK_PATCH} && mkdir build && cd build
+        git clone https://github.com/nlohmann/json && cd json && git checkout v${JS_MAJ}.${JS_MIN}.${JS_PATCH} && mkdir build && cd build
         /usr/local/bin/cmake \
-        -D CMAKE_BUILD_TYPE=Release \
-        -D BUILD_SHARED_LIBS=ON \
-        -D CMAKE_INSTALL_PREFIX=/usr/local/ .. && make -j 8 && make install
+               -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+               -D BUILD_SHARED_LIBS=ON \
+               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  &> config.log  && make -j 1 &> make.log && make install &> make_install.log 
+
+#        #######
+#        # VTK # Duplicate in neurodrive
+#        #######
+#        VTK_MAJ=9
+#        VTK_MIN=2
+#        VTK_PATCH=6
+#        #
+#        cd $SRC
+#        #https://www.vtk.org/files/release/9.0/VTK-9.0.1.tar.gz
+#        curl -fsSL https://www.vtk.org/files/release/${VTK_MAJ}.${VTK_MIN}/VTK-${VTK_MAJ}.${VTK_MIN}.${VTK_PATCH}.tar.gz -O && \
+#        tar zxvf VTK-${VTK_MAJ}.${VTK_MIN}.${VTK_PATCH}.tar.gz && cd VTK-${VTK_MAJ}.${VTK_MIN}.${VTK_PATCH} && mkdir build && cd build
+#        /usr/local/bin/cmake \
+#        -D CMAKE_BUILD_TYPE=Release \
+#        -D BUILD_SHARED_LIBS=ON \
+#        -D CMAKE_INSTALL_PREFIX=/usr/local/ .. &> config.log && make -j 1 &> make.log && make install &> make_install.log
         
         #######
-        # ITK #
+        # ITK # Duplicate in neurodrive
         #######
         ITK_MAJ=5
-        ITK_MIN=1
-        ITK_PATCH=2
+        ITK_MIN=2
+        ITK_PATCH=1
         #
         cd $SRC
         curl -fsSL https://github.com/InsightSoftwareConsortium/ITK/releases/download/v${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}/InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz -O && \
@@ -290,10 +288,10 @@ IncludeCmd: yes
                -D ITK_LEGACY_REMOVE=ON \
                -D Module_ITKVtkGlue:BOOL=OFF \
                -D VTK_DIR:PATH=/usr/local/lib64/ \
-               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ .. && make -j 8 && make install
+               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ .. &> config.log && make -j 1 &> make.log && make install &> make_install.log
         
         ##########
-        # Eigen3 #
+        # Eigen3 # Duplicate in neurodrive
         ##########
         EG_MAJ=3
         EG_MIN=3
@@ -306,9 +304,20 @@ IncludeCmd: yes
                -D CMAKE_BUILD_TYPE:STRING=RELEASE \
                -D BUILD_SHARED_LIBS=ON \
                -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
-               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make install
-        
+               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ .. &> config.log   && make install &> make_install.log
+
+
         ########
+        # AFNI #
+        ########
+	cd $SRC && mkdir AFNI && cd AFNI
+	curl -O https://raw.githubusercontent.com/afni/afni/master/src/other_builds/OS_notes.linux_fedora_b_user.tcsh
+	curl -O https://afni.nimh.nih.gov/pub/dist/bin/misc/@update.afni.binaries
+	tcsh @update.afni.binaries -package linux_openmp_64 -bindir /usr/local/bin/ -do_extras
+	ln -s /usr/lib64/libgsl.so.25.0.0 /usr/lib64/libgsl.so.0
+
+        
+	########
         # CGAL #
         ########
         CG_MAJ=5
@@ -316,7 +325,7 @@ IncludeCmd: yes
         CG_PATCH=1
         #
         cd $SRC
-        git clone https://github.com/CGAL/cgal && cd cgal && git checkout v${CG_MAJ}.${CG_MIN}.${CG_PATCH} && mkdir build && cd build
+        git clone https://github.com/CGAL/cgal && cd cgal && git checkout v${CG_MAJ}.${CG_MIN}.${CG_PATCH} && mkdir build  && cd build
         /usr/local/bin/cmake \
                -DCMAKE_BUILD_TYPE=Release \
        	       -DWITH_examples=true  \
@@ -329,7 +338,9 @@ IncludeCmd: yes
        	       -DWITH_OpenGL:BOOL=ON  \
        	       -DWITH_ZLIB:BOOL=ON  \
        	       -DWITH_VTK:BOOL=ON  \
-               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make -j 8 examples && make install
+               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local ..  &> config.log && make -j 1 &> make.log  && make -j 1 examples &> make_example.log && make install &> make_install.log
+
+
         
         ##########
         # libigl #
@@ -341,7 +352,7 @@ IncludeCmd: yes
         cd $SRC
         git clone https://github.com/libigl/libigl.git && cd libigl && git checkout v${lgl_MAJ}.${lgl_MIN}.${lgl_PATCH} && mkdir build && cd build
         /usr/local/bin/cmake \
-               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make install
+               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local ..  && make -j 8 && make install
         
         ############
         # GeomView #
@@ -356,59 +367,6 @@ IncludeCmd: yes
 	mv download geomview-${GV_MAJ}.${GV_MIN}.${GV_PATCH}.tar.gz && tar zxvf geomview-${GV_MAJ}.${GV_MIN}.${GV_PATCH}.tar.gz &&\
 	cd geomview-${GV_MAJ}.${GV_MIN}.${GV_PATCH} && ./configure --prefix=/usr/local/ && make -j8 && make install 
         
-        ########
-        # JSON #
-        ########
-        JS_MAJ=3
-        JS_MIN=10
-        JS_PATCH=5
-        #
-        cd $SRC
-        git clone https://github.com/nlohmann/json && cd json && git checkout v${JS_MAJ}.${JS_MIN}.${JS_PATCH}
-        mkdir build && cd build
-        /usr/local/bin/cmake \
-               -D CMAKE_BUILD_TYPE:STRING=RELEASE \
-               -D BUILD_SHARED_LIBS=ON \
-               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
-               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make install
-        	      
-
-	###########
-	# MRtrix3 #
-	###########
-	#https://mrtrix.readthedocs.io/en/latest/installation/build_from_source.html
-	MR_MAJ=3
-	MR_MIN=0
-	MR_PATCH=3
-	#
-	cd $SRC
-	ln -s /usr/bin/moc-qt5 /usr/bin/moc
-	ln -s /usr/bin/qmake-qt5 /usr/bin/qmake
-	git clone https://github.com/MRtrix3/mrtrix3.git && cd mrtrix3 && git checkout ${MR_MAJ}.${MR_MIN}.${MR_PATCH}
-	export EIGEN_CFLAGS="-isystem /usr/local/include/eigen3"
-	./configure && ./build
-
-
-#        ########
-#        # GDCM #
-#        ########
-#	# Warning the last tag does not work ...
-#        GDCM_MAJ=3
-#        GDCM_MIN=0
-#        GDCM_PATCH=20
-#        #
-#        cd $SRC
-#        git clone https://github.com/malaterre/GDCM.git  && cd GDCM 
-#        mkdir build && cd build
-#        /usr/local/bin/cmake \
-#               -D CMAKE_BUILD_TYPE:STRING=RELEASE \
-#               -D BUILD_SHARED_LIBS=ON \
-#               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
-#               -D GDCM_WRAP_PYTHON:BOOL=TRUE \
-#               -D GDCM_BUILD_APPLICATIONS:BOOL=TRUE \
-#               -D GDCM_BUILD_EXAMPLES:BOOL=TRUE \
-#               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make install
-
 
         #############
         # Quantum++ #
@@ -429,54 +387,6 @@ IncludeCmd: yes
                -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make install
 
 
-        ##################
-	# King's college #
-	##################
-	# https://github.com/KCL-BMEIS/niftyreg
-	NREG_MAJ=1
-	NREG_MIN=3
-	NREG_PATCH=9
-	# https://github.com/KCL-BMEIS/NiftySeg
-	SREG_MAJ=1
-	SREG_MIN=0
-	#
-	cd $SRC
-	git clone https://github.com/KCL-BMEIS/niftyreg && cd niftyreg && git checkout v${NREG_MAJ}.${NREG_MIN}
-	mkdir build && cd build
-	/usr/local/bin/cmake \
-	       	-D CMAKE_BUILD_TYPE:STRING=RELEASE \
-		-D BUILD_SHARED_LIBS=ON \
-		-D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make install
-	#
-	cd $SRC
-	git clone https://github.com/KCL-BMEIS/NiftySeg && cd NiftySeg && git checkout v${SREG_MAJ}.${SREG_MIN}
-	mkdir build && cd build
-	/usr/local/bin/cmake \
-	       	-D CMAKE_BUILD_TYPE:STRING=RELEASE \
-		-D BUILD_SHARED_LIBS=ON \
-		-D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
-   		-D EIGEN_INCLUDE_DIR:PATH=/usr/local/include/eigen3/ \
-		-D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 8 && make install
-
-
-
-	########
-	# ANTs #
-	########
-	git config --global url."https://".insteadOf git://
-	#ANTs_MAJ=2
-	#ANTs_MIN=3
-	#ANTs_PATCH=5
-	#
-	cd $SRC
-	git clone https://github.com/ANTsX/ANTs && cd ANTs # && git checkout v${ANTs_MAJ}.${ANTs_MIN}.${ANTs_PATCH}
-	mkdir build && cd build
-	/usr/local/bin/cmake \
-	       	-D CMAKE_BUILD_TYPE:STRING=RELEASE \
-		-D BUILD_SHARED_LIBS=ON \
-		-D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
-		-D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ ..  && make -j 1 && cd ANTS-build && make install
-
 	#
 	#
 	echo "Python installation"
@@ -485,36 +395,122 @@ IncludeCmd: yes
 	#
 	#
 	#python2 -m pip install --upgrade pip wheel setuptools numpy
-	python3 -m pip install --upgrade pip wheel setuptools numpy build
+	python3 -m pip install --upgrade pip wheel setuptools numpy build 
 	#
 	#python2 -m pip install -r /etc/singularity/requirements_P2.txt
-	python3 -m pip install -r /etc/singularity/requirements_P3.txt
+#YC	python3 -m pip install -r /etc/singularity/requirements_P3.txt
+
+	#
+	# Fellow container
+	ln -s /mnt/neurodrive/mnt/neuroimaging/neuroimgtools /mnt/neuroimaging/neuroimgtools
+	#
+	rm -rf /mnt/tempo/*
+	#
+	exit 0
 
 
-       ### #
-       ### # R/R-studio
-       ### echo "R/R-studio"
-       ### dnf install -y readline-devel pcre-devel  
-       ### # Requirements during R make --with-recommended-packages
-       ### # Requirements for Java                    ## R CMD javareconf below
-       ### dnf install -y java-1.8.0-openjdk-* which  qpdf valgrind
-       ### # Version of R to build and install
-       ### export R_VERSION=4.1.3
-       ### cd /tmp && curl -O https://cloud.r-project.org/src/base/R-4/R-${R_VERSION}.tar.gz
-       ### cd /tmp && tar -zxf R-${R_VERSION}.tar.gz
-       ### cd /tmp/R-${R_VERSION} && ./configure --with-readline=yes --enable-memory-profiling --enable-R-shlib && make && make install
-       ### #      javareconf
-       ### # R runtime properties
-       ### mkdir /usr/local/lib64/R/site-library
-       ### #
-       ### # R-studio
-       ### # https://www.rstudio.com/
-       ### cd /tmp && wget https://download1.rstudio.org/rstudio-1.1.456-x86_64.rpm
-       ### dnf install -y rstudio-1.1.456-x86_64.rpm
+%environment
+	echo "##############"
+	echo "## Versions ##"
+	echo "##############"
+	#
+	# CMake
+	CM_MAJ=3
+        CM_MIN=18
+        CM_PATH=0
+	#
+	echo "CMake v${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3"
+	#
+	# Eigen3
+        EG_MAJ=3
+        EG_MIN=3
+        EG_PATCH=7
+	#
+	echo "Eigen ${EG_MAJ}.${EG_MIN}.${EG_PATCH}"
+	#
+	# ITK
+	ITK_MAJ=5
+        ITK_MIN=2
+        ITK_PATCH=1
+	#
+	echo "ITK ${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}"
+	#
+	# CGAL
+        CG_MAJ=5
+        CG_MIN=3
+        CG_PATCH=1
+        #
+	echo "CGAL v${CG_MAJ}.${CG_MIN}.${CG_PATCH}"
+	#
+	# MRtrix
+	MR_MAJ=3
+	MR_MIN=0
+	MR_PATCH=3
+	#
+	echo "MRtrix ${MR_MAJ}.${MR_MIN}.${MR_PATCH}"
+	#
+	# FSL
+	FSL_MAJ=6
+        FSL_MIN=0
+        FSL_PATCH=6.4
+	FSL_VERSION=${FSL_MAJ}.${FSL_MIN}.${FSL_PATCH}
+	#
+	echo "FSL $FSL_VERSION"
+	#
+	# FreeSurfer
+	#
+        FS_MAJ=7
+        FS_MIN=3
+        FS_PATCH=2
+	echo "FreeSurfer v{5.3.0,7.1.0,7.3.2}"
 
+	#
+	# Local path
+	SRC=/usr/local/src/
+	PATH=/usr/local/cuda/bin:/usr/local/bin:${PATH} 
+	LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib64/stubs/:/usr/local/lib64:/usr/local/lib:${LD_LIBRARY_PATH}
+	export PATH LD_LIBRARY_PATH
 	
-       rm -rf /mnt/tempo/*
-       exit 0
+	#
+	# Fellow drive
+	# ANTs  CMake  FreeSurfer  FSL  ITK  KCL  MATLAB  MRtrix
+	#
+	#	NEUROIMG=/mnt/neurodrive/mnt/neuroimaging/neuroimgtools/
+	NEUROIMG=/mnt/neuroimaging/neuroimgtools/
+	# ANTs
+	PATH=${PATH}:${NEUROIMG}/ANTs/ANTs/install/bin/:${NEUROIMG}/ANTs/Scripts
+	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NEUROIMG}/ANTs/ANTs/install/lib
+	# MRtrix
+	PATH=${NEUROIMG}/mrtrix3/bin/:${PATH}
+	LD_LIBRARY_PATH=${NEUROIMG}/mrtrix3/lib:${LD_LIBRARY_PATH}
+	# KCL
+	PATH=${PATH}:${NEUROIMG}/niftyreg/install/bin/:${NEUROIMG}/NiftySeg/install/bin
+	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NEUROIMG}/niftyreg/install/lib:${NEUROIMG}/NiftySeg/install/lib
+	# FSL
+	FSLDIR=${NEUROIMG}/FSL/v${FSL_VERSION}
+	export FSLDIR
+	source ${FSLDIR}/etc/fslconf/fsl.sh
+	PATH=${FSLDIR}/share/fsl/bin/:${PATH}
+	LD_LIBRARY_PATH=${FSLDIR}:${LD_LIBRARY_PATH}
+	#FreeSurfer
+	export  FREESURFER_VERSION=v${FS_MAJ}.${FS_MIN}.${FS_PATCH}
+    	export  FREESURFER_HOME=${NEUROIMG}/FreeSurfer/${FREESURFER_VERSION}
+   	source $FREESURFER_HOME/SetUpFreeSurfer.sh
+    	echo "If you use Freesurfer, you need to set: export SUBJECTS_DIR=<path to subject data>"
+	#
+	#
+	export PATH LD_LIBRARY_PATH
+	
+
+#	#
+#	# AFNI
+#	echo  'Please check you have:'
+#	echo  'export R_LIBS=$HOME/R' >> ~/.bashrc
+#	echo  'setenv R_LIBS ~/R'     >> ~/.cshrc
+#
+#	
+#	/usr/local/bin/rPkgsInstall -pkgs ALL
+
 
 %runscript
 	echo "Arguments received: $*"

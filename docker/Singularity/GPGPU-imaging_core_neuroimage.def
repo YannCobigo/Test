@@ -1,0 +1,282 @@
+BootStrap: docker
+###############
+# SINGULARITY #
+###############
+# !Attention!
+# export SINGULARITY_CACHEDIR=/home/cobigo/devel/singularity/CACHE
+# export SINGULARITY_TMPDIR=/home/cobigo/devel/singularity/TMP
+#
+### Creating with writable and --sandbox directories
+# singularity build --sandbox GPGPU-imaging_core_2.0.0 GPGPU-imaging_core.def
+# singularity run --writable --nv -B /mnt/data/shared:/shared GPGPU-imaging_core_2.0.0
+# singularity shell --writable --nv -B /mnt/data/shared:/shared GPGPU-imaging_core_2.0.0
+#
+### Move into a unmuttable SIF (Singularity Image Format)
+# singularity build GPGPU-imaging_core_2.0.0.sif GPGPU-imaging_core_2.0.0
+# 
+### Singularity Definition Files, but will be unmuttable
+# singularity build  /mnt/data/shared/Production/GPGPU-imaging_core_2.1.0.sif GPGPU-imaging_core.def
+#
+From: fedora:32
+IncludeCmd: yes
+
+%setup
+    echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
+    if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+        echo "Hrmm, this container does not have /bin/sh installed..."
+        exit 1
+    fi
+    mkdir $SINGULARITY_ROOTFS/mnt/neuroimaging/ \
+    	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/ \
+    	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/CMake \
+    	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/FSL \
+    	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/FreeSurfer \
+    	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/MATLAB \
+    	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/ITK \
+    	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/KCL \
+    	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/ANTs \
+    	  $SINGULARITY_ROOTFS/mnt/macdata \
+	  $SINGULARITY_ROOTFS/mnt/images \
+	  $SINGULARITY_ROOTFS/mnt/images_test \
+	  $SINGULARITY_ROOTFS/mnt/MAC_QC \
+	  $SINGULARITY_ROOTFS/mnt/production \
+	  $SINGULARITY_ROOTFS/mnt/Quarantine \
+	  $SINGULARITY_ROOTFS/mnt/SNC-PACS-GW1 \
+	  $SINGULARITY_ROOTFS/mnt/tempo \
+	  $SINGULARITY_ROOTFS/shared \
+	  $SINGULARITY_ROOTFS/home/mac \
+	  $SINGULARITY_ROOTFS/netapp \
+	  $SINGULARITY_ROOTFS/netapp/home \
+	  $SINGULARITY_ROOTFS/etc/singularity/ \
+	  $SINGULARITY_ROOTFS/usr/local/lib64/R
+
+	  
+    #
+    #
+    exit 0
+
+%post
+
+
+	#
+	#
+	echo "Basic installation"
+	# No match: gdb-heap.x86_64 openblas-Rblas.x86_64 flex-devel.x86_64 libxml2.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64 libxml++-devel.x86_64 mercurial.x86_64 gmpc-devel.x86_64
+	dnf install  -y  openssl-devel cmake gcc.x86_64 gcc-c++ gcc-gfortran make.x86_64 make-devel.x86_64 git tcsh.x86_64 \
+	    openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 emacs tmux htop  wget tree.x86_64 \
+	    gdb.x86_64 gdb-headless.x86_64 gstreamer1*.x86_64 libstdc++-static.x86_64 diffutils.x86_64  findutils*.x86_64 \
+	    libXt-devel libXtst-devel expat expat-devel motif.x86_64 motif-devel.x86_64 unzip.x86_64 \
+	    qwt.x86_64 qwt-devel.x86_64 qwt-qt5.x86_64 qwt-qt5-devel.x86_64 qwtplot3d.x86_64 qwtplot3d-devel.x86_64 qwtplot3d-qt5.x86_64 qwtplot3d-qt5-devel.x86_64 \
+	    qt-config.x86_64 qt-creator.x86_64 qt-devel.x86_64 qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt5-*.x86_64 qt5-*.noarch
+
+	
+        #
+        # 
+        SRC=/mnt/neuroimaging/neuroimgtools/
+	
+        #########
+        # CMake #
+        #########
+        CM_MAJ=3
+        CM_MIN=18
+        CM_PATH=0
+        # 
+        cd $SRC/CMake
+        curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3/cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3.tar.gz -O && \
+        tar zxvf cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3.tar.gz && cd cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3 && mkdir build && cd build 
+        #
+        cmake \
+        -D CMAKE_BUILD_TYPE=Release \
+        -D BUILD_SHARED_LIBS=OFF \
+        -D CMAKE_INSTALL_PREFIX=/usr/local/ .. &> config.log && make -j 1 &> make.log  && make install &> make_install.log 
+        ln -s /usr/local/share/cmake-${CM_MAJ}.${CM_MIN} /usr/local/share/cmake
+
+        ##########
+        # Eigen3 # Duplicate in neurodrive
+        ##########
+        EG_MAJ=3
+        EG_MIN=3
+        EG_PATCH=7
+        #
+        cd $SRC
+        git clone https://gitlab.com/libeigen/eigen && cd eigen && git checkout ${EG_MAJ}.${EG_MIN}.${EG_PATCH}
+        mkdir build && cd build
+        /usr/local/bin/cmake \
+               -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+               -D BUILD_SHARED_LIBS=ON \
+               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+               -D CMAKE_INSTALL_PREFIX:PATH=/usr/local/ .. &> config.log   && make install &> make_install.log
+
+
+	###########
+	# MRtrix3 #
+	###########
+	#https://mrtrix.readthedocs.io/en/latest/installation/build_from_source.html
+	MR_MAJ=3
+	MR_MIN=0
+	MR_PATCH=3
+	#
+	if ! command -v /usr/bin/python &> /dev/null
+	then
+		ln -s /usr/bin/python3 /usr/bin/python
+	fi
+	#
+	cd $SRC
+	ln -s /usr/bin/moc-qt5 /usr/bin/moc
+	ln -s /usr/bin/qmake-qt5 /usr/bin/qmake
+	git clone https://github.com/MRtrix3/mrtrix3.git && cd mrtrix3 && git checkout ${MR_MAJ}.${MR_MIN}.${MR_PATCH}
+	export EIGEN_CFLAGS="-isystem /usr/local/include/eigen3"
+	./configure && ./build
+
+
+        #######
+        # FSL #
+        #######
+        FSL_MAJ=6
+        FSL_MIN=0
+        FSL_PATCH=6.4
+	FSL_VERSION=${FSL_MAJ}.${FSL_MIN}.${FSL_PATCH}
+	cd $SRC/FSL/
+	wget https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py
+	python3 fslinstaller.py -d /mnt/neuroimaging/neuroimgtools/FSL/v${FSL_VERSION} -V ${FSL_VERSION}
+	        
+	        
+        ##########
+        # MATLAB #
+        ##########
+	#   SPM  #
+	##########
+	cd $SRC/MATLAB/ &&
+	wget https://www.fil.ion.ucl.ac.uk/spm/download/restricted/eldorado/spm12.zip && unzip spm12.zip
+	wget https://www.fil.ion.ucl.ac.uk/spm/download/restricted/idyll/spm8.zip     && unzip spm8.zip
+	wget https://www.neuro.uni-jena.de/cat12/cat12_latest.zip                     && unzip cat12_latest.zip
+	wget https://www.applied-statistics.de/LST_3.0.0.zip                          && unzip LST_3.0.0.zip
+	## wget https://www.nitrc.org/frs/download.php/12229/NODDI_toolbox_v1.05.zip
+	ln -s $PWD/LST   $PWD/spm12/toolbox/
+	ln -s $PWD/cat12 $PWD/spm12/toolbox/
+
+
+	##############
+        # FreeSurfer #
+        ##############
+        FS_MAJ=7
+        FS_MIN=3
+        FS_PATCH=2
+	cd $SRC/FreeSurfer/
+	wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0/freesurfer-Linux-centos6_x86_64-stable-pub-v5.3.0.tar.gz
+	wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.1.0/freesurfer-linux-centos7_x86_64-7.1.0.tar.gz	
+	wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.3.2/freesurfer-linux-centos7_x86_64-7.3.2.tar.gz
+	#
+	mkdir v{5.3.0,7.1.0,7.3.2}
+	#
+	cd $SRC/FreeSurfer/ && tar zxvf freesurfer-Linux-centos6_x86_64-stable-pub-v5.3.0.tar.gz && mv freesurfer v5.3.0
+	cd $SRC/FreeSurfer/ && tar zxvf freesurfer-linux-centos7_x86_64-7.1.0.tar.gz && mv freesurfer v7.1.0
+	cd $SRC/FreeSurfer/ && tar zxvf freesurfer-linux-centos7_x86_64-7.3.2.tar.gz && mv freesurfer v7.3.2
+	#
+	cd $SRC/FreeSurfer/ && echo -e "yann.cobigo@ucsf.edu\n40459\n *CNjAhKwtO4do\n FSm11m2PCTQ76" > v5.3.0/license.txt
+	cd $SRC/FreeSurfer/ && echo -e "yann.cobigo@ucsf.edu\n40459\n *CNjAhKwtO4do\n FSm11m2PCTQ76" > v7.1.0/license.txt
+	cd $SRC/FreeSurfer/ && echo -e "yann.cobigo@ucsf.edu\n40459\n *CNjAhKwtO4do\n FSm11m2PCTQ76" > v7.3.2/license.txt
+	
+        #######
+        # ITK # Duplicate in neurodrive
+        #######
+        ITK_MAJ=5
+        ITK_MIN=2
+        ITK_PATCH=1
+        #
+        cd $SRC/ITK
+        curl -fsSL https://github.com/InsightSoftwareConsortium/ITK/releases/download/v${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}/InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz -O && \
+        tar zxvf InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz && cd InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH} && mkdir build install && cd build
+        /usr/local/bin/cmake \
+               -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+               -D BUILD_SHARED_LIBS=ON \
+               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+               -D ITK_LEGACY_REMOVE=ON \
+               -D Module_ITKVtkGlue:BOOL=OFF \
+               -D VTK_DIR:PATH=/usr/local/lib64/ \
+               -D CMAKE_INSTALL_PREFIX:PATH=$SRC/ITK/install $SRC/ITK/InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH} &> config.log && make -j 1 &> make.log && make install &> make_install.log
+
+        ##################
+	# King's college #
+	##################
+	# https://github.com/KCL-BMEIS/niftyreg
+	NREG_MAJ=1
+	NREG_MIN=3
+	NREG_PATCH=9
+	# https://github.com/KCL-BMEIS/NiftySeg
+	SREG_MAJ=1
+	SREG_MIN=0
+	#
+	cd $SRC/KCL
+	git clone https://github.com/KCL-BMEIS/niftyreg && cd niftyreg && git checkout v${NREG_MAJ}.${NREG_MIN}
+	mkdir install build && cd build
+	/usr/local/bin/cmake \
+	       	-D CMAKE_BUILD_TYPE:STRING=RELEASE \
+		-D BUILD_SHARED_LIBS=ON \
+		-D CMAKE_INSTALL_PREFIX:PATH=$SRC/KCL/niftyreg/install .. &> config.log && make -j 1  &> make.log && make install &> make_install.log
+	#
+	cd $SRC/KCL
+	git clone https://github.com/KCL-BMEIS/NiftySeg && cd NiftySeg && git checkout v${SREG_MAJ}.${SREG_MIN}
+	mkdir install build && cd build
+	/usr/local/bin/cmake \
+	       	-D CMAKE_BUILD_TYPE:STRING=RELEASE \
+		-D BUILD_SHARED_LIBS=ON \
+		-D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+   		-D EIGEN_INCLUDE_DIR:PATH=/usr/local/include/eigen3/ \
+		-D CMAKE_INSTALL_PREFIX:PATH= $SRC/KCL/NiftySeg/install ..  &> config.log && make -j 1 &> make.log && make install &> make_install.log
+
+
+	########
+	# ANTs #
+	########
+	git config --global url."https://".insteadOf git://
+	#ANTs_MAJ=2
+	#ANTs_MIN=3
+	#ANTs_PATCH=5
+	#
+	cd $SRC/ANTs
+	git clone https://github.com/ANTsX/ANTs && cd ANTs # && git checkout v${ANTs_MAJ}.${ANTs_MIN}.${ANTs_PATCH}
+	mkdir install build && cd build
+	/usr/local/bin/cmake \
+	       	-D CMAKE_BUILD_TYPE:STRING=RELEASE \
+		-D BUILD_SHARED_LIBS=ON \
+		-D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+		-D CMAKE_INSTALL_PREFIX:PATH=$SRC/ANTs/ANTs/install .. &> config.log  && make -j 1 &> make.log && cd ANTS-build && make install &> make_install.log
+
+
+
+	#
+	#
+	echo "Python installation"
+	dnf install -y  python3-pip 
+	#dnf install -y python\*-virtualenv
+	#
+	#
+	#python2 -m pip install --upgrade pip wheel setuptools numpy
+	python3 -m pip install --upgrade pip wheel setuptools numpy build
+	#
+	#python2 -m pip install -r /etc/singularity/requirements_P2.txt
+	#python3 -m pip install -r /etc/singularity/requirements_P3.txt
+
+
+
+	
+       rm -rf /mnt/tempo/*
+       exit 0
+
+%runscript
+	echo "Arguments received: $*"
+
+%test
+	#
+	echo "Sounds OK"	
+
+%environment
+    	echo "Variables"
+
+
+
+%labels
+MAINTAINER Yann Cobigo
+VERSION    v2.0.0
+
