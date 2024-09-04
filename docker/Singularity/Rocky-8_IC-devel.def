@@ -1,0 +1,244 @@
+###############
+# SINGULARITY #
+###############
+# !Attention!
+# export SINGULARITY_CACHEDIR=/home/cobigo/devel/singularity/CACHE
+# export SINGULARITY_TMPDIR=/home/cobigo/devel/singularity/TMP
+#
+### Creating with writable and --sandbox directories
+# singularity build --sandbox GPGPU-imaging_core_2.0.0 GPGPU-imaging_core.def
+# singularity run --writable --nv -B /mnt/data/shared:/shared GPGPU-imaging_core_2.0.0
+# singularity shell --writable --nv -B /mnt/data/shared:/shared GPGPU-imaging_core_2.0.0
+#
+### Move into a unmuttable SIF (Singularity Image Format)
+# singularity build GPGPU-imaging_core_2.0.0.sif GPGPU-imaging_core_2.0.0
+# 
+### Singularity Definition Files, but will be unmuttable
+# singularity build  /mnt/data/shared/Production/GPGPU-imaging_core_2.1.0.sif GPGPU-imaging_core.def
+#
+# sudo singularity image.create --size `echo "1024 128" | awk -F" " '{print $1*$2}'` /mnt/data2/shared/Production/GPGPU-imaging_core_2.0.2.img
+# sudo singularity image.create --size 1024 /mnt/coredata/Singularity/test.img
+# in to Docker/docker/Singularity/
+#
+# As a user
+# singularity shell --shell /bin/bash -B /mnt/coredata/neuroimaging_CentOS7/:/mnt/neuroimaging  -B /etc/machine-id:/etc/machine-id -B /usr/local/MATLAB:/usr/local/MATLAB /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
+#
+BootStrap: docker
+From: rockylinux:8
+IncludeCmd: yes
+
+%setup
+    echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
+    if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+        echo "Hrmm, this container does not have /bin/sh installed..."
+        exit 1
+    fi
+    mkdir $SINGULARITY_ROOTFS/mnt/neuroimaging/ \
+    	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neurodevel/ \
+    	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neurodevel/src \
+    	  $SINGULARITY_ROOTFS/shared \
+    	  $SINGULARITY_ROOTFS/shared/imaging_core \
+    	  $SINGULARITY_ROOTFS/shared/language \
+    	  $SINGULARITY_ROOTFS/shared/macdata \
+	  $SINGULARITY_ROOTFS/shared/images \
+	  $SINGULARITY_ROOTFS/mnt/images_test \
+	  $SINGULARITY_ROOTFS/mnt/MAC_QC \
+	  $SINGULARITY_ROOTFS/mnt/production \
+	  $SINGULARITY_ROOTFS/mnt/Quarantine \
+	  $SINGULARITY_ROOTFS/mnt/SNC-PACS-GW1 \
+	  $SINGULARITY_ROOTFS/mnt/tempo \
+	  $SINGULARITY_ROOTFS/home/mac \
+	  $SINGULARITY_ROOTFS/etc/singularity/
+	  
+    cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
+    cp requirements_2023-10-12.txt $SINGULARITY_ROOTFS/etc/singularity/requirements_P3.txt
+
+    #
+    #
+    exit 0
+
+%post
+	#
+	#
+	echo "Update the image"
+	yum update -y && yum install -y epel-release && yum groupinstall -y "Development tools" "RPM Development Tools" "Legacy UNIX Compatibility" "Scientific Support" "System Tools" "Fedora Packager" "Graphical Administration Tools" "Headless Management" "Xfce" "Security Tools" && yum -y config-manager --set-enabled powertools && yum -y update 
+
+
+	#
+	#
+	echo "Basic installation"
+	# Issue with:
+	######
+	# blender.x86_64 tetgen.x86_64 rstudio-desktop.x86_64
+	# try snap install blender tetgen 
+	# tetex-elsevier 'tex(makecell.sty)' 'tex(stfloats.sty)' 'tex(breakcites.sty)' 'tex(moreverb.sty)'
+	# qt-creator.x86_64 qt-devel.x86_64  qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt-config.x86_64
+	######
+	#
+	yum install -y python3.11-devel.x86_64 gcc-c++.x86_64 gcc-gfortran.x86_64 gcc.x86_64 gdb-headless.x86_64 gdb.x86_64 cmake dbus-daemon.x86_64 dbus-glib-devel.x86_64 gsl-devel.x86_64 gsl.x86_64 htop make-devel.x86_64 make.x86_64 mesa-libGL-devel.x86_64 mesa-libGLU*.i686 mesa-libGLU*.x86_64 mesa-libGLw-devel.x86_64 mesa-libGLw.x86_64 mesa-libOSMesa.x86_64 mlocate.x86_64 wget zlib-devel tcsh.x86_64 
+	yum install -y atlas-devel.x86_64 bc.x86_64 bison.x86_64 boost-devel.x86_64 bzip2-devel bzip2-libs.x86_64 cairo cairo-gobject-devel cups-devel.x86_64 cups.x86_64 curl-devel curl.x86_64 diffutils.x86_64 dos2unix.x86_64 ed.x86_64 emacs.x86_64 evince.x86_64 fftw-libs.x86_64 firefox.x86_64 flex.x86_64 fuse3-devel.x86_64 fuse-devel.x86_64 fuse-libs.x86_64 fuse.x86_64 fuse-zip.x86_64 gimp.x86_64 git glibc.x86_64 gmp-devel.x86_64 gnome-tweaks.noarch gobject-introspection-devel gpgme-devel.x86_64 gstreamer1*.x86_64 gwenview.x86_64 hdf5-devel.x86_64 initscripts krb5-devel.x86_64 krb5-pkinit.x86_64 krb5-server-ldap.x86_64 krb5-server.x86_64 krb5-workstation.x86_64 leveldb-devel.x86_64 libcurl-devel.x86_64 libicu-devel libjpeg-devel libmng-devel.x86_64 libmpc-devel.x86_64 libpng12.x86_64 libpng15.x86_64 libpng-devel libreoffice.x86_64 libtiff-devel libuuid-devel.x86_64 libuuid.x86_64 libX11-devel libXcursor-devel.x86_64 libXi-devel.x86_64 libXinerama-devel.x86_64 libXp-devel.x86_64 libXpm-devel.x86_64 libXpm.x86_64 libXp.x86_64 libXrandr-devel.x86_64 libXt-devel libyaml.x86_64 lua.x86_64 motif-devel.x86_64 motif-static.x86_64 motif.x86_64 mpfr-devel.x86_64 mpfr.x86_64 mpich-devel.x86_64 mpich.x86_64 nautilus.x86_64 ncurses-devel netpbm-progs.x86_64 net-tools octave.x86_64 okular.x86_64 openblas*.x86_64 opencv*.x86_64 openssh-clients.x86_64 openssh-server.x86_64 openssh.x86_64 openssl-devel pango-devel paraview.x86_64 patch.x86_64 pygobject2-codegen.x86_64 pygobject2-devel.x86_64 pygobject2-doc.x86_64 pygobject2.x86_64 qgpgme-devel.x86_64 qgpgme.x86_64 qt5-*.noarch qt5-*.x86_64 R-*.noarch R-*.x86_64 R.x86_64 snap* sqlite-devel swig.x86_64 systemd-devel.x86_64 tbb-devel.x86_64 tbb.x86_64 tetex-* 'tex(balance.sty)' texlive-latex-bin-bin texlive-tex4ht 'tex(multirow.sty)' 'tex(wrapfig.sty)' 'tex(xstring.sty)' tmux.x86_64 tree.x86_64 xorg-x11-apps.x86_64 xorg-x11-drivers.x86_64 xorg-x11-fonts-misc.noarch xorg-x11-server-devel.x86_64 xorg-x11-server-Xvfb.x86_64 xorg-x11-utils.x86_64 xorg-x11-xauth xorg-x11-xinit-session.x86_64 xz xz-devel.x86_64 yaml-cpp-devel.x86_64 yaml-cpp.x86_64
+
+
+	########################################
+	## Installation of Neuroimaging Tools ##
+	########################################
+
+        #
+        # 
+        DEST=/mnt/neuroimaging/neurodevel/
+        SRC=/mnt/neuroimaging/neurodevel/src/
+
+        #########
+        # CMake # Duplicate in neurodrive
+        #########
+        CM_MAJ=3
+        CM_MIN=30
+        CM_PATH=2
+        # 
+        cd $SRC
+        curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CM_MAJ}.${CM_MIN}.${CM_PATH}/cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}.tar.gz -O && \
+        tar zxvf cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}.tar.gz && cd cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH} && mkdir build  && cd build 
+        #
+        cmake \
+        -D CMAKE_BUILD_TYPE=Release \
+        -D BUILD_SHARED_LIBS=OFF \
+        -D CMAKE_INSTALL_PREFIX=$DEST/ ..   && make -j 8  && make install 
+        ln -s $DEST/share/cmake-${CM_MAJ}.${CM_MIN} $DEST/share/cmake
+	
+        
+        ########
+        # JSON # Duplicate in neurodrive
+        ########
+        JS_MAJ=3
+        JS_MIN=11
+        JS_PATCH=3
+        #
+        cd $SRC
+        git clone https://github.com/nlohmann/json && cd json && git checkout v${JS_MAJ}.${JS_MIN}.${JS_PATCH} && mkdir build && cd build
+        $DEST/bin/cmake \
+               -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+               -D BUILD_SHARED_LIBS=ON \
+               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+               -D CMAKE_INSTALL_PREFIX:PATH=$DEST/ ..  &> config.log  && make -j 1 &> make.log && make install &> make_install.log 
+
+
+        ##########
+        # Eigen3 # Duplicate in neurodrive
+        ##########
+        EG_MAJ=3
+        EG_MIN=3
+        EG_PATCH=9
+        #
+        cd $SRC
+        git clone https://gitlab.com/libeigen/eigen && cd eigen && git checkout ${EG_MAJ}.${EG_MIN}.${EG_PATCH}
+        mkdir build && cd build
+        $DEST/bin/cmake \
+               -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+               -D BUILD_SHARED_LIBS=ON \
+               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+               -D CMAKE_INSTALL_PREFIX:PATH=$DEST/ .. &> config.log   && make install &> make_install.log
+
+
+        #############
+        # Quantum++ #
+        #############
+        QPP_MAJ=4
+        QPP_MIN=3
+        QPP_PATCH=4
+        #
+        cd $SRC
+        git clone https://github.com/softwareQinc/qpp.git   && cd qpp && git checkout v${QPP_MAJ}.${QPP_MIN}.${QPP_PATCH}
+        mkdir build && cd build
+        $DEST/bin/cmake \
+               -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+               -D EIGEN3_INSTALL_DIR=$DEST/include/eigen3 \
+               -D WITH_EXAMPLES:BOOL=TRUE \
+               -D WITH_OPENMP:BOOL=TRUE \
+               -D CMAKE_INSTALL_PREFIX:PATH=$DEST/ ..  && make install &> make_install.log
+
+        
+	########
+        # CGAL #
+        ########
+        CG_MAJ=5
+        CG_MIN=5
+        CG_PATCH=4
+        #
+        cd $SRC
+        git clone https://github.com/CGAL/cgal && cd cgal && git checkout v${CG_MAJ}.${CG_MIN}.${CG_PATCH} && mkdir build  && cd build
+        $DEST/bin/cmake \
+               -DCMAKE_BUILD_TYPE=Release \
+       	       -DWITH_examples=true  \
+       	       -DWITH_demos=true  \
+       	       -DBUILD_SHARED_LIBS=ON  \
+       	       -DBUILD_TESTING=ON  \
+       	       -DWITH_CGAL_ImageIO=ON  \
+       	       -DWITH_CGAL_Core=ON  \
+       	       -DWITH_CGAL_Qt5:BOOL=ON  \
+       	       -DWITH_OpenGL:BOOL=ON  \
+       	       -DWITH_ZLIB:BOOL=ON  \
+       	       -DWITH_VTK:BOOL=ON  \
+               -D CMAKE_INSTALL_PREFIX:PATH=$DEST ..  &> config.log && make -j 1 &> make.log  && make -j 1 examples &> make_example.log && make install &> make_install.log
+
+        
+#        ##########
+#        # libigl #
+#        ##########
+#        lgl_MAJ=2
+#        lgl_MIN=5
+#        lgl_PATCH=0
+#        #
+#        cd $SRC
+#        git clone https://github.com/libigl/libigl.git && cd libigl && git checkout v${lgl_MAJ}.${lgl_MIN}.${lgl_PATCH} && mkdir build && cd build
+#        $DEST/bin/cmake \
+#               -D CMAKE_INSTALL_PREFIX:PATH=$DEST ..  && make -j 8 && make install
+#
+#
+#        ############
+#        # GeomView #
+#        ############
+#        GV_MAJ=1
+#        GV_MIN=9
+#        GV_PATCH=5
+#        # wget https://sourceforge.net/projects/geomview/files/geomview/1.9.5/geomview-1.9.5.tar.gz/download -o geomview-1.9.5.tar.gz
+#        #https://sourceforge.net/projects/geomview/files/geomview/1.9.5/geomview-1.9.5.tar.gz/download
+#        cd $SRC
+#        wget https://sourceforge.net/projects/geomview/files/geomview/${GV_MAJ}.${GV_MIN}.${GV_PATCH}/geomview-${GV_MAJ}.${GV_MIN}.${GV_PATCH}.tar.gz/download &&\
+#	mv download geomview-${GV_MAJ}.${GV_MIN}.${GV_PATCH}.tar.gz && tar zxvf geomview-${GV_MAJ}.${GV_MIN}.${GV_PATCH}.tar.gz &&\
+#	cd geomview-${GV_MAJ}.${GV_MIN}.${GV_PATCH} && ./configure --prefix=$DEST/ && make -j8 &> make.log && make install &> make_install.log
+#
+#
+        #######
+        # ITK # Duplicate in neurodrive
+        #######
+        ITK_MAJ=5
+        ITK_MIN=4
+        ITK_PATCH=0
+        #
+        cd $SRC
+	curl -fsSL https://github.com/InsightSoftwareConsortium/ITK/archive/refs/tags/v${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz -O && \
+	mv v${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz && \
+	tar zxvf InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz && cd ITK-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH} && mkdir build && cd build
+        $DEST/bin/cmake \
+               -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+               -D BUILD_SHARED_LIBS=ON \
+               -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+               -D ITK_LEGACY_REMOVE=ON \
+               -D Module_ITKVtkGlue:BOOL=OFF \
+               -D VTK_DIR:PATH=$DEST/lib64/ \
+               -D CMAKE_INSTALL_PREFIX:PATH=$DEST/ .. &> config.log && make -j 1 &> make.log && make install &> make_install.log
+        
+
+       #
+       #
+       exit 0
+
+%runscript
+	echo "Arguments received: $*"
+	exec /usr/bin/python "$@"
+
+%test
+	#
+	echo "Sounds OK"	
+	

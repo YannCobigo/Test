@@ -1,0 +1,262 @@
+###############
+# SINGULARITY #
+###############
+# !Attention!
+# export SINGULARITY_CACHEDIR=/home/cobigo/devel/singularity/CACHE
+# export SINGULARITY_TMPDIR=/home/cobigo/devel/singularity/TMP
+#
+### Creating with writable and --sandbox directories
+# singularity build --sandbox GPGPU-imaging_core_2.0.0 GPGPU-imaging_core.def
+# singularity run --writable --nv -B /mnt/data/shared:/shared GPGPU-imaging_core_2.0.0
+# singularity shell --writable --nv -B /mnt/data/shared:/shared GPGPU-imaging_core_2.0.0
+#
+### Move into a unmuttable SIF (Singularity Image Format)
+# singularity build GPGPU-imaging_core_2.0.0.sif GPGPU-imaging_core_2.0.0
+# 
+### Singularity Definition Files, but will be unmuttable
+# singularity build  /mnt/data/shared/Production/GPGPU-imaging_core_2.1.0.sif GPGPU-imaging_core.def
+#
+# sudo singularity image.create --size `echo "1024 128" | awk -F" " '{print $1*$2}'` /mnt/data2/shared/Production/GPGPU-imaging_core_2.0.2.img
+# sudo singularity image.create --size 1024 /mnt/coredata/Singularity/test.img
+# in to Docker/docker/Singularity/
+#
+# As a user
+# singularity shell --shell /bin/bash -B /mnt/coredata/neuroimaging_CentOS7/:/mnt/neuroimaging  -B /etc/machine-id:/etc/machine-id -B /usr/local/MATLAB:/usr/local/MATLAB /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
+#
+#
+#####################
+# Setting Anaconda2 #
+#####################
+# The software has to be set up manually:
+# singularity shell --writable  -B /rosen/hpc-scratch/ycobigo/Docker/neuroimaging_CentOS7:/mnt/neuroimaging /rosen/hpc-scratch/ycobigo/Docker/Centos7-imaging_core_1.3beta.img
+# 
+# Run provided script:
+# ./Anaconda2-5.2.0-Linux-x86_64.sh
+#   - /mnt/neuroimaging/Anaconda2/5.2.0/
+#   - to PATH in your /root/.bashrc [no]  -> export PATH=$PATH:/mnt/neuroimaging/Anaconda2/5.2.0/bin && export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/neuroimaging/Anaconda2/5.2.0/lib
+#   - Do you wish the installer to prepend the Anaconda2 install location [no]
+#   - Do you wish to proceed with the installation of Microsoft VSCode?
+#   
+#   Lastly, change the group from the Anaconda directory 
+#
+BootStrap: docker
+From: rockylinux:8
+IncludeCmd: yes
+
+%setup
+    echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
+    if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+        echo "Hrmm, this container does not have /bin/sh installed..."
+        exit 1
+    fi
+    mkdir $SINGULARITY_ROOTFS/mnt/neuroimaging/ \
+    	  $SINGULARITY_ROOTFS/shared \
+    	  $SINGULARITY_ROOTFS/shared/imaging_core \
+    	  $SINGULARITY_ROOTFS/shared/language \
+    	  $SINGULARITY_ROOTFS/shared/macdata \
+	  $SINGULARITY_ROOTFS/shared/images \
+	  $SINGULARITY_ROOTFS/mnt/images_test \
+	  $SINGULARITY_ROOTFS/mnt/MAC_QC \
+	  $SINGULARITY_ROOTFS/mnt/production \
+	  $SINGULARITY_ROOTFS/mnt/Quarantine \
+	  $SINGULARITY_ROOTFS/mnt/SNC-PACS-GW1 \
+	  $SINGULARITY_ROOTFS/mnt/tempo \
+	  $SINGULARITY_ROOTFS/home/mac \
+	  $SINGULARITY_ROOTFS/etc/singularity/ \
+	  $SINGULARITY_ROOTFS/usr/local/lib64/R 
+	  
+    cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
+    cp requirements_2024-08-22.csv $SINGULARITY_ROOTFS/etc/singularity/requirements_P3.txt
+
+    #
+    #
+    exit 0
+
+%post
+	#
+	#
+	echo "Update the image"
+	yum update -y && yum install -y epel-release && yum groupinstall -y "Development tools" "RPM Development Tools" "Legacy UNIX Compatibility" "Scientific Support" "System Tools" "Fedora Packager" "Graphical Administration Tools" "Headless Management" "Xfce" "Security Tools" && yum -y config-manager --set-enabled powertools && yum -y update 
+
+
+	#
+	#
+	echo "Basic installation"
+	# Issue with:
+	######
+	# blender.x86_64 tetgen.x86_64
+	# try snap install blender tetgen
+	# tetex-elsevier 'tex(makecell.sty)' 'tex(stfloats.sty)' 'tex(breakcites.sty)' 'tex(moreverb.sty)'
+	# qt-creator.x86_64 qt-devel.x86_64  qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt-config.x86_64
+	######
+	# 
+	yum install -y python3.11-devel.x86_64 gcc-c++.x86_64 gcc-gfortran.x86_64 gcc.x86_64 gdb-headless.x86_64 gdb.x86_64 cmake dbus-daemon.x86_64 dbus-glib-devel.x86_64 gsl-devel.x86_64 gsl.x86_64 htop make-devel.x86_64 make.x86_64 mesa-libGL-devel.x86_64 mesa-libGLU*.i686 mesa-libGLU*.x86_64 mesa-libGLw-devel.x86_64 mesa-libGLw.x86_64 mesa-libOSMesa.x86_64 mlocate.x86_64 wget zlib-devel tcsh.x86_64 
+	yum install -y atlas-devel.x86_64 bc.x86_64 bison.x86_64 boost-devel.x86_64 bzip2-devel bzip2-libs.x86_64 cairo cairo-gobject-devel cups-devel.x86_64 cups.x86_64 curl-devel curl.x86_64 diffutils.x86_64 dos2unix.x86_64 ed.x86_64 emacs.x86_64 evince.x86_64 fftw-libs.x86_64 firefox.x86_64 flex.x86_64 fuse3-devel.x86_64 fuse-devel.x86_64 fuse-libs.x86_64 fuse.x86_64 fuse-zip.x86_64 gimp.x86_64 git glibc.x86_64 gmp-devel.x86_64 gnome-tweaks.noarch gobject-introspection-devel gpgme-devel.x86_64 gstreamer1*.x86_64 gwenview.x86_64 hdf5-devel.x86_64 initscripts krb5-devel.x86_64 krb5-pkinit.x86_64 krb5-server-ldap.x86_64 krb5-server.x86_64 krb5-workstation.x86_64 leveldb-devel.x86_64 libcurl-devel.x86_64 libicu-devel libjpeg-devel libmng-devel.x86_64 libmpc-devel.x86_64 libpng12.x86_64 libpng15.x86_64 libpng-devel libreoffice.x86_64 libtiff-devel libuuid-devel.x86_64 libuuid.x86_64 libX11-devel libXcursor-devel.x86_64 libXi-devel.x86_64 libXinerama-devel.x86_64 libXp-devel.x86_64 libXpm-devel.x86_64 libXpm.x86_64 libXp.x86_64 libXrandr-devel.x86_64 libXt-devel libyaml.x86_64 lua.x86_64 motif-devel.x86_64 motif-static.x86_64 motif.x86_64 mpfr-devel.x86_64 mpfr.x86_64 mpich-devel.x86_64 mpich.x86_64 nautilus.x86_64 ncurses-devel netpbm-progs.x86_64 net-tools octave.x86_64 okular.x86_64 openblas*.x86_64 opencv*.x86_64 openssh-clients.x86_64 openssh-server.x86_64 openssh.x86_64 openssl-devel pango-devel paraview.x86_64 patch.x86_64 pygobject2-codegen.x86_64 pygobject2-devel.x86_64 pygobject2-doc.x86_64 pygobject2.x86_64 qgpgme-devel.x86_64 qgpgme.x86_64 qt5-*.noarch qt5-*.x86_64 R-*.noarch R-*.x86_64 R.x86_64 snap* sqlite-devel swig.x86_64 systemd-devel.x86_64 tbb-devel.x86_64 tbb.x86_64 tetex-* 'tex(balance.sty)' texlive-latex-bin-bin texlive-tex4ht 'tex(multirow.sty)' 'tex(wrapfig.sty)' 'tex(xstring.sty)' tmux.x86_64 tree.x86_64 xorg-x11-apps.x86_64 xorg-x11-drivers.x86_64 xorg-x11-fonts-misc.noarch xorg-x11-server-devel.x86_64 xorg-x11-server-Xvfb.x86_64 xorg-x11-utils.x86_64 xorg-x11-xauth xorg-x11-xinit-session.x86_64 xz xz-devel.x86_64 yaml-cpp-devel.x86_64 yaml-cpp.x86_64
+
+
+	#
+	#	
+	echo "Python installation"
+	yum install -y  python3.11-pip
+	python3.11 -m pip install --upgrade pip wheel setuptools numpy build
+	# Since python 3.6 the enum34 library is no longer compatible with the standard library
+	python3.11 -m pip install -r /etc/singularity/requirements_P3.txt
+
+
+        ############
+        # Dcm2Bids #
+        ############
+	Dcm2Bids_VERSION=3.2.0
+	cd /tmp
+	curl -fLO https://github.com/unfmontreal/dcm2bids/releases/latest/download/dcm2bids_rhel-based_${Dcm2Bids_VERSION}.tar.gz
+	tar zxvf dcm2bids_rhel-based_${Dcm2Bids_VERSION}.tar.gz && mv dcm2bids_scaffold dcm2bids dcm2bids_helper /usr/local/bin/
+
+
+        ########
+        # AFNI #
+        ########
+	cd /tmp
+	curl -O https://raw.githubusercontent.com/afni/afni/master/src/other_builds/OS_notes.linux_fedora_b_user.tcsh
+	curl -O https://afni.nimh.nih.gov/pub/dist/bin/misc/@update.afni.binaries
+	tcsh @update.afni.binaries -package linux_openmp_64 -bindir /usr/local/bin/ -do_extras
+	#ln -s /usr/lib64/libgsl.so.25.0.0 /usr/lib64/libgsl.so.0
+
+
+	#
+	# R-studio desktop/centos7/x86_64/rstudio-pro-2023.03.2-454.pro2-x86_64.rpm
+	cd /tmp && wget https://download1.rstudio.org/desktop/centos7/x86_64/rstudio-pro-2023.03.0-386.pro1-x86_64.rpm
+	yum install -y rstudio-pro-2023.03.0-386.pro1-x86_64.rpm
+
+
+        #
+        #
+        exit 0
+
+%environment
+	echo "##############"
+	echo "## Versions ##"
+	echo "##############"
+	#
+	# CMake
+	CM_MAJ=3
+        CM_MIN=18
+        CM_PATH=0
+	#
+	echo "CMake v${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3"
+	#
+	# Dcm2Bids
+	D2B_MAJ=3
+        D2B_MIN=30
+        D2B_PATH=3
+	#
+	echo "Dcm2Bids v${D2B_MAJ}.${D2B_MIN}.${D2B_PATH}"
+	#
+	# JSON
+        JS_MAJ=3
+        JS_MIN=11
+        JS_PATCH=3
+	#
+	echo "JSON v${JS_MAJ}.${JS_MIN}.${JS_PATCH}"
+	#
+	# Eigen
+        EG_MAJ=3
+        EG_MIN=3
+        EG_PATCH=9
+	#
+	echo "Eigen ${EG_MAJ}.${EG_MIN}.${EG_PATCH}"
+	#
+	# ITK
+	ITK_MAJ=5
+        ITK_MIN=4
+        ITK_PATCH=0
+	#
+	echo "ITK ${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}"
+	#
+	# CGAL
+        CG_MAJ=5
+        CG_MIN5
+        CG_PATCH=4
+        #
+	echo "CGAL v${CG_MAJ}.${CG_MIN}.${CG_PATCH}"
+	#
+	# MRtrix
+	MR_MAJ=3
+	MR_MIN=0
+	MR_PATCH=4
+	#
+	echo "MRtrix ${MR_MAJ}.${MR_MIN}.${MR_PATCH}"
+	#
+	# FSL
+	FSL_MAJ=6
+        FSL_MIN=0
+        FSL_PATCH=7.4
+	FSL_VERSION=${FSL_MAJ}.${FSL_MIN}.${FSL_PATCH}
+	#
+	echo "FSL $FSL_VERSION"
+	#
+	# FreeSurfer
+	#
+        FS_MAJ=7
+        FS_MIN=3
+        FS_PATCH=2
+	echo "FreeSurfer v{5.3.0,7.1.0,7.3.2}"
+	#
+	#
+	NREG_MAJ=1
+	NREG_MIN=3
+	NREG_PATCH=9
+	#
+	SREG_MAJ=1
+	SREG_MIN=0
+	#
+	echo "King's college niftyreg (v${NREG_MAJ}.${NREG_MIN}.${NREG_PATCH}) and NiftySeg (v${SREG_MAJ}.${SREG_MIN})"
+
+	#
+	# Local path
+	SRC=/usr/local/src/
+	PATH=/usr/local/cuda/bin:/usr/local/bin:${PATH} 
+	LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib64/stubs/:/usr/local/lib64:/usr/local/lib:${LD_LIBRARY_PATH}
+	export PATH LD_LIBRARY_PATH
+	
+	#
+	# Fellow drive
+	# ANTs  CMake  FreeSurfer  FSL  ITK  KCL  MATLAB  MRtrix
+	#
+	NEURODEV=/mnt/neuroimaging/neurodevel/
+	NEUROIMG=/mnt/neuroimaging/neuroimgtools/
+	# Dev tools
+	PATH=${PATH}:${NEURODEV}/bin/
+	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NEURODEV}/lib64:${NEURODEV}/lib
+	# ANTs
+	PATH=${PATH}:${NEUROIMG}/ANTs/ANTs/install/bin/:${NEUROIMG}/ANTs/Scripts
+	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NEUROIMG}/ANTs/ANTs/install/lib64:${NEUROIMG}/ANTs/ANTs/install/lib
+	# MRtrix
+	PATH=${PATH}:${NEUROIMG}/mrtrix3/bin/
+	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NEUROIMG}/mrtrix3/lib
+	# KCL
+	PATH=${PATH}:${NEUROIMG}/niftyreg/install/bin/:${NEUROIMG}/NiftySeg/install/bin
+	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NEUROIMG}/niftyreg/install/lib:${NEUROIMG}/NiftySeg/install/lib
+	# FSL
+	FSLDIR=${NEUROIMG}/FSL/v${FSL_VERSION}
+	export FSLDIR
+	source ${FSLDIR}/etc/fslconf/fsl.sh
+	PATH=${PATH}:${FSLDIR}/share/fsl/bin/
+	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${FSLDIR}
+	#FreeSurfer
+	export  FREESURFER_VERSION=v${FS_MAJ}.${FS_MIN}.${FS_PATCH}
+    	export  FREESURFER_HOME=${NEUROIMG}/FreeSurfer/${FREESURFER_VERSION}/freesurfer
+   	source $FREESURFER_HOME/SetUpFreeSurfer.sh
+    	echo "If you use Freesurfer, you need to set: export SUBJECTS_DIR=<path to subject data>"
+	#
+	#
+	export PATH LD_LIBRARY_PATH
+
+
+%runscript
+	echo "Arguments received: $*"
+##0	exec /usr/bin/python "$@"
+
+%test
+	#
+	echo "Sounds OK"	
+	

@@ -1,4 +1,3 @@
-BootStrap: docker
 ###############
 # SINGULARITY #
 ###############
@@ -17,7 +16,31 @@ BootStrap: docker
 ### Singularity Definition Files, but will be unmuttable
 # singularity build  /mnt/data/shared/Production/GPGPU-imaging_core_2.1.0.sif GPGPU-imaging_core.def
 #
-From: fedora:32
+# sudo singularity image.create --size `echo "1024 128" | awk -F" " '{print $1*$2}'` /mnt/data2/shared/Production/GPGPU-imaging_core_2.0.2.img
+# sudo singularity image.create --size 1024 /mnt/coredata/Singularity/test.img
+# in to Docker/docker/Singularity/
+#
+# As a user
+# singularity shell --shell /bin/bash -B /mnt/coredata/neuroimaging_CentOS7/:/mnt/neuroimaging  -B /etc/machine-id:/etc/machine-id -B /usr/local/MATLAB:/usr/local/MATLAB /mnt/coredata/Singularity/Centos7-imaging_core_1.0.img
+#
+#
+#####################
+# Setting Anaconda2 #
+#####################
+# The software has to be set up manually:
+# singularity shell --writable  -B /rosen/hpc-scratch/ycobigo/Docker/neuroimaging_CentOS7:/mnt/neuroimaging /rosen/hpc-scratch/ycobigo/Docker/Centos7-imaging_core_1.3beta.img
+# 
+# Run provided script:
+# ./Anaconda2-5.2.0-Linux-x86_64.sh
+#   - /mnt/neuroimaging/Anaconda2/5.2.0/
+#   - to PATH in your /root/.bashrc [no]  -> export PATH=$PATH:/mnt/neuroimaging/Anaconda2/5.2.0/bin && export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt/neuroimaging/Anaconda2/5.2.0/lib
+#   - Do you wish the installer to prepend the Anaconda2 install location [no]
+#   - Do you wish to proceed with the installation of Microsoft VSCode?
+#   
+#   Lastly, change the group from the Anaconda directory 
+#
+BootStrap: docker
+From: rockylinux:8
 IncludeCmd: yes
 
 %setup
@@ -35,41 +58,68 @@ IncludeCmd: yes
     	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/ITK \
     	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/KCL \
     	  $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/ANTs \
-    	  $SINGULARITY_ROOTFS/mnt/macdata \
-	  $SINGULARITY_ROOTFS/mnt/images \
+    	  $SINGULARITY_ROOTFS/shared \
+    	  $SINGULARITY_ROOTFS/shared/imaging_core \
+    	  $SINGULARITY_ROOTFS/shared/language \
+    	  $SINGULARITY_ROOTFS/shared/macdata \
+	  $SINGULARITY_ROOTFS/shared/images \
 	  $SINGULARITY_ROOTFS/mnt/images_test \
 	  $SINGULARITY_ROOTFS/mnt/MAC_QC \
 	  $SINGULARITY_ROOTFS/mnt/production \
 	  $SINGULARITY_ROOTFS/mnt/Quarantine \
 	  $SINGULARITY_ROOTFS/mnt/SNC-PACS-GW1 \
 	  $SINGULARITY_ROOTFS/mnt/tempo \
-	  $SINGULARITY_ROOTFS/shared \
 	  $SINGULARITY_ROOTFS/home/mac \
-	  $SINGULARITY_ROOTFS/netapp \
-	  $SINGULARITY_ROOTFS/netapp/home \
-	  $SINGULARITY_ROOTFS/etc/singularity/ \
-	  $SINGULARITY_ROOTFS/usr/local/lib64/R
-
+	  $SINGULARITY_ROOTFS/etc/singularity
 	  
+    cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
+    cp requirements_2024-08-22.csv $SINGULARITY_ROOTFS/etc/singularity/requirements_P3.txt
+    cp NODDI_toolbox_v1.05.zip $SINGULARITY_ROOTFS/mnt/neuroimaging/neuroimgtools/MATLAB/NODDI_toolbox_v1.05.zip
+
     #
     #
     exit 0
 
 %post
+	#
+	#
+	echo "Update the image"
+	yum update -y && yum install -y epel-release && yum groupinstall -y "Development tools" "RPM Development Tools" "Legacy UNIX Compatibility" "Scientific Support" "System Tools" "Fedora Packager" "Graphical Administration Tools" "Headless Management" "Xfce" "Security Tools" && yum -y config-manager --set-enabled powertools && yum -y update 
 
 
 	#
 	#
 	echo "Basic installation"
-	# No match: gdb-heap.x86_64 openblas-Rblas.x86_64 flex-devel.x86_64 libxml2.x86_64 libxml2-devel.x86_64 libxml2-static.x86_64 libxml++-devel.x86_64 mercurial.x86_64 gmpc-devel.x86_64
-	dnf install  -y  openssl-devel cmake gcc.x86_64 gcc-c++ gcc-gfortran make.x86_64 make-devel.x86_64 git tcsh.x86_64 \
-	    openssh.x86_64 openssh-clients.x86_64 openssh-server.x86_64 fuse-sshfs.x86_64 emacs tmux htop  wget tree.x86_64 \
-	    gdb.x86_64 gdb-headless.x86_64 gstreamer1*.x86_64 libstdc++-static.x86_64 diffutils.x86_64  findutils*.x86_64 \
-	    libXt-devel libXtst-devel expat expat-devel motif.x86_64 motif-devel.x86_64 unzip.x86_64 \
-	    qwt.x86_64 qwt-devel.x86_64 qwt-qt5.x86_64 qwt-qt5-devel.x86_64 qwtplot3d.x86_64 qwtplot3d-devel.x86_64 qwtplot3d-qt5.x86_64 qwtplot3d-qt5-devel.x86_64 \
-	    qt-config.x86_64 qt-creator.x86_64 qt-devel.x86_64 qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt5-*.x86_64 qt5-*.noarch
+	# Issue with:
+	######
+	# blender.x86_64 tetgen.x86_64 rstudio-desktop.x86_64
+	# try snap install blender tetgen  R.x86_64 R-*.x86_64 R-*.noarch
+	# tetex-elsevier 'tex(makecell.sty)' 'tex(stfloats.sty)' 'tex(breakcites.sty)' 'tex(moreverb.sty)'
+	# qt-creator.x86_64 qt-devel.x86_64  qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt-config.x86_64
+	######
+	#
+	yum install -y python3.11-devel.x86_64 gcc-c++.x86_64 gcc-gfortran.x86_64 gcc.x86_64 gdb-headless.x86_64 gdb.x86_64 cmake dbus-daemon.x86_64 dbus-glib-devel.x86_64 gsl-devel.x86_64 gsl.x86_64 htop make-devel.x86_64 make.x86_64 mesa-libGL-devel.x86_64 mesa-libGLU*.i686 mesa-libGLU*.x86_64 mesa-libGLw-devel.x86_64 mesa-libGLw.x86_64 mesa-libOSMesa.x86_64 mlocate.x86_64 wget zlib-devel tcsh.x86_64 
+	yum install -y atlas-devel.x86_64 bc.x86_64 bison.x86_64 boost-devel.x86_64 bzip2-devel bzip2-libs.x86_64 cairo cairo-gobject-devel cups-devel.x86_64 cups.x86_64 curl-devel curl.x86_64 diffutils.x86_64 dos2unix.x86_64 ed.x86_64 emacs.x86_64 evince.x86_64 fftw-libs.x86_64 firefox.x86_64 flex.x86_64 fuse3-devel.x86_64 fuse-devel.x86_64 fuse-libs.x86_64 fuse.x86_64 fuse-zip.x86_64 gimp.x86_64 git glibc.x86_64 gmp-devel.x86_64 gnome-tweaks.noarch gobject-introspection-devel gpgme-devel.x86_64 gstreamer1*.x86_64 gwenview.x86_64 hdf5-devel.x86_64 initscripts krb5-devel.x86_64 krb5-pkinit.x86_64 krb5-server-ldap.x86_64 krb5-server.x86_64 krb5-workstation.x86_64 leveldb-devel.x86_64 libcurl-devel.x86_64 libicu-devel libjpeg-devel libmng-devel.x86_64 libmpc-devel.x86_64 libpng12.x86_64 libpng15.x86_64 libpng-devel libreoffice.x86_64 libtiff-devel libuuid-devel.x86_64 libuuid.x86_64 libX11-devel libXcursor-devel.x86_64 libXi-devel.x86_64 libXinerama-devel.x86_64 libXp-devel.x86_64 libXpm-devel.x86_64 libXpm.x86_64 libXp.x86_64 libXrandr-devel.x86_64 libXt-devel libyaml.x86_64 lua.x86_64 motif-devel.x86_64 motif-static.x86_64 motif.x86_64 mpfr-devel.x86_64 mpfr.x86_64 mpich-devel.x86_64 mpich.x86_64 nautilus.x86_64 ncurses-devel netpbm-progs.x86_64 net-tools octave.x86_64 okular.x86_64 openblas*.x86_64 opencv*.x86_64 openssh-clients.x86_64 openssh-server.x86_64 openssh.x86_64 openssl-devel pango-devel paraview.x86_64 patch.x86_64 pygobject2-codegen.x86_64 pygobject2-devel.x86_64 pygobject2-doc.x86_64 pygobject2.x86_64 qgpgme-devel.x86_64 qgpgme.x86_64 qt5-*.noarch qt5-*.x86_64 R-*.noarch R-*.x86_64 R.x86_64 snap* sqlite-devel swig.x86_64 systemd-devel.x86_64 tbb-devel.x86_64 tbb.x86_64 tetex-* 'tex(balance.sty)' texlive-latex-bin-bin texlive-tex4ht 'tex(multirow.sty)' 'tex(wrapfig.sty)' 'tex(xstring.sty)' tmux.x86_64 tree.x86_64 xorg-x11-apps.x86_64 xorg-x11-drivers.x86_64 xorg-x11-fonts-misc.noarch xorg-x11-server-devel.x86_64 xorg-x11-server-Xvfb.x86_64 xorg-x11-utils.x86_64 xorg-x11-xauth xorg-x11-xinit-session.x86_64 xz xz-devel.x86_64 yaml-cpp-devel.x86_64 yaml-cpp.x86_64
 
-	
+
+	#
+	#	
+	echo "Python installation"
+	yum install -y  python3.11-pip
+	python3.11 -m pip install --upgrade pip wheel setuptools numpy build
+	# Since python 3.6 the enum34 library is no longer compatible with the standard library
+	python3.11 -m pip install -r /etc/singularity/requirements_P3.txt
+
+
+        ########
+        # AFNI #
+        ########
+	cd /tmp
+	curl -O https://raw.githubusercontent.com/afni/afni/master/src/other_builds/OS_notes.linux_fedora_b_user.tcsh
+	curl -O https://afni.nimh.nih.gov/pub/dist/bin/misc/@update.afni.binaries
+	tcsh @update.afni.binaries -package linux_openmp_64 -bindir /usr/local/bin/ -do_extras
+	#ln -s /usr/lib64/libgsl.so.25.0.0 /usr/lib64/libgsl.so.0
+
         #
         # 
         SRC=/mnt/neuroimaging/neuroimgtools/
@@ -82,8 +132,8 @@ IncludeCmd: yes
         CM_PATH=0
         # 
         cd $SRC/CMake
-        curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3/cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3.tar.gz -O && \
-        tar zxvf cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3.tar.gz && cd cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}-rc3 && mkdir build && cd build 
+        curl -fsSL https://github.com/Kitware/CMake/releases/download/v${CM_MAJ}.${CM_MIN}.${CM_PATH}/cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}.tar.gz -O && \
+        tar zxvf cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH}.tar.gz && cd cmake-${CM_MAJ}.${CM_MIN}.${CM_PATH} && mkdir build && cd build 
         #
         cmake \
         -D CMAKE_BUILD_TYPE=Release \
@@ -96,7 +146,7 @@ IncludeCmd: yes
         ##########
         EG_MAJ=3
         EG_MIN=3
-        EG_PATCH=7
+        EG_PATCH=9
         #
         cd $SRC
         git clone https://gitlab.com/libeigen/eigen && cd eigen && git checkout ${EG_MAJ}.${EG_MIN}.${EG_PATCH}
@@ -114,7 +164,7 @@ IncludeCmd: yes
 	#https://mrtrix.readthedocs.io/en/latest/installation/build_from_source.html
 	MR_MAJ=3
 	MR_MIN=0
-	MR_PATCH=3
+	MR_PATCH=4
 	#
 	if ! command -v /usr/bin/python &> /dev/null
 	then
@@ -124,6 +174,7 @@ IncludeCmd: yes
 	cd $SRC
 	ln -s /usr/bin/moc-qt5 /usr/bin/moc
 	ln -s /usr/bin/qmake-qt5 /usr/bin/qmake
+	ln -s /usr/bin/rcc-qt5 /usr/bin/rcc
 	git clone https://github.com/MRtrix3/mrtrix3.git && cd mrtrix3 && git checkout ${MR_MAJ}.${MR_MIN}.${MR_PATCH}
 	export EIGEN_CFLAGS="-isystem /usr/local/include/eigen3"
 	./configure && ./build
@@ -134,11 +185,11 @@ IncludeCmd: yes
         #######
         FSL_MAJ=6
         FSL_MIN=0
-        FSL_PATCH=6.4
+        FSL_PATCH=7.13
 	FSL_VERSION=${FSL_MAJ}.${FSL_MIN}.${FSL_PATCH}
 	cd $SRC/FSL/
 	wget https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py
-	python3 fslinstaller.py -d /mnt/neuroimaging/neuroimgtools/FSL/v${FSL_VERSION} -V ${FSL_VERSION}
+	python3.11 fslinstaller.py -d /mnt/neuroimaging/neuroimgtools/FSL/v${FSL_VERSION} -V ${FSL_VERSION}
 	        
 	        
         ##########
@@ -151,7 +202,10 @@ IncludeCmd: yes
 	wget https://www.fil.ion.ucl.ac.uk/spm/download/restricted/idyll/spm8.zip     && unzip spm8.zip
 	wget https://www.neuro.uni-jena.de/cat12/cat12_latest.zip                     && unzip cat12_latest.zip
 	wget https://www.applied-statistics.de/LST_3.0.0.zip                          && unzip LST_3.0.0.zip
-	## wget https://www.nitrc.org/frs/download.php/12229/NODDI_toolbox_v1.05.zip
+	wget http://pre.weill.cornell.edu/mri/QSM/MEDI_toolbox.zip                    && unzip MEDI_toolbox.zip
+	git clone https://gitlab.com/cmilovic/FANSI-toolbox.git
+	git clone https://github.com/kschan0214/sepia.git
+	unzip NODDI_toolbox_v1.05.zip
 	ln -s $PWD/LST   $PWD/spm12/toolbox/
 	ln -s $PWD/cat12 $PWD/spm12/toolbox/
 
@@ -173,16 +227,17 @@ IncludeCmd: yes
 	cd $SRC/FreeSurfer/ && tar zxvf freesurfer-linux-centos7_x86_64-7.1.0.tar.gz && mv freesurfer v7.1.0
 	cd $SRC/FreeSurfer/ && tar zxvf freesurfer-linux-centos7_x86_64-7.3.2.tar.gz && mv freesurfer v7.3.2
 	#
-	cd $SRC/FreeSurfer/ && echo -e "yann.cobigo@ucsf.edu\n40459\n *CNjAhKwtO4do\n FSm11m2PCTQ76" > v5.3.0/license.txt
-	cd $SRC/FreeSurfer/ && echo -e "yann.cobigo@ucsf.edu\n40459\n *CNjAhKwtO4do\n FSm11m2PCTQ76" > v7.1.0/license.txt
-	cd $SRC/FreeSurfer/ && echo -e "yann.cobigo@ucsf.edu\n40459\n *CNjAhKwtO4do\n FSm11m2PCTQ76" > v7.3.2/license.txt
-	
+	cd $SRC/FreeSurfer/ && echo -e "yann.cobigo@ucsf.edu\n40459\n *CNjAhKwtO4do\n FSm11m2PCTQ76" > v5.3.0/freesurfer/license.txt
+	cd $SRC/FreeSurfer/ && echo -e "yann.cobigo@ucsf.edu\n40459\n *CNjAhKwtO4do\n FSm11m2PCTQ76" > v7.1.0/freesurfer/license.txt
+	cd $SRC/FreeSurfer/ && echo -e "yann.cobigo@ucsf.edu\n40459\n *CNjAhKwtO4do\n FSm11m2PCTQ76" > v7.3.2/freesurfer/license.txt
+
+
         #######
         # ITK # Duplicate in neurodrive
         #######
         ITK_MAJ=5
-        ITK_MIN=2
-        ITK_PATCH=1
+        ITK_MIN=4
+        ITK_PATCH=0
         #
         cd $SRC/ITK
         curl -fsSL https://github.com/InsightSoftwareConsortium/ITK/releases/download/v${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}/InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz -O && \
@@ -195,6 +250,7 @@ IncludeCmd: yes
                -D Module_ITKVtkGlue:BOOL=OFF \
                -D VTK_DIR:PATH=/usr/local/lib64/ \
                -D CMAKE_INSTALL_PREFIX:PATH=$SRC/ITK/install $SRC/ITK/InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH} &> config.log && make -j 1 &> make.log && make install &> make_install.log
+
 
         ##################
 	# King's college #
@@ -244,39 +300,15 @@ IncludeCmd: yes
 		-D CMAKE_INSTALL_PREFIX:PATH=$SRC/ANTs/ANTs/install .. &> config.log  && make -j 1 &> make.log && cd ANTS-build && make install &> make_install.log
 
 
-
-	#
-	#
-	echo "Python installation"
-	dnf install -y  python3-pip 
-	#dnf install -y python\*-virtualenv
-	#
-	#
-	#python2 -m pip install --upgrade pip wheel setuptools numpy
-	python3 -m pip install --upgrade pip wheel setuptools numpy build
-	#
-	#python2 -m pip install -r /etc/singularity/requirements_P2.txt
-	#python3 -m pip install -r /etc/singularity/requirements_P3.txt
-
-
-
-	
-       rm -rf /mnt/tempo/*
-       exit 0
+        #
+        #
+        exit 0
 
 %runscript
 	echo "Arguments received: $*"
+	exec /usr/bin/python "$@"
 
 %test
 	#
 	echo "Sounds OK"	
-
-%environment
-    	echo "Variables"
-
-
-
-%labels
-MAINTAINER Yann Cobigo
-VERSION    v2.0.0
-
+	
