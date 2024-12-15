@@ -233,7 +233,7 @@ urllib3==1.26.6
 vtk==9.0.1
 wcwidth==0.2.5
 webencodings==0.5.1
-Werkzeug==2.0.1
+Werkzeug==2.2.3
 wrapt==1.12.1
 xarray==0.18.2
 xlrd==2.0.1
