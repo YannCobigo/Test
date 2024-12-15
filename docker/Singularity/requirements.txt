@@ -122,7 +122,7 @@ pydicom==1.4.2
 pydot==1.4.1
 pydotplus==2.0.2
 pyglet==1.2.1
-Pygments==2.5.2
+Pygments==2.7.4
 pygobject==3.27.5
 pygpgme==0.3
 pygraphviz==1.5
