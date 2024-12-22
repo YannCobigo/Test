@@ -76,7 +76,7 @@ IncludeCmd: yes
 	#
 	#
 	echo "Update the image"
-	yum update -y && yum install -y epel-release && yum groupinstall -y "Development tools" "RPM Development Tools" "Legacy UNIX Compatibility" "Scientific Support" "System Tools" "Fedora Packager" "Graphical Administration Tools" "Headless Management" "Xfce" "Security Tools" && yum -y config-manager --set-enabled powertools && yum -y update 
+	yum update -y && yum install -y 'dnf-command(config-manager)' epel-release && yum groupinstall -y "Development tools" "RPM Development Tools" "Legacy UNIX Compatibility" "Scientific Support" "System Tools" "Fedora Packager" "Graphical Administration Tools" "Headless Management" "Xfce" "Security Tools" && yum -y config-manager --set-enabled powertools && yum -y update && dnf makecache
 
 
 	#
@@ -227,8 +227,8 @@ IncludeCmd: yes
 	# Dev tools
 	PATH=${PATH}:${NEURODEV}/bin/
 	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NEURODEV}/lib64:${NEURODEV}/lib
-	##0# ITK
-	##0LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NEUROIMG}/ITK/install/lib
+	# ITK
+	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NEUROIMG}/ITK/install/lib
 	# ANTs
 	PATH=${PATH}:${NEUROIMG}/ANTs/ANTs/install/bin/:${NEUROIMG}/ANTs/Scripts
 	LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NEUROIMG}/ANTs/ANTs/install/lib64:${NEUROIMG}/ANTs/ANTs/install/lib
