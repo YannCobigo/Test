@@ -76,7 +76,7 @@ IncludeCmd: yes
 	######
 	#
 	yum install -y python3.11-devel.x86_64 gcc-c++.x86_64 gcc-gfortran.x86_64 gcc.x86_64 gdb-headless.x86_64 gdb.x86_64 cmake dbus-daemon.x86_64 dbus-glib-devel.x86_64 gsl-devel.x86_64 gsl.x86_64 htop make-devel.x86_64 make.x86_64 mesa-libGL-devel.x86_64 mesa-libGLU*.i686 mesa-libGLU*.x86_64 mesa-libGLw-devel.x86_64 mesa-libGLw.x86_64 mesa-libOSMesa.x86_64 mlocate.x86_64 wget zlib-devel tcsh.x86_64 
-	yum install -y atlas-devel.x86_64 bc.x86_64 bison.x86_64 boost-devel.x86_64 bzip2-devel bzip2-libs.x86_64 cairo cairo-gobject-devel cups-devel.x86_64 cups.x86_64 curl-devel curl.x86_64 diffutils.x86_64 dos2unix.x86_64 ed.x86_64 emacs.x86_64 evince.x86_64 fftw-libs.x86_64 firefox.x86_64 flex.x86_64 fuse3-devel.x86_64 fuse-devel.x86_64 fuse-libs.x86_64 fuse.x86_64 fuse-zip.x86_64 gimp.x86_64 git glibc.x86_64 gmp-devel.x86_64 gnome-tweaks.noarch gobject-introspection-devel gpgme-devel.x86_64 gstreamer1*.x86_64 gwenview.x86_64 hdf5-devel.x86_64 initscripts krb5-devel.x86_64 krb5-pkinit.x86_64 krb5-server-ldap.x86_64 krb5-server.x86_64 krb5-workstation.x86_64 leveldb-devel.x86_64 libcurl-devel.x86_64 libicu-devel libjpeg-devel libmng-devel.x86_64 libmpc-devel.x86_64 libpng12.x86_64 libpng15.x86_64 libpng-devel libreoffice.x86_64 libtiff-devel libuuid-devel.x86_64 libuuid.x86_64 libX11-devel libXcursor-devel.x86_64 libXi-devel.x86_64 libXinerama-devel.x86_64 libXp-devel.x86_64 libXpm-devel.x86_64 libXpm.x86_64 libXp.x86_64 libXrandr-devel.x86_64 libXt-devel libyaml.x86_64 lua.x86_64 motif-devel.x86_64 motif-static.x86_64 motif.x86_64 mpfr-devel.x86_64 mpfr.x86_64 mpich-devel.x86_64 mpich.x86_64 nautilus.x86_64 ncurses-devel netpbm-progs.x86_64 net-tools octave.x86_64 okular.x86_64 openblas*.x86_64 opencv*.x86_64 openssh-clients.x86_64 openssh-server.x86_64 openssh.x86_64 openssl-devel pango-devel paraview.x86_64 patch.x86_64 pygobject2-codegen.x86_64 pygobject2-devel.x86_64 pygobject2-doc.x86_64 pygobject2.x86_64 qgpgme-devel.x86_64 qgpgme.x86_64 qt5-*.noarch qt5-*.x86_64 R-*.noarch R-*.x86_64 R.x86_64 snap* sqlite-devel swig.x86_64 systemd-devel.x86_64 tbb-devel.x86_64 tbb.x86_64 tetex-* 'tex(balance.sty)' texlive-latex-bin-bin texlive-tex4ht 'tex(multirow.sty)' 'tex(wrapfig.sty)' 'tex(xstring.sty)' tmux.x86_64 tree.x86_64 xorg-x11-apps.x86_64 xorg-x11-drivers.x86_64 xorg-x11-fonts-misc.noarch xorg-x11-server-devel.x86_64 xorg-x11-server-Xvfb.x86_64 xorg-x11-utils.x86_64 xorg-x11-xauth xorg-x11-xinit-session.x86_64 xz xz-devel.x86_64 yaml-cpp-devel.x86_64 yaml-cpp.x86_64
+	yum install -y atlas-devel.x86_64 bc.x86_64 bison.x86_64 boost-devel.x86_64 bzip2-devel bzip2-libs.x86_64 cairo cairo-gobject-devel cups-devel.x86_64 cups.x86_64 curl-devel curl.x86_64 diffutils.x86_64 dos2unix.x86_64 ed.x86_64 emacs.x86_64 evince.x86_64 fftw-libs.x86_64 firefox.x86_64 flex.x86_64 fuse3-devel.x86_64 fuse-devel.x86_64 fuse-libs.x86_64 fuse.x86_64 fuse-zip.x86_64 gimp.x86_64 git glibc.x86_64 gmp-devel.x86_64 gnome-tweaks.noarch gobject-introspection-devel gpgme-devel.x86_64 gstreamer1*.x86_64 gwenview.x86_64 hdf5-devel.x86_64 initscripts krb5-devel.x86_64 krb5-pkinit.x86_64 krb5-server-ldap.x86_64 krb5-server.x86_64 krb5-workstation.x86_64 leveldb-devel.x86_64 libcurl-devel.x86_64 libicu-devel libjpeg-devel libmng-devel.x86_64 libmpc-devel.x86_64 libpng12.x86_64 libpng15.x86_64 libpng-devel libreoffice.x86_64 libtiff-devel libuuid-devel.x86_64 libuuid.x86_64 libX11-devel libXcursor-devel.x86_64 libXi-devel.x86_64 libXinerama-devel.x86_64 libXp-devel.x86_64 libXpm-devel.x86_64 libXpm.x86_64 libXp.x86_64 libXrandr-devel.x86_64 libXt-devel libyaml.x86_64 lua.x86_64 motif-devel.x86_64 motif-static.x86_64 motif.x86_64 mpfr-devel.x86_64 mpfr.x86_64 mpich-devel.x86_64 mpich.x86_64 nautilus.x86_64 ncurses-devel netpbm-progs.x86_64 net-tools octave.x86_64 okular.x86_64 openblas*.x86_64 opencv*.x86_64 openssh-clients.x86_64 openssh-server.x86_64 openssh.x86_64 openssl-devel pango-devel paraview.x86_64 patch.x86_64 pygobject2-codegen.x86_64 pygobject2-devel.x86_64 pygobject2-doc.x86_64 pygobject2.x86_64 qgpgme-devel.x86_64 qgpgme.x86_64 qt5-*.noarch qt5-*.x86_64 R-*.noarch R-*.x86_64 R.x86_64 snap* sqlite-devel swig.x86_64 systemd-devel.x86_64 tbb-devel.x86_64 tbb.x86_64 tetex-* 'tex(balance.sty)' texlive-latex-bin-bin texlive-tex4ht 'tex(multirow.sty)' 'tex(wrapfig.sty)' 'tex(xstring.sty)' tmux.x86_64 tree.x86_64 xorg-x11-apps.x86_64 xorg-x11-drivers.x86_64 xorg-x11-fonts-misc.noarch xorg-x11-server-devel.x86_64 xorg-x11-server-Xvfb.x86_64 xorg-x11-utils.x86_64 xorg-x11-xauth xorg-x11-xinit-session.x86_64 xz xz-devel.x86_64 yaml-cpp-devel.x86_64 yaml-cpp.x86_64 dcmtk.x86_64 dcmtk-devel.x86_64
 
 
 	########################################
@@ -213,17 +213,17 @@ IncludeCmd: yes
         # ITK # Duplicate in neurodrive
         #######
         ITK_MAJ=5
-        ITK_MIN=4
+        ITK_MIN=3
         ITK_PATCH=0
         #
         cd $SRC
-	curl -fsSL https://github.com/InsightSoftwareConsortium/ITK/archive/refs/tags/v${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz -O && \
-	mv v${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz && \
-	tar zxvf InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz && cd ITK-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH} && mkdir build && cd build
+        curl -fsSL https://github.com/InsightSoftwareConsortium/ITK/releases/download/v${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}/InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz -O && \
+        tar zxvf InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH}.tar.gz && cd InsightToolkit-${ITK_MAJ}.${ITK_MIN}.${ITK_PATCH} && mkdir build install && cd build
         $DEST/bin/cmake \
                -D CMAKE_BUILD_TYPE:STRING=RELEASE \
                -D BUILD_SHARED_LIBS=ON \
                -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+	       -D ITK_USE_SYSTEM_EIGEN:BOOL=TRUE \
                -D ITK_LEGACY_REMOVE=ON \
                -D Module_ITKVtkGlue:BOOL=OFF \
                -D VTK_DIR:PATH=$DEST/lib64/ \
