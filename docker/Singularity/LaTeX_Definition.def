@@ -1,0 +1,148 @@
+Bootstrap: docker
+From: rockylinux:9
+IncludeCmd: yes
+
+
+%labels
+    Author "Your Name"
+    Version "1.2"
+    Description "Singularity container with full LaTeX environment and PDF/image viewers on Rocky Linux."
+
+%environment
+    # Set a default locale to avoid some LaTeX warnings
+    export LANG="en_US.UTF-8"
+    export LC_ALL="en_US.UTF-8"
+    
+    # Add TeX Live to the PATH
+    export PATH="/usr/local/texlive/2024/bin/x86_64-linux:$PATH"
+    export MANPATH="/usr/local/texlive/2024/texmf-dist/doc/man:$MANPATH"
+    export INFOPATH="/usr/local/texlive/2024/texmf-dist/doc/info:$INFOPATH"
+
+%post
+    echo "--- Installing essential build tools and repositories ---"
+    dnf update -y
+    dnf install -y epel-release dnf-plugins-core
+    dnf config-manager --set-enabled crb
+    
+    # Use "Development Tools" group for common build tools and add 'which'
+    dnf group install -y "Development Tools"
+    dnf install -y which perl-Digest-MD5 # perl-Digest-MD5 is required by install-tl
+
+    # Install core system libraries and X11 dependencies for GUI apps
+    dnf install -y \
+        make \
+        gcc \
+        perl \
+        python3 \
+        wget \
+        xz \
+        bzip2 \
+        gzip \
+        tar \
+        git \
+        sudo \
+        libXScrnSaver \
+        libXrender \
+        libXext \
+        libXtst \
+        libSM \
+        libICE \
+        gtk3 \
+        qt5-qtbase \
+        mesa-libGL \
+        mesa-libGLU \
+        freetype \
+        fontconfig \
+        lcms2 \
+        libtiff \
+        libjpeg-turbo \
+        openjpeg2 \
+        libpng \
+        librsvg2 \
+        poppler-glib \
+        poppler-utils \
+        gdk-pixbuf2 \
+        cups-libs \
+        avahi-libs \
+        dbus-libs \
+        libtool-ltdl \
+        libgomp \
+        xorg-x11-xauth \
+        xorg-x11-server-utils \
+        xorg-x11-utils \
+        xterm \
+        fontpackages-filesystem # Helps with font paths
+
+
+    echo "--- Downloading and installing TeX Live (full distribution) from upstream ---"
+    # Download the TeX Live installer
+    # Using 'latest' for a fresh installation. As of June 2025, 2024 is the latest stable.
+    cd /tmp 
+    wget https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz 
+    tar -xzf install-tl-unx.tar.gz
+    cd install-tl-2025*
+
+    # Run the installer for a full scheme, non-interactive, to /usr/local/texlive/2024
+    # --no-interaction: unattended installation
+    # --scheme=full: install the full TeX Live scheme
+    # --prefix=/usr/local/texlive/2024: where to install TeX Live
+    # --pin-of-host: prevents tlmgr from trying to update from host's repositories
+    # --no-gui: no GUI for installation
+    # --no-doc-install: omit documentation to save space (optional, remove if you want docs)
+    # --no-path-update: we'll update PATH in %environment
+    # --disable-local-texmf: prevents creating local texmf tree which is not needed in container
+    #./install-tl --no-interaction --scheme=full --prefix=/usr/local/texlive/2024 --no-gui --no-doc-install --no-path-update --disable-local-texmf --no-post-code
+    ./install-tl --no-interaction --scheme=full --texdir=/usr/local/texlive/2025 --no-gui --no-doc-install
+    
+    # Clean up installer files
+    cd /tmp
+    rm -rf install-tl-* install-tl-unx.tar.gz
+
+    # Update font caches for TeX Live fonts
+    /usr/local/texlive/2025/bin/x86_64-linux/texhash
+    /usr/local/texlive/2025/bin/x86_64-linux/updmap-sys --force
+    /usr/local/texlive/2025/bin/x86_64-linux/fmtutil-sys --all
+    /usr/local/texlive/2025/bin/x86_64-linux/mktexlsr
+
+    echo "--- Installing PDF/Image Viewers and Office Suite ---"
+    dnf install -y \
+        okular \
+        evince \
+        gimp \
+        libreoffice \
+        xpdf \
+        mupdf \
+        ImageMagick \
+        inkscape
+
+    # Clean up dnf cache to reduce container size
+    dnf clean all
+    rm -rf /var/cache/dnf/*
+    
+%runscript
+    echo "This container provides a full TeX Live environment and various viewers."
+    echo "To compile a LaTeX document, try: latexmk -pdf your_document.tex"
+    echo "To open a PDF, try: evince your_document.pdf"
+    exec "$@"
+
+%help
+    This Singularity container provides a comprehensive TeX Live development environment
+    (installed directly from upstream for completeness) on Rocky Linux 9. It also includes
+    a variety of Linux viewers for PDF documents and images, such as Okular, Evince,
+    GIMP, LibreOffice, xpdf, mupdf, ImageMagick, and Inkscape.
+
+    TeX Live is installed to /usr/local/texlive/2024/. The container's PATH and other
+    environment variables are set to include TeX Live binaries.
+
+    To build this container:
+    sudo singularity build latex_env.sif Singularity.def
+
+    To run a shell inside the container:
+    singularity shell latex_env.sif
+
+    To execute a command directly (e.g., compile a LaTeX file):
+    singularity exec latex_env.sif latexmk -pdf /path/to/your/document.tex
+
+    Remember to bind-mount your local directories containing your LaTeX files:
+    singularity exec --bind /local/path:/container/path latex_env.sif latexmk -pdf /container/path/document.sif
+    
