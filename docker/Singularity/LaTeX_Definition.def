@@ -43,17 +43,12 @@ IncludeCmd: yes
         sudo \
         libXScrnSaver \
         libXrender \
-        libXext \
-        libXtst \
-        libSM \
-        libICE \
+        libXext        libXtst libSM  libICE \
         gtk3 \
         qt5-qtbase \
         mesa-libGL \
         mesa-libGLU \
-        freetype \
-        fontconfig \
-        lcms2 \
+        freetype fontconfig lcms2 \
         libtiff \
         libjpeg-turbo \
         openjpeg2 \
