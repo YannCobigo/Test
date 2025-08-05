@@ -51,7 +51,6 @@ IncludeCmd: yes
 	  $SINGULARITY_ROOTFS/etc/singularity/
 	  
     cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
-    cp requirements_2023-10-12.txt $SINGULARITY_ROOTFS/etc/singularity/requirements_P3.txt
 
     #
     #

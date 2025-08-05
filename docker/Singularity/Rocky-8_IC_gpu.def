@@ -42,12 +42,13 @@
 ###############
 # NVIDIA CUDA #
 ###############
+# IX   12.9 (driver: 575.64.03)
 # IIX  10.2 (driver: 440.100)
 # VII  10.1 (driver: 418.113)
 # Matt's 10.0, 9.1
 # Cerebellum 7.5
 BootStrap: docker
-From: rockylinux:9
+From: rockylinux:8
 IncludeCmd: yes
 
 %labels
@@ -78,7 +79,7 @@ IncludeCmd: yes
 	  $SINGULARITY_ROOTFS/usr/local/lib64/R 
 	  
     cp singularity.conf $SINGULARITY_ROOTFS/etc/singularity/
-    cp requirements_2024-08-22.csv $SINGULARITY_ROOTFS/etc/singularity/requirements_P3.txt
+    #YC cp requirements_2024-08-22.csv $SINGULARITY_ROOTFS/etc/singularity/requirements_P3.txt
 
     #
     #
@@ -89,29 +90,29 @@ IncludeCmd: yes
 	#
 	echo "Update the image"
 	yum update -y && yum install -y 'dnf-command(config-manager)' epel-release && yum groupinstall -y "Development tools" "RPM Development Tools" "Legacy UNIX Compatibility" "Scientific Support" "System Tools" "Fedora Packager" "Graphical Administration Tools" "Headless Management" "Xfce" "Security Tools" && yum -y config-manager --set-enabled powertools && yum -y update && dnf makecache
-
+	dnf -y install emacs.x86_64 vim git wget unzip tar cmake # curl.x86_64
 
 	#
 	#
 	echo "Basic installation"
-	# Issue with:
-	######
-	# blender.x86_64 tetgen.x86_64
-	# try snap install blender tetgen
-	# tetex-elsevier 'tex(makecell.sty)' 'tex(stfloats.sty)' 'tex(breakcites.sty)' 'tex(moreverb.sty)'
-	# qt-creator.x86_64 qt-devel.x86_64  qt-examples.x86_64 qt-mysql.x86_64 qt-postgresql.x86_64 qt-config.x86_64
 
     	#
 	# CUDA
 	# 
+	# Versions: https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/
 	# Versions: https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/
 	# Versions: https://developer.download.nvidia.com/compute/cuda/repos/fedora3X/x86_64/
 	# Versions: https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/
-	# 12.6
-	CUDA=12-6
-	CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12-6
-	CUDA_VERSION=12.6.1-1
+	# 12.9
+	CUDA=12-9
+	CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12-9
+	CUDA_VERSION=12.9.1-1
 	CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
+	# 12.6
+	#CUDA=12-6
+	#CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12-6
+	#CUDA_VERSION=12.6.1-1
+	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
 	# 12.1
 	#CUDA=12-1
 	#CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12-1
@@ -123,6 +124,7 @@ IncludeCmd: yes
 	#CUDA_VERSION=12.0.0-1 
 	#CUDA_PKG_VERSION=$CUDA-$CUDA_VERSION
 	#
+	# CUDA 12.9 ()>= 575.57.08
 	# CUDA 11.0 (11.0.171)>= 450.36.06
 	# CUDA 10.2 (10.2.89)>= 440.33
 	# CUDA 10.1 (10.1.105)>= 418.39
@@ -134,35 +136,35 @@ IncludeCmd: yes
 	NVIDIA_VISIBLE_DEVICES=all 
 	NVIDIA_DRIVER_CAPABILITIES=compute,utility 
 	NVIDIA_REQUIRE_CUDA="cuda>=10.2 brand=tesla,driver>=440,driver<441"
-	# cuDNN 
-	dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
+	#
+	# NO GO: cuda-${CUDA}.x86_64 
+	#dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo
+	wget https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo -O /etc/yum.repos.d/cuda.repo #&& rpm -i /etc/yum.repos.d/cuda.repo
+	dnf clean all
+	dnf -y install cuda-demo-suite-${CUDA}.x86_64     cuda-toolkit-${CUDA}\*
+	#
 	echo "exclude=xorg-x11-drv-nvidia*,akmod-nvidia*,kmod-nvidia*,nvidia-driver*,nvidia-settings,nvidia-xconfig,nvidia-persistenced,cuda-nvidia-kmod-common,dkms-nvidia,nvidia-libXNVCtrl" >> /etc/yum.repos.d/cuda.repo 
 	#
-	# cuDNN license: https://developer.nvidia.com/cudnn/license_agreement 
-	curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/D42D0685.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
-	#echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
-	rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.2.4/RHEL8_1-x64/libcudnn8-8.2.4.15-1.cuda11.4.x86_64.rpm
-	rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.2.4/RHEL8_1-x64/libcudnn8-devel-8.2.4.15-1.cuda11.4.x86_64.rpm
-	rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.2.4/RHEL8_1-x64/libcudnn8-samples-8.2.4.15-1.cuda11.4.x86_64.rpm
-	#rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.0.5/RHEL8_1-x64/libcudnn8-8.0.5.39-1.cuda11.1.x86_64.rpm
-	#rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.0.5/RHEL8_1-x64/libcudnn8-devel-8.0.5.39-1.cuda11.1.x86_64.rpm
-	#rpm -i https://developer.download.nvidia.com/compute/redist/cudnn/v8.0.5/RHEL8_1-x64/libcudnn8-samples-8.0.5.39-1.cuda11.1.x86_64.rpm
-	ldconfig
-	# For libraries in the cuda-compat-* package: https://docs.nvidia.com/cuda/eula/index.html#attachment-a 
-	# !!!!!!!!!!!!!!!VERY TEMPO!! WE NEED THE SAMPLES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	dnf install -y cuda-samples-11-6.x86_64
-	dnf install -y cuda-toolkit-${CUDA}.x86_64
-	if [ $CUDA == "10-0" ] || [ $CUDA == "10-1" ] ;
-	then
-		dnf install -y cuda-compat-$CUDA
-	fi
+	###################################################################
+	#                                                                 #
+	#  Samples!                                                       #
+	#  git clone -b v12.9 https://github.com/NVIDIA/cuda-samples.git  #
+	#                                                                 #
+	###################################################################
 
+	#
+	# Install OpenCL runtime + optional libraries
+	dnf -y install ocl-icd opencl-headers clinfo
+    	# Optional OpenCL libs (generic or vendor-neutral)
+    	dnf -y install ViennaCL-devel || true  # BLAS-like routines on OpenCL
+    	dnf -y install boost-compute-devel || true  # GPU computing in C++ with OpenCL
 
 
 	######
 	# 
-	yum install -y python3.11-devel.x86_64 gcc-c++.x86_64 gcc-gfortran.x86_64 gcc.x86_64 gdb-headless.x86_64 gdb.x86_64 cmake dbus-daemon.x86_64 dbus-glib-devel.x86_64 dbus-libs gsl-devel.x86_64 gsl.x86_64 htop make-devel.x86_64 make.x86_64 mesa-libGL-devel.x86_64 mesa-libGLU*.i686 mesa-libGLU*.x86_64 mesa-libGLw-devel.x86_64 mesa-libGLw.x86_64 mesa-libOSMesa.x86_64 mlocate.x86_64 wget zlib-devel tcsh.x86_64 sudo libtool-ltdl
-	yum install -y atlas-devel.x86_64 bc.x86_64 bison.x86_64 boost-devel.x86_64 bzip2-devel bzip2-libs.x86_64 cairo cairo-gobject-devel cups-devel.x86_64 cups.x86_64 curl-devel curl.x86_64 diffutils.x86_64 dos2unix.x86_64 ed.x86_64 emacs.x86_64 evince.x86_64 fftw-libs.x86_64 firefox.x86_64 flex.x86_64 fuse3-devel.x86_64 fuse-devel.x86_64 fuse-libs.x86_64 fuse.x86_64 fuse-zip.x86_64 gimp.x86_64 git glibc.x86_64 gmp-devel.x86_64 gnome-tweaks.noarch gobject-introspection-devel gpgme-devel.x86_64 gstreamer1*.x86_64 gwenview.x86_64 hdf5-devel.x86_64 initscripts krb5-devel.x86_64 krb5-pkinit.x86_64 krb5-server-ldap.x86_64 krb5-server.x86_64 krb5-workstation.x86_64 leveldb-devel.x86_64 libcurl-devel.x86_64 libicu-devel libjpeg-devel libjpeg-turbo openjpeg2 libmng-devel.x86_64 libmpc-devel.x86_64 libpng12.x86_64 libpng15.x86_64 libpng libpng-devel librsvg2 libreoffice.x86_64 freetype fontconfig lcms2 libtiff-devel libuuid-devel.x86_64 libuuid.x86_64 libXScrnSaver libXrender libXext libXtst libSM libICE libX11-devel libXcursor-devel.x86_64 libXi-devel.x86_64 libXinerama-devel.x86_64 libXp-devel.x86_64 libXpm-devel.x86_64 libXpm.x86_64 libXp.x86_64 libXrandr-devel.x86_64 libXt-devel libyaml.x86_64 lua.x86_64 motif-devel.x86_64 motif-static.x86_64 motif.x86_64 mpfr-devel.x86_64 mpfr.x86_64 mpich-devel.x86_64 mpich.x86_64 nautilus.x86_64 ncurses-devel netpbm-progs.x86_64 net-tools octave.x86_64 okular.x86_64 openblas*.x86_64 opencv*.x86_64 openssh-clients.x86_64 openssh-server.x86_64 openssh.x86_64 openssl-devel pango-devel paraview.x86_64 patch.x86_64 pygobject2-codegen.x86_64 pygobject2-devel.x86_64 pygobject2-doc.x86_64 pygobject2.x86_64 qgpgme-devel.x86_64 qgpgme.x86_64 qt5-*.noarch qt5-*.x86_64 R-*.noarch R-*.x86_64 R.x86_64 snap* sqlite-devel swig.x86_64 systemd-devel.x86_64 tbb-devel.x86_64 tbb.x86_64  tmux.x86_64 tree.x86_64 xorg-x11-apps.x86_64 xorg-x11-drivers.x86_64 xorg-x11-fonts-misc.noarch xorg-x11-server-devel.x86_64 xorg-x11-server-Xvfb.x86_64 xorg-x11-utils.x86_64 xorg-x11-xauth xorg-x11-xinit-session.x86_64 xorg-x11-server-utils.x86_64 xz xz-devel.x86_64 yaml-cpp-devel.x86_64 yaml-cpp.x86_64 dcmtk.x86_64 dcmtk-devel.x86_64 doxygen.x86_64 doxygen-doxywizard.x86_64 doxygen-latex.x86_64 gtk3.x86_64 poppler-glib poppler-utils gdk-pixbuf2 cups-libs avahi-libs libgomp xterm fontpackages-filesystem xpdf ImageMagick inkscape
+	dnf install -y python3.11-devel.x86_64 gcc-c++.x86_64 gcc-gfortran.x86_64 gcc.x86_64 gdb-headless.x86_64 gdb.x86_64 dbus-daemon.x86_64 dbus-glib-devel.x86_64 dbus-libs gsl-devel.x86_64 gsl.x86_64 htop make.x86_64 mesa-libGL-devel.x86_64 mesa-libGLU*.i686 mesa-libGLU*.x86_64 mesa-libGLw-devel.x86_64 mesa-libGLw.x86_64 mlocate.x86_64 zlib-devel tcsh.x86_64 sudo libtool-ltdl
+	# NO GO: 
+	dnf install -y atlas-devel.x86_64 bc.x86_64 bison.x86_64 boost-devel.x86_64 bzip2-devel bzip2-libs.x86_64 cairo cairo-gobject-devel cups-devel.x86_64 cups.x86_64 curl-devel diffutils.x86_64 dos2unix.x86_64 ed.x86_64 evince.x86_64 fftw-libs.x86_64 firefox.x86_64 flex.x86_64 fuse3-devel.x86_64 fuse-libs.x86_64 fuse.x86_64 fuse-zip.x86_64 gimp.x86_64 glibc.x86_64 glibc-langpack-en gmp-devel.x86_64 gnome-tweaks.noarch gstreamer1*.x86_64 gwenview.x86_64 hdf5-devel.x86_64 initscripts krb5-devel.x86_64 krb5-pkinit.x86_64 krb5-server-ldap.x86_64 krb5-server.x86_64 krb5-workstation.x86_64 leveldb-devel.x86_64 libcurl-devel.x86_64 libicu-devel libjpeg-devel libjpeg-turbo openjpeg2 libmpc-devel.x86_64 libpng12.x86_64 libpng15.x86_64 libpng libpng-devel librsvg2 libreoffice.x86_64 freetype fontconfig lcms2 libtiff-devel libuuid-devel.x86_64 libuuid.x86_64 libXScrnSaver libXrender libXext libXtst libSM libICE libX11-devel libXcursor-devel.x86_64 libXi-devel.x86_64 libXinerama-devel.x86_64 libXp-devel.x86_64 libXpm-devel.x86_64 libXpm.x86_64 libXp.x86_64 libXrandr-devel.x86_64 libXt-devel libyaml.x86_64 lua.x86_64 motif-devel.x86_64 motif.x86_64 mpfr-devel.x86_64 mpfr.x86_64 mpich-devel.x86_64 mpich.x86_64 nautilus.x86_64 ncurses-devel netpbm-progs.x86_64 net-tools octave.x86_64 okular.x86_64 openblas*.x86_64 opencv*.x86_64 openssh-clients.x86_64 openssh-server.x86_64 openssh.x86_64 openssl-devel pango-devel paraview.x86_64 patch.x86_64 qt5-*.noarch qt5-*.x86_64 R-*.noarch R-*.x86_64 R.x86_64 snap* sqlite-devel systemd-devel.x86_64 tbb-devel.x86_64 tbb.x86_64  tmux.x86_64 tree.x86_64 xorg-x11-drivers.x86_64 xorg-x11-fonts-misc.noarch xorg-x11-server-Xvfb.x86_64 xorg-x11-utils.x86_64 xorg-x11-xauth xorg-x11-xinit-session.x86_64 xorg-x11-server-utils.x86_64 xz xz-devel.x86_64 yaml-cpp-devel.x86_64 yaml-cpp.x86_64 dcmtk.x86_64 dcmtk-devel.x86_64 gtk3.x86_64 poppler-glib poppler-utils gdk-pixbuf2 cups-libs avahi-libs libgomp xterm fontpackages-filesystem xpdf ImageMagick inkscape fuse-devel.x86_64 gobject-introspection-devel gpgme-devel.x86_64 libmng-devel.x86_64 motif-static.x86_64 pygobject2-codegen.x86_64 pygobject2-devel.x86_64 pygobject2-doc.x86_64 pygobject2.x86_64 qgpgme-devel.x86_64 qgpgme.x86_64 swig.x86_64 xorg-x11-apps.x86_64 xorg-x11-server-devel.x86_64 doxygen.x86_64 doxygen-doxywizard.x86_64 doxygen-latex.x86_64
 
 	#
 	# LaTeX setup
@@ -198,17 +200,17 @@ IncludeCmd: yes
     	/usr/local/texlive/2025/bin/x86_64-linux/updmap-sys --force
     	/usr/local/texlive/2025/bin/x86_64-linux/fmtutil-sys --all
     	/usr/local/texlive/2025/bin/x86_64-linux/mktexlsr
-
-
+	
+	
 	#
 	#	
 	echo "Python installation"
 	yum install -y  python3.11-pip
 	python3.11 -m pip install --upgrade pip wheel setuptools numpy build
 	# Since python 3.6 the enum34 library is no longer compatible with the standard library
-	python3.11 -m pip install -r /etc/singularity/requirements_P3.txt
-
-
+	#YC	python3.11 -m pip install -r /etc/singularity/requirements_P3.txt
+	
+	
         ############
         # Dcm2Bids #
         ############
@@ -216,8 +218,8 @@ IncludeCmd: yes
 	cd /tmp
 	curl -fLO https://github.com/unfmontreal/dcm2bids/releases/latest/download/dcm2bids_rhel-based_${Dcm2Bids_VERSION}.tar.gz
 	tar zxvf dcm2bids_rhel-based_${Dcm2Bids_VERSION}.tar.gz && mv dcm2bids_scaffold dcm2bids dcm2bids_helper /usr/local/bin/
-
-
+	
+	
         ########
         # AFNI #
         ########
@@ -226,8 +228,8 @@ IncludeCmd: yes
 	curl -O https://afni.nimh.nih.gov/pub/dist/bin/misc/@update.afni.binaries
 	tcsh @update.afni.binaries -package linux_openmp_64 -bindir /usr/local/bin/ -do_extras
 	#ln -s /usr/lib64/libgsl.so.25.0.0 /usr/lib64/libgsl.so.0
-
-
+	
+	
 	#
 	# R-studio desktop/centos7/x86_64/rstudio-pro-2023.03.2-454.pro2-x86_64.rpm
 	cd /tmp && wget https://download1.rstudio.org/desktop/centos7/x86_64/rstudio-pro-2023.03.0-386.pro1-x86_64.rpm
